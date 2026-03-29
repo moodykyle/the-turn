@@ -154,7 +154,7 @@ body{background:#F5F4F1;color:#111;font-family:-apple-system,BlinkMacSystemFont,
 .hole-label{font-size:22px;font-weight:500;color:var(--color-text-primary);}
 .nav-btn{width:36px;height:36px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .nav-btn:disabled{opacity:0.3;cursor:default;}
-.banner{margin:0.75rem 1rem 0;padding:8px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);}
+.banner{margin:0 1rem;}.banner:not(:empty){margin:0.75rem 1rem 0;padding:8px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);}
 .banner-game{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px;}
 .banner-sub{font-size:11px;color:var(--color-text-secondary);}
 .scorecard{padding:0.5rem 1rem;}
@@ -202,7 +202,7 @@ body{background:#F5F4F1;color:#111;font-family:-apple-system,BlinkMacSystemFont,
 .mp-score-text{font-size:13px;color:var(--color-text-secondary);}
 .hole-dots{display:flex;gap:4px;padding:0.75rem 1rem 0;flex-wrap:wrap;}
 .hdot{width:22px;height:22px;border-radius:50%;border:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--color-text-tertiary);cursor:pointer;background:var(--color-background-primary);}
-.hdot.done{background:var(--color-text-primary);color:var(--color-background-primary);border-color:var(--color-text-primary);}
+.hdot.done{background:#1D9E75;color:#fff;border-color:#1D9E75;}
 .hdot.cur{border:1.5px solid var(--color-text-primary);color:var(--color-text-primary);font-weight:500;}
 .footer-btn{margin:1rem 1rem 0;width:calc(100% - 2rem);padding:14px;background:var(--color-text-primary);color:var(--color-background-primary);border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer;}
 .sc-grid-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0;}
@@ -216,13 +216,13 @@ body{background:#F5F4F1;color:#111;font-family:-apple-system,BlinkMacSystemFont,
 @media(prefers-color-scheme:dark){.sc-grid .player-col{background:#111827;}.sc-grid tr:nth-child(even) .player-col{background:#111827;}}
 @media(prefers-color-scheme:light){.sc-grid .player-col{background:#FAFAF8;}.sc-grid tr:nth-child(even) .player-col{background:#FAFAF8;}}
 
-.sc-cell{width:18px;height:18px;display:flex;align-items:center;justify-content:center;margin:auto;font-size:10px;font-weight:500;position:relative;}
+.sc-cell{width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin:auto;font-size:10px;font-weight:500;}
 .sc-cell.birdie{border-radius:50%;border:1.5px solid #1D9E75;color:#1D9E75;}
 .sc-cell.eagle{border-radius:50%;border:2px solid #0F6E56;outline:1.5px solid #0F6E56;outline-offset:1px;color:#0F6E56;}
 .sc-cell.bogey{border:1.5px solid #D85A30;color:#D85A30;}
 .sc-cell.double{border:2px solid #993C1D;color:#993C1D;}
 .sc-cell.par{color:var(--color-text-secondary);}
-.stroke-dot{width:4px;height:4px;border-radius:50%;background:#1D9E75;position:absolute;top:1px;right:1px;}
+.dot-row{height:6px;display:flex;align-items:center;justify-content:center;}.stroke-dot{width:3px;height:3px;border-radius:50%;background:#1D9E75;display:inline-block;margin:0 1.5px;}
 .view{padding:1rem;}
 .view-title{font-size:16px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;}
 .view-sub{font-size:12px;color:var(--color-text-secondary);margin-bottom:0.75rem;}
@@ -429,7 +429,7 @@ body.force-light{--color-text-primary:#111111;--color-text-secondary:#6B7280;--c
         <div class="wizard-title">Trip setup</div>
         <div class="wizard-sub">Takes about 2 minutes.</div>
         <div class="field-row"><div class="field-label">Trip name</div><input class="text-input" id="weekendName" value="" placeholder="e.g. Shaker Cup 2025"/></div>
-        <div class="field-row"><div class="field-label">Date</div><input class="text-input" id="weekendDate" type="date"/></div>
+        <div class="field-row"><div class="field-label">Date</div><input class="text-input" id="weekendDate" type="date" max="2099-12-31"/></div>
         <div style="display:flex;gap:16px;margin-bottom:14px">
           <div style="flex:1"><div class="field-label">Players</div><select class="course-select" id="numPlayers" style="width:100%"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></div>
           <div style="flex:1"><div class="field-label">Rounds</div><select class="course-select" id="numRounds" style="width:100%"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option></select></div>
@@ -476,11 +476,11 @@ body.force-light{--color-text-primary:#111111;--color-text-secondary:#6B7280;--c
         <div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;margin-bottom:14px">
           <div style="background:var(--color-background-secondary);padding:8px 12px;font-size:12px;font-weight:500;color:var(--color-text-secondary)">Games</div>
           <div style="padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
-            <div style="display:flex;align-items:center;gap:10px"><div style="flex:1;font-size:13px;color:var(--color-text-primary);display:flex;align-items:center;gap:6px">Match Play <span class="info-icon" tabindex="0">i<span class="info-tip">2v2 team match play. Each hole won earns a point. Most points after the game wins. Teams set in Options.</span></span></div><label class="toggle"><input type="checkbox" id="wizMpOn"><span class="toggle-slider"></span></label></div>
+            <div style="display:flex;align-items:center;gap:10px"><div style="flex:1;font-size:13px;color:var(--color-text-primary);display:flex;align-items:center;gap:6px">Vegas <span class="info-icon" tabindex="0">i<span class="info-tip">2v2 format. Each team combines their two net scores into a two-digit number. Higher number wins the point difference each hole.</span></span></div><label class="toggle"><input type="checkbox" id="wizVegasOn"><span class="toggle-slider"></span></label></div>
             <div id="wizMpExtra" style="display:none;margin-top:10px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px"><span style="font-size:12px;color:var(--color-text-secondary)">Default games/round:</span><select class="ie-sel" id="wizMpGames"><option value="1">1 game · 18 holes</option><option value="2">2 games · 9 holes</option><option value="3" selected>3 games · 6 holes</option></select></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12px;color:var(--color-text-secondary)">$</span><input class="ie-num" id="gameVal" type="number" value="5" style="width:90px"/><span style="font-size:12px;color:var(--color-text-secondary)">per game</span></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--color-text-secondary)">Settlement: <span class="info-icon" tabindex="0">i<span class="info-tip" style="left:-180px">Per player: each person wins/pays the full amount. Per team: the amount is split evenly between teammates.</span></span></span><select class="ie-sel" id="wizMpSettle"><option value="perplayer">Per player</option><option value="perteam">Per team</option></select></div></div>
           </div>
           <div style="padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
-            <div style="display:flex;align-items:center;gap:10px"><div style="flex:1;font-size:13px;color:var(--color-text-primary);display:flex;align-items:center;gap:6px">Vegas <span class="info-icon" tabindex="0">i<span class="info-tip">2v2 format. Each team combines their two net scores into a two-digit number. Higher number wins the point difference each hole.</span></span></div><label class="toggle"><input type="checkbox" id="wizVegasOn"><span class="toggle-slider"></span></label></div>
+            <div style="display:flex;align-items:center;gap:10px"><div style="flex:1;font-size:13px;color:var(--color-text-primary);display:flex;align-items:center;gap:6px">Match Play <span class="info-icon" tabindex="0">i<span class="info-tip">2v2 team match play. Each hole won earns a point. Most points after the game wins. Teams set in Options.</span></span></div><label class="toggle"><input type="checkbox" id="wizMpOn"><span class="toggle-slider"></span></label></div>
             <div id="wizVegasExtra" style="display:none;margin-top:10px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px"><span style="font-size:12px;color:var(--color-text-secondary)">Default games/round:</span><select class="ie-sel" id="wizVegasSegs"><option value="0">Match MP</option><option value="1">1 game · 18 holes</option><option value="2">2 games · 9 holes</option><option value="3">3 games · 6 holes</option></select></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12px;color:var(--color-text-secondary)">$</span><input class="ie-num" id="vegasVal" type="number" value="0.50" step="0.25" style="width:90px"/><span style="font-size:12px;color:var(--color-text-secondary)">per point</span></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--color-text-secondary)">Settlement:</span><select class="ie-sel" id="wizVegasSettle"><option value="perplayer">Per player</option><option value="perteam">Per team</option></select></div></div>
           </div>
           <div style="padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
@@ -533,9 +533,9 @@ body.force-light{--color-text-primary:#111111;--color-text-secondary:#6B7280;--c
       <button class="seg-btn" id="tab-entry" onclick="setView('entry')">Entry</button>
       <button class="seg-btn" id="tab-card" onclick="setView('card')">Scorecard</button>
       <button class="seg-btn" id="tab-board" onclick="setView('board')">Standings</button>
+      <button class="seg-btn" id="tab-skins" onclick="setView('skins')">Skins</button>
       <button class="seg-btn" id="tab-matchplay" onclick="setView('matchplay')">Match Play</button>
       <button class="seg-btn" id="tab-vegas" onclick="setView('vegas')">Vegas</button>
-      <button class="seg-btn" id="tab-skins" onclick="setView('skins')">Skins</button>
       <button class="seg-btn" id="tab-money" onclick="setView('money')">Money</button>
       <button class="seg-btn" id="tab-setup" onclick="setView('setup')">Options</button>
     </div>
@@ -545,7 +545,7 @@ body.force-light{--color-text-primary:#111111;--color-text-secondary:#6B7280;--c
       <div class="banner" id="banner"></div>
       <div class="scorecard" id="scorecard"></div>
       <div id="snakeEntryWrap"></div>
-      <div id="mpBoxWrap"></div><div id="vegasBoxWrap"></div><div id="skinsBoxWrap"></div>
+      <div id="skinsBoxWrap"></div><div id="mpBoxWrap"></div><div id="vegasBoxWrap"></div>
       <div class="hole-dots" id="holeDots"></div>
       <button class="footer-btn" id="saveBtn" onclick="saveHole()">Save Hole & Continue →</button>
     </div>
@@ -588,6 +588,14 @@ let PLAYER_LIBRARY=[
   {first:'Aaron',last:'Sporck',idx:7.4,venmo:''}
 ];
 
+// Parse a full name string into {first, last} — splits on last space
+function parseName(nameStr){
+  const s=(nameStr||'').trim();
+  const sp=s.lastIndexOf(' ');
+  if(sp<0)return{first:'',last:s};
+  return{first:s.substring(0,sp),last:s.substring(sp+1)};
+}
+
 // Display name logic: last name by default, first initial + last on conflict, first only if no last
 function displayName(playerIndex,players){
   const roster=players||WK?.players||[];
@@ -623,7 +631,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v60.1';
+const APP_VERSION='v61.1';
 
 // ===== THEME =====
 (function(){
@@ -768,8 +776,10 @@ function applySyncPayload(d){
   if(d.library&&d.library.length>0){
     // Migrate old {name,idx} entries to {first,last,idx,venmo}
     PLAYER_LIBRARY=d.library.map(p=>{
-      if(p.first!==undefined)return p;
-      return{first:p.name||'',last:'',idx:p.idx||0,venmo:''};
+      if(p.first!==undefined&&p.last!==undefined)return p;
+      // Legacy entry: name only — parse into first/last
+      const parsed=parseName(p.first||p.name||'');
+      return{first:parsed.first,last:parsed.last,idx:p.idx||0,venmo:p.venmo||''};
     });
     try{localStorage.setItem(LS_LIB,JSON.stringify(PLAYER_LIBRARY));}catch(e){}
   }
@@ -821,8 +831,9 @@ function loadLib(){
       const lib=JSON.parse(d);
       // Migrate old {name,idx} entries
       PLAYER_LIBRARY=lib.map(p=>{
-        if(p.first!==undefined)return p;
-        return{first:p.name||'',last:'',idx:p.idx||0,venmo:''};
+        if(p.first!==undefined&&p.last!==undefined)return p;
+        const parsed=parseName(p.first||p.name||'');
+        return{first:parsed.first,last:parsed.last,idx:p.idx||0,venmo:p.venmo||''};
       });
     }
   }catch(e){}
@@ -909,7 +920,6 @@ function renderTripList(){
         return`<div class="avatar" style="width:28px;height:28px;font-size:10px;background:${c.bg};color:${c.fg}">${n.substring(0,2).toUpperCase()}</div>`;
       }).join('');
       resumeSlot.innerHTML=`<div class="home-resume-card" onclick="viewTrip('${activeTrip.id}')">
-        <div class="home-resume-icon">⛳</div>
         <div style="flex:1;min-width:0">
           <div class="home-resume-name">${activeTrip.name||'Active Trip'}</div>
           <div class="home-resume-meta">${pct}% complete · ${activeTrip.courses.length} round${activeTrip.courses.length!==1?'s':''}</div>
@@ -963,6 +973,19 @@ function renderTripList(){
   el.innerHTML=html;
 }
 function viewTrip(id){const trips=loadTrips();const trip=trips.find(t=>t.id===id);if(!trip)return;WK=JSON.parse(JSON.stringify(trip.WK));STATE=JSON.parse(JSON.stringify(trip.STATE));if(!STATE.expenses)STATE.expenses=[];if(!STATE.moneyTab)STATE.moneyTab='golf';if(!STATE.skinsViewRound)STATE.skinsViewRound=0;if(!STATE.settledRounds)STATE.settledRounds=[];if(!STATE.roundSettleData)STATE.roundSettleData={};if(!STATE.lockedRounds)STATE.lockedRounds=[];
+  // Re-hydrate course objects: prefer live CATALOG (handles built-in + loaded custom courses)
+  // Fall back to blob's own course data for custom courses not yet in CATALOG
+  // Either way, ensure holes array exists
+  WK.rounds.forEach(rd=>{
+    if(rd.courseName&&CATALOG[rd.courseName]){
+      rd.course=CATALOG[rd.courseName]; // fresh from catalog
+    } else if(!rd.course||!rd.course.holes||!rd.course.holes.length){
+      // Last resort: build a generic 18-hole par-4 course so entry tab doesn't blank
+      console.warn('viewTrip: course not in CATALOG and blob missing holes, using fallback for',rd.courseName);
+      rd.course={slope:113,holes:Array.from({length:18},(_,i)=>({par:4,si:i+1}))};
+    }
+    // else: blob has valid course data, keep it as-is
+  });
   // Snake safety guards for trips saved before v59
   if(!STATE.snakeHolder)STATE.snakeHolder=WK.rounds.map(()=>Array(18).fill(null));
   if(!STATE.snakePot)STATE.snakePot=WK.rounds.map(()=>0);
@@ -984,10 +1007,11 @@ function buildPlayerFields(){
   const datalist=`<datalist id="${listId}">${PLAYER_LIBRARY.map(p=>`<option value="${libDisplayName(p)}" data-idx="${p.idx}">`).join('')}</datalist>`;
   document.getElementById('playerFields').innerHTML=datalist+Array.from({length:n},(_,i)=>{
     const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
-    return`<div class="player-setup-row">
+    return`<div class="player-setup-row" style="flex-wrap:wrap;gap:6px">
       <div class="avatar" style="background:${c.bg};color:${c.fg};width:36px;height:36px;font-size:12px;flex-shrink:0" id="pavi${i}">P${i+1}</div>
-      <div style="flex:1;min-width:0">
-        <input class="text-input" id="pname${i}" list="${listId}" value="" placeholder="Name or pick from library" oninput="onPlayerNameInput(${i})" style="width:100%;font-size:14px;padding:8px 10px"/>
+      <div style="flex:1;min-width:0;display:flex;gap:6px">
+        <input class="text-input" id="pfirst${i}" list="${listId}" value="" placeholder="First" oninput="onPlayerNameInput(${i})" style="flex:1;min-width:0;font-size:14px;padding:8px 10px"/>
+        <input class="text-input" id="plast${i}" value="" placeholder="Last" style="flex:1;min-width:0;font-size:14px;padding:8px 10px"/>
       </div>
       <div style="flex-shrink:0;display:flex;align-items:center;gap:4px">
         <span style="font-size:11px;color:var(--color-text-secondary)">Hdcp</span>
@@ -999,30 +1023,27 @@ function buildPlayerFields(){
 function getUsedPlayerNames(excludeSlot){
   const n=parseInt(document.getElementById('numPlayers').value);
   const used=[];
-  for(let i=0;i<n;i++){if(i===excludeSlot)continue;const v=(document.getElementById('pname'+i)?.value||'').trim().toLowerCase();if(v)used.push(v);}
+  for(let i=0;i<n;i++){if(i===excludeSlot)continue;const f=(document.getElementById('pfirst'+i)?.value||'').trim().toLowerCase();const l=(document.getElementById('plast'+i)?.value||'').trim().toLowerCase();if(f)used.push(f+(l?' '+l:''));}
   return used;
 }
 function onPlayerNameInput(slot){
-  const input=document.getElementById('pname'+slot);
-  const name=(input?.value||'').trim();
+  const firstEl=document.getElementById('pfirst'+slot);
+  const lastEl=document.getElementById('plast'+slot);
+  const first=(firstEl?.value||'').trim();
   const avi=document.getElementById('pavi'+slot);
-  if(avi)avi.textContent=name?name.substring(0,2).toUpperCase():'P'+(slot+1);
-  // Check for duplicate
-  const used=getUsedPlayerNames(slot);
-  if(name&&used.includes(name.toLowerCase())){
-    input.style.borderColor='#D85A30';
-    input.title='This player is already in the lineup';
-  } else {
-    input.style.borderColor='';
-    input.title='';
-  }
-  // Auto-fill handicap from library — match on full name or first name
-  const nameLower=name.toLowerCase();
+  if(avi)avi.textContent=first?first.substring(0,2).toUpperCase():'P'+(slot+1);
+  // Auto-fill last name + handicap from library on first name match
+  const nameLower=first.toLowerCase();
   const match=PLAYER_LIBRARY.find(p=>
     libDisplayName(p).toLowerCase()===nameLower||
     (p.first||'').toLowerCase()===nameLower
   );
-  if(match){const idxEl=document.getElementById('pidx'+slot);if(idxEl&&!idxEl.value)idxEl.value=match.idx;}
+  if(match){
+    if(lastEl&&!lastEl.value)lastEl.value=match.last||'';
+    const idxEl=document.getElementById('pidx'+slot);
+    if(idxEl&&!idxEl.value)idxEl.value=match.idx;
+    if(avi)avi.textContent=(match.first||first).substring(0,2).toUpperCase();
+  }
 }
 function buildCourseFields(){const nR=parseInt(document.getElementById('numRounds').value);const opts=`<option value="">— Select a course —</option>`+Object.keys(CATALOG).map(n=>`<option value="${n}">${n}</option>`).join('');document.getElementById('courseFields').innerHTML=Array.from({length:nR},(_,i)=>`<div class="course-sel-row"><div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);width:52px;flex-shrink:0">Round ${i+1}</div><select class="course-select" id="course${i}">${opts}</select></div>`).join('');}
 function toggleWizCourse(){const f=document.getElementById('wizCourseForm');f.style.display=f.style.display==='none'?'block':'none';}
@@ -1055,16 +1076,16 @@ function startWeekend(){const nP=parseInt(document.getElementById('numPlayers').
   // Build player roster — match library entry for first/last if possible
   for(let i=0;i<nP;i++){
     const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
-    const enteredName=(document.getElementById('pname'+i)?.value||'Player '+(i+1)).trim();
+    const first=(document.getElementById('pfirst'+i)?.value||'Player '+(i+1)).trim();
+    const last=(document.getElementById('plast'+i)?.value||'').trim();
+    // Try library match for venmo
     const libMatch=PLAYER_LIBRARY.find(p=>
-      libDisplayName(p).toLowerCase()===enteredName.toLowerCase()||
-      (p.first||'').toLowerCase()===enteredName.toLowerCase()||
-      (p.last||'').toLowerCase()===enteredName.toLowerCase()
+      (p.first||'').toLowerCase()===first.toLowerCase()&&
+      (p.last||'').toLowerCase()===last.toLowerCase()
     );
-    const first=libMatch?libMatch.first:enteredName;
-    const last=libMatch?(libMatch.last||''):'';
     const venmo=libMatch?(libMatch.venmo||''):'';
-    players.push({name:enteredName,first,last,venmo,idx:parseFloat(document.getElementById('pidx'+i)?.value||10),bg:c.bg,fg:c.fg,ini:enteredName.substring(0,2).toUpperCase()});
+    const displayN=last?last:first; // temp name — resolveDisplayNames will fix
+    players.push({name:displayN,first,last,venmo,idx:parseFloat(document.getElementById('pidx'+i)?.value||10),bg:c.bg,fg:c.fg,ini:(first).substring(0,2).toUpperCase()});
   }
   // Resolve display names — last name default, first initial + last on conflict
   resolveDisplayNames(players);
@@ -1138,12 +1159,19 @@ function bestBird(team,hi,r){const par=WK.rounds[r].course.holes[hi]?.par||4;let
 function calcVegas(hi,r){const vSeg=vegasSegForRound(r),si=segForHole(hi,vSeg),tA=STATE.vegTeams[r]?.[si]?.[0],tB=STATE.vegTeams[r]?.[si]?.[1];if(!tA||!tB||tA.length!==2||tB.length!==2)return null;const nA=tA.map(pi=>getNet(pi,hi,r)),nB=tB.map(pi=>getNet(pi,hi,r));if(nA.includes(null)||nB.includes(null))return null;const loA=Math.min(...nA),hiA=Math.max(...nA),loB=Math.min(...nB),hiB=Math.max(...nB);const bA=bestBird(tA,hi,r),bB=bestBird(tB,hi,r);let numA=loA*10+hiA,numB=loB*10+hiB,aFlip=false,bFlip=false,doubled=false;if(bA>0&&bB===0){numB=hiB*10+loB;bFlip=true;if(bA>=2)doubled=true;}else if(bB>0&&bA===0){numA=hiA*10+loA;aFlip=true;if(bB>=2)doubled=true;}else if(bA>0&&bB>0){if(bA>=2&&bB===1){numB=hiB*10+loB;bFlip=true;doubled=true;}else if(bB>=2&&bA===1){numA=hiA*10+loA;aFlip=true;doubled=true;}else{numA=hiA*10+loA;numB=hiB*10+loB;aFlip=true;bFlip=true;}}let diff=Math.abs(numA-numB);if(doubled)diff*=2;const tied=numA===numB;return{numA,numB,diff,aWins:!tied&&numA<numB,tied,aFlip,bFlip,doubled,tA,tB,loA,hiA,loB,hiB};}
 function calcMP(hi,r){const mpG=mpGamesForRound(r),si=segForHole(hi,mpG),tA=STATE.mpTeams[r]?.[si]?.[0],tB=STATE.mpTeams[r]?.[si]?.[1];if(!tA||!tB||tA.length!==2||tB.length!==2)return null;const nA=tA.map(pi=>getNet(pi,hi,r)),nB=tB.map(pi=>getNet(pi,hi,r));if(nA.includes(null)||nB.includes(null))return null;const bestA=Math.min(...nA),bestB=Math.min(...nB),halved=bestA===bestB;return{bestA,bestB,aWins:!halved&&bestA<bestB,halved,tA,tB,nA,nB};}
 function calcTwos(){return WK.players.map((_,pi)=>{let c=0;WK.rounds.forEach((_,r)=>{for(let h=0;h<18;h++)if(STATE.scores[r][h][pi]===2)c++;});return c;});}
-function renderBanner(){if(!WK.mpOn){document.getElementById('banner').innerHTML='<div class="banner-sub" style="text-align:center">Match play is off this weekend</div>';return;}const r=STATE.currentRound,hi=STATE.currentHole,mpG=mpGamesForRound(r),si=segForHole(hi,mpG);const seg=getSegments(mpG)[si],tA=STATE.mpTeams[r][si][0],tB=STATE.mpTeams[r][si][1];const lmIdx=WK.players.reduce((a,_,i)=>effHdcp(i,r)<effHdcp(a,r)?i:a,0);const badge=STATE.netOffLow?`<span class="hdcp-badge">net off ${WK.players[lmIdx].name}</span>`:'';document.getElementById('banner').innerHTML=`<div class="banner-game">${seg.label}: A (${tA.map(i=>WK.players[i].name).join(' / ')}) vs B (${tB.map(i=>WK.players[i].name).join(' / ')})</div><div class="banner-sub">Holes ${seg.start+1}–${seg.end} ${badge}</div>`;}
-function renderScorecard(){const r=STATE.currentRound,hi=STATE.currentHole,hole=WK.rounds[r].course.holes[hi]||{par:4,si:hi+1};
+function renderBanner(){if(!WK.mpOn||WK.players.length<4){document.getElementById('banner').innerHTML='';return;}const r=STATE.currentRound,hi=STATE.currentHole,mpG=mpGamesForRound(r),si=segForHole(hi,mpG);const seg=getSegments(mpG)[si],tA=STATE.mpTeams[r]?.[si]?.[0],tB=STATE.mpTeams[r]?.[si]?.[1];if(!tA||!tB){document.getElementById('banner').innerHTML='';return;}const lmIdx=WK.players.reduce((a,_,i)=>effHdcp(i,r)<effHdcp(a,r)?i:a,0);const badge=STATE.netOffLow?`<span class="hdcp-badge">net off ${displayName(lmIdx)}</span>`:'';const nameA=tA.map(i=>displayName(i)).join(' / '),nameB=tB.map(i=>displayName(i)).join(' / ');document.getElementById('banner').innerHTML=`<div class="banner-game">${seg.label}: A (${nameA}) vs B (${nameB})</div><div class="banner-sub">Holes ${seg.start+1}–${seg.end} ${badge}</div>`;}
+function renderScorecard(){
+  try{
+  if(!WK||!STATE||!WK.players||!WK.rounds)return;
+  const r=STATE.currentRound,hi=STATE.currentHole;
+  if(!WK.rounds[r]||!WK.rounds[r].course||!WK.rounds[r].course.holes){console.error('renderScorecard: missing course data for round',r);return;}
+  if(!STATE.scores||!STATE.scores[r]||!STATE.scores[r][hi]){console.error('renderScorecard: missing scores for round',r,'hole',hi);return;}
+  const hole=WK.rounds[r].course.holes[hi]||{par:4,si:hi+1};
   // Determine current snake holder (last set on or before this hole)
   const snakeHolder=currentSnakeHolder(r,hi);
-  document.getElementById('scorecard').innerHTML=WK.players.map((p,i)=>{const g=STATE.scores[r][hi][i],st=strokes(i,hi,r),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}</span>`:`<span class="stroke-tag stroke-no">no stroke</span>`;const twosBadge=WK.twosOn&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=WK.snakeOn&&snakeHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const roStyle=(isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'';return`<div class="player-row"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${p.name}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}"><button class="adj" onclick="adjScore(${i},-1)">−</button><div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div><button class="adj" onclick="adjScore(${i},1)">+</button><div class="rel-badge ${relCls}">${relStr}</div></div></div>`;}).join('');
-  renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();}
+  document.getElementById('scorecard').innerHTML=WK.players.map((p,i)=>{const g=STATE.scores[r][hi][i],st=strokes(i,hi,r),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}</span>`:`<span class="stroke-tag stroke-no">no stroke</span>`;const twosBadge=WK.twosOn&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=WK.snakeOn&&snakeHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const roStyle=(isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'';return`<div class="player-row"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}"><button class="adj" onclick="adjScore(${i},-1)">−</button><div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div><button class="adj" onclick="adjScore(${i},1)">+</button></div></div>`;}).join('');
+  renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
+  }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}}
 function adjScore(pi,delta){if(isReadOnly)return;if((STATE.lockedRounds||[]).includes(STATE.currentRound))return;const r=STATE.currentRound,hi=STATE.currentHole,par=WK.rounds[r].course.holes[hi]?.par||4,c=STATE.scores[r][hi][pi];STATE.scores[r][hi][pi]=c===null?par:Math.max(1,c+delta);renderScorecard();renderHoleDots();}
 
 // Returns the snake holder index that is active at or before hole hi in round r
@@ -1194,7 +1222,7 @@ function renderSnakeEntry(){
   const pot=calcSnakePot(r);
   const potDisplay=pot>0?`<span style="font-size:11px;color:var(--color-text-secondary);margin-left:8px">Pot: <strong>$${pot.toFixed(2)}</strong></span>`:'';
   const options=`<option value="">— No holder —</option>`+
-    WK.players.map((p,i)=>`<option value="${i}"${currentHolder===i?' selected':''}>${p.name}</option>`).join('')+
+    WK.players.map((p,i)=>`<option value="${i}"${currentHolder===i?' selected':''}>${displayName(i)}</option>`).join('')+
     (currentHolder!==null?`<option value="clear">⬜ Clear snake</option>`:'');
   wrap.innerHTML=`<div style="margin:0.5rem 1rem 0;padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary)">
     <div style="display:flex;align-items:center;gap:8px">
@@ -1242,7 +1270,7 @@ function onSnakeChange(val){
     // Picked up from no-holder state mid-round (first of round but pot already set — shouldn't happen, treat as first)
     newPot=WK.snakeBase||1;
   }
-  const playerName=WK.players[newHolder].name;
+  const playerName=displayName(newHolder);
   const title=isFirst?`${playerName} picks up the 🐍`:`${playerName} takes the 🐍`;
   const body=isFirst?`Pot starts at $${newPot.toFixed(2)}.`:`Pot grows to $${newPot.toFixed(2)}.`;
   showSnakeModal(title,body,'Confirm',()=>{
@@ -1269,13 +1297,16 @@ function showSnakeModal(title,body,confirmLabel,onOk,onCancel){
   </div>`;
   document.body.appendChild(modal);
 }
-function renderMPHoleBox(){const wrap=document.getElementById('mpBoxWrap');if(!WK.mpOn){wrap.innerHTML='';return;}const r=STATE.currentRound,hi=STATE.currentHole,mpG=mpGamesForRound(r),si=segForHole(hi,mpG),res=calcMP(hi,r);if(!res){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Match play — best ball</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter all scores to calculate</div></div>`;return;}const tA=STATE.mpTeams[r][si][0],tB=STATE.mpTeams[r][si][1],winner=res.halved?'Halved':res.aWins?'Team A wins':'Team B wins';const ptA=res.halved?'½':res.aWins?'1':'0',ptB=res.halved?'½':res.aWins?'0':'1';wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Match play — best ball</div><div class="mp-section"><div class="mp-team-label">Team A — ${tA.map(i=>WK.players[i].name).join(' & ')}</div>${tA.map((pi,idx)=>`<div class="mp-player-line"><span class="mp-player-name">${WK.players[pi].name}</span><span class="mp-net">net ${res.nA[idx]}${res.nA[idx]===res.bestA&&res.aWins?'<span class="mp-best"> ← best</span>':''}</span></div>`).join('')}</div><div class="mp-section"><div class="mp-team-label">Team B — ${tB.map(i=>WK.players[i].name).join(' & ')}</div>${tB.map((pi,idx)=>`<div class="mp-player-line"><span class="mp-player-name">${WK.players[pi].name}</span><span class="mp-net">net ${res.nB[idx]}${res.nB[idx]===res.bestB&&!res.aWins&&!res.halved?'<span class="mp-best"> ← best</span>':''}</span></div>`).join('')}</div><div class="mp-result-bar"><span class="mp-result-text">${winner}</span><span class="mp-score-text">A ${ptA} – ${ptB} B</span></div></div>`;}
-function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap'),r=STATE.currentRound,hi=STATE.currentHole;if(!WK.vegasOn){wrap.innerHTML=`<div style="margin:0.75rem 1rem 0;padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);font-size:13px;color:var(--color-text-secondary);text-align:center">Vegas is off this weekend</div>`;return;}const vSeg=vegasSegForRound(r),si=segForHole(hi,vSeg),tA=STATE.vegTeams[r][si][0],tB=STATE.vegTeams[r][si][1];const nameA='A ('+tA.map(i=>WK.players[i].name).join('/')+')';const nameB='B ('+tB.map(i=>WK.players[i].name).join('/')+')';const res=calcVegas(hi,r);let inner='<div style="font-size:13px;color:var(--color-text-secondary)">Enter all scores to calculate</div>';if(res){const fA=res.aFlip?'<span class="flip-badge">flipped</span>':'',fB=res.bFlip?'<span class="flip-badge">flipped</span>':'',dbl=res.doubled?'<span class="double-badge">eagle x2</span>':'';const rt=res.tied?'Tied':(res.aWins?nameA:nameB)+' wins',pt=res.tied?'Tied':'+'+res.diff+' pts';inner=`<div class="vegas-teams-row"><div class="vegas-team-block"><div class="vegas-team-name">${nameA}</div><div class="vegas-num-row">${fA}<span class="vegas-num${res.aFlip?' flipped':''}">${res.numA}</span></div><div class="vegas-sub">net ${res.loA}+${res.hiA}</div></div><div style="font-size:16px;color:var(--color-text-secondary);padding-top:16px">vs</div><div class="vegas-team-block right"><div class="vegas-team-name">${nameB}</div><div class="vegas-num-row right">${fB}<span class="vegas-num${res.bFlip?' flipped':''}">${res.numB}</span></div><div class="vegas-sub">net ${res.loB}+${res.hiB}</div></div></div><hr class="divider"><div class="result-row"><div><div class="result-label">Result</div><div class="result-winner">${rt} ${dbl}</div></div><div style="text-align:right"><div class="result-label">${res.numA} vs ${res.numB}${res.doubled?' × 2':''}</div><div class="result-pts${res.tied?' tied':''}">${pt}</div></div></div>`;}wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd" style="flex-direction:column;align-items:flex-start;gap:2px"><span>Vegas — hole ${hi+1}</span><span style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)">${nameA} vs ${nameB}</span></div><div class="calc-inner">${inner}</div></div>`;}
+function renderMPHoleBox(){const wrap=document.getElementById('mpBoxWrap');if(!WK.mpOn){wrap.innerHTML='';return;}if(WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Match play — best ball</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>`;return;}const r=STATE.currentRound,hi=STATE.currentHole,mpG=mpGamesForRound(r),si=segForHole(hi,mpG),res=calcMP(hi,r);if(!res){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Match play — best ball</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter all scores to calculate</div></div>`;return;}const tA=STATE.mpTeams[r][si][0],tB=STATE.mpTeams[r][si][1],winner=res.halved?'Halved':res.aWins?'Team A wins':'Team B wins';const ptA=res.halved?'½':res.aWins?'1':'0',ptB=res.halved?'½':res.aWins?'0':'1';wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Match play — best ball</div><div class="mp-section"><div class="mp-team-label">Team A — ${tA.map(i=>displayName(i)).join(' & ')}</div>${tA.map((pi,idx)=>`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net">net ${res.nA[idx]}${res.nA[idx]===res.bestA&&res.aWins?'<span class="mp-best"> ← best</span>':''}</span></div>`).join('')}</div><div class="mp-section"><div class="mp-team-label">Team B — ${tB.map(i=>displayName(i)).join(' & ')}</div>${tB.map((pi,idx)=>`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net">net ${res.nB[idx]}${res.nB[idx]===res.bestB&&!res.aWins&&!res.halved?'<span class="mp-best"> ← best</span>':''}</span></div>`).join('')}</div><div class="mp-result-bar"><span class="mp-result-text">${winner}</span><span class="mp-score-text">A ${ptA} – ${ptB} B</span></div></div>`;}
+function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap'),r=STATE.currentRound,hi=STATE.currentHole;if(!WK.vegasOn){wrap.innerHTML='';return;}if(WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Vegas</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>`;return;}const vSeg=vegasSegForRound(r),si=segForHole(hi,vSeg),tA=STATE.vegTeams[r][si][0],tB=STATE.vegTeams[r][si][1];const nameA='A ('+tA.map(i=>displayName(i)).join('/')+')';const nameB='B ('+tB.map(i=>displayName(i)).join('/')+')';const res=calcVegas(hi,r);let inner='<div style="font-size:13px;color:var(--color-text-secondary)">Enter all scores to calculate</div>';if(res){const fA=res.aFlip?'<span class="flip-badge">flipped</span>':'',fB=res.bFlip?'<span class="flip-badge">flipped</span>':'',dbl=res.doubled?'<span class="double-badge">eagle x2</span>':'';const rt=res.tied?'Tied':(res.aWins?nameA:nameB)+' wins',pt=res.tied?'Tied':'+'+res.diff+' pts';inner=`<div class="vegas-teams-row"><div class="vegas-team-block"><div class="vegas-team-name">${nameA}</div><div class="vegas-num-row">${fA}<span class="vegas-num${res.aFlip?' flipped':''}">${res.numA}</span></div><div class="vegas-sub">net ${res.loA}+${res.hiA}</div></div><div style="font-size:16px;color:var(--color-text-secondary);padding-top:16px">vs</div><div class="vegas-team-block right"><div class="vegas-team-name">${nameB}</div><div class="vegas-num-row right">${fB}<span class="vegas-num${res.bFlip?' flipped':''}">${res.numB}</span></div><div class="vegas-sub">net ${res.loB}+${res.hiB}</div></div></div><hr class="divider"><div class="result-row"><div><div class="result-label">Result</div><div class="result-winner">${rt} ${dbl}</div></div><div style="text-align:right"><div class="result-label">${res.numA} vs ${res.numB}${res.doubled?' × 2':''}</div><div class="result-pts${res.tied?' tied':''}">${pt}</div></div></div>`;}wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd" style="flex-direction:column;align-items:flex-start;gap:2px"><span>Vegas — hole ${hi+1}</span><span style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)">${nameA} vs ${nameB}</span></div><div class="calc-inner">${inner}</div></div>`;}
 function renderHoleDots(){const r=STATE.currentRound;document.getElementById('holeDots').innerHTML=Array.from({length:18},(_,i)=>{const done=STATE.scores[r][i].every(s=>s!==null);return`<div class="hdot${done?' done':''}${i===STATE.currentHole?' cur':''}" onclick="jumpHole(${i})">${i+1}</div>`;}).join('');}
 function jumpHole(i){STATE.currentHole=i;updateHoleUI();}
 function changeHole(d){STATE.currentHole=Math.max(0,Math.min(17,STATE.currentHole+d));updateHoleUI();}
 function updateHoleUI(){
-  const r=STATE.currentRound,hi=STATE.currentHole,hole=WK.rounds[r].course.holes[hi]||{par:4,si:hi+1};
+  if(!WK||!STATE||!WK.rounds||!WK.players)return;
+  const r=STATE.currentRound,hi=STATE.currentHole;
+  if(!WK.rounds[r]||!WK.rounds[r].course){console.error('updateHoleUI: missing round/course for round',r);return;}
+  const hole=WK.rounds[r].course.holes?.[hi]||{par:4,si:hi+1};
   const locked=isRoundLocked(r),complete=isRoundComplete(r);
   document.getElementById('holeLabel').textContent='Hole '+(hi+1);
   document.getElementById('holeMeta').textContent='Par '+hole.par+' · Hdcp '+hole.si;
@@ -1293,7 +1324,7 @@ function updateHoleUI(){
   if(!bn){bn=document.createElement('div');bn.id='lockedRoundBanner';bn.style.cssText='margin:0.5rem 1rem;padding:8px 12px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:12px;color:var(--color-text-secondary);text-align:center';bn.textContent='🔒 Round locked — scores are final. Unlock to make changes.';const sc=document.getElementById('scorecard');if(sc&&sc.parentNode)sc.parentNode.insertBefore(bn,sc);}
   document.getElementById('lockedRoundBanner').style.display=locked?'block':'none';
   if(document.getElementById('scorecard'))document.getElementById('scorecard').style.opacity=locked?'0.45':'1';
-  renderBanner();renderScorecard();renderHoleDots();}
+  renderBanner();renderScorecard();renderHoleDots();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();}
 function saveHole(){if(isReadOnly)return;const r=STATE.currentRound,hi=STATE.currentHole;if(!STATE.scores[r][hi].every(s=>s!==null)){alert('Enter all scores first.');return;}autoSave();if(hi<17)changeHole(1);else setView('board');}
 function renderSCGrid(){
   const r=STATE.scRound,holes=WK.rounds[r].course.holes;
@@ -1328,9 +1359,9 @@ function renderSCGrid(){
   WK.players.forEach((p,pi)=>{
     const cells=holes.map((hole,hi)=>{
       const g=STATE.scores[r][hi][pi],st=strokes(pi,hi,r);
-      const dot=st>0?`<div class="stroke-dot"></div>`:'';
-      if(g===null)return`<td><div class="sc-cell">${dot}</div></td>`;
-      return`<td><div class="sc-cell ${scoreClass(g,hole.par)}">${g}${dot}</div></td>`;
+      const dot=st>=2?`<div class="dot-row"><span class="stroke-dot"></span><span class="stroke-dot"></span></div>`:st===1?`<div class="dot-row"><span class="stroke-dot"></span></div>`:`<div class="dot-row"></div>`;
+      if(g===null)return`<td><div style="display:flex;flex-direction:column;align-items:center">${dot}<div class="sc-cell"></div></div></td>`;
+      return`<td><div style="display:flex;flex-direction:column;align-items:center">${dot}<div class="sc-cell ${scoreClass(g,hole.par)}">${g}</div></div></td>`;
     });
     const fG=holes.slice(0,9).reduce((a,_,i)=>a+(STATE.scores[r][i][pi]||0),0);
     const bG=holes.slice(9).reduce((a,_,i)=>a+(STATE.scores[r][i+9][pi]||0),0);
@@ -1341,7 +1372,7 @@ function renderSCGrid(){
     const tG=fP&&bP?fG+bG:null;
     const tN=fP&&bP?fN+bN:null;
     playerRows+=`<tr>`;
-    playerRows+=`<td class="player-col"><div style="display:flex;align-items:center;gap:4px"><div class="avatar" style="width:20px;height:20px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${p.name}</span></div></td>`;
+    playerRows+=`<td class="player-col"><div style="display:flex;align-items:center;gap:4px"><div class="avatar" style="width:20px;height:20px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(pi)}</span></div></td>`;
     playerRows+=cells.slice(0,9).join('');
     playerRows+=`<td class="total-col">${fP?fG:''}</td>`;
     playerRows+=cells.slice(9).join('');
@@ -1398,8 +1429,8 @@ function calcRoundRankings(){const entries=[];WK.rounds.forEach((rd,r)=>{const a
 function toggleRoundRankings(){STATE.roundRankOpen=!STATE.roundRankOpen;renderBoard();}
 function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
   if(_potMethod==='matchplay'&&WK.mpOn){const mpData=calcAllMP().sort((a,b)=>b.total-a.total);html+=`<div class="board-section-label">Match play points — pot winner</div><div class="section-card" style="margin-bottom:1.25rem">`;mpData.forEach((d,rank)=>{const p=WK.players[d.pi];const pills=d.byRound.map((pts,r)=>`<span class="game-pill${pts>0?' win':''}">R${r+1}: ${pts}</span>`).join('');html+=`<div class="mp-board-row"><div class="mp-rank">${rank+1}</div><div class="avatar" style="width:32px;height:32px;font-size:12px;background:${p.bg};color:${p.fg}">${p.ini}</div><div style="flex:1"><div class="mp-board-name">${p.name}</div><div class="mp-game-pills">${pills}</div></div><div class="mp-board-pts">${d.total.toFixed(1)}</div></div>`;});html+=`</div>`;}
-  html+=`<div class="board-section-label">${_potMethod==='matchplay'?'Stroke play — net':'Net stroke play — pot winner'}</div><div class="section-card" style="margin-bottom:1.25rem">`;WK.players.map((p,i)=>{let net=0,played=0,parTot=0;WK.rounds.forEach((_,r)=>{for(let h=0;h<18;h++){const s=getNet(i,h,r);if(s!==null){net+=s;played++;parTot+=WK.rounds[r].course.holes[h]?.par||4;}}});return{...p,i,net,played,parTot,rel:net-parTot};}).sort((a,b)=>a.rel-b.rel).forEach((p,rank)=>{const rs=p.played===0?'—':p.rel===0?'E':p.rel>0?'+'+p.rel:''+p.rel;html+=`<div class="lb-row"><div class="lb-rank">${rank+1}</div><div class="avatar" style="width:32px;height:32px;font-size:12px;background:${p.bg};color:${p.fg}">${p.ini}</div><div style="flex:1"><div class="lb-name">${p.name}</div><div class="lb-sub">${p.played} holes played</div></div><div class="lb-score">${rs}</div></div>`;});html+=`</div>`;const entries=calcRoundRankings();const isOpen=STATE.roundRankOpen;html+=`<div class="collapsible-hd${isOpen?' open':''}" onclick="toggleRoundRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Best individual rounds</span><span style="font-size:12px;color:var(--color-text-secondary)">${isOpen?'▲':'▼'}</span></div>`;if(isOpen){if(entries.length===0){html+=`<div class="collapsible-body"><div style="padding:16px 12px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Complete at least one full round to see rankings</div></div>`;}else{html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;entries.forEach(e=>{const p=WK.players[e.pi];const ci=WK.rounds.findIndex(r=>r.courseName===e.courseName);const cbg=COURSE_COLORS[ci%COURSE_COLORS.length];const cfg=COURSE_FG[ci%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${p.name}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${e.courseName.split(' ')[0]}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}}document.getElementById('boardContent').innerHTML=html;}
-function pOpts(sel){return WK.players.map((p,i)=>`<option value="${i}"${i===sel?' selected':''}>${p.name}</option>`).join('');}
+  html+=`<div class="board-section-label">${_potMethod==='matchplay'?'Stroke play — net':'Net stroke play — pot winner'}</div><div class="section-card" style="margin-bottom:1.25rem">`;WK.players.map((p,i)=>{let net=0,played=0,parTot=0;WK.rounds.forEach((_,r)=>{for(let h=0;h<18;h++){const s=getNet(i,h,r);if(s!==null){net+=s;played++;parTot+=WK.rounds[r].course.holes[h]?.par||4;}}});return{...p,i,net,played,parTot,rel:net-parTot};}).sort((a,b)=>a.rel-b.rel).forEach((p,rank)=>{const rs=p.played===0?'—':p.rel===0?'E':p.rel>0?'+'+p.rel:''+p.rel;html+=`<div class="lb-row"><div class="lb-rank">${rank+1}</div><div class="avatar" style="width:32px;height:32px;font-size:12px;background:${p.bg};color:${p.fg}">${p.ini}</div><div style="flex:1"><div class="lb-name">${displayName(p.i)}</div><div class="lb-sub">${p.played} holes played</div></div><div class="lb-score">${rs}</div></div>`;});html+=`</div>`;const entries=calcRoundRankings();const isOpen=STATE.roundRankOpen;html+=`<div class="collapsible-hd${isOpen?' open':''}" onclick="toggleRoundRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Best individual rounds</span><span style="font-size:12px;color:var(--color-text-secondary)">${isOpen?'▲':'▼'}</span></div>`;if(isOpen){if(entries.length===0){html+=`<div class="collapsible-body"><div style="padding:16px 12px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Complete at least one full round to see rankings</div></div>`;}else{html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;entries.forEach(e=>{const p=WK.players[e.pi];const ci=WK.rounds.findIndex(r=>r.courseName===e.courseName);const cbg=COURSE_COLORS[ci%COURSE_COLORS.length];const cfg=COURSE_FG[ci%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${p.name}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${e.courseName.split(' ')[0]}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}}document.getElementById('boardContent').innerHTML=html;}
+function pOpts(sel){return WK.players.map((p,i)=>`<option value="${i}"${i===sel?' selected':''}>${displayName(i)}</option>`).join('');}
 function setDrop(gameIdx,slot,pIdx,roundIdx,isVegas){if(isReadOnly)return;const arr=isVegas?STATE.vegTeams:STATE.mpTeams;const teams=arr[roundIdx][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;renderTeamsPanel();renderBanner();renderScorecard();}
 function copyMPToVegas(r){const mpG=mpGamesForRound(r),vG=vegasSegForRound(r);STATE.vegTeams[r]=Array(vG).fill(null).map((_,si)=>{const mpSi=Math.min(si,mpG-1);return JSON.parse(JSON.stringify(STATE.mpTeams[r][mpSi]));});renderTeamsPanel();}
 function setMPGamesForRound(r,g){WK.mpGamesPerRound[r]=g;const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams[r]=Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));renderTeamsPanel();renderBanner();renderMPHoleBox();}
@@ -1412,11 +1443,6 @@ function renderTeamsPanel(){
   const r=STATE.teamsRound,mpG=mpGamesForRound(r),mpSegs=getSegments(mpG),vG=vegasSegForRound(r),vegSegs=getSegments(vG),sG=skinsGamesForRound(r),skSegs=getSegments(sG);
   let html=html_hdcp+`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Weekend bet</div><div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Buy-in per player</span>$<input class="ie-num" type="number" value="${WK.buyIn}" style="width:90px" onchange="WK.buyIn=parseFloat(this.value)"/></div></div>`;
   html+=`<div style="margin-bottom:12px"><div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:6px">Teams for round — each round is independent:</div><div style="display:flex;gap:0">${WK.rounds.map((rd,i)=>{const first=i===0,last=i===WK.rounds.length-1;return`<div class="rd-btn${i===r?' active':''}" onclick="switchTeamsRound(${i})" style="flex:1;${first?'border-radius:var(--border-radius-md) 0 0 var(--border-radius-md)':''}${last?'border-radius:0 var(--border-radius-md) var(--border-radius-md) 0':''}">Rd ${i+1}<br><span style="font-size:9px;opacity:0.75">${rdLabel(i)}</span></div>`;}).join('')}</div></div>`;
-  // Match Play
-  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap"><span>Match Play — Rd ${r+1}</span>${WK.mpOn?`<select class="ie-sel" onchange="setMPGamesForRound(${r},parseInt(this.value))"><option value="1"${mpG===1?' selected':''}>1 game · 18h</option><option value="2"${mpG===2?' selected':''}>2 games · 9h</option><option value="3"${mpG===3?' selected':''}>3 games · 6h</option></select>$<input class="ie-num" type="number" value="${WK.gameVal}" style="width:90px" onchange="WK.gameVal=parseFloat(this.value)"/><span style="font-size:11px;color:var(--color-text-secondary)">/game</span>`:''}</div><label class="toggle"><input type="checkbox" ${WK.mpOn?'checked':''} onchange="WK.mpOn=this.checked;updateTabDimming();renderTeamsPanel();renderBanner();renderMPHoleBox()"><span class="toggle-slider"></span></label></div>${WK.mpOn?mpSegs.map((seg,si)=>{const tm=STATE.mpTeams[r][si];if(!tm)return'';const[a0,a1]=tm[0],[b0,b1]=tm[1];return`<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},false)">${pOpts(a0)}</select><select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},false)">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},false)">${pOpts(b0)}</select><select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},false)">${pOpts(b1)}</select></div></div></div>`;}).join('')+`<div class="setup-row" style="border-bottom:none;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.mpSettle=this.value"><option value="perplayer"${(WK.mpSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.mpSettle==='perteam'?' selected':''}>Per team</option></select></div>`:`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Match play is off</div>`}</div>`;
-  // Vegas — "Copy MP Teams" at top of header, "Game" not "Seg"
-  const vegOv=WK.vegasSegsPerRound[r];
-  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap"><span>Vegas — Rd ${r+1}</span>${WK.vegasOn?`<select class="ie-sel" onchange="setVegaSegsForRound(${r},parseInt(this.value))"><option value="0"${vegOv===0?' selected':''}>Match MP (${mpG})</option><option value="1"${vegOv===1?' selected':''}>1 game · 18h</option><option value="2"${vegOv===2?' selected':''}>2 games · 9h</option><option value="3"${vegOv===3?' selected':''}>3 games · 6h</option></select>$<input class="ie-num" type="number" value="${WK.vegasVal.toFixed(2)}" step="0.25" style="width:90px" onchange="WK.vegasVal=parseFloat(this.value)"/><span style="font-size:11px;color:var(--color-text-secondary)">/pt</span><button class="btn-sm" onclick="copyMPToVegas(${r})">Copy MP Teams</button>`:''}</div><label class="toggle"><input type="checkbox" ${WK.vegasOn?'checked':''} onchange="WK.vegasOn=this.checked;updateTabDimming();renderTeamsPanel();renderVegasBoxWrap()"><span class="toggle-slider"></span></label></div>${WK.vegasOn?vegSegs.map((seg,si)=>{const tv=STATE.vegTeams[r][si];if(!tv)return'';const[a0,a1]=tv[0],[b0,b1]=tv[1];return`<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},true)">${pOpts(a0)}</select><select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},true)">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},true)">${pOpts(b0)}</select><select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},true)">${pOpts(b1)}</select></div></div></div>`;}).join('')+`<div class="setup-row" style="border-bottom:none;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.vegasSettle=this.value"><option value="perplayer"${(WK.vegasSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.vegasSettle==='perteam'?' selected':''}>Per team</option></select></div>`:`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Vegas is off</div>`}</div>`;
   // Skins
   {
     const skOv=WK.skinsGamesPerRound?.[r]||0;
@@ -1438,6 +1464,11 @@ function renderTeamsPanel(){
     }
     html+='</div>';
   }
+  // Match Play
+  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap"><span>Match Play — Rd ${r+1}</span>${WK.mpOn?`<select class="ie-sel" onchange="setMPGamesForRound(${r},parseInt(this.value))"><option value="1"${mpG===1?' selected':''}>1 game · 18h</option><option value="2"${mpG===2?' selected':''}>2 games · 9h</option><option value="3"${mpG===3?' selected':''}>3 games · 6h</option></select>$<input class="ie-num" type="number" value="${WK.gameVal}" style="width:90px" onchange="WK.gameVal=parseFloat(this.value)"/><span style="font-size:11px;color:var(--color-text-secondary)">/game</span>`:''}</div><label class="toggle"><input type="checkbox" ${WK.mpOn?'checked':''} onchange="WK.mpOn=this.checked;updateTabDimming();renderTeamsPanel();renderBanner();renderMPHoleBox()"><span class="toggle-slider"></span></label></div>${WK.mpOn?mpSegs.map((seg,si)=>{const tm=STATE.mpTeams[r][si];if(!tm)return'';const[a0,a1]=tm[0],[b0,b1]=tm[1];return`<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},false)">${pOpts(a0)}</select><select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},false)">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},false)">${pOpts(b0)}</select><select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},false)">${pOpts(b1)}</select></div></div></div>`;}).join('')+`<div class="setup-row" style="border-bottom:none;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.mpSettle=this.value"><option value="perplayer"${(WK.mpSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.mpSettle==='perteam'?' selected':''}>Per team</option></select></div>`:`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Match play is off</div>`}</div>`;
+  // Vegas — "Copy MP Teams" at top of header, "Game" not "Seg"
+  const vegOv=WK.vegasSegsPerRound[r];
+  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap"><span>Vegas — Rd ${r+1}</span>${WK.vegasOn?`<select class="ie-sel" onchange="setVegaSegsForRound(${r},parseInt(this.value))"><option value="0"${vegOv===0?' selected':''}>Match MP (${mpG})</option><option value="1"${vegOv===1?' selected':''}>1 game · 18h</option><option value="2"${vegOv===2?' selected':''}>2 games · 9h</option><option value="3"${vegOv===3?' selected':''}>3 games · 6h</option></select>$<input class="ie-num" type="number" value="${WK.vegasVal.toFixed(2)}" step="0.25" style="width:90px" onchange="WK.vegasVal=parseFloat(this.value)"/><span style="font-size:11px;color:var(--color-text-secondary)">/pt</span><button class="btn-sm" onclick="copyMPToVegas(${r})">Copy MP Teams</button>`:''}</div><label class="toggle"><input type="checkbox" ${WK.vegasOn?'checked':''} onchange="WK.vegasOn=this.checked;updateTabDimming();renderTeamsPanel();renderVegasBoxWrap()"><span class="toggle-slider"></span></label></div>${WK.vegasOn?vegSegs.map((seg,si)=>{const tv=STATE.vegTeams[r][si];if(!tv)return'';const[a0,a1]=tv[0],[b0,b1]=tv[1];return`<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},true)">${pOpts(a0)}</select><select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},true)">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},true)">${pOpts(b0)}</select><select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},true)">${pOpts(b1)}</select></div></div></div>`;}).join('')+`<div class="setup-row" style="border-bottom:none;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.vegasSettle=this.value"><option value="perplayer"${(WK.vegasSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.vegasSettle==='perteam'?' selected':''}>Per team</option></select></div>`:`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Vegas is off</div>`}</div>`;
     // Two's Club
   html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1"><span>Two's Club</span>${WK.twosOn?`$<input class="ie-num" type="number" value="${WK.twosAmt}" style="width:90px" onchange="WK.twosAmt=parseFloat(this.value);renderTeamsPanel()"/><span style="font-size:11px;color:var(--color-text-secondary)">/player · pot $${(WK.twosAmt*WK.players.length).toFixed(0)}</span>`:''}</div><label class="toggle"><input type="checkbox" ${WK.twosOn?'checked':''} onchange="WK.twosOn=this.checked;renderTeamsPanel()"><span class="toggle-slider"></span></label></div>${!WK.twosOn?`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Two's Club is off</div>`:''}</div>`;
     // Snake
@@ -1497,7 +1528,7 @@ function renderWeekendPanel(){
   const themeState=getThemeState();
   const themeIcon=themeState==='dark'?'🌙':themeState==='light'?'☀️':'🌓';
   const themeNext=themeState==='system'?'Dark':themeState==='dark'?'Light':'Auto';
-  let html=`<div class="section-card"><div class="section-hd">Trip details</div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Name</span><input class="inline-edit" value="${WK.name}" onchange="WK.name=this.value;document.getElementById('mainTitle').textContent=WK.name"/></div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Date</span><input class="inline-edit" type="date" value="${WK.date}" onchange="WK.date=this.value"/></div>${WK.rounds.map((rd,i)=>{const rdOpts=Object.keys(CATALOG).map(n=>`<option value="${n}"${rd.courseName===n?' selected':''}>${n}</option>`).join('');return`<div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Rd ${i+1}</span><select class="inline-edit" onchange="WK.rounds[${i}].courseName=this.value;WK.rounds[${i}].course=CATALOG[this.value];renderWeekendPanel()">${rdOpts}</select>${WK.rounds.length>1?`<button class="btn-danger" onclick="removeRound(${i})" style="flex-shrink:0">✕</button>`:''}</div>`;}).join('')}<div style="padding:8px 12px;display:flex;align-items:center;gap:8px;border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Add round:</span><select class="course-select" id="newRoundCourse" style="flex:1">${Object.keys(CATALOG).map(n=>`<option value="${n}">${n}</option>`).join('')}</select><button class="btn-sm" onclick="addRound()">+ Add</button></div></div>`;
+  let html=`<div class="section-card"><div class="section-hd">Trip details</div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Name</span><input class="inline-edit" value="${WK.name}" onchange="WK.name=this.value;document.getElementById('mainTitle').textContent=WK.name"/></div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Date</span><input class="inline-edit" type="date" value="${WK.date}" max="2099-12-31" onchange="WK.date=this.value"/></div>${WK.rounds.map((rd,i)=>{const rdOpts=Object.keys(CATALOG).map(n=>`<option value="${n}"${rd.courseName===n?' selected':''}>${n}</option>`).join('');return`<div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Rd ${i+1}</span><select class="inline-edit" onchange="WK.rounds[${i}].courseName=this.value;WK.rounds[${i}].course=CATALOG[this.value];renderWeekendPanel()">${rdOpts}</select>${WK.rounds.length>1?`<button class="btn-danger" onclick="removeRound(${i})" style="flex-shrink:0">✕</button>`:''}</div>`;}).join('')}<div style="padding:8px 12px;display:flex;align-items:center;gap:8px;border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Add round:</span><select class="course-select" id="newRoundCourse" style="flex:1">${Object.keys(CATALOG).map(n=>`<option value="${n}">${n}</option>`).join('')}</select><button class="btn-sm" onclick="addRound()">+ Add</button></div></div>`;
   html+=`<div class="section-card" style="margin-top:14px"><div class="section-hd">Display</div><div class="setup-row" style="justify-content:space-between"><div><div style="font-size:13px;color:var(--color-text-primary)">${themeIcon} Appearance</div><div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">Currently: ${themeState==='system'?'System default':themeState==='dark'?'Dark mode':'Light mode'}</div></div><button class="btn-sm" onclick="toggleTheme()" style="flex-shrink:0">Switch to ${themeNext}</button></div></div>`;
   html+=`</div>`;
   document.getElementById('opt-panel-weekend').innerHTML=html;
@@ -1507,7 +1538,7 @@ function removeRound(idx){if(WK.rounds.length<=1){alert('Need at least 1 round.'
 function renderCoursesPanel(){let html=`<div style="margin-bottom:10px"><button class="btn-sm" onclick="toggleAddCourse()">+ Add new course</button></div><div id="addCourseForm" style="display:none" class="section-card"><div class="section-hd">New course</div><div style="padding:10px 12px"><div style="display:flex;gap:8px;margin-bottom:8px"><input class="text-input" id="newCName" placeholder="Course name" style="flex:2"/><input class="ie-num" id="newCSlope" type="number" placeholder="Slope" style="width:70px"/></div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Front 9 pars</div><input class="text-input" id="newCFP" placeholder="4,4,3,5,4,4,3,5,4" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Front 9 HCP indexes</div><input class="text-input" id="newCFSI" placeholder="1,3,5,7,9,11,13,15,17" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Back 9 pars</div><input class="text-input" id="newCBP" placeholder="4,4,3,5,4,4,3,5,4" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Back 9 HCP indexes</div><input class="text-input" id="newCBSI" placeholder="2,4,6,8,10,12,14,16,18" style="margin-bottom:8px"/><button class="btn-primary" onclick="addCourse()" style="padding:8px">Save course</button></div></div>`;Object.keys(CATALOG).forEach(name=>{const c=CATALOG[name],eid='ce_'+name.replace(/\W/g,'_');html+=`<div class="section-card" style="margin-bottom:10px"><div class="section-hd"><span>${name}</span><div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;color:var(--color-text-secondary)">slope</span><input class="ie-num" type="number" value="${c.slope}" style="width:70px" onchange="CATALOG['${name}'].slope=parseInt(this.value);saveCustomCourses()"/><button class="btn-sm" onclick="document.getElementById('${eid}').style.display=document.getElementById('${eid}').style.display==='none'?'block':'none'">Edit holes</button></div></div><div style="padding:4px 12px;font-size:10px;color:var(--color-text-secondary)">Front: ${c.holes.slice(0,9).map(h=>h.par).join(',')} · HCP: ${c.holes.slice(0,9).map(h=>h.si).join(',')}<br>Back: ${c.holes.slice(9).map(h=>h.par).join(',')} · HCP: ${c.holes.slice(9).map(h=>h.si).join(',')}</div><div id="${eid}" style="display:none;border-top:0.5px solid var(--color-border-tertiary);padding:8px 12px"><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Front pars</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(0,9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.par}" onchange="CATALOG['${name}'].holes[${i}].par=parseInt(this.value);saveCustomCourses()" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Front HCP</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(0,9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.si}" onchange="CATALOG['${name}'].holes[${i}].si=parseInt(this.value);saveCustomCourses()" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Back pars</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.par}" onchange="CATALOG['${name}'].holes[${i+9}].par=parseInt(this.value);saveCustomCourses()" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Back HCP</div><div style="display:flex;gap:3px">${c.holes.slice(9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.si}" onchange="CATALOG['${name}'].holes[${i+9}].si=parseInt(this.value);saveCustomCourses()" style="width:100%"/>`).join('')}</div></div></div>`;});document.getElementById('opt-panel-courses').innerHTML=html;}
 function renderInfoPanel(){
   const sections=[
-    {id:'info-about',title:'About The Turn',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The Turn is a golf weekend scoring app built for groups of 2–8 players. It handles handicap-adjusted scoring, multiple game formats, expense tracking, and money settlement — all from a single URL that works on any phone.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Version <strong>${APP_VERSION}</strong> · Make the turn. Skip the drama.</p>`},
+    {id:'info-about',title:'About The Turn',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The Turn is a golf weekend scoring app built for groups of 2–8 players. Note that Team games (Match Play, Vegas, Team Skins) require 4 players. Individual Skins works with any group size. It handles handicap-adjusted scoring, multiple game formats, expense tracking, and money settlement — all from a single URL that works on any phone.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Version <strong>${APP_VERSION}</strong> · Make the turn. Skip the drama.</p>`},
     {id:'info-setup',title:'Setting Up a Weekend',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Tap <strong>Start New Trip</strong> on the home screen. The setup wizard walks you through four steps:</p><ul style="font-size:13px;color:var(--color-text-secondary);line-height:1.8;padding-left:18px;margin-bottom:8px"><li><strong>Trip details</strong> — name, date, number of players and rounds</li><li><strong>Players</strong> — type a name or pick from your library; handicap index auto-fills for known players</li><li><strong>Courses</strong> — select a course for each round from the built-in catalog, or add a custom course</li><li><strong>Games &amp; Money</strong> — toggle Match Play, Vegas, Skins, Two's Club, set dollar amounts and buy-in</li></ul><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">All data syncs automatically — anyone who opens the app sees the current state.</p>`},
     {id:'info-scoring',title:'Entering Scores',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Use the <strong>Entry</strong> tab to enter gross scores hole by hole. Net scores are calculated automatically using each player's course handicap (USGA index × slope ÷ 113, adjusted by the handicap % you set).</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The scorecard updates live as you enter scores. Tap the left/right arrows to move between holes, or use the round selector to switch rounds.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">After all 18 holes are entered, a <strong>Lock Round</strong> button appears at the bottom of the Entry tab. Locking freezes scores for that round — a 🔒 appears on the round tab and the +/− buttons are disabled. Use <strong>Unlock</strong> on the Money tab to re-open a locked (but unsettled) round if a score needs correcting.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">A save indicator confirms when scores are written to the cloud.</p>`},
     {id:'info-matchplay',title:'Match Play',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Best ball net scoring. Two teams of two compete hole-by-hole — the team with the lower best-ball net score wins the hole (1 point), ties are halved (0.5 each).</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Each round can be split into 1, 2, or 3 games with different team pairings. Teams are set in <strong>Options → Teams &amp; Money</strong>.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Settlement can be per player (each person wins/pays the full game value) or per team (split between teammates). Match Play points are the primary standings tiebreaker.</p>`},
@@ -1543,7 +1574,7 @@ function toggleInfoSection(id){
 function showHowToPlay(){
   const old=document.getElementById('howToPlayModal');if(old)old.remove();
   const sections=[
-    {id:'htp-about',title:'About The Turn',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The Turn is a golf weekend scoring app built for groups of 2–8 players. It handles handicap-adjusted scoring, multiple game formats, expense tracking, and money settlement — all from a single URL that works on any phone.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Version <strong>${APP_VERSION}</strong> · Make the turn. Skip the drama.</p>`},
+    {id:'htp-about',title:'About The Turn',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The Turn is a golf weekend scoring app built for groups of 2–8 players. Note that Team games (Match Play, Vegas, Team Skins) require 4 players. Individual Skins works with any group size. It handles handicap-adjusted scoring, multiple game formats, expense tracking, and money settlement — all from a single URL that works on any phone.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Version <strong>${APP_VERSION}</strong> · Make the turn. Skip the drama.</p>`},
     {id:'htp-setup',title:'Setting Up a Weekend',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Tap <strong>New Trip</strong> on the home screen. The setup wizard walks you through four steps:</p><ul style="font-size:13px;color:var(--color-text-secondary);line-height:1.8;padding-left:18px;margin-bottom:8px"><li><strong>Trip details</strong> — name, date, number of players and rounds</li><li><strong>Players</strong> — type a name or pick from your library; handicap index auto-fills for known players</li><li><strong>Courses</strong> — select a course for each round from the built-in catalog, or add a custom course</li><li><strong>Games &amp; Money</strong> — toggle Match Play, Vegas, Skins, Two's Club, Snake, set dollar amounts and buy-in</li></ul><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">All data syncs automatically — anyone who opens the app sees the current state.</p>`},
     {id:'htp-scoring',title:'Entering Scores',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Use the <strong>Entry</strong> tab to enter gross scores hole by hole. Net scores are calculated automatically using each player's course handicap. The scorecard updates live as you enter scores.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">After all 18 holes are entered, a Lock Round button appears. Locking freezes scores — use Settle on the Money tab to record that cash has moved.</p>`},
     {id:'htp-matchplay',title:'Match Play',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Best ball net scoring. Two teams of two compete hole-by-hole — the team with the lower best-ball net score wins the hole. Ties are halved. Each round can be split into 1, 2, or 3 games with different team pairings.</p>`},
@@ -1587,8 +1618,8 @@ function renderMPRound(){
   segs.forEach((seg,si)=>{
     const tm=STATE.mpTeams[r][si];if(!tm)return;
     const tA=tm[0],tB=tm[1];
-    const nameA=tA.map(i=>WK.players[i].name).join(' & ');
-    const nameB=tB.map(i=>WK.players[i].name).join(' & ');
+    const nameA=tA.map(i=>displayName(i)).join(' & ');
+    const nameB=tB.map(i=>displayName(i)).join(' & ');
     let pA=0,pB=0,rows='';
     for(let h=seg.start;h<seg.end;h++){
       const res=calcMP(h,r);
@@ -1613,8 +1644,8 @@ function renderVegasRound(){
   segs.forEach((seg,si)=>{
     const tv=STATE.vegTeams[r][si];if(!tv)return;
     const tA=tv[0],tB=tv[1];
-    const nameA=tA.map(i=>WK.players[i].name).join(' & ');
-    const nameB=tB.map(i=>WK.players[i].name).join(' & ');
+    const nameA=tA.map(i=>displayName(i)).join(' & ');
+    const nameB=tB.map(i=>displayName(i)).join(' & ');
     let totA=0,totB=0,rows='';
     for(let h=seg.start;h<seg.end;h++){
       const res=calcVegas(h,r);
@@ -1762,16 +1793,16 @@ function renderMoney(){
   // ---- Weekend pot ----
   const potSettled=(STATE.settledRounds||[]).includes('pot');
   html+=`<div class="section-card round-card-collapsed" id="rcard-pot" style="margin-bottom:14px;${potSettled?'opacity:0.6;':''}">`;
-  const potSumm=allDone?potData.map(d=>{const p=WK.players[d.pi],isW=d===potData[0],v=isW?(pot-WK.buyIn):-WK.buyIn;return`<span style="color:${v>=0?'#1D9E75':'#D85A30'};font-size:11px">${p.name} ${fmt(v)}</span>`;}).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">Settles after all holes</span>`;
+  const potSumm=allDone?potData.map(d=>{const p=WK.players[d.pi],isW=d===potData[0],v=isW?(pot-WK.buyIn):-WK.buyIn;return`<span style="color:${v>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(i)} ${fmt(v)}</span>`;}).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">Settles after all holes</span>`;
   html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('pot')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Weekend pot — $${pot}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${potSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${potSettled?`<button class="btn-sm" style="font-size:10px;opacity:0.55" onclick="event.stopPropagation();unsettleItem('pot')">Unsettle</button>`:allDone?`<button class="btn-sm" onclick="event.stopPropagation();settleItem('pot')">Settle</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
   html+=`<div class="round-card-body">`;
   if(!allDone)html+=`<div class="pending-box">Settles after all ${totalHoles()} holes. ${totalHoles()-totalHolesPlayed()} remaining.</div>`;
   else{
     html+=`<div style="padding:4px 12px 2px;font-size:10px;color:var(--color-text-tertiary)">Winner determined by ${potLabel}</div>`;
-    potData.forEach((d,rank)=>{const p=WK.players[d.pi],isW=rank===0,net=isW?(pot-WK.buyIn):-WK.buyIn;html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${p.name}${isW?' 🏆':''}</span></div><div class="${net>=0?'money-pos':'money-neg'}">${fmt(net)}</div></div>`;});
+    potData.forEach((d,rank)=>{const p=WK.players[d.pi],isW=rank===0,net=isW?(pot-WK.buyIn):-WK.buyIn;html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(d.pi)}${isW?' 🏆':''}</span></div><div class="${net>=0?'money-pos':'money-neg'}">${fmt(net)}</div></div>`;});
     const potNet=Array(n).fill(-WK.buyIn);potNet[potData[0].pi]=pot-WK.buyIn;
     const ptxns=simplifyDebts(potNet);
-    if(ptxns.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Transfers</div>`;ptxns.forEach(t=>{html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px">${WK.players[t.from].name} → ${WK.players[t.to].name}</span><span style="font-size:13px;font-weight:500;color:#D85A30">$${t.amt.toFixed(2)}</span></div>`;});}
+    if(ptxns.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Transfers</div>`;ptxns.forEach(t=>{html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px">${displayName(t.from)} → ${displayName(t.to)}</span><span style="font-size:13px;font-weight:500;color:#D85A30">$${t.amt.toFixed(2)}</span></div>`;});}
   }
   html+='</div></div>';
 
@@ -1818,7 +1849,7 @@ function renderMoney(){
     const netForTotal=snapNet||roundNet;
     if(complete)netForTotal.forEach((v,i)=>grandTotal[i]+=v);
 
-    const summParts=complete?WK.players.map((p,i)=>`<span style="color:${roundNet[i]>=0?'#1D9E75':'#D85A30'};font-size:11px">${p.name} ${fmt(roundNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">In progress</span>`;
+    const summParts=complete?WK.players.map((p,i)=>`<span style="color:${roundNet[i]>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(i)} ${fmt(roundNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">In progress</span>`;
 
     html+=`<div class="section-card round-card-collapsed" id="rcard-${r}" style="margin-bottom:14px;${settled?'opacity:0.6;':''}">`;
     const lkd_r=isRoundLocked(r);html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard(${r})"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Round ${r+1} — ${WK.rounds[r].courseName}${lkd_r?' 🔒':''}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${summParts}</div></div><div style="display:flex;align-items:center;gap:8px">${settled&&!changed?`<button class="btn-sm" style="font-size:10px;opacity:0.55" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:settled&&changed?`<span style="color:#D97706;font-size:11px">⚠ Changed</span><button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:complete?`<button class="btn-sm" onclick="event.stopPropagation();settleRound(${r})">Settle</button>`:''} ${lkd_r&&!settled?`<button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unlockRound(${r})">Unlock</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
@@ -1831,8 +1862,8 @@ function renderMoney(){
       mpR.gameResults.forEach(({seg,tA,tB,pA,pB,winner})=>{
         const mpSv=settleVal(WK.gameVal,tA.length,WK.mpSettle||'perplayer');
         const aWins=winner==='a', bWins=winner==='b', tied=winner==='tie';
-        const nameA=tA.map(i=>WK.players[i].name).join(' & ');
-        const nameB=tB.map(i=>WK.players[i].name).join(' & ');
+        const nameA=tA.map(i=>displayName(i)).join(' & ');
+        const nameB=tB.map(i=>displayName(i)).join(' & ');
         const dollarStr=`+$${mpSv.toFixed(2)}`;
         const gcol='display:grid;grid-template-columns:1fr 52px 64px;align-items:center;gap:4px;padding:2px 0';
         html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
@@ -1854,8 +1885,8 @@ function renderMoney(){
       html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Vegas — $${WK.vegasVal.toFixed(2)}/pt · ${(WK.vegasSettle||'perplayer')==='perplayer'?'per player':'per team'}</div>`;
       vegR.gameResults.forEach(({seg,tA,tB,ptsA,ptsB,dollarA})=>{
         const aWins=dollarA>0, bWins=dollarA<0, tied=dollarA===0;
-        const nameA=tA.map(i=>WK.players[i].name).join(' & ');
-        const nameB=tB.map(i=>WK.players[i].name).join(' & ');
+        const nameA=tA.map(i=>displayName(i)).join(' & ');
+        const nameB=tB.map(i=>displayName(i)).join(' & ');
         const dollarStr=`+$${Math.abs(dollarA).toFixed(2)}`;
         const gcol='display:grid;grid-template-columns:1fr 52px 64px;align-items:center;gap:4px;padding:2px 0';
         html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
@@ -1880,8 +1911,8 @@ function renderMoney(){
         const netAmt=Math.abs(netDiff)*(WK.skinsVal||5);
         const skSv=settleVal(netAmt,tA.length,WK.skinsSettle||'perplayer');
         const aWins=netDiff>0, bWins=netDiff<0, tied=netDiff===0;
-        const nameA=tA.map(i=>WK.players[i].name).join(' & ');
-        const nameB=tB.map(i=>WK.players[i].name).join(' & ');
+        const nameA=tA.map(i=>displayName(i)).join(' & ');
+        const nameB=tB.map(i=>displayName(i)).join(' & ');
         const dollarStr=`+$${skSv.toFixed(2)}`;
         const gcol='display:grid;grid-template-columns:1fr 52px 64px;align-items:center;gap:4px;padding:2px 0';
         html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
@@ -1906,14 +1937,14 @@ function renderMoney(){
       if(STATE.snakeHolder&&STATE.snakeHolder[r]){for(let h=17;h>=0;h--){if(STATE.snakeHolder[r][h]!==null){finalHolder=STATE.snakeHolder[r][h];break;}}}
       const sPot=calcSnakePot(r);
       const hasSnake=finalHolder!==null;
-      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">🐍 Snake${hasSnake?` — pot $${sPot.toFixed(2)} · ${WK.players[finalHolder].name} holds`:' — not set'}</div>`;
+      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">🐍 Snake${hasSnake?` — pot $${sPot.toFixed(2)} · ${displayName(finalHolder)} holds`:' — not set'}</div>`;
       if(!hasSnake){html+=`<div class="pending-box">No snake assigned this round</div>`;}
-      else{WK.players.forEach((p,i)=>{html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${p.name}${i===finalHolder?' 🐍':''}</span></div><div class="${rNet[i]>=0?'money-pos':'money-neg'}">${fmt(rNet[i])}</div></div>`;});}
+      else{WK.players.forEach((p,i)=>{html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(i)}${i===finalHolder?' 🐍':''}</span></div><div class="${rNet[i]>=0?'money-pos':'money-neg'}">${fmt(rNet[i])}</div></div>`;});}
     }
     // Explicit player-to-player transfers
     const txns=simplifyDebts(roundNet);
     html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Round transfers</div>`;
-    if(txns.length){txns.forEach(t=>{html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px">${WK.players[t.from].name} → ${WK.players[t.to].name}</span><span style="font-size:13px;font-weight:500;color:#D85A30">$${t.amt.toFixed(2)}</span></div>`;});}
+    if(txns.length){txns.forEach(t=>{html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px">${displayName(t.from)} → ${displayName(t.to)}</span><span style="font-size:13px;font-weight:500;color:#D85A30">$${t.amt.toFixed(2)}</span></div>`;});}
     else html+=`<div style="padding:8px 12px;text-align:center;font-size:12px;color:#1D9E75">All square this round 🎉</div>`;
     html+='</div></div>';
   });
@@ -1926,15 +1957,15 @@ function renderMoney(){
     else twos.forEach((_,i)=>{twosNet[i]-=WK.twosAmt;});
     twosNet.forEach((v,i)=>grandTotal[i]+=v);
     const twosSettled=(STATE.settledRounds||[]).includes('twos');
-    const twosSumm=tot>0?WK.players.map((p,i)=>`<span style="color:${twosNet[i]>=0?'#1D9E75':'#D85A30'};font-size:11px">${p.name} ${fmt(twosNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">No 2s yet</span>`;
+    const twosSumm=tot>0?WK.players.map((p,i)=>`<span style="color:${twosNet[i]>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(i)} ${fmt(twosNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">No 2s yet</span>`;
     html+=`<div class="section-card round-card-collapsed" id="rcard-twos" style="margin-bottom:14px;${twosSettled?'opacity:0.6;':''}">`;
     html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('twos')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Two's Club — pot $${tp}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${twosSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${twosSettled?`<button class="btn-sm" style="font-size:10px;opacity:0.55" onclick="event.stopPropagation();unsettleItem('twos')">Unsettle</button>`:`<button class="btn-sm" onclick="event.stopPropagation();settleItem('twos')">Settle</button>`}<span class="round-card-chevron">▼</span></div></div>`;
     html+=`<div class="round-card-body">`;
     if(!tot)html+=`<div class="pending-box">No 2s yet — pot carries</div>`;
     else{
-      WK.players.forEach((p,i)=>{const extra=twos[i]>0?`<span class="twos-badge">${twos[i]} two${twos[i]>1?'s':''}</span>`:'';html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${p.name}${extra}</span></div><div class="${twosNet[i]>=0?'money-pos':'money-neg'}">${fmt(twosNet[i])}</div></div>`;});
+      WK.players.forEach((p,i)=>{const extra=twos[i]>0?`<span class="twos-badge">${twos[i]} two${twos[i]>1?'s':''}</span>`:'';html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(i)}${extra}</span></div><div class="${twosNet[i]>=0?'money-pos':'money-neg'}">${fmt(twosNet[i])}</div></div>`;});
       const ttxns=simplifyDebts(twosNet);
-      if(ttxns.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Transfers</div>`;ttxns.forEach(t=>{html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px">${WK.players[t.from].name} → ${WK.players[t.to].name}</span><span style="font-size:13px;font-weight:500;color:#D85A30">$${t.amt.toFixed(2)}</span></div>`;});}
+      if(ttxns.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Transfers</div>`;ttxns.forEach(t=>{html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px">${displayName(t.from)} → ${displayName(t.to)}</span><span style="font-size:13px;font-weight:500;color:#D85A30">$${t.amt.toFixed(2)}</span></div>`;});}
     }
     html+='</div></div>';
   }
@@ -1957,15 +1988,15 @@ function renderMoney(){
     return out;
   });
   const allSettled=outstandingTotal.every(v=>Math.abs(v)<0.01);
-  const gtSumm=[...WK.players.map((p,i)=>({...p,i,t:outstandingTotal[i]}))].sort((a,b)=>b.t-a.t).map(p=>`<span style="color:${p.t>=0?'#1D9E75':'#D85A30'};font-size:11px">${p.name} ${fmt(p.t)}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>');
+  const gtSumm=[...WK.players.map((p,i)=>({...p,i,t:outstandingTotal[i]}))].sort((a,b)=>b.t-a.t).map(p=>`<span style="color:${p.t>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(p.i)} ${fmt(p.t)}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>');
   html+=`<div class="section-card round-card-collapsed" id="rcard-grand" style="margin-bottom:14px">`;
   html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('grand')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span style="color:var(--color-text-primary);font-weight:500">Golf outstanding</span><div style="display:flex;gap:4px;flex-wrap:wrap">${allSettled?'<span style="font-size:11px;color:#1D9E75">All settled 🎉</span>':gtSumm}</div></div><span class="round-card-chevron">▼</span></div>`;
   html+=`<div class="round-card-body">`;
   if(allSettled){html+=`<div style="padding:16px 12px;text-align:center;font-size:13px;color:#1D9E75;font-weight:500">All golf bets settled 🎉</div>`;}
   else{
-    [...WK.players.map((p,i)=>({...p,i,t:outstandingTotal[i]}))].sort((a,b)=>b.t-a.t).forEach(p=>{html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${p.name}</span></div><div class="${p.t>=0?'money-pos':'money-neg'}">${fmt(p.t)}</div></div>`;});
+    [...WK.players.map((p,i)=>({...p,i,t:outstandingTotal[i]}))].sort((a,b)=>b.t-a.t).forEach(p=>{html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(p.i)}</span></div><div class="${p.t>=0?'money-pos':'money-neg'}">${fmt(p.t)}</div></div>`;});
     const gtxns=simplifyDebts(outstandingTotal);
-    if(gtxns.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Outstanding transfers</div>`;gtxns.forEach(t=>{html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px">${WK.players[t.from].name} → ${WK.players[t.to].name}</span><span style="font-size:13px;font-weight:500;color:#D85A30">$${t.amt.toFixed(2)}</span></div>`;});}
+    if(gtxns.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Outstanding transfers</div>`;gtxns.forEach(t=>{html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px">${displayName(t.from)} → ${displayName(t.to)}</span><span style="font-size:13px;font-weight:500;color:#D85A30">$${t.amt.toFixed(2)}</span></div>`;});}
   }
   html+='</div></div>';
 
@@ -2026,12 +2057,16 @@ function renderSkinsBoxWrap(){
   const wrap=document.getElementById('skinsBoxWrap');if(!wrap)return;
   if(!WK.skinsOn){wrap.innerHTML='';return;}
   const r=STATE.currentRound,hi=STATE.currentHole,sG=skinsGamesForRound(r),si=segForHole(hi,sG),seg=getSegments(sG)[si];
+  // Guard: team skins requires 4 players and valid team data
+  if(WK.skinsFmt==='team'&&WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Skins</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Team Skins requires 4 players. For 2-player games, use Individual Skins format (Options → Skins → Format).</div></div>`;return;}
+  const skTeam=STATE.skinsTeams?.[r]?.[si];
+  if(WK.skinsFmt==='team'&&(!skTeam||!skTeam[0]||!skTeam[1])){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Skins</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Set teams in Options to calculate skins.</div></div>`;return;}
   const carry=skinsCarryAt(r,hi);
   const res=skinHoleWinner(hi,r);
   let resultLine='';
   if(res){
     if(res.tied)resultLine=`<span class="carry">Tied — carries (${carry+1} next)</span>`;
-    else if(res.type==='individual')resultLine=`${WK.players[res.winner]?.name} wins!`;
+    else if(res.type==='individual')resultLine=`${displayName(res.winner)} wins!`;
     else{const wt=res.winner==='a'?(res.teams?.[0]||[]).map(i=>WK.players[i]?.name).join(' & '):(res.teams?.[1]||[]).map(i=>WK.players[i]?.name).join(' & ');resultLine=`${wt} wins!`;}
   } else {resultLine='<span style="color:var(--color-text-secondary)">Enter all scores to calculate</span>';}
   let teamLine='';
@@ -2150,11 +2185,11 @@ function renderExpenses(){
   const expTxns=simplifyDebts(expNet);
   const fmt=v=>v>=0?'+$'+v.toFixed(2):'-$'+Math.abs(v).toFixed(2);
   html+=`<div class="section-card round-card-collapsed" id="rcard-expenses" style="margin-bottom:14px;${expSettled?'opacity:0.6;':''}">`;
-  const expSumm=WK.players.map((p,i)=>`<span style="color:${expNet[i]>=0?'#1D9E75':'#D85A30'};font-size:11px">${p.name} ${fmt(expNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>');
+  const expSumm=WK.players.map((p,i)=>`<span style="color:${expNet[i]>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(i)} ${fmt(expNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>');
   html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('expenses')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span style="font-weight:500">Expense summary</span><div style="display:flex;gap:4px;flex-wrap:wrap">${expSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${expSettled?`<button class="btn-sm" style="font-size:10px;opacity:0.55" onclick="event.stopPropagation();unsettleItem('expenses')">Unsettle</button>`:!isReadOnly?`<button class="btn-sm" onclick="event.stopPropagation();settleItem('expenses')">Settle</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
   html+=`<div class="round-card-body">`;
-  WK.players.forEach((p,i)=>{html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${p.name}</span></div><div class="${expNet[i]>=0?'money-pos':'money-neg'}">${fmt(expNet[i])}</div></div>`;});
-  if(expTxns.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Transfers</div>`;expTxns.forEach(t=>{html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px">${WK.players[t.from].name} → ${WK.players[t.to].name}</span><span style="font-size:13px;font-weight:500;color:#D85A30">$${t.amt.toFixed(2)}</span></div>`;});}
+  WK.players.forEach((p,i)=>{html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(i)}</span></div><div class="${expNet[i]>=0?'money-pos':'money-neg'}">${fmt(expNet[i])}</div></div>`;});
+  if(expTxns.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Transfers</div>`;expTxns.forEach(t=>{html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px">${displayName(t.from)} → ${displayName(t.to)}</span><span style="font-size:13px;font-weight:500;color:#D85A30">$${t.amt.toFixed(2)}</span></div>`;});}
   else html+=`<div style="padding:8px 12px;text-align:center;font-size:12px;color:#1D9E75">All square on expenses 🎉</div>`;
   html+='</div></div>';
   document.getElementById('expensesContent').innerHTML=html;
@@ -2169,10 +2204,10 @@ function openExpForm(editId){
 <div class="field-row"><div class="field-label">Description</div><input class="text-input" id="eDesc" value="${ex?.desc||''}" placeholder="e.g. Airbnb night 1"/></div>
 <div class="field-row"><div class="field-label">Category</div><select class="course-select" id="eCat">${ECATS.map(c=>`<option value="${c.id}"${c.id===(ex?.cat||'misc')?' selected':''}>${c.e} ${c.l}</option>`).join('')}</select></div>
 <div class="field-row"><div class="field-label">Amount ($)</div><input class="text-input" id="eAmt" type="number" step=".01" value="${ex?.amount||''}" placeholder="0.00" style="width:120px"/></div>
-<div class="field-row"><div class="field-label">Paid by</div><select class="course-select" id="ePaidBy">${WK.players.map((p,i)=>`<option value="${i}"${i===(ex?.paidBy??0)?' selected':''}>${p.name}</option>`).join('')}</select></div>
-<div class="field-row"><div class="field-label">Who owes?</div><div id="eChips" style="display:flex;flex-wrap:wrap;gap:4px">${WK.players.map((p,i)=>{const ow=defOwes.some(o=>o.pi===i);return`<span class="pchip${ow?' active':''}" onclick="this.classList.toggle('active')">${p.name}</span>`;}).join('')}</div></div>
+<div class="field-row"><div class="field-label">Paid by</div><select class="course-select" id="ePaidBy">${WK.players.map((p,i)=>`<option value="${i}"${i===(ex?.paidBy??0)?' selected':''}>${displayName(i)}</option>`).join('')}</select></div>
+<div class="field-row"><div class="field-label">Who owes?</div><div id="eChips" style="display:flex;flex-wrap:wrap;gap:4px">${WK.players.map((p,i)=>{const ow=defOwes.some(o=>o.pi===i);return`<span class="pchip${ow?' active':''}" onclick="this.classList.toggle('active')">${displayName(i)}</span>`;}).join('')}</div></div>
 <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><label class="toggle"><input type="checkbox" id="eCustom" ${ex?.customSplit?'checked':''} onchange="document.getElementById('eCustomFields').style.display=this.checked?'block':'none'"><span class="toggle-slider"></span></label><span style="font-size:13px;color:var(--color-text-primary)">Custom split</span></div>
-<div id="eCustomFields" style="display:${ex?.customSplit?'block':'none'};margin-bottom:12px">${WK.players.map((p,i)=>{const oe=defOwes.find(o=>o.pi===i);return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="flex:1;font-size:13px">${p.name}</span><span>$</span><input class="ie-num" id="eShare${i}" type="number" step=".01" placeholder="0.00" value="${oe?.amt??''}" style="width:90px"/></div>`;}).join('')}</div>
+<div id="eCustomFields" style="display:${ex?.customSplit?'block':'none'};margin-bottom:12px">${WK.players.map((p,i)=>{const oe=defOwes.find(o=>o.pi===i);return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="flex:1;font-size:13px">${displayName(i)}</span><span>$</span><input class="ie-num" id="eShare${i}" type="number" step=".01" placeholder="0.00" value="${oe?.amt??''}" style="width:90px"/></div>`;}).join('')}</div>
 <div style="display:flex;gap:8px"><button class="btn-primary" onclick="saveExp()">Save</button><button class="btn-secondary" style="flex:none" onclick="cancelExp()">Cancel</button></div>
 </div>`;
   document.getElementById('expensesContent').innerHTML=form+document.getElementById('expensesContent').innerHTML;
@@ -2284,8 +2319,8 @@ function renderSettle(){
     const mpR=WK.mpOn?calcRoundMP(r):{gameResults:[],net:[]};
     mpR.gameResults.forEach(({seg,tA,tB,pA,pB,winner})=>{
       const audMpVal=winner==='tie'?0:settleVal(WK.gameVal,tA.length,WK.mpSettle||'perplayer');
-      tA.forEach(pi=>{auditGolf[pi].mp.push({label:`R${r+1} ${seg.label}`,val:winner==='a'?audMpVal:winner==='b'?-audMpVal:0,desc:`vs ${tB.map(i=>WK.players[i].name).join('&')} (${pA}–${pB})`});});
-      tB.forEach(pi=>{auditGolf[pi].mp.push({label:`R${r+1} ${seg.label}`,val:winner==='b'?audMpVal:winner==='a'?-audMpVal:0,desc:`vs ${tA.map(i=>WK.players[i].name).join('&')} (${pB}–${pA})`});});
+      tA.forEach(pi=>{auditGolf[pi].mp.push({label:`R${r+1} ${seg.label}`,val:winner==='a'?audMpVal:winner==='b'?-audMpVal:0,desc:`vs ${tB.map(i=>displayName(i)).join('&')} (${pA}–${pB})`});});
+      tB.forEach(pi=>{auditGolf[pi].mp.push({label:`R${r+1} ${seg.label}`,val:winner==='b'?audMpVal:winner==='a'?-audMpVal:0,desc:`vs ${tA.map(i=>displayName(i)).join('&')} (${pB}–${pA})`});});
     });
     const vegR=WK.vegasOn?calcRoundVegas(r):{gameResults:[],net:[]};
     vegR.gameResults.forEach(({seg,tA,tB,ptsA,ptsB,dollarA})=>{
@@ -2383,7 +2418,7 @@ function renderSettle(){
     html+=`<div class="audit-player-row" onclick="toggleAuditPlayer(${pi})">`;
     html+=`<div class="avatar" style="width:32px;height:32px;font-size:12px;background:${p.bg};color:${p.fg}">${p.ini}</div>`;
     const golfAmt=a.total;
-    html+=`<div style="flex:1;padding-left:8px"><div style="font-size:14px;font-weight:500;color:var(--color-text-primary)">${p.name}</div>`;
+    html+=`<div style="flex:1;padding-left:8px"><div style="font-size:14px;font-weight:500;color:var(--color-text-primary)">${displayName(pi)}</div>`;
     html+=`<div style="display:flex;gap:12px;margin-top:2px;flex-wrap:wrap">`;
     html+=`<span style="font-size:11px;color:var(--color-text-secondary)">Golf <span style="color:${golfAmt>=0?'#1D9E75':'#D85A30'};font-weight:500">${fmt(golfAmt)}</span></span>`;
     if(myExps.length||expNet[pi]!==0)html+=`<span style="font-size:11px;color:var(--color-text-secondary)">Exp <span style="color:${expNet[pi]>=0?'#1D9E75':'#D85A30'};font-weight:500">${fmt(expNet[pi])}</span></span>`;
@@ -2438,7 +2473,7 @@ function renderSettle(){
         if(WK.snakePayout==='split'){rNet=finalHolder===pi?-(sPot*(WK.players.length-1)):sPot;}
         else{rNet=finalHolder===pi?-sPot:sPot/(WK.players.length-1);}
         if(rNet===0)return;
-        const desc=finalHolder===pi?'holds snake':`${WK.players[finalHolder].name} holds`;
+        const desc=finalHolder===pi?'holds snake':`${displayName(finalHolder)} holds`;
         html+=subRow(`R${r+1}`,desc,rNet);
       });
       html+=`</div>`;
