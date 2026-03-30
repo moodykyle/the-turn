@@ -631,7 +631,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v61.2';
+const APP_VERSION='v62';
 
 // ===== THEME =====
 (function(){
@@ -841,6 +841,7 @@ function loadLib(){
 function saveLib(){try{localStorage.setItem(LS_LIB,JSON.stringify(PLAYER_LIBRARY));}catch(e){}scheduleSbSave();}
 function loadCustomCourses(){try{const d=localStorage.getItem(LS_COURSES);if(d){const cc=JSON.parse(d);Object.keys(cc).forEach(n=>{CATALOG[n]=cc[n];});}}catch(e){}}
 function saveCustomCourses(){try{const builtIn=Object.keys(RAW_CATALOG);const custom={};Object.keys(CATALOG).forEach(n=>{if(!builtIn.includes(n))custom[n]=CATALOG[n];});localStorage.setItem(LS_COURSES,JSON.stringify(custom));}catch(e){}scheduleSbSave();}
+function renameCourse(oldName,newName){newName=newName.trim();if(!newName||newName===oldName)return;if(CATALOG[newName]){alert('A course named "'+newName+'" already exists.');return;}CATALOG[newName]=CATALOG[oldName];delete CATALOG[oldName];WK.rounds.forEach((rd,i)=>{if(rd.courseName===oldName){WK.rounds[i].courseName=newName;}});saveCustomCourses();renderCoursesPanel();renderWeekendPanel();autoSave();}
 function loadTripsLocal(){try{const d=localStorage.getItem(LS_TRIPS);return d?JSON.parse(d):[];}catch(e){return[];}}
 function loadTrips(){return loadTripsLocal();}
 function saveTrips(trips){try{localStorage.setItem(LS_TRIPS,JSON.stringify(trips));}catch(e){}scheduleSbSave();}
@@ -1466,13 +1467,13 @@ function setSkinsGamesForRound(r,v){if(!WK.skinsGamesPerRound)WK.skinsGamesPerRo
 function renderTeamsPanel(){
   html_hdcp=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Scoring config</div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net off low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffLow?'checked':''} onchange="STATE.netOffLow=this.checked;renderTeamsPanel();renderScorecard();renderBanner()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Handicap adjustment</span><div style="display:flex;align-items:center;gap:4px"><input class="ie-num" type="number" value="${(WK.hdcpPct*100).toFixed(0)}" style="width:56px" onchange="WK.hdcpPct=parseFloat(this.value)/100;renderTeamsPanel();renderScorecard()"/><span style="font-size:12px;color:var(--color-text-secondary)">%</span></div></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px"><span style="font-size:12px;color:var(--color-text-secondary)">Pot winner</span><select class="ie-sel" onchange="WK.potMethod=this.value;renderTeamsPanel();renderBoard();renderMoney()"><option value="netstroke"${(WK.potMethod||'netstroke')==='netstroke'?' selected':''}>Net stroke play</option><option value="matchplay"${WK.potMethod==='matchplay'?' selected':''}>Match play points</option></select></div></div>`;
   const r=STATE.teamsRound,mpG=mpGamesForRound(r),mpSegs=getSegments(mpG),vG=vegasSegForRound(r),vegSegs=getSegments(vG),sG=skinsGamesForRound(r),skSegs=getSegments(sG);
-  let html=html_hdcp+`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Weekend bet</div><div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Buy-in per player</span>$<input class="ie-num" type="number" value="${WK.buyIn}" style="width:90px" onchange="WK.buyIn=parseFloat(this.value)"/></div></div>`;
+  let html=html_hdcp+`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Weekend bet</div><div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Buy-in per player</span>$<input class="ie-num" type="number" value="${WK.buyIn}" style="width:90px" onchange="WK.buyIn=parseFloat(this.value);autoSave()"/></div></div>`;
   html+=`<div style="margin-bottom:12px"><div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:6px">Teams for round — each round is independent:</div><div style="display:flex;gap:0">${WK.rounds.map((rd,i)=>{const first=i===0,last=i===WK.rounds.length-1;return`<div class="rd-btn${i===r?' active':''}" onclick="switchTeamsRound(${i})" style="flex:1;${first?'border-radius:var(--border-radius-md) 0 0 var(--border-radius-md)':''}${last?'border-radius:0 var(--border-radius-md) var(--border-radius-md) 0':''}">Rd ${i+1}<br><span style="font-size:9px;opacity:0.75">${rdLabel(i)}</span></div>`;}).join('')}</div></div>`;
   // Skins
   {
     const skOv=WK.skinsGamesPerRound?.[r]||0;
     const skinsHdr=WK.skinsOn
-      ?`<select class="ie-sel" onchange="setSkinsGamesForRound(${r},parseInt(this.value))"><option value="1"${skOv===1?' selected':''}>1 game · 18h</option><option value="2"${skOv===2?' selected':''}>2 games · 9h</option><option value="3"${(skOv===3||skOv===0)?' selected':''}>3 games · 6h</option></select>$<input class="ie-num" type="number" value="${WK.skinsVal||5}" style="width:90px" onchange="WK.skinsVal=parseFloat(this.value)"/><span style="font-size:11px;color:var(--color-text-secondary)">/skin</span>${WK.skinsFmt==='team'?'<button class="btn-sm" onclick="copyMPToSkins('+r+')">Copy MP Teams</button>':''}`
+      ?`<select class="ie-sel" onchange="setSkinsGamesForRound(${r},parseInt(this.value))"><option value="1"${skOv===1?' selected':''}>1 game · 18h</option><option value="2"${skOv===2?' selected':''}>2 games · 9h</option><option value="3"${(skOv===3||skOv===0)?' selected':''}>3 games · 6h</option></select>$<input class="ie-num" type="number" value="${WK.skinsVal||5}" style="width:90px" onchange="WK.skinsVal=parseFloat(this.value);autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary)">/skin</span>${WK.skinsFmt==='team'?'<button class="btn-sm" onclick="copyMPToSkins('+r+')">Copy MP Teams</button>':''}`
       :'';
     html+='<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap"><span>Skins &mdash; Rd '+( r+1)+'</span>'+skinsHdr+'</div><label class="toggle"><input type="checkbox" '+(WK.skinsOn?'checked':'')+' onchange="WK.skinsOn=this.checked;updateTabDimming();renderTeamsPanel()"><span class="toggle-slider"></span></label></div>';
     if(WK.skinsOn){
@@ -1483,19 +1484,19 @@ function renderTeamsPanel(){
       } else {
         html+=`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Individual — all players compete for each skin</div>`;
       }
-      html+=`<div style="padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.skinsSettle=this.value"><option value="perplayer"${WK.skinsSettle==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.skinsSettle==='perteam'?' selected':''}>Per team</option></select></div>`;
+      html+=`<div style="padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.skinsSettle=this.value;autoSave()"><option value="perplayer"${WK.skinsSettle==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.skinsSettle==='perteam'?' selected':''}>Per team</option></select></div>`;
     } else {
       html+=`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Skins is off</div>`;
     }
     html+='</div>';
   }
   // Match Play
-  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap"><span>Match Play — Rd ${r+1}</span>${WK.mpOn?`<select class="ie-sel" onchange="setMPGamesForRound(${r},parseInt(this.value))"><option value="1"${mpG===1?' selected':''}>1 game · 18h</option><option value="2"${mpG===2?' selected':''}>2 games · 9h</option><option value="3"${mpG===3?' selected':''}>3 games · 6h</option></select>$<input class="ie-num" type="number" value="${WK.gameVal}" style="width:90px" onchange="WK.gameVal=parseFloat(this.value)"/><span style="font-size:11px;color:var(--color-text-secondary)">/game</span>`:''}</div><label class="toggle"><input type="checkbox" ${WK.mpOn?'checked':''} onchange="WK.mpOn=this.checked;updateTabDimming();renderTeamsPanel();renderBanner();renderMPHoleBox()"><span class="toggle-slider"></span></label></div>${WK.mpOn?mpSegs.map((seg,si)=>{const tm=STATE.mpTeams[r][si];if(!tm)return'';const[a0,a1]=tm[0],[b0,b1]=tm[1];return`<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},false)">${pOpts(a0)}</select><select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},false)">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},false)">${pOpts(b0)}</select><select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},false)">${pOpts(b1)}</select></div></div></div>`;}).join('')+`<div class="setup-row" style="border-bottom:none;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.mpSettle=this.value"><option value="perplayer"${(WK.mpSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.mpSettle==='perteam'?' selected':''}>Per team</option></select></div>`:`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Match play is off</div>`}</div>`;
+  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap"><span>Match Play — Rd ${r+1}</span>${WK.mpOn?`<select class="ie-sel" onchange="setMPGamesForRound(${r},parseInt(this.value))"><option value="1"${mpG===1?' selected':''}>1 game · 18h</option><option value="2"${mpG===2?' selected':''}>2 games · 9h</option><option value="3"${mpG===3?' selected':''}>3 games · 6h</option></select>$<input class="ie-num" type="number" value="${WK.gameVal}" style="width:90px" onchange="WK.gameVal=parseFloat(this.value);autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary)">/game</span>`:''}</div><label class="toggle"><input type="checkbox" ${WK.mpOn?'checked':''} onchange="WK.mpOn=this.checked;updateTabDimming();renderTeamsPanel();renderBanner();renderMPHoleBox()"><span class="toggle-slider"></span></label></div>${WK.mpOn?mpSegs.map((seg,si)=>{const tm=STATE.mpTeams[r][si];if(!tm)return'';const[a0,a1]=tm[0],[b0,b1]=tm[1];return`<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},false)">${pOpts(a0)}</select><select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},false)">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},false)">${pOpts(b0)}</select><select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},false)">${pOpts(b1)}</select></div></div></div>`;}).join('')+`<div class="setup-row" style="border-bottom:none;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.mpSettle=this.value;autoSave()"><option value="perplayer"${(WK.mpSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.mpSettle==='perteam'?' selected':''}>Per team</option></select></div>`:`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Match play is off</div>`}</div>`;
   // Vegas — "Copy MP Teams" at top of header, "Game" not "Seg"
   const vegOv=WK.vegasSegsPerRound[r];
-  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap"><span>Vegas — Rd ${r+1}</span>${WK.vegasOn?`<select class="ie-sel" onchange="setVegaSegsForRound(${r},parseInt(this.value))"><option value="1"${vegOv===1?' selected':''}>1 game · 18h</option><option value="2"${vegOv===2?' selected':''}>2 games · 9h</option><option value="3"${(vegOv===3||vegOv===0)?' selected':''}>3 games · 6h</option></select>$<input class="ie-num" type="number" value="${WK.vegasVal.toFixed(2)}" step="0.25" style="width:90px" onchange="WK.vegasVal=parseFloat(this.value)"/><span style="font-size:11px;color:var(--color-text-secondary)">/pt</span><button class="btn-sm" onclick="copyMPToVegas(${r})">Copy MP Teams</button>`:''}</div><label class="toggle"><input type="checkbox" ${WK.vegasOn?'checked':''} onchange="WK.vegasOn=this.checked;updateTabDimming();renderTeamsPanel();renderVegasBoxWrap()"><span class="toggle-slider"></span></label></div>${WK.vegasOn?vegSegs.map((seg,si)=>{const tv=STATE.vegTeams[r][si];if(!tv)return'';const[a0,a1]=tv[0],[b0,b1]=tv[1];return`<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},true)">${pOpts(a0)}</select><select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},true)">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},true)">${pOpts(b0)}</select><select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},true)">${pOpts(b1)}</select></div></div></div>`;}).join('')+`<div class="setup-row" style="border-bottom:none;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.vegasSettle=this.value"><option value="perplayer"${(WK.vegasSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.vegasSettle==='perteam'?' selected':''}>Per team</option></select></div>`:`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Vegas is off</div>`}</div>`;
+  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap"><span>Vegas — Rd ${r+1}</span>${WK.vegasOn?`<select class="ie-sel" onchange="setVegaSegsForRound(${r},parseInt(this.value))"><option value="1"${vegOv===1?' selected':''}>1 game · 18h</option><option value="2"${vegOv===2?' selected':''}>2 games · 9h</option><option value="3"${(vegOv===3||vegOv===0)?' selected':''}>3 games · 6h</option></select>$<input class="ie-num" type="number" value="${WK.vegasVal.toFixed(2)}" step="0.25" style="width:90px" onchange="WK.vegasVal=parseFloat(this.value);autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary)">/pt</span><button class="btn-sm" onclick="copyMPToVegas(${r})">Copy MP Teams</button>`:''}</div><label class="toggle"><input type="checkbox" ${WK.vegasOn?'checked':''} onchange="WK.vegasOn=this.checked;updateTabDimming();renderTeamsPanel();renderVegasBoxWrap()"><span class="toggle-slider"></span></label></div>${WK.vegasOn?vegSegs.map((seg,si)=>{const tv=STATE.vegTeams[r][si];if(!tv)return'';const[a0,a1]=tv[0],[b0,b1]=tv[1];return`<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},true)">${pOpts(a0)}</select><select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},true)">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},true)">${pOpts(b0)}</select><select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},true)">${pOpts(b1)}</select></div></div></div>`;}).join('')+`<div class="setup-row" style="border-bottom:none;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.vegasSettle=this.value;autoSave()"><option value="perplayer"${(WK.vegasSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.vegasSettle==='perteam'?' selected':''}>Per team</option></select></div>`:`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Vegas is off</div>`}</div>`;
     // Two's Club
-  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1"><span>Two's Club</span>${WK.twosOn?`$<input class="ie-num" type="number" value="${WK.twosAmt}" style="width:90px" onchange="WK.twosAmt=parseFloat(this.value);renderTeamsPanel()"/><span style="font-size:11px;color:var(--color-text-secondary)">/player · pot $${(WK.twosAmt*WK.players.length).toFixed(0)}</span>`:''}</div><label class="toggle"><input type="checkbox" ${WK.twosOn?'checked':''} onchange="WK.twosOn=this.checked;renderTeamsPanel()"><span class="toggle-slider"></span></label></div>${!WK.twosOn?`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Two's Club is off</div>`:''}</div>`;
+  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1"><span>Two's Club</span>${WK.twosOn?`$<input class="ie-num" type="number" value="${WK.twosAmt}" style="width:90px" onchange="WK.twosAmt=parseFloat(this.value);renderTeamsPanel();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary)">/player · pot $${(WK.twosAmt*WK.players.length).toFixed(0)}</span>`:''}</div><label class="toggle"><input type="checkbox" ${WK.twosOn?'checked':''} onchange="WK.twosOn=this.checked;renderTeamsPanel()"><span class="toggle-slider"></span></label></div>${!WK.twosOn?`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Two's Club is off</div>`:''}</div>`;
     // Snake
   html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1"><span>🐍 Snake</span></div><label class="toggle"><input type="checkbox" ${WK.snakeOn?'checked':''} onchange="WK.snakeOn=this.checked;autoSave();renderTeamsPanel()"><span class="toggle-slider"></span></label></div>`;
   if(WK.snakeOn){
@@ -1560,7 +1561,7 @@ function renderWeekendPanel(){
 }
 function addRound(){const cn=document.getElementById('newRoundCourse')?.value||Object.keys(CATALOG)[0];WK.rounds.push({courseName:cn,course:CATALOG[cn]});const nP=WK.players.length;STATE.scores.push(Array(18).fill(null).map(()=>Array(nP).fill(null)));const g=WK.mpGamesDefault;WK.mpGamesPerRound.push(g);WK.vegasSegsPerRound.push(WK.vegasSegsDefault);if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=[];WK.skinsGamesPerRound.push(0);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams.push(Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));const vg=vegasSegForRound(WK.rounds.length-1);STATE.vegTeams.push(Array(vg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));if(!STATE.skinsTeams)STATE.skinsTeams=[];const sg=skinsGamesForRound(WK.rounds.length-1);STATE.skinsTeams.push(Array(sg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));renderWeekendPanel();if(STATE.optPanel==='teams')renderTeamsPanel();}
 function removeRound(idx){if(WK.rounds.length<=1){alert('Need at least 1 round.');return;}WK.rounds.splice(idx,1);STATE.scores.splice(idx,1);WK.mpGamesPerRound.splice(idx,1);WK.vegasSegsPerRound.splice(idx,1);WK.skinsGamesPerRound?.splice(idx,1);STATE.mpTeams.splice(idx,1);STATE.vegTeams.splice(idx,1);STATE.skinsTeams?.splice(idx,1);if(STATE.currentRound>=WK.rounds.length)STATE.currentRound=WK.rounds.length-1;if(STATE.teamsRound>=WK.rounds.length)STATE.teamsRound=WK.rounds.length-1;if(STATE.mpViewRound>=WK.rounds.length)STATE.mpViewRound=WK.rounds.length-1;if(STATE.vegasViewRound>=WK.rounds.length)STATE.vegasViewRound=WK.rounds.length-1;if((STATE.skinsViewRound||0)>=WK.rounds.length)STATE.skinsViewRound=WK.rounds.length-1;if(STATE.scRound>=WK.rounds.length)STATE.scRound=WK.rounds.length-1;renderWeekendPanel();if(STATE.optPanel==='teams')renderTeamsPanel();}
-function renderCoursesPanel(){let html=`<div style="margin-bottom:10px"><button class="btn-sm" onclick="toggleAddCourse()">+ Add new course</button></div><div id="addCourseForm" style="display:none" class="section-card"><div class="section-hd">New course</div><div style="padding:10px 12px"><div style="display:flex;gap:8px;margin-bottom:8px"><input class="text-input" id="newCName" placeholder="Course name" style="flex:2"/><input class="ie-num" id="newCSlope" type="number" placeholder="Slope" style="width:70px"/></div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Front 9 pars</div><input class="text-input" id="newCFP" placeholder="4,4,3,5,4,4,3,5,4" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Front 9 HCP indexes</div><input class="text-input" id="newCFSI" placeholder="1,3,5,7,9,11,13,15,17" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Back 9 pars</div><input class="text-input" id="newCBP" placeholder="4,4,3,5,4,4,3,5,4" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Back 9 HCP indexes</div><input class="text-input" id="newCBSI" placeholder="2,4,6,8,10,12,14,16,18" style="margin-bottom:8px"/><button class="btn-primary" onclick="addCourse()" style="padding:8px">Save course</button></div></div>`;Object.keys(CATALOG).forEach(name=>{const c=CATALOG[name],eid='ce_'+name.replace(/\W/g,'_');html+=`<div class="section-card" style="margin-bottom:10px"><div class="section-hd"><span>${name}</span><div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;color:var(--color-text-secondary)">slope</span><input class="ie-num" type="number" value="${c.slope}" style="width:70px" onchange="CATALOG['${name}'].slope=parseInt(this.value);saveCustomCourses()"/><button class="btn-sm" onclick="document.getElementById('${eid}').style.display=document.getElementById('${eid}').style.display==='none'?'block':'none'">Edit holes</button></div></div><div style="padding:4px 12px;font-size:10px;color:var(--color-text-secondary)">Front: ${c.holes.slice(0,9).map(h=>h.par).join(',')} · HCP: ${c.holes.slice(0,9).map(h=>h.si).join(',')}<br>Back: ${c.holes.slice(9).map(h=>h.par).join(',')} · HCP: ${c.holes.slice(9).map(h=>h.si).join(',')}</div><div id="${eid}" style="display:none;border-top:0.5px solid var(--color-border-tertiary);padding:8px 12px"><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Front pars</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(0,9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.par}" onchange="CATALOG['${name}'].holes[${i}].par=parseInt(this.value);saveCustomCourses()" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Front HCP</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(0,9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.si}" onchange="CATALOG['${name}'].holes[${i}].si=parseInt(this.value);saveCustomCourses()" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Back pars</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.par}" onchange="CATALOG['${name}'].holes[${i+9}].par=parseInt(this.value);saveCustomCourses()" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Back HCP</div><div style="display:flex;gap:3px">${c.holes.slice(9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.si}" onchange="CATALOG['${name}'].holes[${i+9}].si=parseInt(this.value);saveCustomCourses()" style="width:100%"/>`).join('')}</div></div></div>`;});document.getElementById('opt-panel-courses').innerHTML=html;}
+function renderCoursesPanel(){let html=`<div style="margin-bottom:10px"><button class="btn-sm" onclick="toggleAddCourse()">+ Add new course</button></div><div id="addCourseForm" style="display:none" class="section-card"><div class="section-hd">New course</div><div style="padding:10px 12px"><div style="display:flex;gap:8px;margin-bottom:8px"><input class="text-input" id="newCName" placeholder="Course name" style="flex:2"/><input class="ie-num" id="newCSlope" type="number" placeholder="Slope" style="width:70px"/></div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Front 9 pars</div><input class="text-input" id="newCFP" placeholder="4,4,3,5,4,4,3,5,4" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Front 9 HCP indexes</div><input class="text-input" id="newCFSI" placeholder="1,3,5,7,9,11,13,15,17" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Back 9 pars</div><input class="text-input" id="newCBP" placeholder="4,4,3,5,4,4,3,5,4" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Back 9 HCP indexes</div><input class="text-input" id="newCBSI" placeholder="2,4,6,8,10,12,14,16,18" style="margin-bottom:8px"/><button class="btn-primary" onclick="addCourse()" style="padding:8px">Save course</button></div></div>`;Object.keys(CATALOG).forEach(name=>{const c=CATALOG[name],eid='ce_'+name.replace(/\W/g,'_');html+=`<div class="section-card" style="margin-bottom:10px"><div class="section-hd"><input class="inline-edit" value="${name}" style="font-size:13px;font-weight:600;flex:1;min-width:0" onblur="renameCourse('${name}',this.value)" onkeydown="if(event.key==='Enter')this.blur()"/><div style="display:flex;align-items:center;gap:6px;flex-shrink:0"><span style="font-size:11px;color:var(--color-text-secondary)">slope</span><input class="ie-num" type="number" value="${c.slope}" style="width:70px" onchange="CATALOG['${name}'].slope=parseInt(this.value);saveCustomCourses()"/><button class="btn-sm" onclick="document.getElementById('${eid}').style.display=document.getElementById('${eid}').style.display==='none'?'block':'none'">Edit holes</button></div></div><div style="padding:4px 12px;font-size:10px;color:var(--color-text-secondary)">Front: ${c.holes.slice(0,9).map(h=>h.par).join(',')} · HCP: ${c.holes.slice(0,9).map(h=>h.si).join(',')}<br>Back: ${c.holes.slice(9).map(h=>h.par).join(',')} · HCP: ${c.holes.slice(9).map(h=>h.si).join(',')}</div><div id="${eid}" style="display:none;border-top:0.5px solid var(--color-border-tertiary);padding:8px 12px"><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Front pars</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(0,9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.par}" onchange="CATALOG['${name}'].holes[${i}].par=parseInt(this.value);saveCustomCourses()" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Front HCP</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(0,9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.si}" onchange="CATALOG['${name}'].holes[${i}].si=parseInt(this.value);saveCustomCourses()" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Back pars</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.par}" onchange="CATALOG['${name}'].holes[${i+9}].par=parseInt(this.value);saveCustomCourses()" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Back HCP</div><div style="display:flex;gap:3px">${c.holes.slice(9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.si}" onchange="CATALOG['${name}'].holes[${i+9}].si=parseInt(this.value);saveCustomCourses()" style="width:100%"/>`).join('')}</div></div></div>`;});document.getElementById('opt-panel-courses').innerHTML=html;}
 function renderInfoPanel(){
   const sections=[
     {id:'info-about',title:'About The Turn',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The Turn is a golf weekend scoring app built for groups of 2–8 players. Note that Team games (Match Play, Vegas, Team Skins) require 4 players. Individual Skins works with any group size. It handles handicap-adjusted scoring, multiple game formats, expense tracking, and money settlement — all from a single URL that works on any phone.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Version <strong>${APP_VERSION}</strong> · Make the turn. Skip the drama.</p>`},
@@ -1727,14 +1728,16 @@ function calcRoundSkins(r){
   getSegments(sG).forEach((seg,si)=>{
     const sk=STATE.skinsTeams?.[r]?.[si];if(!sk)return;
     let carry=1,skinsA=0,skinsB=0;
+    const skinsByPlayer=Array(n).fill(0);
     for(let h=seg.start;h<seg.end;h++){
       const res=skinHoleWinner(h,r);
       if(!res||res.tied){carry++;continue;}
       const val=(WK.skinsVal||5)*carry;
       if(WK.skinsFmt==='individual'){
         const wi=res.winner;
-        net[wi]+=val*(n-1)/n;
-        WK.players.forEach((_,pi)=>{if(pi!==wi)net[pi]-=val/n;});
+        net[wi]+=val*(n-1);
+        WK.players.forEach((_,pi)=>{if(pi!==wi)net[pi]-=val;});
+        skinsByPlayer[wi]+=carry;
       } else {
         const winT=res.winner==='a'?sk[0]:sk[1];
         const loseT=res.winner==='a'?sk[1]:sk[0];
@@ -1745,7 +1748,11 @@ function calcRoundSkins(r){
       }
       carry=1;
     }
-    gameResults.push({seg,si,tA:sk[0],tB:sk[1],skinsA,skinsB});
+    if(WK.skinsFmt==='individual'){
+      gameResults.push({seg,si,individual:true,skinsByPlayer});
+    } else {
+      gameResults.push({seg,si,tA:sk[0],tB:sk[1],skinsA,skinsB});
+    }
   });
   return{gameResults,net};
 }
@@ -1811,14 +1818,14 @@ function renderMoney(){
   const fmt=v=>v>=0?'+$'+v.toFixed(2):'-$'+Math.abs(v).toFixed(2);
   const allDone=totalHolesPlayed()>=totalHoles();
   const potData=calcPotRankings();
-  const mpData=calcAllMP().sort((a,b)=>b.total-a.total);
+  const mpData=WK.mpOn?calcAllMP().sort((a,b)=>b.total-a.total):[];
   const potLabel=(WK.potMethod||'netstroke')==='matchplay'?'Match play points':'Net stroke play';
   let html='';
 
   // ---- Weekend pot ----
   const potSettled=(STATE.settledRounds||[]).includes('pot');
   html+=`<div class="section-card round-card-collapsed" id="rcard-pot" style="margin-bottom:14px;${potSettled?'opacity:0.6;':''}">`;
-  const potSumm=allDone?potData.map(d=>{const p=WK.players[d.pi],isW=d===potData[0],v=isW?(pot-WK.buyIn):-WK.buyIn;return`<span style="color:${v>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(i)} ${fmt(v)}</span>`;}).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">Settles after all holes</span>`;
+  const potSumm=allDone?potData.map(d=>{const p=WK.players[d.pi],isW=d===potData[0],v=isW?(pot-WK.buyIn):-WK.buyIn;return`<span style="color:${v>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(d.pi)} ${fmt(v)}</span>`;}).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">Settles after all holes</span>`;
   html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('pot')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Weekend pot — $${pot}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${potSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${potSettled?`<button class="btn-sm" style="font-size:10px;opacity:0.55" onclick="event.stopPropagation();unsettleItem('pot')">Unsettle</button>`:allDone?`<button class="btn-sm" onclick="event.stopPropagation();settleItem('pot')">Settle</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
   html+=`<div class="round-card-body">`;
   if(!allDone)html+=`<div class="pending-box">Settles after all ${totalHoles()} holes. ${totalHoles()-totalHolesPlayed()} remaining.</div>`;
@@ -1930,29 +1937,55 @@ function renderMoney(){
       });
     }
     if(WK.skinsOn&&skR&&skR.gameResults.length){
-      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Skins — $${WK.skinsVal}/skin · ${(WK.skinsSettle||'perplayer')==='perplayer'?'per player':'per team'}</div>`;
-      skR.gameResults.forEach(({seg,tA,tB,skinsA,skinsB})=>{
-        const netDiff=skinsA-skinsB;
-        const netAmt=Math.abs(netDiff)*(WK.skinsVal||5);
-        const skSv=settleVal(netAmt,tA.length,WK.skinsSettle||'perplayer');
-        const aWins=netDiff>0, bWins=netDiff<0, tied=netDiff===0;
-        const nameA=tA.map(i=>displayName(i)).join(' & ');
-        const nameB=tB.map(i=>displayName(i)).join(' & ');
-        const dollarStr=`+$${skSv.toFixed(2)}`;
-        const gcol='display:grid;grid-template-columns:1fr 52px 64px;align-items:center;gap:4px;padding:2px 0';
-        html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
-          <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">${seg.label}</div>
-          <div style="${gcol}">
-            <span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}</span>
-            <span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${skinsA} skin${skinsA!==1?'s':''}</span>
-            <span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:#1D9E75':tied?'color:var(--color-text-secondary)':'visibility:hidden'}">${aWins?dollarStr:tied?'Tied':''}</span>
-          </div>
-          <div style="${gcol}">
-            <span style="font-size:13px;${bWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameB}</span>
-            <span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${skinsB} skin${skinsB!==1?'s':''}</span>
-            <span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${bWins?dollarStr:''}</span>
-          </div>
-        </div>`;
+      const isIndivMoney=WK.skinsFmt==='individual';
+      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Skins — $${WK.skinsVal}/skin · ${isIndivMoney?'Individual':(WK.skinsSettle||'perplayer')==='perplayer'?'per player':'per team'}</div>`;
+      skR.gameResults.forEach((gr)=>{
+        if(gr.individual){
+          // Individual skins: one row per player
+          const {seg,skinsByPlayer}=gr;
+          const gcol='display:grid;grid-template-columns:1fr 52px 64px;align-items:center;gap:4px;padding:2px 0';
+          const maxSkins=Math.max(...skinsByPlayer);
+          const totalSkins=skinsByPlayer.reduce((a,v)=>a+v,0);
+          html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
+            <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">${seg.label}</div>`;
+          WK.players.forEach((p,pi)=>{
+            const sk=skinsByPlayer[pi]||0;
+            const otherSkins=totalSkins-sk;
+            const netP=(sk-otherSkins)*(WK.skinsVal||5);
+            const isWinner=sk===maxSkins&&sk>0;
+            const netStr=isWinner?`+$${netP.toFixed(2)}`:'';
+            html+=`<div style="${gcol}">
+              <span style="font-size:13px;${isWinner?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${displayName(pi)}</span>
+              <span style="font-size:12px;text-align:right;${isWinner?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${sk} skin${sk!==1?'s':''}</span>
+              <span style="font-size:12px;text-align:right;${isWinner?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${netStr}</span>
+            </div>`;
+          });
+          html+=`</div>`;
+        } else {
+          // Team skins
+          const {seg,tA,tB,skinsA,skinsB}=gr;
+          const netDiff=skinsA-skinsB;
+          const netAmt=Math.abs(netDiff)*(WK.skinsVal||5);
+          const skSv=settleVal(netAmt,tA.length,WK.skinsSettle||'perplayer');
+          const aWins=netDiff>0, bWins=netDiff<0, tied=netDiff===0;
+          const nameA=tA.map(i=>displayName(i)).join(' & ');
+          const nameB=tB.map(i=>displayName(i)).join(' & ');
+          const dollarStr=`+$${skSv.toFixed(2)}`;
+          const gcol='display:grid;grid-template-columns:1fr 52px 64px;align-items:center;gap:4px;padding:2px 0';
+          html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
+            <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">${seg.label}</div>
+            <div style="${gcol}">
+              <span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}</span>
+              <span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${skinsA} skin${skinsA!==1?'s':''}</span>
+              <span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:#1D9E75':tied?'color:var(--color-text-secondary)':'visibility:hidden'}">${aWins?dollarStr:tied?'Tied':''}</span>
+            </div>
+            <div style="${gcol}">
+              <span style="font-size:13px;${bWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameB}</span>
+              <span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${skinsB} skin${skinsB!==1?'s':''}</span>
+              <span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${bWins?dollarStr:''}</span>
+            </div>
+          </div>`;
+        }
       });
     }
     // Snake — inside round card
@@ -2265,7 +2298,7 @@ function deleteExp(id){if(isReadOnly||(STATE.settledRounds||[]).includes('expens
 // ===== SETTLE UP =====
 function calcGolfNetPerPlayer(){
   const n=WK.players.length,pot=WK.buyIn*n;
-  const mpData=calcAllMP().sort((a,b)=>b.total-a.total);
+  const mpData=WK.mpOn?calcAllMP().sort((a,b)=>b.total-a.total):[];
   // MP net
   const mpNet=Array(n).fill(0);
   if(WK.mpOn){WK.rounds.forEach((_,r)=>{getSegments(mpGamesForRound(r)).forEach((seg,si)=>{const tm=STATE.mpTeams[r][si];if(!tm)return;let pA=0,pB=0;for(let h=seg.start;h<seg.end;h++){const res=calcMP(h,r);if(!res)continue;if(res.aWins)pA++;else if(res.halved){pA+=0.5;pB+=0.5;}else pB++;}const cgMpSv=settleVal(WK.gameVal,tm[0].length,WK.mpSettle||'perplayer');if(pA>pB){tm[0].forEach(pi=>mpNet[pi]+=cgMpSv);tm[1].forEach(pi=>mpNet[pi]-=cgMpSv);}else if(pB>pA){tm[1].forEach(pi=>mpNet[pi]+=cgMpSv);tm[0].forEach(pi=>mpNet[pi]-=cgMpSv);}});});}
@@ -2287,8 +2320,8 @@ function calcGolfNetPerPlayer(){
           if(WK.skinsFmt==='individual'){
             // individual: winner gets val from each other player equally
             const wi=sres.winner;
-            skNet[wi]+=val*(n-1)/n;
-            WK.players.forEach((_,pi)=>{if(pi!==wi)skNet[pi]-=val/n;});
+            skNet[wi]+=val*(n-1);
+            WK.players.forEach((_,pi)=>{if(pi!==wi)skNet[pi]-=val;});
           } else {
             // team: winning team each get val/teamSize from each losing team member
             const winT=sres.winner==='a'?sk[0]:sk[1];
@@ -2330,7 +2363,7 @@ function renderSettle(){
   const n=WK.players.length,pot=WK.buyIn*n;
   const fmt=v=>v>=0?'+$'+v.toFixed(2):'-$'+Math.abs(v).toFixed(2);
   const allDone=totalHolesPlayed()>=totalHoles();
-  const mpData=calcAllMP().sort((a,b)=>b.total-a.total);
+  const mpData=WK.mpOn?calcAllMP().sort((a,b)=>b.total-a.total):[];
   const potRankData=calcPotRankings();
 
   // Build audit per player
@@ -2373,8 +2406,8 @@ function renderSettle(){
             loseT.forEach(pi=>{auditGolf[pi].skins.push({label:`R${r+1} ${seg.label}`,val:-audSkSv,carry});});
           } else {
             const wi=res.winner;
-            auditGolf[wi].skins.push({label:`R${r+1} ${seg.label}`,val:val*(n-1)/n,carry});
-            WK.players.forEach((_,pi)=>{if(pi!==wi)auditGolf[pi].skins.push({label:`R${r+1} ${seg.label}`,val:-val/n,carry});});
+            auditGolf[wi].skins.push({label:`R${r+1} ${seg.label}`,val:val*(n-1),carry});
+            WK.players.forEach((_,pi)=>{if(pi!==wi)auditGolf[pi].skins.push({label:`R${r+1} ${seg.label}`,val:-val,carry});});
           }
           carry=1;
         }
