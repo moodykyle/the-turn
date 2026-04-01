@@ -114,7 +114,7 @@ body{background:#F5F4F1;color:#111;font-family:-apple-system,BlinkMacSystemFont,
 .seg-btn.dimmed{opacity:0.4;}
 #tab-board:not(.active){border-top:2px solid #1D9E75;}
 .rd-sel{display:flex;gap:0;padding:0.75rem 1rem 0;}
-.rd-btn{flex:1;padding:5px 2px;font-size:11px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;text-align:center;line-height:1.3;}
+.rd-btn{flex:1;padding:5px 2px;font-size:11px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;text-align:center;line-height:1.3;position:relative;}
 .rd-btn:first-child{border-radius:var(--border-radius-md) 0 0 var(--border-radius-md);}
 .rd-btn:last-child{border-radius:0 var(--border-radius-md) var(--border-radius-md) 0;}
 .rd-btn.active{background:#1D9E75!important;color:#ffffff!important;border-color:#1D9E75!important;}
@@ -330,8 +330,6 @@ body.force-light .sc-grid .total-col{background:#F0EFEB;}
 .trip-status.inprogress{background:#FEF3C7;color:#92400E;}
 .save-indicator{position:fixed;bottom:1rem;right:1rem;background:var(--color-text-primary);color:var(--color-background-primary);font-size:11px;padding:6px 12px;border-radius:var(--border-radius-md);opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:100;}
 .save-indicator.show{opacity:1;}
-.readonly-banner{background:#FEF3C7;border:0.5px solid #F59E0B;border-radius:var(--border-radius-md);padding:8px 14px;margin:0.75rem 1rem 0;display:flex;align-items:center;justify-content:space-between;gap:8px;}
-.readonly-banner span{font-size:12px;color:#92400E;}
 /* Money sub-tabs */
 .money-sub-nav{display:flex;gap:0;margin-bottom:1rem;}
 .money-sub-btn{flex:1;padding:7px 4px;font-size:11px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;text-align:center;}
@@ -529,12 +527,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
             <div><div class="event-name" id="mainTitle"></div><div class="header-sub" id="mainSub"></div></div>
           </div>
         </div>
-        <div id="readonlyBadge" style="display:none;margin-left:auto;font-size:10px;background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:var(--border-radius-md);flex-shrink:0;z-index:1">View only</div>
       </div>
-    </div>
-    <div id="readonlyResumeBanner" style="display:none" class="readonly-banner">
-      <span>👀 Viewing a previous trip</span>
-      <button class="btn-sm" onclick="resumeTrip()" style="flex-shrink:0">Resume editing</button>
     </div>
     <div class="seg-nav">
       <button class="seg-btn" id="tab-entry" onclick="setView('entry')">Entry</button>
@@ -1006,7 +999,7 @@ function viewTrip(id){const trips=loadTrips();const trip=trips.find(t=>t.id===id
   if(!STATE.snakePot)STATE.snakePot=WK.rounds.map(()=>0);
   if(!WK.snakeOn)WK.snakeOn=false;
   isReadOnly=true;viewingTripId=id;launchMainApp();}
-function resumeTrip(){if(!viewingTripId)return;isReadOnly=false;viewingTripId=null;document.getElementById('readonlyBadge').style.display='none';document.getElementById('readonlyResumeBanner').style.display='none';document.getElementById('saveBtn').style.display='block';updateHoleUI();setMoneyTab(STATE.moneyTab||'golf');renderOptPanel(STATE.optPanel||'weekend');}
+function resumeTrip(){if(!viewingTripId)return;isReadOnly=false;viewingTripId=null;document.getElementById('saveBtn').style.display='block';updateHoleUI();setMoneyTab(STATE.moneyTab||'golf');renderOptPanel(STATE.optPanel||'weekend');}
 function nameToIni(n){
   const parts=(n||'').trim().split(/\s+/).filter(p=>p&&p!=='.');
   if(parts.length>=2)return(parts[0][0]+(parts[parts.length-1][0]||'')).toUpperCase();
@@ -1067,7 +1060,7 @@ function onPlayerNameInput(slot){
 }
 function buildCourseFields(){const nR=parseInt(document.getElementById('numRounds').value);const opts=`<option value="">— Select a course —</option>`+Object.keys(CATALOG).map(n=>`<option value="${n}">${n}</option>`).join('');document.getElementById('courseFields').innerHTML=Array.from({length:nR},(_,i)=>`<div class="course-sel-row"><div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);width:52px;flex-shrink:0">Round ${i+1}</div><select class="course-select" id="course${i}">${opts}</select></div>`).join('');}
 function toggleWizCourse(){const f=document.getElementById('wizCourseForm');f.style.display=f.style.display==='none'?'block':'none';}
-function saveWizCourse(){const name=document.getElementById('wizCName').value.trim(),slope=parseInt(document.getElementById('wizCSlope').value)||113;const parse=id=>(document.getElementById(id).value||'').split(',').map(x=>parseInt(x.trim())||4);const fp=parse('wizCFP'),fsi=parse('wizCFSI'),bp=parse('wizCBP'),bsi=parse('wizCBSI');if(!name){alert('Enter a course name.');return;}const holes=[];for(let i=0;i<9;i++)holes.push({par:fp[i]||4,si:fsi[i]||i*2+1});for(let i=0;i<9;i++)holes.push({par:bp[i]||4,si:bsi[i]||i*2+2});CATALOG[name]={slope,holes};saveCustomCourses();buildCourseFields();document.getElementById('wizCourseForm').style.display='none';alert(name+' added!');}
+function saveWizCourse(){const name=document.getElementById('wizCName').value.trim(),slope=parseInt(document.getElementById('wizCSlope').value)||113;const parse=id=>(document.getElementById(id).value||'').split(',').map(x=>parseInt(x.trim())||4);const fp=parse('wizCFP'),fsi=parse('wizCFSI'),bp=parse('wizCBP'),bsi=parse('wizCBSI');if(!name){alert('Enter a course name.');return;}const allSI=[...fsi,...bsi];const siIssues=validateSI(allSI);if(siIssues.length){if(!confirm('SI validation issues:\n\n'+siIssues.join('\n')+'\n\nSave anyway?'))return;}const holes=[];for(let i=0;i<9;i++)holes.push({par:fp[i]||4,si:fsi[i]||i*2+1});for(let i=0;i<9;i++)holes.push({par:bp[i]||4,si:bsi[i]||i*2+2});CATALOG[name]={slope,holes};saveCustomCourses();buildCourseFields();document.getElementById('wizCourseForm').style.display='none';alert(name+' added!');}
 document.getElementById('step1Next').addEventListener('click',()=>{buildPlayerFields();showStep(2);});
 document.getElementById('step2Back').addEventListener('click',()=>showStep(1));
 document.getElementById('step2Next').addEventListener('click',()=>{buildCourseFields();showStep(3);});
@@ -1141,7 +1134,7 @@ function initState(netOffLow){const nR=WK.rounds.length,nP=WK.players.length;con
     snakeHolder:Array(nR).fill(null).map(()=>Array(18).fill(null)),
     snakePot:Array(nR).fill(0)
   };}
-function launchMainApp(){document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;document.getElementById('mainSub').textContent=(WK.date?WK.date+' · ':'')+WK.rounds[0].courseName;document.getElementById('readonlyBadge').style.display=isReadOnly?'block':'none';document.getElementById('readonlyResumeBanner').style.display=isReadOnly?'flex':'none';document.getElementById('saveBtn').style.display=isReadOnly?'none':'block';updateTabDimming();setView('entry');}
+function launchMainApp(){document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;document.getElementById('mainSub').textContent=(WK.date?WK.date+' · ':'')+WK.rounds[0].courseName;document.getElementById('saveBtn').style.display=isReadOnly?'none':'block';updateTabDimming();setView('entry');}
 const ALL_VIEWS=['entry','card','matchplay','vegas','skins','board','money','setup'];
 function setView(v){ALL_VIEWS.forEach(n=>{const el=document.getElementById('view-'+n),btn=document.getElementById('tab-'+n);if(el)el.style.display=n===v?'block':'none';if(btn){btn.classList.remove('active');if(n===v)btn.classList.add('active');}});if(v==='entry'){renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();}if(v==='card'){renderRdSel('cardRdSel',STATE.scRound,'switchCardRound');renderSCGrid();setTimeout(fitScorecardToScreen,50);}if(v==='matchplay'){renderRdSel('mpRdSel',STATE.mpViewRound,'switchMPRound');renderMPRound();}if(v==='vegas'){renderRdSel('vegasRdSel',STATE.vegasViewRound,'switchVegasRound');renderVegasRound();}if(v==='skins'){renderRdSel('skinsRdSel',STATE.skinsViewRound||0,'switchSkinsRound');renderSkinsRound();}if(v==='board')renderBoard();if(v==='money')setMoneyTab('golf');if(v==='setup')renderOptions();}
 function updateTabDimming(){
@@ -1175,7 +1168,7 @@ function renderOptPanel(p){
   if(p==='teams')renderTeamsPanel();if(p==='players')renderPlayersPanel();if(p==='weekend')renderWeekendPanel();if(p==='courses')renderCoursesPanel();if(p==='info')renderInfoPanel();
 }
 function rdLabel(i){const cn=WK.rounds[i].courseName,ct=WK.rounds.filter(r=>r.courseName===cn).length;if(ct>1){let o=0;for(let j=0;j<=i;j++)if(WK.rounds[j].courseName===cn)o++;return cn.split(' ')[0]+'('+o+')';}return cn.split(' ')[0];}
-function renderRdSel(cid,cur,fn){const el=document.getElementById(cid);if(!el)return;el.innerHTML=WK.rounds.map((rd,i)=>{const done=STATE.scores[i].every(h=>h.every(s=>s!==null));const lkd=(STATE.lockedRounds||[]).includes(i);return`<div class="rd-btn${i===cur?' active':''}${done?' done':''}" onclick="${fn}(${i})">Rd ${i+1}${lkd?' 🔒':''}<br><span style="font-size:9px;opacity:0.75">${rdLabel(i)}</span></div>`;}).join('');}
+function renderRdSel(cid,cur,fn){const el=document.getElementById(cid);if(!el)return;const isEntry=cid==='entryRdSel';el.innerHTML=WK.rounds.map((rd,i)=>{const done=STATE.scores[i].every(h=>h.every(s=>s!==null));const lkd=(STATE.lockedRounds||[]).includes(i);const detailsLink=isEntry&&i===cur?`<div onclick="event.stopPropagation();showRoundDetails()" style="position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,0.5);color:rgba(255,255,255,0.8);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1">i</div>`:'';return`<div class="rd-btn${i===cur?' active':''}${done?' done':''}" onclick="${fn}(${i})">Rd ${i+1}${lkd?' 🔒':''}<br><span style="font-size:9px;opacity:0.75">${rdLabel(i)}</span>${detailsLink}</div>`;}).join('');}
 function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=0;document.getElementById('mainSub').textContent=(WK.date?WK.date+' · ':'')+WK.rounds[r].courseName;renderRdSel('entryRdSel',r,'switchEntryRound');updateHoleUI();}
 function switchCardRound(r){STATE.scRound=r;renderRdSel('cardRdSel',r,'switchCardRound');renderSCGrid();}
 function switchMPRound(r){STATE.mpViewRound=r;renderRdSel('mpRdSel',r,'switchMPRound');renderMPRound();}
@@ -1462,7 +1455,54 @@ function calcRoundRankings(){const entries=[];WK.rounds.forEach((rd,r)=>{const a
 function toggleRoundRankings(){STATE.roundRankOpen=!STATE.roundRankOpen;renderBoard();}
 function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
   if(_potMethod==='matchplay'&&WK.mpOn){const mpData=calcAllMP().sort((a,b)=>b.total-a.total);html+=`<div class="board-section-label">Match play points — pot winner</div><div class="section-card" style="margin-bottom:1.25rem">`;mpData.forEach((d,rank)=>{const p=WK.players[d.pi];const pills=d.byRound.map((pts,r)=>`<span class="game-pill${pts>0?' win':''}">R${r+1}: ${pts}</span>`).join('');html+=`<div class="mp-board-row"><div class="mp-rank">${rank+1}</div><div class="avatar" style="width:32px;height:32px;font-size:12px;background:${p.bg};color:${p.fg}">${p.ini}</div><div style="flex:1"><div class="mp-board-name">${p.name}</div><div class="mp-game-pills">${pills}</div></div><div class="mp-board-pts">${d.total.toFixed(1)}</div></div>`;});html+=`</div>`;}
-  html+=`<div class="board-section-label">${_potMethod==='matchplay'?'Stroke play — net':'Net stroke play — pot winner'}</div><div class="section-card" style="margin-bottom:1.25rem">`;WK.players.map((p,i)=>{let net=0,played=0,parTot=0;WK.rounds.forEach((_,r)=>{for(let h=0;h<18;h++){const s=getNet(i,h,r);if(s!==null){net+=s;played++;parTot+=WK.rounds[r].course.holes[h]?.par||4;}}});return{...p,i,net,played,parTot,rel:net-parTot};}).sort((a,b)=>a.rel-b.rel).forEach((p,rank)=>{const rs=p.played===0?'—':p.rel===0?'E':p.rel>0?'+'+p.rel:''+p.rel;html+=`<div class="lb-row"><div class="lb-rank">${rank+1}</div><div class="avatar" style="width:32px;height:32px;font-size:12px;background:${p.bg};color:${p.fg}">${p.ini}</div><div style="flex:1"><div class="lb-name">${displayName(p.i)}</div><div class="lb-sub">${p.played} holes played</div></div><div class="lb-score">${rs}</div></div>`;});html+=`</div>`;const entries=calcRoundRankings();const isOpen=STATE.roundRankOpen;html+=`<div class="collapsible-hd${isOpen?' open':''}" onclick="toggleRoundRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Best individual rounds</span><span style="font-size:12px;color:var(--color-text-secondary)">${isOpen?'▲':'▼'}</span></div>`;if(isOpen){if(entries.length===0){html+=`<div class="collapsible-body"><div style="padding:16px 12px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Complete at least one full round to see rankings</div></div>`;}else{html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;entries.forEach(e=>{const p=WK.players[e.pi];const ci=WK.rounds.findIndex(r=>r.courseName===e.courseName);const cbg=COURSE_COLORS[ci%COURSE_COLORS.length];const cfg=COURSE_FG[ci%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${p.name}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${e.courseName.split(' ')[0]}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}}document.getElementById('boardContent').innerHTML=html;}
+  html+=`<div class="board-section-label">${_potMethod==='matchplay'?'Stroke play — net':'Net stroke play — pot winner'}</div><div class="section-card" style="margin-bottom:1.25rem">`;
+  const lbPlayers=WK.players.map((p,i)=>{
+    let net=0,played=0,parTot=0;
+    const rounds=WK.rounds.map((_,r)=>{
+      let rNet=0,rGross=0,rPar=0,rPlayed=0;
+      for(let h=0;h<18;h++){
+        const g=STATE.scores[r][h][i];
+        if(g!==null){const s=getNet(i,h,r);rNet+=s;rGross+=g;rPar+=WK.rounds[r].course.holes[h]?.par||4;rPlayed++;}
+      }
+      return{r,rNet,rGross,rPar,rPlayed,complete:rPlayed===18};
+    });
+    rounds.forEach(rd=>{if(rd.complete){net+=rd.rNet;played+=18;parTot+=rd.rPar;}else{for(let h=0;h<18;h++){const s=getNet(i,h,rd.r);if(s!==null){net+=s;played++;parTot+=WK.rounds[rd.r].course.holes[h]?.par||4;}}}});
+    return{...p,i,net,played,parTot,rel:net-parTot,rounds};
+  }).sort((a,b)=>a.rel-b.rel);
+  if(!STATE.lbExpanded)STATE.lbExpanded={};
+  lbPlayers.forEach((p,rank)=>{
+    const rs=p.played===0?'—':p.rel===0?'E':p.rel>0?'+'+p.rel:''+p.rel;
+    const isExp=!!STATE.lbExpanded[p.i];
+    const chevron=isExp?'▲':'▼';
+    html+=`<div>`;
+    html+=`<div class="lb-row" style="cursor:pointer" onclick="toggleLbPlayer(${p.i})"><div class="lb-rank">${rank+1}</div><div class="avatar" style="width:32px;height:32px;font-size:12px;background:${p.bg};color:${p.fg}">${p.ini}</div><div style="flex:1"><div class="lb-name">${displayName(p.i)}</div><div class="lb-sub">${p.played} holes played</div></div><div style="display:flex;align-items:center;gap:8px"><div class="lb-score">${rs}</div><span style="font-size:11px;color:var(--color-text-tertiary)">${chevron}</span></div></div>`;
+    if(isExp){
+      html+=`<div style="background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary)">`;
+      p.rounds.forEach(rd=>{
+        if(!rd.complete&&rd.rPlayed===0)return;
+        const cn=WK.rounds[rd.r].courseName;
+        const relNet=rd.rNet-rd.rPar;
+        const relGross=rd.rGross-rd.rPar;
+        const netStr=rd.complete?(relNet===0?'E':relNet>0?'+'+relNet:''+relNet):'—';
+        const relGrossStr=rd.complete?(relGross===0?'E':relGross>0?'+'+relGross:''+relGross):'—';
+        const netCol=relNet<0?'#1D9E75':relNet>0?'#D85A30':'var(--color-text-primary)';
+        // Count strokes received in this round
+        let rdStrokes=0;
+        if(rd.complete){for(let hi=0;hi<18;hi++)rdStrokes+=strokes(p.i,hi,rd.r);}
+        const strokesStr=rd.complete?(rdStrokes>0?rdStrokes+' stroke'+(rdStrokes!==1?'s':''):'no strokes'):'';
+        html+=`<div style="display:grid;grid-template-columns:auto 1fr auto auto auto;align-items:center;gap:6px;padding:6px 12px 6px 56px;border-bottom:0.5px solid var(--color-border-tertiary)">
+          <span style="font-size:11px;color:var(--color-text-tertiary);white-space:nowrap">Rd ${rd.r+1}</span>
+          <span style="font-size:11px;color:var(--color-text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cn}</span>
+          <span style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap">${rd.complete?rd.rGross+' ('+relGrossStr+')':'—'}</span>
+          <span style="font-size:11px;color:var(--color-text-tertiary);white-space:nowrap">${strokesStr}</span>
+          <span style="font-size:13px;font-weight:600;color:${netCol};white-space:nowrap;min-width:36px;text-align:right">${rd.complete?netStr:'—'}</span>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+    html+=`</div>`;
+  });
+  html+=`</div>`;const entries=calcRoundRankings();const isOpen=STATE.roundRankOpen;html+=`<div class="collapsible-hd${isOpen?' open':''}" onclick="toggleRoundRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Best individual rounds</span><span style="font-size:12px;color:var(--color-text-secondary)">${isOpen?'▲':'▼'}</span></div>`;if(isOpen){if(entries.length===0){html+=`<div class="collapsible-body"><div style="padding:16px 12px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Complete at least one full round to see rankings</div></div>`;}else{html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;entries.forEach(e=>{const p=WK.players[e.pi];const ci=WK.rounds.findIndex(r=>r.courseName===e.courseName);const cbg=COURSE_COLORS[ci%COURSE_COLORS.length];const cfg=COURSE_FG[ci%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const badgeLabel=(()=>{const sameNameRounds=WK.rounds.filter(r=>r.courseName===e.courseName);if(sameNameRounds.length<=1)return e.courseName.split(' ')[0];const idx=WK.rounds.findIndex((r,ri)=>r.courseName===e.courseName&&WK.rounds.slice(0,ri+1).filter(x=>x.courseName===e.courseName).length===WK.rounds.slice(0,e.r+1).filter(x=>x.courseName===e.courseName).length);const occ=WK.rounds.slice(0,e.r+1).filter(r=>r.courseName===e.courseName).length;return e.courseName.split(' ')[0]+'('+occ+')';})();html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${p.name}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}}document.getElementById('boardContent').innerHTML=html;}
 function pOpts(sel){return WK.players.map((p,i)=>`<option value="${i}"${i===sel?' selected':''}>${displayName(i)}</option>`).join('');}
 function setDrop(gameIdx,slot,pIdx,roundIdx,isVegas){if(isReadOnly)return;const arr=isVegas?STATE.vegTeams:STATE.mpTeams;const teams=arr[roundIdx][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;renderTeamsPanel();renderBanner();renderScorecard();}
 function copyMPToVegas(r){const mpG=mpGamesForRound(r),vG=vegasSegForRound(r);STATE.vegTeams[r]=Array(vG).fill(null).map((_,si)=>{const mpSi=Math.min(si,mpG-1);return JSON.parse(JSON.stringify(STATE.mpTeams[r][mpSi]));});renderTeamsPanel();}
@@ -1643,7 +1683,18 @@ function showHowToPlay(){
   document.body.appendChild(modal);
 }
 function toggleAddCourse(){const f=document.getElementById('addCourseForm');if(f)f.style.display=f.style.display==='none'?'block':'none';}
-function addCourse(){const name=document.getElementById('newCName').value.trim(),slope=parseInt(document.getElementById('newCSlope').value)||113;const parse=id=>(document.getElementById(id).value||'').split(',').map(x=>parseInt(x.trim())||4);const fp=parse('newCFP'),fsi=parse('newCFSI'),bp=parse('newCBP'),bsi=parse('newCBSI');if(!name){alert('Enter a course name.');return;}const holes=[];for(let i=0;i<9;i++)holes.push({par:fp[i]||4,si:fsi[i]||i*2+1});for(let i=0;i<9;i++)holes.push({par:bp[i]||4,si:bsi[i]||i*2+2});CATALOG[name]={slope,holes};saveCustomCourses();renderCoursesPanel();}
+
+function validateSI(allSI){
+  const issues=[];
+  const invalid=allSI.filter(v=>v<1||v>18);
+  if(invalid.length)issues.push('Invalid SI values (must be 1-18): '+invalid.join(', '));
+  const dupes=allSI.filter((v,i,a)=>a.indexOf(v)!==i);
+  if(dupes.length)issues.push('Duplicate SI values: '+[...new Set(dupes)].join(', '));
+  if(allSI.length!==18)issues.push('Expected 18 SI values, got '+allSI.length);
+  return issues;
+}
+
+function addCourse(){const name=document.getElementById('newCName').value.trim(),slope=parseInt(document.getElementById('newCSlope').value)||113;const parse=id=>(document.getElementById(id).value||'').split(',').map(x=>parseInt(x.trim())||4);const fp=parse('newCFP'),fsi=parse('newCFSI'),bp=parse('newCBP'),bsi=parse('newCBSI');if(!name){alert('Enter a course name.');return;}const allSI=[...fsi,...bsi];const siIssues=validateSI(allSI);if(siIssues.length){if(!confirm('SI validation issues:\n\n'+siIssues.join('\n')+'\n\nSave anyway?'))return;}const holes=[];for(let i=0;i<9;i++)holes.push({par:fp[i]||4,si:fsi[i]||i*2+1});for(let i=0;i<9;i++)holes.push({par:bp[i]||4,si:bsi[i]||i*2+2});CATALOG[name]={slope,holes};saveCustomCourses();renderCoursesPanel();}
 function renderMPRound(){
   if(!WK.mpOn){document.getElementById('mpRoundContent').innerHTML=`<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Match play is off this weekend</div>`;return;}
   const r=STATE.mpViewRound,mpG=mpGamesForRound(r),segs=getSegments(mpG);
@@ -2588,6 +2639,86 @@ syncOnLoad().then(()=>{
 });
 updateThemeUI();
 showHome();
+
+function showRoundDetails(){
+  const r=STATE.currentRound;
+  const rd=WK.rounds[r];
+  const course=rd.course;
+  const parTotal=course.holes.reduce((a,h)=>a+h.par,0);
+  const hdcpPct=Math.round(WK.hdcpPct*100);
+
+  // Build player rows
+  const playerRows=WK.players.map((p,pi)=>{
+    const idx=p.idx;
+    const wkndIdx=+(idx*WK.hdcpPct).toFixed(1);
+    const ch=courseHdcp(pi,r);
+    const eff=effHdcp(pi,r);
+    // Find stroke holes (1-indexed for display) — uses effHdcp (net-off-low adjusted)
+    const strokeHoles=[];
+    for(let hi=0;hi<18;hi++){if(strokes(pi,hi,r)>0)strokeHoles.push(hi+1);}
+    return{name:displayName(pi),bg:p.bg,fg:p.fg,ini:p.ini,idx,wkndIdx,ch,eff,strokeHoles};
+  });
+  const netOffLowActive=STATE.netOffLow;
+  const lowMan=netOffLowActive?WK.players.reduce((a,_,pi)=>courseHdcp(pi,r)<courseHdcp(a,r)?pi:a,0):null;
+
+  const modal=document.createElement('div');
+  modal.id='roundDetailsModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1000;display:flex;align-items:flex-end;justify-content:center;';
+  modal.innerHTML=`
+    <div style="background:var(--color-background-primary);border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 16px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
+        <div>
+          <div style="font-size:16px;font-weight:600;color:var(--color-text-primary)">${rd.courseName}</div>
+          <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">Slope ${course.slope} &nbsp;·&nbsp; Par ${parTotal}</div>
+        </div>
+        <button onclick="document.getElementById('roundDetailsModal').remove()" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+      </div>
+
+      <div style="padding:12px 16px 8px">
+        <div style="font-size:10px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Handicaps &nbsp;·&nbsp; ${hdcpPct}% adjustment</div>
+        ${netOffLowActive?`<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px;padding:6px 10px;background:var(--color-background-secondary);border-radius:6px">Net off low man active — strokes adjusted relative to ${displayName(lowMan)}</div>`:''}
+      <div style="border:0.5px solid var(--color-border-tertiary);border-radius:8px;overflow:hidden">
+          <div style="display:grid;grid-template-columns:1fr 52px 52px ${netOffLowActive?'48px ':''} 48px;background:var(--color-background-secondary);padding:6px 10px;font-size:10px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.05em">
+            <span>Player</span><span style="text-align:right">USGA</span><span style="text-align:right">Wknd</span>${netOffLowActive?'<span style="text-align:right">CH</span>':''}<span style="text-align:right">${netOffLowActive?'Net':'Course'}</span>
+          </div>
+          ${playerRows.map((p,i)=>`
+          <div style="display:grid;grid-template-columns:1fr 52px 52px ${netOffLowActive?'48px ':''} 48px;align-items:center;padding:8px 10px;border-top:0.5px solid var(--color-border-tertiary)">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:26px;height:26px;border-radius:50%;background:${p.bg};color:${p.fg};font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:600;flex-shrink:0">${p.ini}</div>
+              <span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">${p.name}</span>
+            </div>
+            <span style="font-size:13px;text-align:right;color:var(--color-text-secondary)">${p.idx}</span>
+            <span style="font-size:13px;text-align:right;color:var(--color-text-secondary)">${p.wkndIdx}</span>
+            ${netOffLowActive?`<span style="font-size:13px;text-align:right;color:var(--color-text-secondary)">${p.ch}</span>`:''}
+            <span style="font-size:14px;font-weight:600;text-align:right;color:var(--color-text-primary)">${p.eff}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      <div style="padding:8px 16px 16px">
+        <div style="font-size:10px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Stroke Holes</div>
+        ${playerRows.map(p=>`
+        <div style="margin-bottom:10px">
+          <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap">
+            <span style="font-size:12px;font-weight:600;color:var(--color-text-primary);flex-shrink:0">${p.name} (${p.eff}${netOffLowActive&&p.eff!==p.ch?' net, '+p.ch+' ch':''})</span>
+            <span style="font-size:12px;color:var(--color-text-secondary)">${p.strokeHoles.length>0?'H'+p.strokeHoles.join(', H'):'No strokes'}</span>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>
+  `;
+  // Close on backdrop tap
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+}
+
+
+function toggleLbPlayer(pi){
+  if(!STATE.lbExpanded)STATE.lbExpanded={};
+  STATE.lbExpanded[pi]=!STATE.lbExpanded[pi];
+  renderBoard();
+}
+
 </script>
 </body>
 </html>
