@@ -840,7 +840,7 @@ function loadLib(){
 }
 function saveLib(){try{localStorage.setItem(LS_LIB,JSON.stringify(PLAYER_LIBRARY));}catch(e){}scheduleSbSave();}
 function loadCustomCourses(){try{const d=localStorage.getItem(LS_COURSES);if(d){const cc=JSON.parse(d);Object.keys(cc).forEach(n=>{CATALOG[n]=cc[n];});}}catch(e){}}
-function saveCustomCourses(){try{const builtIn=Object.keys(RAW_CATALOG);const custom={};Object.keys(CATALOG).forEach(n=>{if(!builtIn.includes(n))custom[n]=CATALOG[n];});localStorage.setItem(LS_COURSES,JSON.stringify(custom));}catch(e){}scheduleSbSave();}
+function saveCustomCourses(){try{const custom={};Object.keys(CATALOG).forEach(n=>{const raw=RAW_CATALOG[n];if(!raw){custom[n]=CATALOG[n];}else{const c=CATALOG[n];const rawHoles=[];for(let i=0;i<9;i++)rawHoles.push({par:raw.fp[i],si:raw.fsi[i]});for(let i=0;i<9;i++)rawHoles.push({par:raw.bp[i],si:raw.bsi[i]});const changed=c.slope!==raw.slope||c.holes.some((h,i)=>h.par!==rawHoles[i].par||h.si!==rawHoles[i].si);if(changed)custom[n]=CATALOG[n];}});localStorage.setItem(LS_COURSES,JSON.stringify(custom));}catch(e){}scheduleSbSave();}
 function renameCourse(oldName,newName){newName=newName.trim();if(!newName||newName===oldName)return;if(CATALOG[newName]){alert('A course named "'+newName+'" already exists.');return;}CATALOG[newName]=CATALOG[oldName];delete CATALOG[oldName];WK.rounds.forEach((rd,i)=>{if(rd.courseName===oldName){WK.rounds[i].courseName=newName;}});saveCustomCourses();renderCoursesPanel();renderWeekendPanel();autoSave();}
 function loadTripsLocal(){try{const d=localStorage.getItem(LS_TRIPS);return d?JSON.parse(d):[];}catch(e){return[];}}
 function loadTrips(){return loadTripsLocal();}
@@ -998,7 +998,7 @@ function viewTrip(id){const trips=loadTrips();const trip=trips.find(t=>t.id===id
   if(!STATE.snakeHolder)STATE.snakeHolder=WK.rounds.map(()=>Array(18).fill(null));
   if(!STATE.snakePot)STATE.snakePot=WK.rounds.map(()=>0);
   if(!WK.snakeOn)WK.snakeOn=false;
-  isReadOnly=true;viewingTripId=id;launchMainApp();}
+  isReadOnly=false;viewingTripId=id;launchMainApp();}
 function resumeTrip(){if(!viewingTripId)return;isReadOnly=false;viewingTripId=null;document.getElementById('saveBtn').style.display='block';updateHoleUI();setMoneyTab(STATE.moneyTab||'golf');renderOptPanel(STATE.optPanel||'weekend');}
 function nameToIni(n){
   const parts=(n||'').trim().split(/\s+/).filter(p=>p&&p!=='.');
