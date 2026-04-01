@@ -631,7 +631,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v63';
+const APP_VERSION='v66';
 
 // ===== THEME =====
 (function(){
@@ -677,6 +677,375 @@ function toggleTheme(){
 }
 const LS_TRIPS='theturn_trips',LS_LIB='theturn_library',LS_COURSES='theturn_courses';
 const ECATS=[{id:'lodging',e:'🏠',l:'Lodging'},{id:'food',e:'🍔',l:'Food'},{id:'drinks',e:'🍺',l:'Drinks'},{id:'golf',e:'⛳',l:'Golf'},{id:'misc',e:'📦',l:'Misc'}];
+
+// ===== STEP 2: PARALLEL SCHEMA LAYER =====
+// Dirty tracking — records what needs writing to new schema tables.
+// scores entries are "roundIndex:holeIndex" strings e.g. "0:7"
+const _s2Dirty={trip:false,players:false,expenses:false,scores:new Set()};
+
+function s2MarkDirty(types,scoreKey){
+  if(types.includes('trip'))_s2Dirty.trip=true;
+  if(types.includes('players'))_s2Dirty.players=true;
+  if(types.includes('expenses'))_s2Dirty.expenses=true;
+  if(types.includes('score')&&scoreKey)_s2Dirty.scores.add(scoreKey);
+}
+
+// Deterministic IDs — stable, no UUID generation needed
+function s2TripId(){return WK._id||'';}
+function s2RoundId(r){return WK._id+':round:'+r;}
+function s2PlayerId(pi){return WK._id+':player:'+pi;}
+
+async function s2Upsert(table,rows){
+  if(!rows||!rows.length)return;
+  try{
+    await fetch(SB_URL+'/rest/v1/'+table,{
+      method:'POST',
+      headers:{
+        'apikey':SB_KEY,
+        'Authorization':'Bearer '+SB_KEY,
+        'Content-Type':'application/json',
+        'Prefer':'resolution=merge-duplicates,return=minimal'
+      },
+      body:JSON.stringify(rows)
+    });
+  }catch(e){}
+}
+
+async function s2WriteActive(){
+  if(!WK||!STATE)return;
+  const tripId=s2TripId();
+  if(!tripId)return;
+
+  try{
+    // 1. Trip upsert
+    if(_s2Dirty.trip){
+      await s2Upsert('trips',[{
+        trip_id:tripId,
+        name:WK.name||'',
+        date:WK.date||'',
+        buy_in:WK.buyIn||0,
+        hdcp_pct:WK.hdcpPct||0.8,
+        pot_method:WK.potMethod||'netstroke',
+        mp_on:!!WK.mpOn,
+        mp_games_default:WK.mpGamesDefault||3,
+        mp_settle:WK.mpSettle||'perplayer',
+        game_val:WK.gameVal||5,
+        vegas_on:!!WK.vegasOn,
+        vegas_val:WK.vegasVal||0.5,
+        vegas_segs_default:WK.vegasSegsDefault||3,
+        vegas_settle:WK.vegasSettle||'perplayer',
+        skins_on:!!WK.skinsOn,
+        skins_val:WK.skinsVal||5,
+        skins_fmt:WK.skinsFmt||'team',
+        skins_settle:WK.skinsSettle||'perplayer',
+        skins_games_default:WK.skinsGamesDefault||3,
+        twos_on:!!WK.twosOn,
+        twos_amt:WK.twosAmt||25,
+        snake_on:!!WK.snakeOn,
+        snake_base:WK.snakeBase||1,
+        snake_growth:WK.snakeGrowth||'double',
+        snake_increment:WK.snakeIncrement||1,
+        snake_payout:WK.snakePayout||'split',
+        mp_teams:STATE.mpTeams||null,
+        vegas_teams:STATE.vegTeams||null,
+        skins_teams:STATE.skinsTeams||null,
+        snake_holder:STATE.snakeHolder||null,
+        snake_pot:STATE.snakePot||null,
+        settled_rounds:STATE.settledRounds||null,
+        round_settle_data:STATE.roundSettleData||null,
+        locked_rounds:STATE.lockedRounds||null,
+        net_off_low:!!STATE.netOffLow,
+        rounds_data:WK.rounds.map(rd=>({
+          courseName:rd.courseName,
+          course:rd.course
+        })),
+        summary:{
+          playerNames:WK.players.map((p,i)=>displayName(i)),
+          playerInis:WK.players.map(p=>p.ini),
+          playerColors:WK.players.map(p=>({bg:p.bg,fg:p.fg})),
+          courses:WK.rounds.map(r=>r.courseName),
+          holesPlayed:totalHolesPlayed(),
+          totalHoles:totalHoles(),
+          complete:totalHolesPlayed()>=totalHoles(),
+          winner:(()=>{const pd=calcPotRankings();return pd[0]?WK.players[pd[0].pi]?.name:'';})()
+        },
+        updated_at:new Date().toISOString()
+      }]);
+      _s2Dirty.trip=false;
+    }
+
+    // 2. Players upsert
+    if(_s2Dirty.players){
+      const rows=WK.players.map((p,pi)=>({
+        player_id:s2PlayerId(pi),
+        trip_id:tripId,
+        first_name:(p.name||'').split(' ')[0]||'',
+        last_name:(p.name||'').split(' ').slice(1).join(' ')||'',
+        handicap_idx:p.idx||0,
+        bg_color:p.bg||'',
+        fg_color:p.fg||'',
+        ini:p.ini||'',
+        player_index:pi
+      }));
+      await s2Upsert('players',rows);
+      _s2Dirty.players=false;
+    }
+
+    // 3. Scores upsert — only dirty holes
+    if(_s2Dirty.scores.size>0){
+      const scoreRows=[];
+      _s2Dirty.scores.forEach(key=>{
+        const[r,hi]=[parseInt(key.split(':')[0]),parseInt(key.split(':')[1])];
+        if(!STATE.scores[r]||!STATE.scores[r][hi])return;
+        WK.players.forEach((_,pi)=>{
+          const strokes=STATE.scores[r][hi][pi];
+          if(strokes===null)return; // only write entered scores
+          scoreRows.push({
+            score_id:WK._id+':score:'+r+':'+hi+':'+pi,
+            round_id:s2RoundId(r),
+            player_id:s2PlayerId(pi),
+            hole_index:hi,
+            strokes:strokes,
+            updated_at:new Date().toISOString()
+          });
+        });
+      });
+      if(scoreRows.length)await s2Upsert('scores',scoreRows);
+      _s2Dirty.scores.clear();
+    }
+
+    // 4. Expenses upsert
+    if(_s2Dirty.expenses){
+      const exps=(STATE.expenses||[]).map(e=>({
+        expense_id:e.id,
+        trip_id:tripId,
+        description:e.desc||'',
+        category:e.cat||'',
+        amount:e.amount||0,
+        paid_by:e.paidBy,
+        owes:e.owes||null,
+        custom_split:!!e.customSplit
+      }));
+      if(exps.length)await s2Upsert('expenses',exps);
+      _s2Dirty.expenses=false;
+    }
+
+  }catch(e){}
+}
+
+async function s2ValidateOnLoad(){
+  if(!WK)return;
+  const tripId=s2TripId();
+  try{
+    // Fetch trip row
+    const tr=await fetch(SB_URL+'/rest/v1/trips?trip_id=eq.'+encodeURIComponent(tripId)+'&select=trip_id,name',{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    });
+    const tripRows=tr.ok?await tr.json():[];
+
+    // Fetch player count
+    const pr=await fetch(SB_URL+'/rest/v1/players?trip_id=eq.'+encodeURIComponent(tripId)+'&select=player_id',{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    });
+    const playerRows=pr.ok?await pr.json():[];
+
+    // Fetch score count
+    const sr=await fetch(SB_URL+'/rest/v1/scores?round_id=like.'+encodeURIComponent(tripId+':round:%')+'&select=score_id',{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    });
+    const scoreRows=sr.ok?await sr.json():[];
+
+    // Fetch expense count
+    const er=await fetch(SB_URL+'/rest/v1/expenses?trip_id=eq.'+encodeURIComponent(tripId)+'&select=expense_id',{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    });
+    const expRows=er.ok?await er.json():[];
+
+    // Blob counts for comparison
+    const blobPlayers=WK.players.length;
+    const blobScores=WK.rounds.reduce((a,_,r)=>a+STATE.scores[r].reduce((b,h)=>b+h.filter(s=>s!==null).length,0),0);
+    const blobExpenses=(STATE.expenses||[]).length;
+    const totalPossibleScores=WK.rounds.length*18*WK.players.length;
+
+    const tripMatch=tripRows.length>0?'✓':'not yet written';
+    const playerMatch=playerRows.length===blobPlayers?'✓':`schema ${playerRows.length} vs blob ${blobPlayers}`;
+    const scoreNote=scoreRows.length===blobScores?'✓':`schema ${scoreRows.length} / ${totalPossibleScores} possible`;
+    const expMatch=expRows.length===blobExpenses?'✓':`schema ${expRows.length} vs blob ${blobExpenses}`;
+
+    console.log(
+      '%c[Step2 Validation]','color:#4ade80;font-weight:bold',
+      '\n  Trip ID:    ',tripId,
+      '\n  Trip row:   ',tripMatch,
+      '\n  Players:    ',playerMatch,
+      '\n  Scores:     ',scoreNote,'(blob entered:',blobScores,')',
+      '\n  Expenses:   ',expMatch
+    );
+  }catch(e){
+    console.log('[Step2 Validation] skipped —',e.message);
+  }
+}
+
+async function s2ReadTrip(tripId){
+  try{
+    // Fetch trip row
+    const tr=await fetch(SB_URL+'/rest/v1/trips?trip_id=eq.'+encodeURIComponent(tripId),{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    });
+    if(!tr.ok)return null;
+    const tripRows=await tr.json();
+    if(!tripRows||!tripRows.length)return null;
+    const t=tripRows[0];
+
+    // Validate rounds_data exists
+    if(!t.rounds_data||!t.rounds_data.length)return null;
+
+    // Fetch players
+    const pr=await fetch(SB_URL+'/rest/v1/players?trip_id=eq.'+encodeURIComponent(tripId)+'&order=player_index.asc',{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    });
+    if(!pr.ok)return null;
+    const playerRows=await pr.json();
+    if(!playerRows||!playerRows.length)return null;
+
+    // Fetch scores
+    const sr=await fetch(SB_URL+'/rest/v1/scores?round_id=like.'+encodeURIComponent(tripId+':round:%'),{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    });
+    const scoreRows=sr.ok?await sr.json():[];
+
+    // Fetch expenses
+    const er=await fetch(SB_URL+'/rest/v1/expenses?trip_id=eq.'+encodeURIComponent(tripId),{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    });
+    const expRows=er.ok?await er.json():[];
+
+    // Reconstruct WK
+    const nR=t.rounds_data.length;
+    const nP=playerRows.length;
+    const newWK={
+      _id:tripId,
+      name:t.name||'',
+      date:t.date||'',
+      buyIn:t.buy_in||0,
+      hdcpPct:t.hdcp_pct||0.8,
+      potMethod:t.pot_method||'netstroke',
+      mpOn:!!t.mp_on,
+      mpGamesDefault:t.mp_games_default||3,
+      mpGamesPerRound:Array(nR).fill(t.mp_games_default||3),
+      mpSettle:t.mp_settle||'perplayer',
+      gameVal:t.game_val||5,
+      vegasOn:!!t.vegas_on,
+      vegasVal:t.vegas_val||0.5,
+      vegasSegsDefault:t.vegas_segs_default||3,
+      vegasSegsPerRound:Array(nR).fill(t.vegas_segs_default||3),
+      vegasSettle:t.vegas_settle||'perplayer',
+      skinsOn:!!t.skins_on,
+      skinsVal:t.skins_val||5,
+      skinsFmt:t.skins_fmt||'team',
+      skinsSettle:t.skins_settle||'perplayer',
+      skinsGamesDefault:t.skins_games_default||3,
+      skinsGamesPerRound:Array(nR).fill(t.skins_games_default||3),
+      twosOn:!!t.twos_on,
+      twosAmt:t.twos_amt||25,
+      snakeOn:!!t.snake_on,
+      snakeBase:t.snake_base||1,
+      snakeGrowth:t.snake_growth||'double',
+      snakeIncrement:t.snake_increment||1,
+      snakePayout:t.snake_payout||'split',
+      players:playerRows.map(p=>({
+        name:((p.first_name||'')+(p.last_name?' '+p.last_name:'')).trim(),
+        idx:p.handicap_idx||0,
+        bg:p.bg_color||'#2e7d32',
+        fg:p.fg_color||'#ffffff',
+        ini:p.ini||'?'
+      })),
+      rounds:t.rounds_data.map(rd=>({
+        courseName:rd.courseName,
+        course:rd.course||(CATALOG[rd.courseName])||{slope:113,holes:Array.from({length:18},(_,i)=>({par:4,si:i+1}))}
+      }))
+    };
+
+    // Reconstruct STATE scores 3D array
+    const newScores=Array(nR).fill(null).map(()=>Array(18).fill(null).map(()=>Array(nP).fill(null)));
+    scoreRows.forEach(s=>{
+      // round_id format: tripId:round:r
+      const rIdx=parseInt((s.round_id||'').split(':round:')[1]);
+      const hi=s.hole_index;
+      // player_id format: tripId:player:pi
+      const pi=parseInt((s.player_id||'').split(':player:')[1]);
+      if(!isNaN(rIdx)&&!isNaN(hi)&&!isNaN(pi)&&newScores[rIdx]&&newScores[rIdx][hi])
+        newScores[rIdx][hi][pi]=s.strokes;
+    });
+
+    // Reconstruct STATE
+    const newSTATE={
+      currentRound:0,
+      currentHole:0,
+      netOffLow:!!t.net_off_low,
+      mpViewRound:0,
+      vegasViewRound:0,
+      skinsViewRound:0,
+      scRound:0,
+      optPanel:'teams',
+      teamsRound:0,
+      roundRankOpen:false,
+      moneyTab:'golf',
+      scores:newScores,
+      mpTeams:t.mp_teams||Array(nR).fill(null).map((_,r)=>defaultTeams(r)),
+      vegTeams:t.vegas_teams||Array(nR).fill(null).map((_,r)=>defaultVegasTeams(r)),
+      skinsTeams:t.skins_teams||Array(nR).fill(null).map((_,r=>{const g=skinsGamesForRound(r);return Array(g).fill(null).map(()=>JSON.parse(JSON.stringify([[0,1],[2,3]])));})),
+      snakeHolder:t.snake_holder||Array(nR).fill(null).map(()=>Array(18).fill(null)),
+      snakePot:t.snake_pot||Array(nR).fill(0),
+      settledRounds:t.settled_rounds||[],
+      roundSettleData:t.round_settle_data||{},
+      lockedRounds:t.locked_rounds||[],
+      expenses:expRows.map(e=>({
+        id:e.expense_id,
+        desc:e.description||'',
+        cat:e.category||'',
+        amount:e.amount||0,
+        paidBy:e.paid_by,
+        owes:e.owes||[],
+        customSplit:!!e.custom_split
+      }))
+    };
+
+    console.log('%c[Step3] Loaded trip from new schema','color:#60a5fa;font-weight:bold',tripId);
+    return{WK:newWK,STATE:newSTATE};
+
+  }catch(e){
+    console.log('[Step3] s2ReadTrip failed, falling back to blob —',e.message);
+    return null;
+  }
+}
+
+async function s2LoadTripList(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/trips?select=trip_id,name,date,summary&order=updated_at.desc',{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    });
+    if(!r.ok)return null;
+    const rows=await r.json();
+    if(!rows||!rows.length)return null;
+    // Shape into format renderTripList expects
+    return rows.map(t=>{
+      const s=t.summary||{};
+      return{
+        id:t.trip_id,
+        name:t.name||'',
+        date:t.date||'',
+        playerNames:s.playerNames||[],
+        playerInis:s.playerInis||[],
+        playerColors:s.playerColors||[],
+        courses:s.courses||[],
+        holesPlayed:s.holesPlayed||0,
+        totalHoles:s.totalHoles||0,
+        complete:!!s.complete,
+        winner:s.winner||''
+      };
+    });
+  }catch(e){return null;}
+}
 
 // ===== SUPABASE SYNC =====
 const SB_URL='https://xexfyvrpimzxdozxmpof.supabase.co';
@@ -763,11 +1132,11 @@ function showConnStatus(ok){
   }
 }
 
-function getSyncPayload(){const custom={};Object.keys(CATALOG).forEach(n=>{const raw=RAW_CATALOG[n];if(!raw){custom[n]=CATALOG[n];}else{const c=CATALOG[n];const rawHoles=[];for(let i=0;i<9;i++)rawHoles.push({par:raw.fp[i],si:raw.fsi[i]});for(let i=0;i<9;i++)rawHoles.push({par:raw.bp[i],si:raw.bsi[i]});const changed=c.slope!==raw.slope||c.holes.some((h,i)=>h.par!==rawHoles[i].par||h.si!==rawHoles[i].si);if(changed)custom[n]=CATALOG[n];}});return{trips:loadTripsLocal(),library:PLAYER_LIBRARY,courses:custom};}
+function getSyncPayload(){const custom={};Object.keys(CATALOG).forEach(n=>{const raw=RAW_CATALOG[n];if(!raw){custom[n]=CATALOG[n];}else{const c=CATALOG[n];const rawHoles=[];for(let i=0;i<9;i++)rawHoles.push({par:raw.fp[i],si:raw.fsi[i]});for(let i=0;i<9;i++)rawHoles.push({par:raw.bp[i],si:raw.bsi[i]});const changed=c.slope!==raw.slope||c.holes.some((h,i)=>h.par!==rawHoles[i].par||h.si!==rawHoles[i].si);if(changed)custom[n]=CATALOG[n];}});return{library:PLAYER_LIBRARY,courses:custom};}
 
 function applySyncPayload(d){
   if(!d)return;
-  if(d.trips){try{localStorage.setItem(LS_TRIPS,JSON.stringify(d.trips));}catch(e){}}
+  // Trips now live in new schema — no longer applied from blob
   if(d.library&&d.library.length>0){
     // Migrate old {name,idx} entries to {first,last,idx,venmo}
     PLAYER_LIBRARY=d.library.map(p=>{
@@ -790,6 +1159,7 @@ function scheduleSbSave(){
   _sbSaveTimer=setTimeout(async()=>{
     const payload=getSyncPayload();
     await sbSave(payload);
+    s2WriteActive(); // Step 2: parallel schema write, fire-and-forget
   },800);
 }
 
@@ -816,6 +1186,8 @@ async function syncOnLoad(){
   // Seed default players if library is still empty
   if(PLAYER_LIBRARY.length===0)await seedPlayersIfEmpty();
   if(el){el.textContent='';el.style.display='none';}
+  // Step 2: validate new schema against blob (console only)
+  if(WK)s2ValidateOnLoad();
 }
 
 // Local-only storage helpers (cache layer)
@@ -840,7 +1212,7 @@ function renameCourse(oldName,newName){newName=newName.trim();if(!newName||newNa
 function loadTripsLocal(){try{const d=localStorage.getItem(LS_TRIPS);return d?JSON.parse(d):[];}catch(e){return[];}}
 function loadTrips(){return loadTripsLocal();}
 function saveTrips(trips){try{localStorage.setItem(LS_TRIPS,JSON.stringify(trips));}catch(e){}scheduleSbSave();}
-function autoSave(){if(!WK||!STATE||isReadOnly)return;const trips=loadTrips();const holesPlayed=totalHolesPlayed(),totalH=totalHoles(),complete=holesPlayed>=totalH;const potData=calcPotRankings();const winner=potData[0]?WK.players[potData[0].pi]?.name:'';const snapshot={id:WK._id||(WK._id=Date.now()+''),name:WK.name,date:WK.date,playerNames:WK.players.map((p,i)=>displayName(i)),playerInis:WK.players.map(p=>p.ini),courses:WK.rounds.map(r=>r.courseName),holesPlayed,totalHoles:totalH,complete,winner,savedAt:new Date().toISOString(),WK:JSON.parse(JSON.stringify(WK)),STATE:JSON.parse(JSON.stringify(STATE))};const idx=trips.findIndex(t=>t.id===snapshot.id);if(idx>=0)trips[idx]=snapshot;else trips.unshift(snapshot);saveTrips(trips);showSaveToast();}
+function autoSave(){if(!WK||!STATE||isReadOnly)return;s2MarkDirty(['trip','players','expenses']);const trips=loadTrips();const holesPlayed=totalHolesPlayed(),totalH=totalHoles(),complete=holesPlayed>=totalH;const potData=calcPotRankings();const winner=potData[0]?WK.players[potData[0].pi]?.name:'';const snapshot={id:WK._id||(WK._id=Date.now()+''),name:WK.name,date:WK.date,playerNames:WK.players.map((p,i)=>displayName(i)),playerInis:WK.players.map(p=>p.ini),playerColors:WK.players.map(p=>({bg:p.bg,fg:p.fg})),courses:WK.rounds.map(r=>r.courseName),holesPlayed,totalHoles:totalH,complete,winner,savedAt:new Date().toISOString()};const idx=trips.findIndex(t=>t.id===snapshot.id);if(idx>=0)trips[idx]=snapshot;else trips.unshift(snapshot);saveTrips(trips);showSaveToast();}
 function showSaveToast(){const el=document.getElementById('saveIndicator');el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1500);}
 function showHome(){document.getElementById('homeScreen').style.display='block';document.getElementById('wizardScreen').style.display='none';document.getElementById('mainScreen').style.display='none';renderTripList();renderLibrarySection();}
 
@@ -902,7 +1274,15 @@ function homeRemoveCourse(name){if(!confirm('Remove '+name+' from catalog?'))ret
 function startNewWeekend(){WK=null;STATE=null;isReadOnly=false;viewingTripId=null;// Reset all steps then show step 1
 [1,2,3,4].forEach(n=>{const el=document.getElementById('step'+n);if(el)el.classList.remove('active');});wizStep=1;const s1=document.getElementById('step1');if(s1)s1.classList.add('active');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='block';updateDots();}
 function renderTripList(){
-  const trips=loadTrips();
+  // Render from blob immediately for instant display
+  _renderTripListFromData(loadTrips());
+  // Then fetch from schema and re-render if data available
+  s2LoadTripList().then(schemaTrips=>{
+    if(schemaTrips&&schemaTrips.length)_renderTripListFromData(schemaTrips);
+  });
+}
+
+function _renderTripListFromData(trips){
   const el=document.getElementById('tripList');
   const resumeSlot=document.getElementById('resumeCardSlot');
 
@@ -912,7 +1292,7 @@ function renderTripList(){
     if(activeTrip){
       const pct=activeTrip.totalHoles>0?Math.round(activeTrip.holesPlayed/activeTrip.totalHoles*100):0;
       const playerAvis=activeTrip.playerNames.slice(0,4).map((n,i)=>{
-        const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
+        const c=activeTrip.playerColors?.[i]||AVATAR_PALETTE[i%AVATAR_PALETTE.length];
         const ini=activeTrip.playerInis?.[i]||nameToIni(n);
         return`<div class="avatar" style="width:28px;height:28px;font-size:10px;background:${c.bg};color:${c.fg}">${ini}</div>`;
       }).join('');
@@ -951,7 +1331,7 @@ function renderTripList(){
         ?`<span class="trip-status complete">✓ Complete</span>`
         :`<span class="trip-status inprogress">${pct}% complete</span>`;
       const playerAvis=t.playerNames.slice(0,4).map((n,i)=>{
-        const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
+        const c=t.playerColors?.[i]||AVATAR_PALETTE[i%AVATAR_PALETTE.length];
         const ini=t.playerInis?.[i]||nameToIni(n);
         return`<div class="avatar" style="width:30px;height:30px;font-size:11px;background:${c.bg};color:${c.fg}">${ini}</div>`;
       }).join('');
@@ -975,7 +1355,19 @@ function renderTripList(){
   }
   el.innerHTML=html;
 }
-function viewTrip(id){const trips=loadTrips();const trip=trips.find(t=>t.id===id);if(!trip)return;WK=JSON.parse(JSON.stringify(trip.WK));STATE=JSON.parse(JSON.stringify(trip.STATE));if(!STATE.expenses)STATE.expenses=[];if(!STATE.moneyTab)STATE.moneyTab='golf';if(!STATE.skinsViewRound)STATE.skinsViewRound=0;if(!STATE.settledRounds)STATE.settledRounds=[];if(!STATE.roundSettleData)STATE.roundSettleData={};if(!STATE.lockedRounds)STATE.lockedRounds=[];
+function viewTrip(id){
+  // Step 3: try new schema first, fall back to blob
+  s2ReadTrip(id).then(s2data=>{
+    if(s2data){
+      WK=s2data.WK;
+      STATE=s2data.STATE;
+    } else {
+      // Blob fallback
+      const trips=loadTrips();const trip=trips.find(t=>t.id===id);if(!trip)return;
+      WK=JSON.parse(JSON.stringify(trip.WK));STATE=JSON.parse(JSON.stringify(trip.STATE));
+      console.log('[Step3] Loaded trip from blob (fallback)');
+    }
+    if(!STATE.expenses)STATE.expenses=[];if(!STATE.moneyTab)STATE.moneyTab='golf';if(!STATE.skinsViewRound)STATE.skinsViewRound=0;if(!STATE.settledRounds)STATE.settledRounds=[];if(!STATE.roundSettleData)STATE.roundSettleData={};if(!STATE.lockedRounds)STATE.lockedRounds=[];
   // Re-hydrate course objects: prefer live CATALOG (handles built-in + loaded custom courses)
   // Fall back to blob's own course data for custom courses not yet in CATALOG
   // Either way, ensure holes array exists
@@ -993,7 +1385,8 @@ function viewTrip(id){const trips=loadTrips();const trip=trips.find(t=>t.id===id
   if(!STATE.snakeHolder)STATE.snakeHolder=WK.rounds.map(()=>Array(18).fill(null));
   if(!STATE.snakePot)STATE.snakePot=WK.rounds.map(()=>0);
   if(!WK.snakeOn)WK.snakeOn=false;
-  isReadOnly=false;viewingTripId=id;launchMainApp();}
+  isReadOnly=false;viewingTripId=id;launchMainApp();s2ValidateOnLoad();
+  });}
 function resumeTrip(){if(!viewingTripId)return;isReadOnly=false;viewingTripId=null;document.getElementById('saveBtn').style.display='block';updateHoleUI();setMoneyTab(STATE.moneyTab||'golf');renderOptPanel(STATE.optPanel||'weekend');}
 function nameToIni(n){
   const parts=(n||'').trim().split(/\s+/).filter(p=>p&&p!=='.');
@@ -1193,7 +1586,7 @@ function renderScorecard(){
   document.getElementById('scorecard').innerHTML=WK.players.map((p,i)=>{const g=STATE.scores[r][hi][i],st=strokes(i,hi,r),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}</span>`:`<span class="stroke-tag stroke-no">no stroke</span>`;const twosBadge=WK.twosOn&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=WK.snakeOn&&snakeHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const roStyle=(isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'';return`<div class="player-row"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}"><button class="adj" onclick="adjScore(${i},-1)">−</button><div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div><button class="adj" onclick="adjScore(${i},1)">+</button></div></div>`;}).join('');
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}}
-function adjScore(pi,delta){if(isReadOnly)return;if((STATE.lockedRounds||[]).includes(STATE.currentRound))return;const r=STATE.currentRound,hi=STATE.currentHole,par=WK.rounds[r].course.holes[hi]?.par||4,c=STATE.scores[r][hi][pi];STATE.scores[r][hi][pi]=c===null?par:Math.max(1,c+delta);renderScorecard();renderHoleDots();}
+function adjScore(pi,delta){if(isReadOnly)return;if((STATE.lockedRounds||[]).includes(STATE.currentRound))return;const r=STATE.currentRound,hi=STATE.currentHole,par=WK.rounds[r].course.holes[hi]?.par||4,c=STATE.scores[r][hi][pi];STATE.scores[r][hi][pi]=c===null?par:Math.max(1,c+delta);s2MarkDirty(['score'],r+':'+hi);renderScorecard();renderHoleDots();}
 
 // Returns the snake holder index that is active at or before hole hi in round r
 function currentSnakeHolder(r,hi){
