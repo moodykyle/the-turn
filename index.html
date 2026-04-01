@@ -631,7 +631,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v62.1';
+const APP_VERSION='v63';
 
 // ===== THEME =====
 (function(){
@@ -763,12 +763,7 @@ function showConnStatus(ok){
   }
 }
 
-function getSyncPayload(){
-  const builtIn=Object.keys(RAW_CATALOG);
-  const custom={};
-  Object.keys(CATALOG).forEach(n=>{if(!builtIn.includes(n))custom[n]=CATALOG[n];});
-  return{trips:loadTripsLocal(),library:PLAYER_LIBRARY,courses:custom};
-}
+function getSyncPayload(){const custom={};Object.keys(CATALOG).forEach(n=>{const raw=RAW_CATALOG[n];if(!raw){custom[n]=CATALOG[n];}else{const c=CATALOG[n];const rawHoles=[];for(let i=0;i<9;i++)rawHoles.push({par:raw.fp[i],si:raw.fsi[i]});for(let i=0;i<9;i++)rawHoles.push({par:raw.bp[i],si:raw.bsi[i]});const changed=c.slope!==raw.slope||c.holes.some((h,i)=>h.par!==rawHoles[i].par||h.si!==rawHoles[i].si);if(changed)custom[n]=CATALOG[n];}});return{trips:loadTripsLocal(),library:PLAYER_LIBRARY,courses:custom};}
 
 function applySyncPayload(d){
   if(!d)return;
