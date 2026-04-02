@@ -578,9 +578,8 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
 </div>
 
 <script>
-const RAW_CATALOG={'Turtle Point':{slope:132,fp:[4,5,4,3,5,4,3,4,4],fsi:[9,5,15,7,1,11,17,13,3],bp:[5,4,4,5,3,4,3,4,4],bsi:[12,6,4,10,16,8,14,18,2]},'Osprey Point':{slope:133,fp:[4,5,3,4,4,3,4,5,4],fsi:[5,15,11,3,7,9,17,13,1],bp:[4,3,5,4,4,3,4,4,5],bsi:[6,4,14,12,16,18,8,2,10]},'Ocean Course':{slope:139,fp:[4,5,4,4,3,4,5,3,4],fsi:[15,3,9,1,11,13,7,17,5],bp:[4,5,4,4,3,4,5,3,4],bsi:[16,8,10,2,14,18,4,12,6]},'Oak Point':{slope:134,fp:[5,3,4,5,4,4,3,5,3],fsi:[7,17,15,5,13,11,9,1,3],bp:[4,3,5,4,4,3,4,5,4],bsi:[10,14,8,2,6,18,12,4,16]},'Mid Pines':{slope:131,fp:[4,3,4,4,5,5,4,3,4],fsi:[5,15,7,13,9,1,3,17,11],bp:[5,3,4,3,4,5,4,4,4],bsi:[2,18,8,10,16,12,6,14,4]},'Pine Needles':{slope:130,fp:[5,4,3,4,3,4,4,4,4],fsi:[11,5,17,9,7,1,3,15,13],bp:[5,4,4,3,4,5,3,4,4],bsi:[4,12,14,16,2,6,18,8,10]},'Tobacco Road':{slope:135,fp:[5,4,3,5,4,3,4,3,4],fsi:[3,11,17,9,15,13,7,5,1],bp:[4,5,4,5,3,4,4,3,4],bsi:[6,10,14,2,8,12,16,18,4]},'Pinehurst No 4':{slope:136,fp:[4,5,4,3,4,3,4,4,4],fsi:[7,13,11,17,1,9,3,15,5],bp:[4,3,4,5,3,4,4,5,4],bsi:[4,18,10,8,12,16,14,6,2]},'Pinehurst No 7':{slope:138,fp:[5,4,4,4,3,4,4,5,3],fsi:[5,1,13,11,17,3,9,7,15],bp:[4,4,5,3,4,4,3,4,5],bsi:[6,10,4,16,8,14,18,2,12]},'Pinehurst No 8':{slope:137,fp:[4,5,4,4,3,5,4,3,4],fsi:[15,9,11,5,17,1,13,7,3],bp:[4,5,4,4,3,4,3,4,5],bsi:[6,4,18,12,8,16,10,14,2]},'Pinehurst No 9':{slope:130,fp:[4,3,4,5,4,4,4,5,3],fsi:[5,13,7,1,3,11,9,15,17],bp:[5,4,3,4,4,5,4,3,4],bsi:[10,14,18,6,2,12,8,16,4]},'Bulls Bay':{slope:133,fp:[4,5,3,5,4,5,3,4,4],fsi:[5,1,15,3,7,11,9,17,13],bp:[5,4,3,5,3,4,4,3,4],bsi:[4,16,12,2,14,6,10,18,8]}};
 const CATALOG={};
-Object.keys(RAW_CATALOG).forEach(name=>{const r=RAW_CATALOG[name],holes=[];for(let i=0;i<9;i++)holes.push({par:r.fp[i],si:r.fsi[i]});for(let i=0;i<9;i++)holes.push({par:r.bp[i],si:r.bsi[i]});CATALOG[name]={slope:r.slope,holes};});
+// CATALOG populated from Supabase courses table on load (see loadCourses())
 let PLAYER_LIBRARY=[
   {first:'Matt',last:'Richardson',idx:3.6,venmo:''},
   {first:'Doug',last:'Stinson',idx:5.4,venmo:''},
@@ -631,7 +630,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v66';
+const APP_VERSION='v67';
 
 // ===== THEME =====
 (function(){
@@ -1132,7 +1131,7 @@ function showConnStatus(ok){
   }
 }
 
-function getSyncPayload(){const custom={};Object.keys(CATALOG).forEach(n=>{const raw=RAW_CATALOG[n];if(!raw){custom[n]=CATALOG[n];}else{const c=CATALOG[n];const rawHoles=[];for(let i=0;i<9;i++)rawHoles.push({par:raw.fp[i],si:raw.fsi[i]});for(let i=0;i<9;i++)rawHoles.push({par:raw.bp[i],si:raw.bsi[i]});const changed=c.slope!==raw.slope||c.holes.some((h,i)=>h.par!==rawHoles[i].par||h.si!==rawHoles[i].si);if(changed)custom[n]=CATALOG[n];}});return{library:PLAYER_LIBRARY,courses:custom};}
+function getSyncPayload(){return{library:PLAYER_LIBRARY};}
 
 function applySyncPayload(d){
   if(!d)return;
@@ -1147,10 +1146,7 @@ function applySyncPayload(d){
     });
     try{localStorage.setItem(LS_LIB,JSON.stringify(PLAYER_LIBRARY));}catch(e){}
   }
-  if(d.courses){
-    try{localStorage.setItem(LS_COURSES,JSON.stringify(d.courses));}catch(e){}
-    Object.keys(d.courses).forEach(n=>{CATALOG[n]=d.courses[n];});
-  }
+  // Courses now live in Supabase courses table — no longer applied from blob
 }
 
 let _sbSaveTimer=null;
@@ -1206,9 +1202,56 @@ function loadLib(){
   }catch(e){}
 }
 function saveLib(){try{localStorage.setItem(LS_LIB,JSON.stringify(PLAYER_LIBRARY));}catch(e){}scheduleSbSave();}
-function loadCustomCourses(){try{const d=localStorage.getItem(LS_COURSES);if(d){const cc=JSON.parse(d);Object.keys(cc).forEach(n=>{CATALOG[n]=cc[n];});}}catch(e){}}
-function saveCustomCourses(){try{const custom={};Object.keys(CATALOG).forEach(n=>{const raw=RAW_CATALOG[n];if(!raw){custom[n]=CATALOG[n];}else{const c=CATALOG[n];const rawHoles=[];for(let i=0;i<9;i++)rawHoles.push({par:raw.fp[i],si:raw.fsi[i]});for(let i=0;i<9;i++)rawHoles.push({par:raw.bp[i],si:raw.bsi[i]});const changed=c.slope!==raw.slope||c.holes.some((h,i)=>h.par!==rawHoles[i].par||h.si!==rawHoles[i].si);if(changed)custom[n]=CATALOG[n];}});localStorage.setItem(LS_COURSES,JSON.stringify(custom));}catch(e){}autoSave();}
-function renameCourse(oldName,newName){newName=newName.trim();if(!newName||newName===oldName)return;if(CATALOG[newName]){alert('A course named "'+newName+'" already exists.');return;}CATALOG[newName]=CATALOG[oldName];delete CATALOG[oldName];WK.rounds.forEach((rd,i)=>{if(rd.courseName===oldName){WK.rounds[i].courseName=newName;}});saveCustomCourses();renderCoursesPanel();renderWeekendPanel();autoSave();}
+async function loadCourses(){
+  // Try Supabase first
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/courses?select=name,slope,holes&order=name.asc',{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    });
+    if(r.ok){
+      const rows=await r.json();
+      if(rows&&rows.length){
+        rows.forEach(c=>{if(c.name&&c.holes)CATALOG[c.name]={slope:c.slope||113,holes:c.holes};});
+        try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}
+        return;
+      }
+    }
+  }catch(e){}
+  // Fallback: localStorage cache
+  try{
+    const d=localStorage.getItem(LS_COURSES);
+    if(d){const cc=JSON.parse(d);Object.keys(cc).forEach(n=>{CATALOG[n]=cc[n];});}
+  }catch(e){}
+}
+async function saveCourse(name){
+  const c=CATALOG[name];
+  if(!c)return;
+  // Update localStorage cache
+  try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}
+  // Upsert to Supabase courses table
+  try{
+    await fetch(SB_URL+'/rest/v1/courses?name=eq.'+encodeURIComponent(name),{
+      method:'PATCH',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({slope:c.slope,holes:c.holes})
+    });
+  }catch(e){}
+  autoSave();
+}
+async function saveNewCourse(name){
+  const c=CATALOG[name];
+  if(!c)return;
+  try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}
+  try{
+    await fetch(SB_URL+'/rest/v1/courses',{
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({name,slope:c.slope,holes:c.holes,is_custom:true})
+    });
+  }catch(e){}
+  autoSave();
+}
+async function renameCourse(oldName,newName){newName=newName.trim();if(!newName||newName===oldName)return;if(CATALOG[newName]){alert('A course named "'+newName+'" already exists.');return;}CATALOG[newName]=CATALOG[oldName];delete CATALOG[oldName];WK.rounds.forEach((rd,i)=>{if(rd.courseName===oldName){WK.rounds[i].courseName=newName;}});try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}try{await fetch(SB_URL+'/rest/v1/courses?name=eq.'+encodeURIComponent(oldName),{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name:newName})});}catch(e){}renderCoursesPanel();renderWeekendPanel();autoSave();}
 function loadTripsLocal(){try{const d=localStorage.getItem(LS_TRIPS);return d?JSON.parse(d):[];}catch(e){return[];}}
 function loadTrips(){return loadTripsLocal();}
 function saveTrips(trips){try{localStorage.setItem(LS_TRIPS,JSON.stringify(trips));}catch(e){}scheduleSbSave();}
@@ -1254,7 +1297,7 @@ function renderLibrarySection(){
       <div class="section-hd">Courses <span style="font-size:11px;font-weight:400;color:var(--color-text-secondary)">(${courseNames.length})</span></div>`;
     courseNames.forEach(name=>{
       const c=CATALOG[name];
-      const isBuiltIn=!!RAW_CATALOG[name];
+      const isBuiltIn=false; // all courses now from Supabase
       const frontPar=c.holes.slice(0,9).reduce((s,h)=>s+h.par,0);
       const backPar=c.holes.slice(9).reduce((s,h)=>s+h.par,0);
       html+=`<div class="setup-row" style="padding:8px 12px">
@@ -1270,7 +1313,7 @@ function renderLibrarySection(){
 }
 
 function homeRemoveLibPlayer(i){if(!confirm('Remove '+libDisplayName(PLAYER_LIBRARY[i])+' from library?'))return;PLAYER_LIBRARY.splice(i,1);saveLib();renderLibrarySection();}
-function homeRemoveCourse(name){if(!confirm('Remove '+name+' from catalog?'))return;delete CATALOG[name];saveCustomCourses();renderLibrarySection();}
+async function homeRemoveCourse(name){if(!confirm('Remove '+name+' from catalog?'))return;delete CATALOG[name];try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}try{await fetch(SB_URL+'/rest/v1/courses?name=eq.'+encodeURIComponent(name),{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});}catch(e){}renderLibrarySection();}
 function startNewWeekend(){WK=null;STATE=null;isReadOnly=false;viewingTripId=null;// Reset all steps then show step 1
 [1,2,3,4].forEach(n=>{const el=document.getElementById('step'+n);if(el)el.classList.remove('active');});wizStep=1;const s1=document.getElementById('step1');if(s1)s1.classList.add('active');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='block';updateDots();}
 function renderTripList(){
@@ -1448,7 +1491,7 @@ function onPlayerNameInput(slot){
 }
 function buildCourseFields(){const nR=parseInt(document.getElementById('numRounds').value);const opts=`<option value="">— Select a course —</option>`+Object.keys(CATALOG).map(n=>`<option value="${n}">${n}</option>`).join('');document.getElementById('courseFields').innerHTML=Array.from({length:nR},(_,i)=>`<div class="course-sel-row"><div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);width:52px;flex-shrink:0">Round ${i+1}</div><select class="course-select" id="course${i}">${opts}</select></div>`).join('');}
 function toggleWizCourse(){const f=document.getElementById('wizCourseForm');f.style.display=f.style.display==='none'?'block':'none';}
-function saveWizCourse(){const name=document.getElementById('wizCName').value.trim(),slope=parseInt(document.getElementById('wizCSlope').value)||113;const parse=id=>(document.getElementById(id).value||'').split(',').map(x=>parseInt(x.trim())||4);const fp=parse('wizCFP'),fsi=parse('wizCFSI'),bp=parse('wizCBP'),bsi=parse('wizCBSI');if(!name){alert('Enter a course name.');return;}const allSI=[...fsi,...bsi];const siIssues=validateSI(allSI);if(siIssues.length){if(!confirm('SI validation issues:\n\n'+siIssues.join('\n')+'\n\nSave anyway?'))return;}const holes=[];for(let i=0;i<9;i++)holes.push({par:fp[i]||4,si:fsi[i]||i*2+1});for(let i=0;i<9;i++)holes.push({par:bp[i]||4,si:bsi[i]||i*2+2});CATALOG[name]={slope,holes};saveCustomCourses();buildCourseFields();document.getElementById('wizCourseForm').style.display='none';alert(name+' added!');}
+function saveWizCourse(){const name=document.getElementById('wizCName').value.trim(),slope=parseInt(document.getElementById('wizCSlope').value)||113;const parse=id=>(document.getElementById(id).value||'').split(',').map(x=>parseInt(x.trim())||4);const fp=parse('wizCFP'),fsi=parse('wizCFSI'),bp=parse('wizCBP'),bsi=parse('wizCBSI');if(!name){alert('Enter a course name.');return;}const allSI=[...fsi,...bsi];const siIssues=validateSI(allSI);if(siIssues.length){if(!confirm('SI validation issues:\n\n'+siIssues.join('\n')+'\n\nSave anyway?'))return;}const holes=[];for(let i=0;i<9;i++)holes.push({par:fp[i]||4,si:fsi[i]||i*2+1});for(let i=0;i<9;i++)holes.push({par:bp[i]||4,si:bsi[i]||i*2+2});CATALOG[name]={slope,holes};saveNewCourse(name);buildCourseFields();document.getElementById('wizCourseForm').style.display='none';alert(name+' added!');}
 document.getElementById('step1Next').addEventListener('click',()=>{buildPlayerFields();showStep(2);});
 document.getElementById('step2Back').addEventListener('click',()=>showStep(1));
 document.getElementById('step2Next').addEventListener('click',()=>{buildCourseFields();showStep(3);});
@@ -1996,7 +2039,7 @@ function renderWeekendPanel(){
 }
 function addRound(){const cn=document.getElementById('newRoundCourse')?.value||Object.keys(CATALOG)[0];WK.rounds.push({courseName:cn,course:CATALOG[cn]});const nP=WK.players.length;STATE.scores.push(Array(18).fill(null).map(()=>Array(nP).fill(null)));const g=WK.mpGamesDefault;WK.mpGamesPerRound.push(g);WK.vegasSegsPerRound.push(WK.vegasSegsDefault);if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=[];WK.skinsGamesPerRound.push(0);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams.push(Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));const vg=vegasSegForRound(WK.rounds.length-1);STATE.vegTeams.push(Array(vg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));if(!STATE.skinsTeams)STATE.skinsTeams=[];const sg=skinsGamesForRound(WK.rounds.length-1);STATE.skinsTeams.push(Array(sg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));renderWeekendPanel();if(STATE.optPanel==='teams')renderTeamsPanel();}
 function removeRound(idx){if(WK.rounds.length<=1){alert('Need at least 1 round.');return;}WK.rounds.splice(idx,1);STATE.scores.splice(idx,1);WK.mpGamesPerRound.splice(idx,1);WK.vegasSegsPerRound.splice(idx,1);WK.skinsGamesPerRound?.splice(idx,1);STATE.mpTeams.splice(idx,1);STATE.vegTeams.splice(idx,1);STATE.skinsTeams?.splice(idx,1);if(STATE.currentRound>=WK.rounds.length)STATE.currentRound=WK.rounds.length-1;if(STATE.teamsRound>=WK.rounds.length)STATE.teamsRound=WK.rounds.length-1;if(STATE.mpViewRound>=WK.rounds.length)STATE.mpViewRound=WK.rounds.length-1;if(STATE.vegasViewRound>=WK.rounds.length)STATE.vegasViewRound=WK.rounds.length-1;if((STATE.skinsViewRound||0)>=WK.rounds.length)STATE.skinsViewRound=WK.rounds.length-1;if(STATE.scRound>=WK.rounds.length)STATE.scRound=WK.rounds.length-1;renderWeekendPanel();if(STATE.optPanel==='teams')renderTeamsPanel();}
-function renderCoursesPanel(){let html=`<div style="margin-bottom:10px"><button class="btn-sm" onclick="toggleAddCourse()">+ Add new course</button></div><div id="addCourseForm" style="display:none" class="section-card"><div class="section-hd">New course</div><div style="padding:10px 12px"><div style="display:flex;gap:8px;margin-bottom:8px"><input class="text-input" id="newCName" placeholder="Course name" style="flex:2"/><input class="ie-num" id="newCSlope" type="number" placeholder="Slope" style="width:70px"/></div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Front 9 pars</div><input class="text-input" id="newCFP" placeholder="4,4,3,5,4,4,3,5,4" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Front 9 HCP indexes</div><input class="text-input" id="newCFSI" placeholder="1,3,5,7,9,11,13,15,17" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Back 9 pars</div><input class="text-input" id="newCBP" placeholder="4,4,3,5,4,4,3,5,4" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Back 9 HCP indexes</div><input class="text-input" id="newCBSI" placeholder="2,4,6,8,10,12,14,16,18" style="margin-bottom:8px"/><button class="btn-primary" onclick="addCourse()" style="padding:8px">Save course</button></div></div>`;Object.keys(CATALOG).forEach(name=>{const c=CATALOG[name],eid='ce_'+name.replace(/\W/g,'_');html+=`<div class="section-card" style="margin-bottom:10px"><div class="section-hd"><input class="inline-edit" value="${name}" style="font-size:13px;font-weight:600;flex:1;min-width:0" onblur="renameCourse('${name}',this.value)" onkeydown="if(event.key==='Enter')this.blur()"/><div style="display:flex;align-items:center;gap:6px;flex-shrink:0"><span style="font-size:11px;color:var(--color-text-secondary)">slope</span><input class="ie-num" type="number" value="${c.slope}" style="width:70px" onchange="CATALOG['${name}'].slope=parseInt(this.value);saveCustomCourses()"/><button class="btn-sm" onclick="document.getElementById('${eid}').style.display=document.getElementById('${eid}').style.display==='none'?'block':'none'">Edit holes</button></div></div><div style="padding:4px 12px;font-size:10px;color:var(--color-text-secondary)">Front: ${c.holes.slice(0,9).map(h=>h.par).join(',')} · HCP: ${c.holes.slice(0,9).map(h=>h.si).join(',')}<br>Back: ${c.holes.slice(9).map(h=>h.par).join(',')} · HCP: ${c.holes.slice(9).map(h=>h.si).join(',')}</div><div id="${eid}" style="display:none;border-top:0.5px solid var(--color-border-tertiary);padding:8px 12px"><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Front pars</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(0,9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.par}" onchange="CATALOG['${name}'].holes[${i}].par=parseInt(this.value);saveCustomCourses()" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Front HCP</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(0,9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.si}" onchange="CATALOG['${name}'].holes[${i}].si=parseInt(this.value);saveCustomCourses()" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Back pars</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.par}" onchange="CATALOG['${name}'].holes[${i+9}].par=parseInt(this.value);saveCustomCourses()" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Back HCP</div><div style="display:flex;gap:3px">${c.holes.slice(9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.si}" onchange="CATALOG['${name}'].holes[${i+9}].si=parseInt(this.value);saveCustomCourses()" style="width:100%"/>`).join('')}</div></div></div>`;});document.getElementById('opt-panel-courses').innerHTML=html;}
+function renderCoursesPanel(){let html=`<div style="margin-bottom:10px"><button class="btn-sm" onclick="toggleAddCourse()">+ Add new course</button></div><div id="addCourseForm" style="display:none" class="section-card"><div class="section-hd">New course</div><div style="padding:10px 12px"><div style="display:flex;gap:8px;margin-bottom:8px"><input class="text-input" id="newCName" placeholder="Course name" style="flex:2"/><input class="ie-num" id="newCSlope" type="number" placeholder="Slope" style="width:70px"/></div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Front 9 pars</div><input class="text-input" id="newCFP" placeholder="4,4,3,5,4,4,3,5,4" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Front 9 HCP indexes</div><input class="text-input" id="newCFSI" placeholder="1,3,5,7,9,11,13,15,17" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Back 9 pars</div><input class="text-input" id="newCBP" placeholder="4,4,3,5,4,4,3,5,4" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Back 9 HCP indexes</div><input class="text-input" id="newCBSI" placeholder="2,4,6,8,10,12,14,16,18" style="margin-bottom:8px"/><button class="btn-primary" onclick="addCourse()" style="padding:8px">Save course</button></div></div>`;Object.keys(CATALOG).forEach(name=>{const c=CATALOG[name],eid='ce_'+name.replace(/\W/g,'_');html+=`<div class="section-card" style="margin-bottom:10px"><div class="section-hd"><input class="inline-edit" value="${name}" style="font-size:13px;font-weight:600;flex:1;min-width:0" onblur="renameCourse('${name}',this.value)" onkeydown="if(event.key==='Enter')this.blur()"/><div style="display:flex;align-items:center;gap:6px;flex-shrink:0"><span style="font-size:11px;color:var(--color-text-secondary)">slope</span><input class="ie-num" type="number" value="${c.slope}" style="width:70px" onchange="CATALOG['${name}'].slope=parseInt(this.value);saveCourse('${name}')"/><button class="btn-sm" onclick="document.getElementById('${eid}').style.display=document.getElementById('${eid}').style.display==='none'?'block':'none'">Edit holes</button></div></div><div style="padding:4px 12px;font-size:10px;color:var(--color-text-secondary)">Front: ${c.holes.slice(0,9).map(h=>h.par).join(',')} · HCP: ${c.holes.slice(0,9).map(h=>h.si).join(',')}<br>Back: ${c.holes.slice(9).map(h=>h.par).join(',')} · HCP: ${c.holes.slice(9).map(h=>h.si).join(',')}</div><div id="${eid}" style="display:none;border-top:0.5px solid var(--color-border-tertiary);padding:8px 12px"><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Front pars</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(0,9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.par}" onchange="CATALOG['${name}'].holes[${i}].par=parseInt(this.value);saveCourse('${name}')" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Front HCP</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(0,9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.si}" onchange="CATALOG['${name}'].holes[${i}].si=parseInt(this.value);saveCourse('${name}')" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Back pars</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.par}" onchange="CATALOG['${name}'].holes[${i+9}].par=parseInt(this.value);saveCourse('${name}')" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Back HCP</div><div style="display:flex;gap:3px">${c.holes.slice(9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.si}" onchange="CATALOG['${name}'].holes[${i+9}].si=parseInt(this.value);saveCourse('${name}')" style="width:100%"/>`).join('')}</div></div></div>`;});document.getElementById('opt-panel-courses').innerHTML=html;}
 function renderInfoPanel(){
   const sections=[
     {id:'info-about',title:'About The Turn',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The Turn is a golf weekend scoring app built for groups of 2–8 players. Note that Team games (Match Play, Vegas, Team Skins) require 4 players. Individual Skins works with any group size. It handles handicap-adjusted scoring, multiple game formats, expense tracking, and money settlement — all from a single URL that works on any phone.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Version <strong>${APP_VERSION}</strong> · Make the turn. Skip the drama.</p>`},
@@ -2082,7 +2125,7 @@ function validateSI(allSI){
   return issues;
 }
 
-function addCourse(){const name=document.getElementById('newCName').value.trim(),slope=parseInt(document.getElementById('newCSlope').value)||113;const parse=id=>(document.getElementById(id).value||'').split(',').map(x=>parseInt(x.trim())||4);const fp=parse('newCFP'),fsi=parse('newCFSI'),bp=parse('newCBP'),bsi=parse('newCBSI');if(!name){alert('Enter a course name.');return;}const allSI=[...fsi,...bsi];const siIssues=validateSI(allSI);if(siIssues.length){if(!confirm('SI validation issues:\n\n'+siIssues.join('\n')+'\n\nSave anyway?'))return;}const holes=[];for(let i=0;i<9;i++)holes.push({par:fp[i]||4,si:fsi[i]||i*2+1});for(let i=0;i<9;i++)holes.push({par:bp[i]||4,si:bsi[i]||i*2+2});CATALOG[name]={slope,holes};saveCustomCourses();renderCoursesPanel();}
+function addCourse(){const name=document.getElementById('newCName').value.trim(),slope=parseInt(document.getElementById('newCSlope').value)||113;const parse=id=>(document.getElementById(id).value||'').split(',').map(x=>parseInt(x.trim())||4);const fp=parse('newCFP'),fsi=parse('newCFSI'),bp=parse('newCBP'),bsi=parse('newCBSI');if(!name){alert('Enter a course name.');return;}const allSI=[...fsi,...bsi];const siIssues=validateSI(allSI);if(siIssues.length){if(!confirm('SI validation issues:\n\n'+siIssues.join('\n')+'\n\nSave anyway?'))return;}const holes=[];for(let i=0;i<9;i++)holes.push({par:fp[i]||4,si:fsi[i]||i*2+1});for(let i=0;i<9;i++)holes.push({par:bp[i]||4,si:bsi[i]||i*2+2});CATALOG[name]={slope,holes};saveNewCourse(name);renderCoursesPanel();}
 function renderMPRound(){
   if(!WK.mpOn){document.getElementById('mpRoundContent').innerHTML=`<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Match play is off this weekend</div>`;return;}
   const r=STATE.mpViewRound,mpG=mpGamesForRound(r),segs=getSegments(mpG);
@@ -3020,10 +3063,11 @@ function renderMoneyGolf(){renderMoney();}
 
 // Init
 loadLib();
-loadCustomCourses();
-syncOnLoad().then(()=>{
-  renderTripList();
-  renderLibrarySection();
+loadCourses().then(()=>{
+  syncOnLoad().then(()=>{
+    renderTripList();
+    renderLibrarySection();
+  });
 });
 updateThemeUI();
 showHome();
