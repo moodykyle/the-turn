@@ -640,7 +640,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v68';
+const APP_VERSION='v69';
 
 // ===== THEME =====
 (function(){
@@ -1327,9 +1327,28 @@ async function homeRemoveCourse(name){if(!confirm('Remove '+name+' from catalog?
 function startNewWeekend(){WK=null;STATE=null;isReadOnly=false;viewingTripId=null;// Reset all steps then show step 1
 [1,2,3,4].forEach(n=>{const el=document.getElementById('step'+n);if(el)el.classList.remove('active');});wizStep=1;const s1=document.getElementById('step1');if(s1)s1.classList.add('active');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='block';updateDots();}
 function startQuickRound(){
+  // Show player count modal instead of prompt
+  let modal=document.getElementById('qrPlayerModal');
+  if(!modal){
+    modal=document.createElement('div');
+    modal.id='qrPlayerModal';
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
+    modal.innerHTML=`<div style="background:var(--color-surface);border-radius:14px;padding:24px 28px;width:260px;text-align:center;">
+      <div style="font-size:15px;font-weight:600;color:var(--color-text);margin-bottom:6px;">Quick Round</div>
+      <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:18px;">How many players?</div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        ${[2,3,4].map(n=>`<button onclick="startQuickRoundWithPlayers(${n})" style="flex:1;padding:14px 0;font-size:18px;font-weight:700;background:var(--color-accent);color:#fff;border:none;border-radius:10px;cursor:pointer;">${n}</button>`).join('')}
+      </div>
+      <button onclick="document.getElementById('qrPlayerModal').style.display='none'" style="margin-top:14px;font-size:13px;color:var(--color-text-secondary);background:none;border:none;cursor:pointer;">Cancel</button>
+    </div>`;
+    document.body.appendChild(modal);
+  }
+  modal.style.display='flex';
+}
+function startQuickRoundWithPlayers(n){
+  const modal=document.getElementById('qrPlayerModal');
+  if(modal)modal.style.display='none';
   WK=null;STATE=null;isReadOnly=false;viewingTripId=null;
-  const n=parseInt(prompt('How many players?','4'));
-  if(!n||n<2||n>8){return;}
   // Pre-fill step 1
   const today=new Date().toISOString().split('T')[0];
   const nameEl=document.getElementById('weekendName');
@@ -1355,9 +1374,12 @@ function startQuickRound(){
 function renderTripList(){
   // Render from blob immediately for instant display
   _renderTripListFromData(loadTrips());
-  // Then fetch from schema and re-render if data available
+  // Then fetch from schema, re-render, and reconcile localStorage
   s2LoadTripList().then(schemaTrips=>{
-    if(schemaTrips&&schemaTrips.length)_renderTripListFromData(schemaTrips);
+    if(schemaTrips&&schemaTrips.length){
+      _renderTripListFromData(schemaTrips);
+      saveTrips(schemaTrips); // prune stale local trips to match Supabase
+    }
   });
 }
 
@@ -1472,7 +1494,36 @@ function nameToIni(n){
   if(parts.length>=2)return(parts[0][0]+(parts[parts.length-1][0]||'')).toUpperCase();
   return(parts[0]||'').substring(0,2).toUpperCase();
 }
-function deleteTrip(id,btn){if(!confirm('Delete this trip? This cannot be undone.'))return;const card=btn?.closest('.trip-card,.home-resume-card');if(card){card.style.opacity='0.3';card.style.pointerEvents='none';}const trips=loadTrips().filter(t=>t.id!==id);saveTrips(trips);setTimeout(renderTripList,400);}
+async function s2DeleteTrip(id){
+  const enc=encodeURIComponent(id);
+  const hdrs={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+  async function del(table,filter){
+    const r=await fetch(SB_URL+'/rest/v1/'+table+'?'+filter,{method:'DELETE',headers:hdrs});
+    if(!r.ok){const t=await r.text();throw new Error(table+' delete failed: '+t);}
+  }
+  // Order matters: scores first (FK to rounds/players), then rest
+  await del('scores','round_id=like.'+encodeURIComponent(id+':round:%'));
+  await del('expenses','trip_id=eq.'+enc);
+  await del('players','trip_id=eq.'+enc);
+  await del('rounds','trip_id=eq.'+enc);
+  await del('trips','trip_id=eq.'+enc);
+}
+async function deleteTrip(id,btn){
+  if(!confirm('Delete this trip? This cannot be undone.'))return;
+  const card=btn?.closest('.trip-card,.home-resume-card');
+  if(card){card.style.opacity='0.3';card.style.pointerEvents='none';}
+  try{
+    await s2DeleteTrip(id);
+  }catch(e){
+    if(card){card.style.opacity='';card.style.pointerEvents='';}
+    alert('Delete failed. Please try again.');
+    return;
+  }
+  // Remove from localStorage and reconcile
+  const trips=loadTrips().filter(t=>t.id!==id);
+  saveTrips(trips);
+  renderTripList();
+}
 function goHome(){if(!isReadOnly&&WK){autoSave();}showHome();}
 function getSegments(count){const s=Math.floor(18/count);return Array.from({length:count},(_,i)=>({start:i*s,end:i===count-1?18:(i+1)*s,label:'Game '+(i+1)}));}
 function segForHole(h,count){return getSegments(count).findIndex(s=>h>=s.start&&h<s.end);}
