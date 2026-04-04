@@ -136,6 +136,7 @@ body{background:#F5F4F1;color:#111;font-family:-apple-system,BlinkMacSystemFont,
 .field-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;}
 .field-row{margin-bottom:14px;}
 .text-input{width:100%;padding:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:14px;background:var(--color-background-primary);color:var(--color-text-primary);}
+input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(52%) sepia(98%) saturate(336%) hue-rotate(115deg) brightness(88%) contrast(89%);cursor:pointer;}
 .player-setup-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary);}
 .player-setup-row:last-child{border-bottom:none;}
 .avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:500;flex-shrink:0;}
@@ -476,7 +477,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
       </div>
       <div class="wizard-step" id="step4">
         <div class="wizard-title">Money & games</div>
-        <div class="wizard-sub">Set the stakes and choose which games to play.</div>
+        <div class="wizard-sub">Set the stakes and choose which games to play. Games apply to all rounds by default - individual rounds are configurable in the Options tab after the trip is created.</div>
         <div id="playerCountWarning" style="display:none;background:#FAEEDA;border:0.5px solid #EFB880;border-radius:var(--border-radius-md);padding:10px 12px;margin-bottom:14px;"></div>
         <div class="field-row"><div class="field-label" style="display:flex;align-items:center;gap:6px">Weekend buy-in per player ($) <span class="info-icon" tabindex="0">i<span class="info-tip">Each player puts this into the pot. Winner is determined by the method selected below.</span></span></div><input id="buyIn" type="number" value="50" style="width:90px;padding:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:14px;background:var(--color-background-primary);color:var(--color-text-primary);"/></div><div class="field-row"><div class="field-label">Pot winner determined by</div><select id="wizPotMethod" style="width:100%;padding:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:14px;background:var(--color-background-primary);color:var(--color-text-primary);"><option value="netstroke">Net stroke play (lowest net score)</option><option value="matchplay">Match play points (most points)</option></select></div>
         <div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;margin-bottom:14px">
@@ -581,12 +582,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
 <script>
 const CATALOG={};
 // CATALOG populated from Supabase courses table on load (see loadCourses())
-let PLAYER_LIBRARY=[
-  {first:'Matt',last:'Richardson',idx:3.6,venmo:''},
-  {first:'Doug',last:'Stinson',idx:5.4,venmo:''},
-  {first:'Kyle',last:'Moody',idx:9.0,venmo:''},
-  {first:'Aaron',last:'Sporck',idx:7.4,venmo:''}
-];
+let PLAYER_LIBRARY=[];
 
 // Parse a full name string into {first, last} — splits on last space
 function parseName(nameStr){
@@ -624,23 +620,13 @@ function libDisplayName(p){
 }
 
 // Seed default players into Supabase if library is empty
-async function seedPlayersIfEmpty(){
-  if(PLAYER_LIBRARY.length>0)return;
-  PLAYER_LIBRARY=[
-    {first:'Matt',last:'Richardson',idx:3.6,venmo:''},
-    {first:'Doug',last:'Stinson',idx:5.4,venmo:''},
-    {first:'Kyle',last:'Moody',idx:9.0,venmo:''},
-    {first:'Aaron',last:'Sporck',idx:7.4,venmo:''}
-  ];
-  saveLib();
-}
 const AVATAR_PALETTE=[{bg:'#B5D4F4',fg:'#0C447C'},{bg:'#9FE1CB',fg:'#085041'},{bg:'#F5C4B3',fg:'#712B13'},{bg:'#F4C0D1',fg:'#72243E'},{bg:'#FAC775',fg:'#633806'},{bg:'#C0DD97',fg:'#27500A'},{bg:'#F7C1C1',fg:'#791F1F'},{bg:'#CECBF6',fg:'#3C3489'},{bg:'#B8E8FF',fg:'#0A3A52'},{bg:'#FFD9A0',fg:'#5C3500'},{bg:'#D4F5C2',fg:'#1A4D00'},{bg:'#ECC9F0',fg:'#5A1268'}];
 const COURSE_COLORS=['#B5D4F4','#9FE1CB','#F5C4B3','#F4C0D1','#FAC775','#C0DD97'];
 const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v70';
+const APP_VERSION='v72';
 
 // ===== THEME =====
 (function(){
@@ -1209,8 +1195,6 @@ async function syncOnLoad(){
       }
     }catch(e){}
   }
-  // Seed default players if library is still empty
-  if(PLAYER_LIBRARY.length===0)await seedPlayersIfEmpty();
   if(el){el.textContent='';el.style.display='none';}
   // Step 2: validate new schema against blob (console only)
   if(WK)s2ValidateOnLoad();
@@ -1305,7 +1289,7 @@ function renderLibrarySection(){
     if(PLAYER_LIBRARY.length===0){
       html+=`<div style="padding:12px;font-size:13px;color:var(--color-text-secondary);text-align:center">No players yet — add in trip setup.</div>`;
     } else {
-      PLAYER_LIBRARY.forEach((p,i)=>{
+      const sortedLib=PLAYER_LIBRARY.map((p,i)=>({p,i})).sort((a,b)=>(a.p.last||'').localeCompare(b.p.last||''));sortedLib.forEach(({p,i})=>{
         const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
         const initials=((p.first||'')[0]||'')+((p.last||'')[0]||'');
         const fullName=libDisplayName(p);
@@ -1344,8 +1328,11 @@ function renderLibrarySection(){
 
 function homeRemoveLibPlayer(i){if(!confirm('Remove '+libDisplayName(PLAYER_LIBRARY[i])+' from library?'))return;PLAYER_LIBRARY.splice(i,1);saveLib();renderLibrarySection();}
 async function homeRemoveCourse(name){if(!confirm('Remove '+name+' from catalog?'))return;delete CATALOG[name];try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}try{await fetch(SB_URL+'/rest/v1/courses?name=eq.'+encodeURIComponent(name),{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});}catch(e){}renderLibrarySection();}
-function startNewWeekend(){WK=null;STATE=null;isReadOnly=false;viewingTripId=null;// Reset all steps then show step 1
-[1,2,3,4].forEach(n=>{const el=document.getElementById('step'+n);if(el)el.classList.remove('active');});wizStep=1;const s1=document.getElementById('step1');if(s1)s1.classList.add('active');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='block';updateDots();}
+function startNewWeekend(){WK=null;STATE=null;isReadOnly=false;viewingTripId=null;
+  const wn=document.getElementById('weekendName');if(wn)wn.value='';
+  const wd=document.getElementById('weekendDate');if(wd)wd.value='';
+  ['wizMpOn','wizVegasOn','wizSkinsOn','wizTwosOn','wizSnakeOn'].forEach(id=>{const el=document.getElementById(id);if(el){el.checked=false;el.dispatchEvent(new Event('change'));}});
+  [1,2,3,4].forEach(n=>{const el=document.getElementById('step'+n);if(el)el.classList.remove('active');});wizStep=1;const s1=document.getElementById('step1');if(s1)s1.classList.add('active');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='block';updateDots();}
 function startQuickRound(){
   // Show player count modal instead of prompt
   let modal=document.getElementById('qrPlayerModal');
@@ -1555,7 +1542,7 @@ function refreshDatalist(){}
 function buildPlayerFields(){
   const n=parseInt(document.getElementById('numPlayers').value);
   const listId='playerLibList';
-  const datalist=`<datalist id="${listId}">${PLAYER_LIBRARY.map(p=>`<option value="${libDisplayName(p)}" data-idx="${p.idx}">`).join('')}</datalist>`;
+  const sortedForList=[...PLAYER_LIBRARY].sort((a,b)=>(a.last||'').localeCompare(b.last||''));const datalist=`<datalist id="${listId}">${sortedForList.map(p=>`<option value="${libDisplayName(p)}" data-idx="${p.idx}">`).join('')}</datalist>`;
   document.getElementById('playerFields').innerHTML=datalist+Array.from({length:n},(_,i)=>{
     const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
     return`<div class="player-setup-row" style="flex-wrap:wrap;gap:6px">
@@ -1580,15 +1567,23 @@ function getUsedPlayerNames(excludeSlot){
 function onPlayerNameInput(slot){
   const firstEl=document.getElementById('pfirst'+slot);
   const lastEl=document.getElementById('plast'+slot);
-  const first=(firstEl?.value||'').trim();
+  const raw=(firstEl?.value||'').trim();
   const avi=document.getElementById('pavi'+slot);
+  // Check if user selected a full name from datalist (e.g. "Matt Richardson")
+  const fullMatch=PLAYER_LIBRARY.find(p=>libDisplayName(p).toLowerCase()===raw.toLowerCase());
+  if(fullMatch){
+    // Full name selected — split into first/last fields
+    firstEl.value=fullMatch.first||'';
+    if(lastEl)lastEl.value=fullMatch.last||'';
+    const idxEl=document.getElementById('pidx'+slot);
+    if(idxEl)idxEl.value=fullMatch.idx;
+    if(avi)avi.textContent=(fullMatch.first||raw).substring(0,2).toUpperCase();
+    return;
+  }
+  const first=raw;
   if(avi)avi.textContent=first?first.substring(0,2).toUpperCase():'P'+(slot+1);
   // Auto-fill last name + handicap from library on first name match
-  const nameLower=first.toLowerCase();
-  const match=PLAYER_LIBRARY.find(p=>
-    libDisplayName(p).toLowerCase()===nameLower||
-    (p.first||'').toLowerCase()===nameLower
-  );
+  const match=PLAYER_LIBRARY.find(p=>(p.first||'').toLowerCase()===first.toLowerCase());
   if(match){
     if(lastEl&&!lastEl.value)lastEl.value=match.last||'';
     const idxEl=document.getElementById('pidx'+slot);
@@ -1647,6 +1642,15 @@ function startWeekend(){const nP=parseInt(document.getElementById('numPlayers').
   }
   // Resolve display names — last name default, first initial + last on conflict
   resolveDisplayNames(players);
+  // Save new players to library (skip if already present by first+last match)
+  let libUpdated=false;
+  players.forEach(p=>{
+    if(!p.first)return;
+    const exists=PLAYER_LIBRARY.find(l=>(l.first||'').toLowerCase()===p.first.toLowerCase()&&(l.last||'').toLowerCase()===(p.last||'').toLowerCase());
+    if(!exists){PLAYER_LIBRARY.push({first:p.first,last:p.last||'',idx:p.idx||0,venmo:p.venmo||''});libUpdated=true;}
+    else if(exists&&p.idx&&exists.idx!==p.idx){exists.idx=p.idx;libUpdated=true;}
+  });
+  if(libUpdated)saveLib();
   const rounds=[];for(let i=0;i<nR;i++){const cn=document.getElementById('course'+i)?.value||Object.keys(CATALOG)[0];if(!cn){alert('Please select a course for Round '+(i+1)+'.');return;}rounds.push({courseName:cn,course:CATALOG[cn],mpOn:false,vegasOn:false,skinsOn:false,snakeOn:false});}const mpOn=document.getElementById('wizMpOn').checked,vegasOn=document.getElementById('wizVegasOn').checked,twosOn=document.getElementById('wizTwosOn').checked,skinsOn=document.getElementById('wizSkinsOn').checked;const mpGDef=mpOn?parseInt(document.getElementById('wizMpGames').value):3;const skGDef=skinsOn?parseInt(document.getElementById('wizSkinsGames').value):0;const netOffLow=document.getElementById('wizNetOffLow')?.checked||false;const mpSettle=mpOn?(document.getElementById('wizMpSettle')?.value||'perplayer'):'perplayer';const vegasSettle=vegasOn?(document.getElementById('wizVegasSettle')?.value||'perplayer'):'perplayer';const snakeOn=document.getElementById('wizSnakeOn').checked;WK={_id:Date.now()+'',name:document.getElementById('weekendName').value||'My Trip',date:document.getElementById('weekendDate').value||'',players,rounds,hdcpPct:parseFloat(document.getElementById('hdcpPct').value||80)/100,buyIn:parseFloat(document.getElementById('buyIn').value||50),potMethod:document.getElementById('wizPotMethod')?.value||'netstroke',mpOn,mpGamesDefault:mpGDef,mpGamesPerRound:Array(nR).fill(mpGDef),gameVal:mpOn?parseFloat(document.getElementById('gameVal').value||5):5,mpSettle,vegasOn,vegasVal:vegasOn?parseFloat(document.getElementById('vegasVal').value||0.5):0.5,vegasSegsDefault:vegasOn?parseInt(document.getElementById('wizVegasSegs').value):3,vegasSegsPerRound:Array(nR).fill(vegasOn?parseInt(document.getElementById('wizVegasSegs').value):3),vegasSettle,twosOn,twosAmt:twosOn?parseFloat(document.getElementById('twosAmt').value||25):25,skinsOn,skinsVal:skinsOn?parseFloat(document.getElementById('skinsVal').value||5):5,skinsFmt:skinsOn?(document.getElementById('wizSkinsFmt').value||'team'):'team',skinsSettle:skinsOn?(document.getElementById('wizSkinsSettle').value||'perplayer'):'perplayer',skinsGamesDefault:skGDef>0?skGDef:3,skinsGamesPerRound:Array(nR).fill(skGDef>0?skGDef:3),snakeOn,snakeBase:snakeOn?parseFloat(document.getElementById('snakeBase').value||1):1,snakeGrowth:snakeOn?(document.getElementById('snakeGrowth').value||'double'):'double',snakeIncrement:snakeOn?parseFloat(document.getElementById('snakeIncrement').value||1):1,snakePayout:snakeOn?(document.getElementById('snakePayout').value||'split'):'split'};isReadOnly=false;viewingTripId=null;
   WK.rounds.forEach(rd=>{rd.mpOn=mpOn;rd.vegasOn=vegasOn;rd.skinsOn=skinsOn;rd.snakeOn=snakeOn;});
   if(players.length<4&&skinsOn)WK.skinsFmt='individual';
@@ -1734,6 +1738,7 @@ function bestBird(team,hi,r){const par=WK.rounds[r].course.holes[hi]?.par||4;let
 function calcVegas(hi,r){const vSeg=vegasSegForRound(r),si=segForHole(hi,vSeg),tA=STATE.vegTeams[r]?.[si]?.[0],tB=STATE.vegTeams[r]?.[si]?.[1];if(!tA||!tB||tA.length!==2||tB.length!==2)return null;const nA=tA.map(pi=>getNet(pi,hi,r)),nB=tB.map(pi=>getNet(pi,hi,r));if(nA.includes(null)||nB.includes(null))return null;const loA=Math.min(...nA),hiA=Math.max(...nA),loB=Math.min(...nB),hiB=Math.max(...nB);const bA=bestBird(tA,hi,r),bB=bestBird(tB,hi,r);let numA=loA*10+hiA,numB=loB*10+hiB,aFlip=false,bFlip=false,doubled=false;if(bA>0&&bB===0){numB=hiB*10+loB;bFlip=true;if(bA>=2)doubled=true;}else if(bB>0&&bA===0){numA=hiA*10+loA;aFlip=true;if(bB>=2)doubled=true;}else if(bA>0&&bB>0){if(bA>=2&&bB===1){numB=hiB*10+loB;bFlip=true;doubled=true;}else if(bB>=2&&bA===1){numA=hiA*10+loA;aFlip=true;doubled=true;}else{numA=hiA*10+loA;numB=hiB*10+loB;aFlip=true;bFlip=true;}}let diff=Math.abs(numA-numB);if(doubled)diff*=2;const tied=numA===numB;return{numA,numB,diff,aWins:!tied&&numA<numB,tied,aFlip,bFlip,doubled,tA,tB,loA,hiA,loB,hiB};}
 function calcMP(hi,r){const mpG=mpGamesForRound(r),si=segForHole(hi,mpG),tA=STATE.mpTeams[r]?.[si]?.[0],tB=STATE.mpTeams[r]?.[si]?.[1];if(!tA||!tB||tA.length!==2||tB.length!==2)return null;const nA=tA.map(pi=>getNet(pi,hi,r)),nB=tB.map(pi=>getNet(pi,hi,r));if(nA.includes(null)||nB.includes(null))return null;const bestA=Math.min(...nA),bestB=Math.min(...nB),halved=bestA===bestB;return{bestA,bestB,aWins:!halved&&bestA<bestB,halved,tA,tB,nA,nB};}
 function calcTwos(){return WK.players.map((_,pi)=>{let c=0;WK.rounds.forEach((_,r)=>{for(let h=0;h<18;h++)if(STATE.scores[r][h][pi]===2)c++;});return c;});}
+function calcTwosDetail(){return WK.players.map((_,pi)=>{const hits=[];WK.rounds.forEach((_,r)=>{for(let h=0;h<18;h++)if(STATE.scores[r][h][pi]===2)hits.push('R'+(r+1)+' H'+(h+1));});return hits;});}
 function renderBanner(){if(!gameOn('mp',STATE.currentRound)||WK.players.length<4){document.getElementById('banner').innerHTML='';return;}const r=STATE.currentRound,hi=STATE.currentHole,mpG=mpGamesForRound(r),si=segForHole(hi,mpG);const seg=getSegments(mpG)[si],tA=STATE.mpTeams[r]?.[si]?.[0],tB=STATE.mpTeams[r]?.[si]?.[1];if(!tA||!tB){document.getElementById('banner').innerHTML='';return;}const lmIdx=WK.players.reduce((a,_,i)=>effHdcp(i,r)<effHdcp(a,r)?i:a,0);const badge=STATE.netOffLow?`<span class="hdcp-badge">net off ${displayName(lmIdx)}</span>`:'';const nameA=tA.map(i=>displayName(i)).join(' / '),nameB=tB.map(i=>displayName(i)).join(' / ');document.getElementById('banner').innerHTML=`<div class="banner-game">${seg.label}: A (${nameA}) vs B (${nameB})</div><div class="banner-sub">Holes ${seg.start+1}–${seg.end} ${badge}</div>`;}
 function renderScorecard(){
   try{
@@ -2126,38 +2131,44 @@ function renderTeamsPanel(){
 }
 function setDropSkins(gameIdx,slot,pIdx,roundIdx){if(isReadOnly)return;if(!STATE.skinsTeams)return;const teams=STATE.skinsTeams[roundIdx][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;renderTeamsPanel();}
 function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span>Active players</span></div>`;WK.players.forEach((p,i)=>{const eff=effHdcp(i,r);html+=`<div class="setup-row"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><input class="inline-edit" value="${p.name}" style="flex:1;min-width:60px" onchange="WK.players[${i}].name=this.value;WK.players[${i}].ini=this.value.substring(0,2).toUpperCase();renderPlayersPanel();renderScorecard();renderBanner();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin:0 3px">idx</span><input class="ie-num" type="number" step="0.1" value="${p.idx}" style="width:70px" onchange="WK.players[${i}].idx=parseFloat(this.value)||0;renderPlayersPanel();renderScorecard();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px;white-space:nowrap">→ ${eff}</span>${WK.players.length>2?`<button class="btn-danger" onclick="removePlayer(${i})">✕</button>`:''}</div>`;});html+=`</div>`;if(WK.players.length<12)html+=`<button class="btn-sm" onclick="addPlayer()" style="margin-bottom:14px">+ Add player</button>`;
-  html+=`<div class="section-card"><div class="section-hd">Player library <span style="font-size:11px;font-weight:400;color:var(--color-text-secondary)">— saved for quick setup</span></div>`;
-  PLAYER_LIBRARY.forEach((p,i)=>{
-    const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
-    const initials=((p.first||'')[0]||'')+((p.last||'')[0]||'');
-    html+=`<div style="padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
-      <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">
-        <div class="avatar" style="width:28px;height:28px;font-size:10px;background:${c.bg};color:${c.fg};flex-shrink:0">${initials.toUpperCase()||'?'}</div>
-        <input class="text-input" value="${p.first||''}" placeholder="First" style="flex:1;padding:5px 8px;font-size:13px" onchange="PLAYER_LIBRARY[${i}].first=this.value;saveLib()"/>
-        <input class="text-input" value="${p.last||''}" placeholder="Last" style="flex:1;padding:5px 8px;font-size:13px" onchange="PLAYER_LIBRARY[${i}].last=this.value;saveLib()"/>
-        <button class="btn-danger" onclick="removeLibPlayer(${i})">✕</button>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center;padding-left:34px">
-        <span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0">Hdcp</span>
-        <input class="ie-num" type="number" step="0.1" value="${p.idx}" style="width:64px" onchange="PLAYER_LIBRARY[${i}].idx=parseFloat(this.value);saveLib()"/>
-        <span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0">@</span>
-        <input class="text-input" value="${(p.venmo||'').replace(/^@/,'')}" placeholder="Venmo handle" style="flex:1;padding:5px 8px;font-size:13px" onchange="PLAYER_LIBRARY[${i}].venmo=this.value.replace(/^@/,'');saveLib()"/>
-      </div>
-    </div>`;
-  });
-  html+=`<div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary)">
-    <div style="display:flex;gap:6px;margin-bottom:6px">
-      <input class="text-input" id="newLibFirst" placeholder="First name" style="flex:1"/>
-      <input class="text-input" id="newLibLast" placeholder="Last name" style="flex:1"/>
-    </div>
-    <div style="display:flex;gap:6px">
-      <input class="ie-num" id="newLibIdx" type="number" step="0.1" placeholder="Idx" style="width:64px"/>
-      <input class="text-input" id="newLibVenmo" placeholder="Venmo handle" style="flex:1"/>
-      <button class="btn-sm" onclick="addLibPlayer()">Add</button>
-    </div>
-  </div></div>`;
+  if(PLAYER_LIBRARY.length===0){
+    html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Player library <span style="font-size:11px;font-weight:400;color:var(--color-text-secondary)">— saved for quick setup</span></div><div style="padding:12px;font-size:13px;color:var(--color-text-secondary);text-align:center">No players yet — added automatically when you create a trip.</div></div>`;
+  } else {
+    html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Player library <span style="font-size:11px;font-weight:400;color:var(--color-text-secondary)">— saved for quick setup</span></div>`;
+    const sortedLib=PLAYER_LIBRARY.map((p,i)=>({p,i})).sort((a,b)=>(a.p.last||'').localeCompare(b.p.last||''));sortedLib.forEach(({p,i})=>{
+      const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
+      const initials=((p.first||'')[0]||'')+((p.last||'')[0]||'');
+      const eid='lib_edit_'+i;
+      const venmoDisplay=p.venmo?` · @${(p.venmo||'').replace(/^@/,'')}`:'';
+      html+=`<div style="border-bottom:0.5px solid var(--color-border-tertiary)">
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px">
+          <div class="avatar" style="width:28px;height:28px;font-size:10px;background:${c.bg};color:${c.fg};flex-shrink:0">${initials.toUpperCase()||'?'}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">${p.first||''} ${p.last||''}</div>
+            <div style="font-size:11px;color:var(--color-text-secondary)">Hdcp ${p.idx}${venmoDisplay}</div>
+          </div>
+          <button class="btn-sm" id="${eid}_btn" onclick="toggleEditPanel('${eid}','${eid}_btn')">Edit</button>
+        </div>
+        <div id="${eid}" style="display:none;padding:8px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary)">
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <input class="text-input" value="${p.first||''}" placeholder="First" style="flex:1;padding:5px 8px;font-size:13px" onchange="PLAYER_LIBRARY[${i}].first=this.value;saveLib();renderPlayersPanel()"/>
+            <input class="text-input" value="${p.last||''}" placeholder="Last" style="flex:1;padding:5px 8px;font-size:13px" onchange="PLAYER_LIBRARY[${i}].last=this.value;saveLib();renderPlayersPanel()"/>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+            <span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0">Hdcp</span>
+            <input class="ie-num" type="number" step="0.1" value="${p.idx}" style="width:64px" onchange="PLAYER_LIBRARY[${i}].idx=parseFloat(this.value);saveLib()"/>
+            <span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px">@</span>
+            <input class="text-input" value="${(p.venmo||'').replace(/^@/,'')}" placeholder="Venmo handle" style="flex:1;padding:5px 8px;font-size:13px" onchange="PLAYER_LIBRARY[${i}].venmo=this.value.replace(/^@/,'');saveLib()"/>
+          </div>
+          <button class="btn-danger" style="font-size:11px" onclick="removeLibPlayer(${i})">Remove from library</button>
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
   document.getElementById('opt-panel-players').innerHTML=html;
 }
+function toggleEditPanel(eid,btnId){const panel=document.getElementById(eid);const btn=document.getElementById(btnId);if(!panel)return;const isOpen=panel.style.display!=='none';panel.style.display=isOpen?'none':'block';if(btn)btn.textContent=isOpen?'Edit':'Save';}
 function addLibPlayer(){const first=(document.getElementById('newLibFirst')?.value||'').trim(),last=(document.getElementById('newLibLast')?.value||'').trim(),idx=parseFloat(document.getElementById('newLibIdx')?.value||10),venmo=(document.getElementById('newLibVenmo')?.value||'').trim();if(!first)return;PLAYER_LIBRARY.push({first,last,idx,venmo});saveLib();renderPlayersPanel();}
 function removeLibPlayer(i){PLAYER_LIBRARY.splice(i,1);saveLib();renderPlayersPanel();}
 function addPlayer(){if(WK.players.length>=12)return;const c=pickColor(),i=WK.players.length;WK.players.push({name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));});renderPlayersPanel();renderTeamsPanel();}
@@ -2173,7 +2184,7 @@ function renderWeekendPanel(){
 }
 function addRound(){const cn=document.getElementById('newRoundCourse')?.value||Object.keys(CATALOG)[0];WK.rounds.push({courseName:cn,course:CATALOG[cn]});const nP=WK.players.length;STATE.scores.push(Array(18).fill(null).map(()=>Array(nP).fill(null)));const g=WK.mpGamesDefault;WK.mpGamesPerRound.push(g);WK.vegasSegsPerRound.push(WK.vegasSegsDefault);if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=[];WK.skinsGamesPerRound.push(0);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams.push(Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));const vg=vegasSegForRound(WK.rounds.length-1);STATE.vegTeams.push(Array(vg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));if(!STATE.skinsTeams)STATE.skinsTeams=[];const sg=skinsGamesForRound(WK.rounds.length-1);STATE.skinsTeams.push(Array(sg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));renderWeekendPanel();if(STATE.optPanel==='teams')renderTeamsPanel();}
 function removeRound(idx){if(WK.rounds.length<=1){alert('Need at least 1 round.');return;}WK.rounds.splice(idx,1);STATE.scores.splice(idx,1);WK.mpGamesPerRound.splice(idx,1);WK.vegasSegsPerRound.splice(idx,1);WK.skinsGamesPerRound?.splice(idx,1);STATE.mpTeams.splice(idx,1);STATE.vegTeams.splice(idx,1);STATE.skinsTeams?.splice(idx,1);if(STATE.currentRound>=WK.rounds.length)STATE.currentRound=WK.rounds.length-1;if(STATE.teamsRound>=WK.rounds.length)STATE.teamsRound=WK.rounds.length-1;if(STATE.mpViewRound>=WK.rounds.length)STATE.mpViewRound=WK.rounds.length-1;if(STATE.vegasViewRound>=WK.rounds.length)STATE.vegasViewRound=WK.rounds.length-1;if((STATE.skinsViewRound||0)>=WK.rounds.length)STATE.skinsViewRound=WK.rounds.length-1;if(STATE.scRound>=WK.rounds.length)STATE.scRound=WK.rounds.length-1;renderWeekendPanel();if(STATE.optPanel==='teams')renderTeamsPanel();}
-function renderCoursesPanel(){let html=`<div style="margin-bottom:10px"><button class="btn-sm" onclick="toggleAddCourse()">+ Add new course</button></div><div id="addCourseForm" style="display:none" class="section-card"><div class="section-hd">New course</div><div style="padding:10px 12px"><div style="display:flex;gap:8px;margin-bottom:8px"><input class="text-input" id="newCName" placeholder="Course name" style="flex:2"/><input class="ie-num" id="newCSlope" type="number" placeholder="Slope" style="width:70px"/></div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Front 9 pars</div><input class="text-input" id="newCFP" placeholder="4,4,3,5,4,4,3,5,4" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Front 9 HCP indexes</div><input class="text-input" id="newCFSI" placeholder="1,3,5,7,9,11,13,15,17" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Back 9 pars</div><input class="text-input" id="newCBP" placeholder="4,4,3,5,4,4,3,5,4" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Back 9 HCP indexes</div><input class="text-input" id="newCBSI" placeholder="2,4,6,8,10,12,14,16,18" style="margin-bottom:8px"/><button class="btn-primary" onclick="addCourse()" style="padding:8px">Save course</button></div></div>`;Object.keys(CATALOG).forEach(name=>{const c=CATALOG[name],eid='ce_'+name.replace(/\W/g,'_');html+=`<div class="section-card" style="margin-bottom:10px"><div class="section-hd"><input class="inline-edit" value="${name}" style="font-size:13px;font-weight:600;flex:1;min-width:0" onblur="renameCourse('${name}',this.value)" onkeydown="if(event.key==='Enter')this.blur()"/><div style="display:flex;align-items:center;gap:6px;flex-shrink:0"><span style="font-size:11px;color:var(--color-text-secondary)">slope</span><input class="ie-num" type="number" value="${c.slope}" style="width:70px" onchange="CATALOG['${name}'].slope=parseInt(this.value);saveCourse('${name}')"/><button class="btn-sm" onclick="document.getElementById('${eid}').style.display=document.getElementById('${eid}').style.display==='none'?'block':'none'">Edit holes</button></div></div><div style="padding:4px 12px;font-size:10px;color:var(--color-text-secondary)">Front: ${c.holes.slice(0,9).map(h=>h.par).join(',')} · HCP: ${c.holes.slice(0,9).map(h=>h.si).join(',')}<br>Back: ${c.holes.slice(9).map(h=>h.par).join(',')} · HCP: ${c.holes.slice(9).map(h=>h.si).join(',')}</div><div id="${eid}" style="display:none;border-top:0.5px solid var(--color-border-tertiary);padding:8px 12px"><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Front pars</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(0,9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.par}" onchange="CATALOG['${name}'].holes[${i}].par=parseInt(this.value);saveCourse('${name}')" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Front HCP</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(0,9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.si}" onchange="CATALOG['${name}'].holes[${i}].si=parseInt(this.value);saveCourse('${name}')" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Back pars</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.par}" onchange="CATALOG['${name}'].holes[${i+9}].par=parseInt(this.value);saveCourse('${name}')" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Back HCP</div><div style="display:flex;gap:3px">${c.holes.slice(9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.si}" onchange="CATALOG['${name}'].holes[${i+9}].si=parseInt(this.value);saveCourse('${name}')" style="width:100%"/>`).join('')}</div></div></div>`;});document.getElementById('opt-panel-courses').innerHTML=html;}
+function renderCoursesPanel(){let html=`<div style="margin-bottom:10px"><button class="btn-sm" onclick="toggleAddCourse()">+ Add new course</button></div><div id="addCourseForm" style="display:none" class="section-card"><div class="section-hd">New course</div><div style="padding:10px 12px"><div style="display:flex;gap:8px;margin-bottom:8px"><input class="text-input" id="newCName" placeholder="Course name" style="flex:2"/><input class="ie-num" id="newCSlope" type="number" placeholder="Slope" style="width:70px"/></div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Front 9 pars</div><input class="text-input" id="newCFP" placeholder="4,4,3,5,4,4,3,5,4" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Front 9 HCP indexes</div><input class="text-input" id="newCFSI" placeholder="1,3,5,7,9,11,13,15,17" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Back 9 pars</div><input class="text-input" id="newCBP" placeholder="4,4,3,5,4,4,3,5,4" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Back 9 HCP indexes</div><input class="text-input" id="newCBSI" placeholder="2,4,6,8,10,12,14,16,18" style="margin-bottom:8px"/><button class="btn-primary" onclick="addCourse()" style="padding:8px">Save course</button></div></div>`;Object.keys(CATALOG).forEach(name=>{const c=CATALOG[name],eid='ce_'+name.replace(/\W/g,'_');html+=`<div class="section-card" style="margin-bottom:10px"><div class="section-hd"><input class="inline-edit" value="${name}" style="font-size:13px;font-weight:600;flex:1;min-width:0" onblur="renameCourse('${name}',this.value)" onkeydown="if(event.key==='Enter')this.blur()"/><div style="display:flex;align-items:center;gap:6px;flex-shrink:0"><span style="font-size:11px;color:var(--color-text-secondary)">slope</span><input class="ie-num" type="number" value="${c.slope}" style="width:70px" onchange="CATALOG['${name}'].slope=parseInt(this.value);saveCourse('${name}')"/><button class="btn-sm" id="${eid}_btn" onclick="toggleEditPanel('${eid}','${eid}_btn')">Edit</button></div></div><div style="padding:4px 12px;font-size:10px;color:var(--color-text-secondary)">Front: ${c.holes.slice(0,9).map(h=>h.par).join(',')} · HCP: ${c.holes.slice(0,9).map(h=>h.si).join(',')}<br>Back: ${c.holes.slice(9).map(h=>h.par).join(',')} · HCP: ${c.holes.slice(9).map(h=>h.si).join(',')}</div><div id="${eid}" style="display:none;border-top:0.5px solid var(--color-border-tertiary);padding:8px 12px"><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Front pars</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(0,9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.par}" onchange="CATALOG['${name}'].holes[${i}].par=parseInt(this.value);saveCourse('${name}')" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Front HCP</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(0,9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.si}" onchange="CATALOG['${name}'].holes[${i}].si=parseInt(this.value);saveCourse('${name}')" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Back pars</div><div style="display:flex;gap:3px;margin-bottom:6px">${c.holes.slice(9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.par}" onchange="CATALOG['${name}'].holes[${i+9}].par=parseInt(this.value);saveCourse('${name}')" style="width:100%"/>`).join('')}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Back HCP</div><div style="display:flex;gap:3px">${c.holes.slice(9).map((h,i)=>`<input class="hole-edit-inp" type="number" value="${h.si}" onchange="CATALOG['${name}'].holes[${i+9}].si=parseInt(this.value);saveCourse('${name}')" style="width:100%"/>`).join('')}</div></div></div>`;});document.getElementById('opt-panel-courses').innerHTML=html;}
 function renderInfoPanel(){
   const sections=[
     {id:'info-about',title:'About The Turn',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The Turn is a golf weekend scoring app built to fill the needs of my own buddies trip, The Shaker Cup, which started in 2009. What began with pencil and paper eventually moved to Google Sheets, which served its purpose for a few years before the complexity of the games outgrew what a spreadsheet could handle cleanly. The Turn was built to fill that space.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">It handles handicap-adjusted scoring, multiple game formats, expense tracking, and money settlement. It runs from a single URL that works on any phone. Team games require 4 players. Individual Skins works with any group size.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Version <strong>${APP_VERSION}</strong> · Make the turn. Skip the drama.</p>`},
@@ -2675,7 +2686,7 @@ function renderMoney(){
     html+=`<div class="round-card-body">`;
     if(!tot)html+=`<div class="pending-box">No 2s yet — pot carries</div>`;
     else{
-      WK.players.forEach((p,i)=>{const extra=twos[i]>0?`<span class="twos-badge">${twos[i]} two${twos[i]>1?'s':''}</span>`:'';html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(i)}${extra}</span></div><div class="${twosNet[i]>=0?'money-pos':'money-neg'}">${fmt(twosNet[i])}</div></div>`;});
+      const twosDetail=calcTwosDetail();WK.players.forEach((p,i)=>{const hits=twosDetail[i];const badge=hits.length>0?`<span class="twos-badge">${hits.length} two${hits.length>1?'s':''}</span>`:'' ;const loc=hits.length>0?`<span style="font-size:11px;color:var(--color-text-secondary);margin-left:3px">· ${hits.join(', ')}</span>`:'';const extra=badge+loc;html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(i)}${extra}</span></div><div class="${twosNet[i]>=0?'money-pos':'money-neg'}">${fmt(twosNet[i])}</div></div>`;});
       const ttxns=simplifyDebts(twosNet);
       if(ttxns.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Transfers</div>`;ttxns.forEach(t=>{html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px">${displayName(t.from)} → ${displayName(t.to)}</span><span style="font-size:13px;font-weight:500;color:#D85A30">$${t.amt.toFixed(2)}</span></div>`;});}
     }
