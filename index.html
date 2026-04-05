@@ -177,10 +177,10 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(52%) sepia(9
 .calc-box{margin:0.75rem 1rem 0;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;}
 .calc-hd{background:var(--color-background-secondary);padding:7px 12px;font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em;display:flex;justify-content:space-between;}
 .calc-inner{padding:10px 12px;}
-.vegas-teams-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;gap:8px;}
-.vegas-team-block{flex:1;}.vegas-team-block.right{text-align:right;}
+.vegas-teams-row{display:flex;align-items:stretch;justify-content:space-between;margin-bottom:0;gap:8px;}
+.vegas-team-block{flex:1;display:flex;flex-direction:column;justify-content:center;padding:10px 0;}.vegas-team-block.right{text-align:right;align-items:flex-end;}
 .vegas-team-name{font-size:11px;color:var(--color-text-secondary);margin-bottom:2px;}
-.vegas-num-row{display:flex;align-items:baseline;gap:4px;}
+.vegas-num-row{display:flex;align-items:baseline;gap:4px;flex-wrap:nowrap;white-space:nowrap;}
 .vegas-num-row.right{justify-content:flex-end;}
 .vegas-num{font-size:26px;font-weight:500;color:var(--color-text-primary);line-height:1;}
 .vegas-num.flipped{color:#1D9E75;}
@@ -188,12 +188,14 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(52%) sepia(9
 .double-badge{font-size:10px;background:#9FE1CB;color:#04342C;border-radius:var(--border-radius-md);padding:1px 6px;}
 .vegas-sub{font-size:10px;color:var(--color-text-secondary);margin-top:1px;}
 .divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:8px 0;}
-.result-row{display:flex;justify-content:space-between;align-items:baseline;}
+.result-row{display:flex;justify-content:space-between;align-items:center;}
 .result-label{font-size:11px;color:var(--color-text-secondary);}
 .result-winner{font-size:14px;font-weight:500;color:var(--color-text-primary);}
 .result-pts{font-size:20px;font-weight:500;color:#1D9E75;}
 .result-pts.tied{color:var(--color-text-secondary);}
-.mp-section{padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary);}
+.mp-team-block{display:flex;align-items:stretch;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary);}
+.mp-team-letter{font-size:18px;font-weight:700;color:var(--color-text-secondary);width:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-right:10px;}
+.mp-team-players{flex:1;}
 .mp-team-label{font-size:10px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;}
 .mp-player-line{display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;}
 .mp-player-name{color:var(--color-text-secondary);}
@@ -383,7 +385,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
 <body>
 <div class="save-indicator" id="saveIndicator">✓ Saved</div>
 <div id="syncStatus" style="display:none;position:fixed;top:12px;left:50%;transform:translateX(-50%);background:var(--color-text-primary);color:var(--color-background-primary);font-size:11px;padding:4px 12px;border-radius:20px;z-index:9999;opacity:0.85">Syncing…</div>
-<div id="connWarning" style="display:none;position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#D97706;color:#ffffff;font-size:12px;font-weight:500;padding:6px 14px;border-radius:20px;z-index:9999;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3)">⚠ Connection lost — use paper backup</div>
+<div id="connWarning" style="display:none;position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#D97706;color:#ffffff;font-size:12px;font-weight:500;padding:6px 14px;border-radius:20px;z-index:9999;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3)">⚠ Connection lost - use paper backup</div>
 <div class="app">
 
   <!-- HOME -->
@@ -447,7 +449,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
       </div>
       <div class="wizard-step" id="step2">
         <div class="wizard-title">Players</div>
-        <div class="wizard-sub">Type a name or pick from your library — handicap index auto-fills for known players.</div>
+        <div class="wizard-sub">Type a name or pick from your library - handicap index auto-fills for known players.</div>
         <div class="field-row"><div class="field-label">Handicap adjustment</div>
           <div style="display:flex;align-items:center;gap:8px"><input id="hdcpPct" type="number" value="80" min="50" max="100" style="width:80px;padding:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:14px;background:var(--color-background-primary);color:var(--color-text-primary);"/><span style="font-size:13px;color:var(--color-text-secondary)">% of USGA index</span></div>
         </div>
@@ -456,7 +458,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
         <div style="margin-top:14px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden">
           <div style="background:var(--color-background-secondary);padding:8px 12px;font-size:12px;font-weight:500;color:var(--color-text-secondary)">Handicap options</div>
           <div style="padding:10px 12px">
-            <div style="display:flex;align-items:center;gap:10px"><div style="flex:1"><div style="font-size:13px;color:var(--color-text-primary)">Net off low man</div><div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">Handicap strokes relative to lowest — low man gets 0</div></div><label class="toggle"><input type="checkbox" id="wizNetOffLow"><span class="toggle-slider"></span></label></div>
+            <div style="display:flex;align-items:center;gap:10px"><div style="flex:1"><div style="font-size:13px;color:var(--color-text-primary)">Net off low man</div><div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">Handicap strokes relative to lowest - low man gets 0</div></div><label class="toggle"><input type="checkbox" id="wizNetOffLow"><span class="toggle-slider"></span></label></div>
           </div>
         </div>
         <div class="wizard-nav"><button class="btn-secondary" id="step2Back">← Back</button><button class="btn-primary" id="step2Next">Next →</button></div>
@@ -1193,7 +1195,7 @@ async function syncOnLoad(){
       if(raw){
         const {payload}=JSON.parse(raw);
         applySyncPayload(payload);
-        if(el){el.textContent='⚠ Offline — showing last saved data';el.style.display='block';setTimeout(()=>{el.style.display='none';},4000);}
+        if(el){el.textContent='⚠ Offline - showing last saved data';el.style.display='block';setTimeout(()=>{el.style.display='none';},4000);}
       }
     }catch(e){}
   }
@@ -1289,7 +1291,7 @@ function renderLibrarySection(){
     html+=`<div class="section-card" style="margin-bottom:10px">
       <div class="section-hd">Players</div>`;
     if(PLAYER_LIBRARY.length===0){
-      html+=`<div style="padding:12px;font-size:13px;color:var(--color-text-secondary);text-align:center">No players yet — add in trip setup.</div>`;
+      html+=`<div style="padding:12px;font-size:13px;color:var(--color-text-secondary);text-align:center">No players yet - add in trip setup.</div>`;
     } else {
       const sortedLib=PLAYER_LIBRARY.map((p,i)=>({p,i})).sort((a,b)=>(a.p.last||'').localeCompare(b.p.last||''));sortedLib.forEach(({p,i})=>{
         const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
@@ -1593,7 +1595,7 @@ function onPlayerNameInput(slot){
     if(avi)avi.textContent=(match.first||first).substring(0,2).toUpperCase();
   }
 }
-function buildCourseFields(){const nR=parseInt(document.getElementById('numRounds').value);const opts=`<option value="">— Select a course —</option>`+Object.keys(CATALOG).map(n=>`<option value="${n}">${n}</option>`).join('');document.getElementById('courseFields').innerHTML=Array.from({length:nR},(_,i)=>`<div class="course-sel-row"><div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);width:52px;flex-shrink:0">Round ${i+1}</div><select class="course-select" id="course${i}">${opts}</select></div>`).join('');}
+function buildCourseFields(){const nR=parseInt(document.getElementById('numRounds').value);const opts=`<option value="">- Select a course -</option>`+Object.keys(CATALOG).map(n=>`<option value="${n}">${n}</option>`).join('');document.getElementById('courseFields').innerHTML=Array.from({length:nR},(_,i)=>`<div class="course-sel-row"><div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);width:52px;flex-shrink:0">Round ${i+1}</div><select class="course-select" id="course${i}">${opts}</select></div>`).join('');}
 function toggleWizCourse(){const f=document.getElementById('wizCourseForm');f.style.display=f.style.display==='none'?'block':'none';}
 function saveWizCourse(){const name=document.getElementById('wizCName').value.trim(),slope=parseInt(document.getElementById('wizCSlope').value)||113;const parse=id=>(document.getElementById(id).value||'').split(',').map(x=>parseInt(x.trim())||4);const fp=parse('wizCFP'),fsi=parse('wizCFSI'),bp=parse('wizCBP'),bsi=parse('wizCBSI');if(!name){alert('Enter a course name.');return;}const allSI=[...fsi,...bsi];const siIssues=validateSI(allSI);if(siIssues.length){if(!confirm('SI validation issues:\n\n'+siIssues.join('\n')+'\n\nSave anyway?'))return;}const holes=[];for(let i=0;i<9;i++)holes.push({par:fp[i]||4,si:fsi[i]||i*2+1});for(let i=0;i<9;i++)holes.push({par:bp[i]||4,si:bsi[i]||i*2+2});CATALOG[name]={slope,holes};saveNewCourse(name);buildCourseFields();document.getElementById('wizCourseForm').style.display='none';alert(name+' added!');}
 document.getElementById('step1Next').addEventListener('click',()=>{buildPlayerFields();showStep(2);});
@@ -1606,7 +1608,7 @@ document.getElementById('step3Next').addEventListener('click',()=>{
   if(warn){
     if(nP!==4){
       warn.style.display='block';
-      warn.innerHTML=`<div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px;flex-shrink:0">⚠️</span><div><div style="font-size:13px;font-weight:500;color:#854F0B;margin-bottom:3px">Heads up — The Turn is optimized for 4 players</div><div style="font-size:12px;color:#854F0B;line-height:1.5">You have ${nP} player${nP!==1?'s':''}. Scoring and money math may not work as expected. You can still use the app but consider tracking on paper as a backup.</div></div></div>`;
+      warn.innerHTML=`<div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px;flex-shrink:0">⚠️</span><div><div style="font-size:13px;font-weight:500;color:#854F0B;margin-bottom:3px">Heads up - The Turn is optimized for 4 players</div><div style="font-size:12px;color:#854F0B;line-height:1.5">You have ${nP} player${nP!==1?'s':''}. Scoring and money math may not work as expected. You can still use the app but consider tracking on paper as a backup.</div></div></div>`;
     } else {
       warn.style.display='none';
     }
@@ -1879,8 +1881,108 @@ function showSnakeModal(title,body,confirmLabel,onOk,onCancel){
   </div>`;
   document.body.appendChild(modal);
 }
-function renderMPHoleBox(){const wrap=document.getElementById('mpBoxWrap');if(!gameOn('mp',STATE.currentRound)){wrap.innerHTML='';return;}if(WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Match play — best ball</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>`;return;}const r=STATE.currentRound,hi=STATE.currentHole,mpG=mpGamesForRound(r),si=segForHole(hi,mpG),res=calcMP(hi,r);if(!res){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Match play — best ball</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter all scores to calculate</div></div>`;return;}const tA=STATE.mpTeams[r][si][0],tB=STATE.mpTeams[r][si][1],winner=res.halved?'Halved':res.aWins?'Team A wins':'Team B wins';const ptA=res.halved?'½':res.aWins?'1':'0',ptB=res.halved?'½':res.aWins?'0':'1';wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Match play — best ball</div><div class="mp-section"><div class="mp-team-label">Team A — ${tA.map(i=>displayName(i)).join(' & ')}</div>${tA.map((pi,idx)=>`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net">net ${res.nA[idx]}${res.nA[idx]===res.bestA&&res.aWins?'<span class="mp-best"> ← best</span>':''}</span></div>`).join('')}</div><div class="mp-section"><div class="mp-team-label">Team B — ${tB.map(i=>displayName(i)).join(' & ')}</div>${tB.map((pi,idx)=>`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net">net ${res.nB[idx]}${res.nB[idx]===res.bestB&&!res.aWins&&!res.halved?'<span class="mp-best"> ← best</span>':''}</span></div>`).join('')}</div><div class="mp-result-bar"><span class="mp-result-text">${winner}</span><span class="mp-score-text">A ${ptA} – ${ptB} B</span></div></div>`;}
-function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap'),r=STATE.currentRound,hi=STATE.currentHole;if(!gameOn('vegas',STATE.currentRound)){wrap.innerHTML='';return;}if(WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Vegas</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>`;return;}const vSeg=vegasSegForRound(r),si=segForHole(hi,vSeg),tA=STATE.vegTeams[r][si][0],tB=STATE.vegTeams[r][si][1];const nameA='A ('+tA.map(i=>displayName(i)).join('/')+')';const nameB='B ('+tB.map(i=>displayName(i)).join('/')+')';const res=calcVegas(hi,r);let inner='<div style="font-size:13px;color:var(--color-text-secondary)">Enter all scores to calculate</div>';if(res){const fA=res.aFlip?'<span class="flip-badge">flipped</span>':'',fB=res.bFlip?'<span class="flip-badge">flipped</span>':'',dbl=res.doubled?'<span class="double-badge">eagle x2</span>':'';const rt=res.tied?'Tied':(res.aWins?nameA:nameB)+' wins',pt=res.tied?'Tied':'+'+res.diff+' pts';inner=`<div class="vegas-teams-row"><div class="vegas-team-block"><div class="vegas-team-name">${nameA}</div><div class="vegas-num-row">${fA}<span class="vegas-num${res.aFlip?' flipped':''}">${res.numA}</span></div><div class="vegas-sub">net ${res.loA}+${res.hiA}</div></div><div style="font-size:16px;color:var(--color-text-secondary);padding-top:16px">vs</div><div class="vegas-team-block right"><div class="vegas-team-name">${nameB}</div><div class="vegas-num-row right">${fB}<span class="vegas-num${res.bFlip?' flipped':''}">${res.numB}</span></div><div class="vegas-sub">net ${res.loB}+${res.hiB}</div></div></div><hr class="divider"><div class="result-row"><div><div class="result-label">Result</div><div class="result-winner">${rt} ${dbl}</div></div><div style="text-align:right"><div class="result-label">${res.numA} vs ${res.numB}${res.doubled?' × 2':''}</div><div class="result-pts${res.tied?' tied':''}">${pt}</div></div></div>`;}wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd" style="flex-direction:column;align-items:flex-start;gap:2px"><span>Vegas — hole ${hi+1}</span><span style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)">${nameA} vs ${nameB}</span></div><div class="calc-inner">${inner}</div></div>`;}
+function calcMPMatchScore(r,si,throughHole){
+  const seg=getSegments(mpGamesForRound(r))[si];
+  const holesInSeg=seg.end-seg.start;
+  let diff=0; // positive = A leads, negative = B leads
+  let lastHolePlayed=-1;
+  let closedAtHole=-1;
+  for(let h=seg.start;h<=throughHole&&h<seg.end;h++){
+    const res=calcMP(h,r);
+    if(!res)break;
+    lastHolePlayed=h;
+    if(res.halved){/* no change */}
+    else if(res.aWins)diff++;
+    else diff--;
+    // check if match is closed (lead > holes remaining in seg)
+    const holesPlayedSoFar=h-seg.start+1;
+    const holesLeft=holesInSeg-holesPlayedSoFar;
+    if(Math.abs(diff)>holesLeft&&closedAtHole<0)closedAtHole=h;
+  }
+  if(lastHolePlayed<seg.start)return null; // no holes played yet in seg
+  const holesPlayed=lastHolePlayed-seg.start+1;
+  const holesLeft=holesInSeg-holesPlayed;
+  const lead=Math.abs(diff);
+  const leader=diff>0?'A':diff<0?'B':null;
+  let scoreStr;
+  if(closedAtHole>=0){
+    const closedPlayed=closedAtHole-seg.start+1;
+    const closedLeft=holesInSeg-closedPlayed;
+    scoreStr=(leader==='A'?'Team A':'Team B')+' '+lead+'&'+closedLeft;
+  } else if(!leader){
+    scoreStr='A/S';
+  } else if(lead===holesLeft){
+    scoreStr=(leader==='A'?'Team A':'Team B')+': Dormie '+lead;
+  } else {
+    scoreStr=(leader==='A'?'Team A':'Team B')+': '+lead+' up';
+  }
+  return{diff,lead,leader,holesPlayed,holesLeft,closed:closedAtHole>=0,scoreStr};
+}
+function gameBoxHeader(title,rightContent){
+  return `<div class="calc-hd"><span>${title}</span>${rightContent?`<span>${rightContent}</span>`:''}</div>`;
+}
+function gameBoxHeaderWithTeams(title,tA,tB){
+  const nA=tA.map(i=>displayName(i)).join(' & ');
+  const nB=tB.map(i=>displayName(i)).join(' & ');
+  return `<div class="calc-hd" style="flex-direction:column;gap:1px;align-items:stretch"><div><span>${title}</span></div><div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)"><span style="opacity:0.6">A:</span> ${nA}</div><div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)"><span style="opacity:0.6">B:</span> ${nB}</div></div>`;
+}
+function gameBoxHeaderWithFmt(title,fmt){
+  return `<div class="calc-hd" style="flex-direction:column;gap:1px;align-items:stretch"><div><span>${title}</span></div><div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)">${fmt}</div></div>`;
+}
+function renderMPHoleBox(){
+  const wrap=document.getElementById('mpBoxWrap');
+  if(!gameOn('mp',STATE.currentRound)){wrap.innerHTML='';return;}
+  if(WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd" style="flex-direction:column;gap:1px;align-items:stretch"><div><span>Match play</span></div><div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)">2v2 best ball</div></div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>`;return;}
+  const r=STATE.currentRound,hi=STATE.currentHole,mpG=mpGamesForRound(r),si=segForHole(hi,mpG),res=calcMP(hi,r);
+  if(!res){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd" style="flex-direction:column;gap:1px;align-items:stretch"><div><span>Match play</span></div><div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)">2v2 best ball</div></div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter all scores to calculate</div></div>`;return;}
+  const tA=STATE.mpTeams[r][si][0],tB=STATE.mpTeams[r][si][1];
+  const ms=calcMPMatchScore(r,si,hi);
+  const scoreStr=ms?ms.scoreStr:'A/S';
+  const seg=getSegments(mpG)[si];
+  const hdr=gameBoxHeaderWithFmt('Match play','2v2 best ball');
+  const winnerTxt=res.halved?'Halved':res.aWins?'A wins':'B wins';
+  const gameRef=`G${si+1} H${seg.start+1}-${seg.end}`;
+  const resultBar=`<div class="mp-result-bar"><span class="mp-result-text">${winnerTxt}</span><span class="mp-result-text" style="font-size:13px;color:#1D9E75">${scoreStr}</span><span class="mp-score-text">${gameRef}</span></div>`;
+  function mpTeamBlock(team,scores,bestScore,isWinner){
+    const players=team.map((pi,idx)=>`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net">${scores[idx]===bestScore&&isWinner?'<span class="mp-best">best \u2192 </span>':''}net ${scores[idx]}</span></div>`).join('');
+    return `<div class="mp-team-block"><div class="mp-team-letter">${team===tA?'A':'B'}</div><div class="mp-team-players">${players}</div></div>`;
+  }
+  wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdr}${mpTeamBlock(tA,res.nA,res.bestA,res.aWins)}${mpTeamBlock(tB,res.nB,res.bestB,!res.aWins&&!res.halved)}${resultBar}</div>`;
+}
+function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap'),r=STATE.currentRound,hi=STATE.currentHole;if(!gameOn('vegas',STATE.currentRound)){wrap.innerHTML='';return;}if(WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Vegas</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>`;return;}const vSeg=vegasSegForRound(r),si=segForHole(hi,vSeg),tA=STATE.vegTeams[r][si][0],tB=STATE.vegTeams[r][si][1];
+  const hdr=gameBoxHeaderWithTeams(`Vegas - Hole ${hi+1}`,tA,tB);
+  const res=calcVegas(hi,r);let inner='<div style="font-size:13px;color:var(--color-text-secondary)">Enter all scores to calculate</div>';
+  if(res){
+    const fA=res.aFlip?'<span class="flip-badge">flipped</span>':'';
+    const fB=res.bFlip?'<span class="flip-badge">flipped</span>':'';
+    const dbl=res.doubled?'<span class="double-badge">eagle x2</span>':'';
+    const rt=res.tied?'Tied':(res.aWins?'A wins':'B wins');
+    const pt=res.tied?'Tied':'+'+res.diff+' pts';
+    inner=`<div class="vegas-teams-row">
+      <div class="vegas-team-block">
+        <div class="vegas-team-name">Team A</div>
+        <div class="vegas-num-row">
+          <span class="vegas-num${res.aFlip?' flipped':''}">${res.numA}</span>${fA}
+        </div>
+        <div class="vegas-sub">net ${res.loA}+${res.hiA}</div>
+      </div>
+      <div style="font-size:16px;color:var(--color-text-secondary)">vs</div>
+      <div class="vegas-team-block right">
+        <div class="vegas-team-name">Team B</div>
+        <div class="vegas-num-row right">${fB}<span class="vegas-num${res.bFlip?' flipped':''}">${res.numB}</span></div>
+        <div class="vegas-sub">net ${res.loB}+${res.hiB}</div>
+      </div>
+    </div>
+    <div class="result-row" style="background:var(--color-background-secondary);padding:8px 12px;margin-top:0;">
+      <div>
+        <div class="result-winner">${rt}${dbl?` ${dbl}`:''}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="result-label">${res.numA} vs ${res.numB}${res.doubled?' × 2':''}</div>
+        <div class="result-pts${res.tied?' tied':''}">${pt}</div>
+      </div>
+    </div>`;}
+  wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdr}<div class="calc-inner">${inner}</div></div>`;}
 function renderHoleDots(){const r=STATE.currentRound;document.getElementById('holeDots').innerHTML=Array.from({length:18},(_,i)=>{const done=STATE.scores[r][i].every(s=>s!==null);return`<div class="hdot${done?' done':''}${i===STATE.currentHole?' cur':''}" onclick="jumpHole(${i})">${i+1}</div>`;}).join('');}
 function jumpHole(i){STATE.currentHole=i;updateHoleUI();}
 function changeHole(d){STATE.currentHole=Math.max(0,Math.min(17,STATE.currentHole+d));updateHoleUI();}
@@ -1894,7 +1996,7 @@ function updateHoleUI(){
   document.getElementById('holeMeta').textContent='Par '+hole.par+' · Hdcp '+hole.si;
   document.getElementById('prevBtn').disabled=hi===0;
   document.getElementById('nextBtn').disabled=hi===17;
-  document.getElementById('saveBtn').textContent=hi===17?'Finish Round — go to Standings':'Save Hole & Continue →';
+  document.getElementById('saveBtn').textContent=hi===17?'Finish Round - go to Standings':'Save Hole & Continue →';
   // Lock/Unlock button
   let lb=document.getElementById('lockRoundBtn');
   if(!lb){lb=document.createElement('button');lb.id='lockRoundBtn';lb.className='footer-btn';lb.style.cssText='background:var(--color-background-secondary);color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary);margin-top:8px;';document.getElementById('saveBtn').parentNode.appendChild(lb);}
@@ -1903,7 +2005,7 @@ function updateHoleUI(){
   else{lb.style.display='none';}
   // Locked banner above scorecard
   let bn=document.getElementById('lockedRoundBanner');
-  if(!bn){bn=document.createElement('div');bn.id='lockedRoundBanner';bn.style.cssText='margin:0.5rem 1rem;padding:8px 12px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:12px;color:var(--color-text-secondary);text-align:center';bn.textContent='🔒 Round locked — scores are final. Unlock to make changes.';const sc=document.getElementById('scorecard');if(sc&&sc.parentNode)sc.parentNode.insertBefore(bn,sc);}
+  if(!bn){bn=document.createElement('div');bn.id='lockedRoundBanner';bn.style.cssText='margin:0.5rem 1rem;padding:8px 12px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:12px;color:var(--color-text-secondary);text-align:center';bn.textContent='🔒 Round locked - scores are final. Unlock to make changes.';const sc=document.getElementById('scorecard');if(sc&&sc.parentNode)sc.parentNode.insertBefore(bn,sc);}
   document.getElementById('lockedRoundBanner').style.display=locked?'block':'none';
   if(document.getElementById('scorecard'))document.getElementById('scorecard').style.opacity=locked?'0.45':'1';
   renderBanner();renderScorecard();renderHoleDots();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();}
@@ -2014,8 +2116,8 @@ function totalHoles(){return WK.rounds.length*18;}
 function calcRoundRankings(){const entries=[];WK.rounds.forEach((rd,r)=>{const anyComplete=STATE.scores[r].some(h=>h.every(s=>s!==null));if(!anyComplete)return;WK.players.forEach((p,pi)=>{const roundComplete=STATE.scores[r].every(h=>h[pi]!==null);if(!roundComplete)return;const gross=STATE.scores[r].reduce((a,hole)=>a+(hole[pi]||0),0);const net=Array.from({length:18},(_,hi)=>getNet(pi,hi,r)).reduce((a,n)=>a+(n||0),0);const parTotal=WK.rounds[r].course.holes.reduce((a,h)=>a+h.par,0);entries.push({pi,r,courseName:rd.courseName,gross,net,parTotal,relGross:gross-parTotal,relNet:net-parTotal});});});entries.sort((a,b)=>a.net-b.net);let rank=1;entries.forEach((e,i)=>{if(i>0&&entries[i].net===entries[i-1].net){e.rank=entries[i-1].rank;}else{e.rank=rank;}rank=i+2;});return entries;}
 function toggleRoundRankings(){STATE.roundRankOpen=!STATE.roundRankOpen;renderBoard();}
 function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
-  if(_potMethod==='matchplay'&&gameOnAny('mp')){const mpData=calcAllMP().sort((a,b)=>b.total-a.total);html+=`<div class="board-section-label">Match play points — pot winner</div><div class="section-card" style="margin-bottom:1.25rem">`;mpData.forEach((d,rank)=>{const p=WK.players[d.pi];const pills=d.byRound.map((pts,r)=>`<span class="game-pill${pts>0?' win':''}">R${r+1}: ${pts}</span>`).join('');html+=`<div class="mp-board-row"><div class="mp-rank">${rank+1}</div><div class="avatar" style="width:32px;height:32px;font-size:12px;background:${p.bg};color:${p.fg}">${p.ini}</div><div style="flex:1"><div class="mp-board-name">${p.name}</div><div class="mp-game-pills">${pills}</div></div><div class="mp-board-pts">${d.total.toFixed(1)}</div></div>`;});html+=`</div>`;}
-  html+=`<div class="board-section-label">${_potMethod==='matchplay'?'Stroke play — net':'Net stroke play — pot winner'}</div><div class="section-card" style="margin-bottom:1.25rem">`;
+  if(_potMethod==='matchplay'&&gameOnAny('mp')){const mpData=calcAllMP().sort((a,b)=>b.total-a.total);html+=`<div class="board-section-label">Match play points - pot winner</div><div class="section-card" style="margin-bottom:1.25rem">`;mpData.forEach((d,rank)=>{const p=WK.players[d.pi];const pills=d.byRound.map((pts,r)=>`<span class="game-pill${pts>0?' win':''}">R${r+1}: ${pts}</span>`).join('');html+=`<div class="mp-board-row"><div class="mp-rank">${rank+1}</div><div class="avatar" style="width:32px;height:32px;font-size:12px;background:${p.bg};color:${p.fg}">${p.ini}</div><div style="flex:1"><div class="mp-board-name">${p.name}</div><div class="mp-game-pills">${pills}</div></div><div class="mp-board-pts">${d.total.toFixed(1)}</div></div>`;});html+=`</div>`;}
+  html+=`<div class="board-section-label">${_potMethod==='matchplay'?'Stroke play - net':'Net stroke play - pot winner'}</div><div class="section-card" style="margin-bottom:1.25rem">`;
   const lbPlayers=WK.players.map((p,i)=>{
     let net=0,played=0,parTot=0;
     const rounds=WK.rounds.map((_,r)=>{
@@ -2087,7 +2189,7 @@ function renderTeamsPanel(){
   html_hdcp=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Scoring config</div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net off low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffLow?'checked':''} onchange="STATE.netOffLow=this.checked;renderTeamsPanel();renderScorecard();renderBanner()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Handicap adjustment</span><div style="display:flex;align-items:center;gap:4px"><input class="ie-num" type="number" value="${(WK.hdcpPct*100).toFixed(0)}" style="width:56px" onchange="WK.hdcpPct=parseFloat(this.value)/100;renderTeamsPanel();renderScorecard()"/><span style="font-size:12px;color:var(--color-text-secondary)">%</span></div></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px"><span style="font-size:12px;color:var(--color-text-secondary)">Pot winner</span><select class="ie-sel" onchange="WK.potMethod=this.value;renderTeamsPanel();renderBoard();renderMoney()"><option value="netstroke"${(WK.potMethod||'netstroke')==='netstroke'?' selected':''}>Net stroke play</option><option value="matchplay"${WK.potMethod==='matchplay'?' selected':''}>Match play points</option></select></div></div>`;
   const r=STATE.teamsRound,mpG=mpGamesForRound(r),mpSegs=getSegments(mpG),vG=vegasSegForRound(r),vegSegs=getSegments(vG),sG=skinsGamesForRound(r),skSegs=getSegments(sG);
   let html=html_hdcp+`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Weekend bet</div><div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Buy-in per player</span>$<input class="ie-num" type="number" value="${WK.buyIn}" style="width:90px" onchange="WK.buyIn=parseFloat(this.value);autoSave()"/></div></div>`;
-  html+=`<div style="margin-bottom:12px"><div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:6px">Games &amp; Teams for round — each round is independent:</div><div style="display:flex;gap:0">${WK.rounds.map((rd,i)=>{const first=i===0,last=i===WK.rounds.length-1;return`<div class="rd-btn${i===r?' active':''}" onclick="switchTeamsRound(${i})" style="flex:1;${first?'border-radius:var(--border-radius-md) 0 0 var(--border-radius-md)':''}${last?'border-radius:0 var(--border-radius-md) var(--border-radius-md) 0':''}">Rd ${i+1}<br><span style="font-size:9px;opacity:0.75">${rdLabel(i)}</span></div>`;}).join('')}</div></div>`;
+  html+=`<div style="margin-bottom:12px"><div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:6px">Games &amp; Teams for round - each round is independent:</div><div style="display:flex;gap:0">${WK.rounds.map((rd,i)=>{const first=i===0,last=i===WK.rounds.length-1;return`<div class="rd-btn${i===r?' active':''}" onclick="switchTeamsRound(${i})" style="flex:1;${first?'border-radius:var(--border-radius-md) 0 0 var(--border-radius-md)':''}${last?'border-radius:0 var(--border-radius-md) var(--border-radius-md) 0':''}">Rd ${i+1}<br><span style="font-size:9px;opacity:0.75">${rdLabel(i)}</span></div>`;}).join('')}</div></div>`;
   // Skins
   {
     const skOv=WK.skinsGamesPerRound?.[r]||0;
@@ -2101,7 +2203,7 @@ function renderTeamsPanel(){
         if(!STATE.skinsTeams)STATE.skinsTeams=WK.rounds.map((_,ri)=>{const g=skinsGamesForRound(ri);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));});
         html+=skSegs.map((seg,si)=>{const sk=STATE.skinsTeams[r]?.[si];if(!sk)return'';const[a0,a1]=sk[0],[b0,b1]=sk[1];return`<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDropSkins(${si},'a0',parseInt(this.value),${r})">${pOpts(a0)}</select><select class="team-dropdown" onchange="setDropSkins(${si},'a1',parseInt(this.value),${r})">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDropSkins(${si},'b0',parseInt(this.value),${r})">${pOpts(b0)}</select><select class="team-dropdown" onchange="setDropSkins(${si},'b1',parseInt(this.value),${r})">${pOpts(b1)}</select></div></div></div>`;}).join('');
       } else {
-        html+=`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Individual — all players compete for each skin</div>`;
+        html+=`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Individual - all players compete for each skin</div>`;
       }
       html+=`<div style="padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.skinsSettle=this.value;autoSave()"><option value="perplayer"${WK.skinsSettle==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.skinsSettle==='perteam'?' selected':''}>Per team</option></select></div>`;
     } else {
@@ -2110,10 +2212,10 @@ function renderTeamsPanel(){
     html+='</div>';
   }
   // Match Play
-  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap"><span>Match Play — Rd ${r+1}</span>${gameOn('mp',r)?`<select class="ie-sel" onchange="setMPGamesForRound(${r},parseInt(this.value))"><option value="1"${mpG===1?' selected':''}>1 game · 18h</option><option value="2"${mpG===2?' selected':''}>2 games · 9h</option><option value="3"${mpG===3?' selected':''}>3 games · 6h</option></select>$<input class="ie-num" type="number" value="${WK.gameVal}" style="width:90px" onchange="WK.gameVal=parseFloat(this.value);autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary)">/game</span>${gameOn('skins',r)?`<button class="btn-sm" onclick="copySkinsToMP(${r})">Copy Skins Teams</button>`:''}`:''}</div><label class="toggle"><input type="checkbox" ${gameOn('mp',r)?'checked':''} onchange="WK.rounds[${r}].mpOn=this.checked;updateTabDimming();renderTeamsPanel();renderBanner();renderMPHoleBox()"><span class="toggle-slider"></span></label></div>${gameOn('mp',r)?mpSegs.map((seg,si)=>{const tm=STATE.mpTeams[r][si];if(!tm)return'';const[a0,a1]=tm[0],[b0,b1]=tm[1];return`<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},false)">${pOpts(a0)}</select><select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},false)">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},false)">${pOpts(b0)}</select><select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},false)">${pOpts(b1)}</select></div></div></div>`;}).join('')+`<div class="setup-row" style="border-bottom:none;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.mpSettle=this.value;autoSave()"><option value="perplayer"${(WK.mpSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.mpSettle==='perteam'?' selected':''}>Per team</option></select></div>`:`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Match play is off</div>`}</div>`;
+  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap"><span>Match Play - Rd ${r+1}</span>${gameOn('mp',r)?`<select class="ie-sel" onchange="setMPGamesForRound(${r},parseInt(this.value))"><option value="1"${mpG===1?' selected':''}>1 game · 18h</option><option value="2"${mpG===2?' selected':''}>2 games · 9h</option><option value="3"${mpG===3?' selected':''}>3 games · 6h</option></select>$<input class="ie-num" type="number" value="${WK.gameVal}" style="width:90px" onchange="WK.gameVal=parseFloat(this.value);autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary)">/game</span>${gameOn('skins',r)?`<button class="btn-sm" onclick="copySkinsToMP(${r})">Copy Skins Teams</button>`:''}`:''}</div><label class="toggle"><input type="checkbox" ${gameOn('mp',r)?'checked':''} onchange="WK.rounds[${r}].mpOn=this.checked;updateTabDimming();renderTeamsPanel();renderBanner();renderMPHoleBox()"><span class="toggle-slider"></span></label></div>${gameOn('mp',r)?mpSegs.map((seg,si)=>{const tm=STATE.mpTeams[r][si];if(!tm)return'';const[a0,a1]=tm[0],[b0,b1]=tm[1];return`<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},false)">${pOpts(a0)}</select><select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},false)">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},false)">${pOpts(b0)}</select><select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},false)">${pOpts(b1)}</select></div></div></div>`;}).join('')+`<div class="setup-row" style="border-bottom:none;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.mpSettle=this.value;autoSave()"><option value="perplayer"${(WK.mpSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.mpSettle==='perteam'?' selected':''}>Per team</option></select></div>`:`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Match play is off</div>`}</div>`;
   // Vegas — "Copy Skins Teams" at top of header, "Game" not "Seg"
   const vegOv=WK.vegasSegsPerRound[r];
-  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap"><span>Vegas — Rd ${r+1}</span>${gameOn('vegas',r)?`<select class="ie-sel" onchange="setVegaSegsForRound(${r},parseInt(this.value))"><option value="1"${vegOv===1?' selected':''}>1 game · 18h</option><option value="2"${vegOv===2?' selected':''}>2 games · 9h</option><option value="3"${(vegOv===3||vegOv===0)?' selected':''}>3 games · 6h</option></select>$<input class="ie-num" type="number" value="${WK.vegasVal.toFixed(2)}" step="0.25" style="width:90px" onchange="WK.vegasVal=parseFloat(this.value);autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary)">/pt</span>${gameOn('skins',r)?`<button class="btn-sm" onclick="copySkinsToVegas(${r})">Copy Skins Teams</button>`:''}`:''}</div><label class="toggle"><input type="checkbox" ${gameOn('vegas',r)?'checked':''} onchange="WK.rounds[${r}].vegasOn=this.checked;updateTabDimming();renderTeamsPanel();renderVegasBoxWrap()"><span class="toggle-slider"></span></label></div>${gameOn('vegas',r)?vegSegs.map((seg,si)=>{const tv=STATE.vegTeams[r][si];if(!tv)return'';const[a0,a1]=tv[0],[b0,b1]=tv[1];return`<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},true)">${pOpts(a0)}</select><select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},true)">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},true)">${pOpts(b0)}</select><select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},true)">${pOpts(b1)}</select></div></div></div>`;}).join('')+`<div class="setup-row" style="border-bottom:none;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.vegasSettle=this.value;autoSave()"><option value="perplayer"${(WK.vegasSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.vegasSettle==='perteam'?' selected':''}>Per team</option></select></div>`:`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Vegas is off</div>`}</div>`;
+  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap"><span>Vegas - Rd ${r+1}</span>${gameOn('vegas',r)?`<select class="ie-sel" onchange="setVegaSegsForRound(${r},parseInt(this.value))"><option value="1"${vegOv===1?' selected':''}>1 game · 18h</option><option value="2"${vegOv===2?' selected':''}>2 games · 9h</option><option value="3"${(vegOv===3||vegOv===0)?' selected':''}>3 games · 6h</option></select>$<input class="ie-num" type="number" value="${WK.vegasVal.toFixed(2)}" step="0.25" style="width:90px" onchange="WK.vegasVal=parseFloat(this.value);autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary)">/pt</span>${gameOn('skins',r)?`<button class="btn-sm" onclick="copySkinsToVegas(${r})">Copy Skins Teams</button>`:''}`:''}</div><label class="toggle"><input type="checkbox" ${gameOn('vegas',r)?'checked':''} onchange="WK.rounds[${r}].vegasOn=this.checked;updateTabDimming();renderTeamsPanel();renderVegasBoxWrap()"><span class="toggle-slider"></span></label></div>${gameOn('vegas',r)?vegSegs.map((seg,si)=>{const tv=STATE.vegTeams[r][si];if(!tv)return'';const[a0,a1]=tv[0],[b0,b1]=tv[1];return`<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},true)">${pOpts(a0)}</select><select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},true)">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},true)">${pOpts(b0)}</select><select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},true)">${pOpts(b1)}</select></div></div></div>`;}).join('')+`<div class="setup-row" style="border-bottom:none;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.vegasSettle=this.value;autoSave()"><option value="perplayer"${(WK.vegasSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.vegasSettle==='perteam'?' selected':''}>Per team</option></select></div>`:`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Vegas is off</div>`}</div>`;
     // Two's Club
   html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1"><span>Two's Club</span>${WK.twosOn?`$<input class="ie-num" type="number" value="${WK.twosAmt}" style="width:90px" onchange="WK.twosAmt=parseFloat(this.value);renderTeamsPanel();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary)">/player · pot $${(WK.twosAmt*WK.players.length).toFixed(0)}</span>`:''}</div><label class="toggle"><input type="checkbox" ${WK.twosOn?'checked':''} onchange="WK.twosOn=this.checked;renderTeamsPanel()"><span class="toggle-slider"></span></label></div>${!WK.twosOn?`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Two's Club is off</div>`:''}</div>`;
     // Snake
@@ -2134,9 +2236,9 @@ function renderTeamsPanel(){
 function setDropSkins(gameIdx,slot,pIdx,roundIdx){if(isReadOnly)return;if(!STATE.skinsTeams)return;const teams=STATE.skinsTeams[roundIdx][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;renderTeamsPanel();}
 function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span>Active players</span></div>`;WK.players.forEach((p,i)=>{const eff=effHdcp(i,r);html+=`<div class="setup-row"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><input class="inline-edit" value="${p.name}" style="flex:1;min-width:60px" onchange="WK.players[${i}].name=this.value;WK.players[${i}].ini=this.value.substring(0,2).toUpperCase();renderPlayersPanel();renderScorecard();renderBanner();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin:0 3px">idx</span><input class="ie-num" type="number" step="0.1" value="${p.idx}" style="width:70px" onchange="WK.players[${i}].idx=parseFloat(this.value)||0;renderPlayersPanel();renderScorecard();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px;white-space:nowrap">→ ${eff}</span>${WK.players.length>2?`<button class="btn-danger" onclick="removePlayer(${i})">✕</button>`:''}</div>`;});html+=`</div>`;if(WK.players.length<12)html+=`<button class="btn-sm" onclick="addPlayer()" style="margin-bottom:14px">+ Add player</button>`;
   if(PLAYER_LIBRARY.length===0){
-    html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Player library <span style="font-size:11px;font-weight:400;color:var(--color-text-secondary)">— saved for quick setup</span></div><div style="padding:12px;font-size:13px;color:var(--color-text-secondary);text-align:center">No players yet — added automatically when you create a trip.</div></div>`;
+    html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Player library <span style="font-size:11px;font-weight:400;color:var(--color-text-secondary)">- saved for quick setup</span></div><div style="padding:12px;font-size:13px;color:var(--color-text-secondary);text-align:center">No players yet - added automatically when you create a trip.</div></div>`;
   } else {
-    html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Player library <span style="font-size:11px;font-weight:400;color:var(--color-text-secondary)">— saved for quick setup</span></div>`;
+    html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Player library <span style="font-size:11px;font-weight:400;color:var(--color-text-secondary)">- saved for quick setup</span></div>`;
     const sortedLib=PLAYER_LIBRARY.map((p,i)=>({p,i})).sort((a,b)=>(a.p.last||'').localeCompare(b.p.last||''));sortedLib.forEach(({p,i})=>{
       const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
       const initials=((p.first||'')[0]||'')+((p.last||'')[0]||'');
@@ -2198,8 +2300,8 @@ function renderInfoPanel(){
     {id:'info-vegas',title:'Vegas',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A team game. Each team's two net scores are combined into a two-digit number with the lower score first. For example, net 3 and net 5 becomes 35. The team with the lower number wins the difference in points.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">If a player makes a birdie or better, the other team's scores are <strong>flipped</strong> (35 becomes 53), which can turn the momentum dramatically.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Dollar value is set per point. Vegas games can follow the same structure as Match Play or run independently.</p>`},
     {id:'info-twos',title:"Two's Club",body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Every player contributes a fixed amount to a pot at the start of the weekend. Any player who makes a net 2 on a par 3 shares the pot equally with other players who also make a 2.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">No 2s all weekend, no blood. Results shown in the Money tab after all holes are played.</p>`},
     {id:'info-money',title:'Money & Expenses',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The Money tab is where it all comes together. Golf results calculate automatically as you play, so by the end of the weekend the numbers are already there. You can settle up as you go or wait until Sunday and do it all at once.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Golf $$</strong> shows a per-round breakdown of every game, including the Weekend Pot and Two's Club. A Golf Outstanding card tracks the running unsettled balance and updates as you settle items.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Expenses</strong> is built to track off-course costs shared by the group. If one buddy drops a card at the bar, log what everyone owes and settle up later with confidence. Side bets like putting competitions or E9s can be tracked here too, under the Golf &amp; Side Bets category.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Full Audit</strong> gives each player a complete view of their damage across golf and expenses combined. At the bottom, minimum transfers shows the fewest transactions needed to fully settle up. Venmo handles are shown right there in the transfer summary.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Every section has its own Settle button. Settling snapshots the amounts, removes them from the outstanding balance, and dims the card. Unsettle to reverse if needed.</p>`},
-    {id:'info-standings',title:'Standings',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The <strong>Standings</strong> tab shows the weekend leaderboards. The primary leaderboard is determined by the <strong>Pot winner</strong> setting in Options → Game Setup — either Net stroke play (lowest cumulative net score) or Match play points (most points). The pot winner method is also what determines who wins the Weekend Pot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">If Match play points is selected as the pot winner, both a Match Play Points leaderboard and a Stroke Play net leaderboard are shown. If Net stroke play is selected, only the net leaderboard is shown.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">A collapsible Best Individual Rounds section ranks each player's single-round net performances across all rounds.</p>`},
-    {id:'info-data',title:'Data & Sync',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">All data is stored in the cloud and syncs automatically. When you open the app, it fetches the latest state, making any trip created on one device visible to everyone.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The app also works offline — scores are saved locally and pushed to the cloud when connectivity returns.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Note: the app syncs on load, not in real-time. If two players are scoring simultaneously, close and reopen the app to see each other's latest changes.</p>`},
+    {id:'info-standings',title:'Standings',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The <strong>Standings</strong> tab shows the weekend leaderboards. The primary leaderboard is determined by the <strong>Pot winner</strong> setting in Options → Game Setup - either Net stroke play (lowest cumulative net score) or Match play points (most points). The pot winner method is also what determines who wins the Weekend Pot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">If Match play points is selected as the pot winner, both a Match Play Points leaderboard and a Stroke Play net leaderboard are shown. If Net stroke play is selected, only the net leaderboard is shown.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">A collapsible Best Individual Rounds section ranks each player's single-round net performances across all rounds.</p>`},
+    {id:'info-data',title:'Data & Sync',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">All data is stored in the cloud and syncs automatically. When you open the app, it fetches the latest state, making any trip created on one device visible to everyone.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The app also works offline - scores are saved locally and pushed to the cloud when connectivity returns.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Note: the app syncs on load, not in real-time. If two players are scoring simultaneously, close and reopen the app to see each other's latest changes.</p>`},
   ];
   const html=sections.map(s=>`
     <div class="section-card" style="margin-bottom:10px">
@@ -2235,7 +2337,7 @@ function showHowToPlay(){
     {id:'htp-snake',title:'🐍 Snake',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A putting side game. Manually assign the snake each hole to whoever 3-putted. The first holder sets the pot — each transfer grows it (doubles or flat increment). Whoever holds it at round's end owes the pot to the other players.</p>`},
     {id:'htp-twos',title:"Two's Club",body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Everyone contributes to a pot. Any player who makes a net 2 on a par 3 shares the pot. No 2s all weekend, no blood.</p>`},
     {id:'htp-money',title:'Money & Expenses',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Golf results calculate automatically as you play. <strong>Golf $$</strong> shows the per-round breakdown. <strong>Expenses</strong> tracks shared off-course costs and side bets. <strong>Full Audit</strong> shows each player's complete picture with minimum transfers to fully settle up.</p>`},
-    {id:'htp-data',title:'Data & Sync',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">All data syncs to the cloud automatically. Open the app on any device to see the current state. The app also works offline — scores are saved locally and pushed to the cloud when connectivity returns.</p>`},
+    {id:'htp-data',title:'Data & Sync',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">All data syncs to the cloud automatically. Open the app on any device to see the current state. The app also works offline - scores are saved locally and pushed to the cloud when connectivity returns.</p>`},
   ];
   const accordionHtml=sections.map(s=>`
     <div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:8px;overflow:hidden;background:var(--color-background-primary)">
@@ -2553,7 +2655,7 @@ function renderMoney(){
     html+=`<div class="section-card round-card-collapsed" id="rcard-${r}" style="margin-bottom:14px;${settled?'opacity:0.6;':''}">`;
     const lkd_r=isRoundLocked(r);html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard(${r})"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Round ${r+1} — ${WK.rounds[r].courseName}${lkd_r?' 🔒':''}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${summParts}</div></div><div style="display:flex;align-items:center;gap:8px">${settled&&!changed?`<button class="btn-sm" style="font-size:10px;opacity:0.55" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:settled&&changed?`<span style="color:#D97706;font-size:11px">⚠ Changed</span><button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:complete?`<button class="btn-sm" onclick="event.stopPropagation();settleRound(${r})">Settle</button>`:''} ${lkd_r&&!settled?`<button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unlockRound(${r})">Unlock</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
     html+=`<div class="round-card-body">`;
-    if(changed)html+=`<div style="padding:8px 12px;background:#FEF3C7;border-bottom:0.5px solid #F59E0B;font-size:12px;color:#92400E">⚠ Scores edited after settlement — amounts are current.</div>`;
+    if(changed)html+=`<div style="padding:8px 12px;background:#FEF3C7;border-bottom:0.5px solid #F59E0B;font-size:12px;color:#92400E">⚠ Scores edited after settlement - amounts are current.</div>`;
     if(!complete){html+=`<div class="pending-box">Scores incomplete</div></div></div>`;return;}
 
     if(gameOn('skins',r)&&skR&&skR.gameResults.length){
@@ -2686,7 +2788,7 @@ function renderMoney(){
     html+=`<div class="section-card round-card-collapsed" id="rcard-twos" style="margin-bottom:14px;${twosSettled?'opacity:0.6;':''}">`;
     html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('twos')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Two's Club — pot $${tp}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${twosSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${twosSettled?`<button class="btn-sm" style="font-size:10px;opacity:0.55" onclick="event.stopPropagation();unsettleItem('twos')">Unsettle</button>`:`<button class="btn-sm" onclick="event.stopPropagation();settleItem('twos')">Settle</button>`}<span class="round-card-chevron">▼</span></div></div>`;
     html+=`<div class="round-card-body">`;
-    if(!tot)html+=`<div class="pending-box">No 2s yet — pot carries</div>`;
+    if(!tot)html+=`<div class="pending-box">No 2s yet - pot carries</div>`;
     else{
       const twosDetail=calcTwosDetail();WK.players.forEach((p,i)=>{const hits=twosDetail[i];const badge=hits.length>0?`<span class="twos-badge">${hits.length} two${hits.length>1?'s':''}</span>`:'' ;const loc=hits.length>0?`<span style="font-size:11px;color:var(--color-text-secondary);margin-left:3px">· ${hits.join(', ')}</span>`:'';const extra=badge+loc;html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(i)}${extra}</span></div><div class="${twosNet[i]>=0?'money-pos':'money-neg'}">${fmt(twosNet[i])}</div></div>`;});
       const ttxns=simplifyDebts(twosNet);
@@ -2782,21 +2884,46 @@ function renderSkinsBoxWrap(){
   const wrap=document.getElementById('skinsBoxWrap');if(!wrap)return;
   if(!gameOn('skins',STATE.currentRound)){wrap.innerHTML='';return;}
   const r=STATE.currentRound,hi=STATE.currentHole,sG=skinsGamesForRound(r),si=segForHole(hi,sG),seg=getSegments(sG)[si];
-  // Guard: team skins requires 4 players and valid team data
-  if(WK.skinsFmt==='team'&&WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Skins</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Team Skins requires 4 players. For 2-player games, use Individual Skins format (Options → Skins → Format).</div></div>`;return;}
+  if(WK.skinsFmt==='team'&&WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Skins</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Team Skins requires 4 players. For 2-player games, use Individual Skins format (Options \u2192 Skins \u2192 Format).</div></div>`;return;}
   const skTeam=STATE.skinsTeams?.[r]?.[si];
   if(WK.skinsFmt==='team'&&(!skTeam||!skTeam[0]||!skTeam[1])){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Skins</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Set teams in Options to calculate skins.</div></div>`;return;}
   const carry=skinsCarryAt(r,hi);
   const res=skinHoleWinner(hi,r);
-  let resultLine='';
-  if(res){
-    if(res.tied)resultLine=`<span class="carry">Tied — carries (${carry+1} next)</span>`;
-    else if(res.type==='individual')resultLine=`${displayName(res.winner)} wins!`;
-    else{const wt=res.winner==='a'?(res.teams?.[0]||[]).map(i=>WK.players[i]?.name).join(' & '):(res.teams?.[1]||[]).map(i=>WK.players[i]?.name).join(' & ');resultLine=`${wt} wins!`;}
-  } else {resultLine='<span style="color:var(--color-text-secondary)">Enter all scores to calculate</span>';}
-  let teamLine='';
-  if(WK.skinsFmt==='team'){const sk=STATE.skinsTeams?.[r]?.[si];if(sk)teamLine=`<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">A: ${sk[0].map(i=>WK.players[i]?.name).join(' & ')} · B: ${sk[1].map(i=>WK.players[i]?.name).join(' & ')}</div>`;}
-  wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd"><span>Skins — ${seg.label}</span><span${carry>1?' class="carry"':''}>${carry} skin${carry>1?'s':''} · $${(WK.skinsVal*carry).toFixed(2)}</span></div><div class="calc-inner">${teamLine}<div style="font-size:13px">${resultLine}</div></div></div>`;
+  const skinsFmtLabel=WK.skinsFmt==='individual'?'Individual':'2v2 best ball';
+  const hdr=gameBoxHeaderWithFmt('Skins',skinsFmtLabel);
+  const gameRef=`G${si+1} H${seg.start+1}-${seg.end}`;
+  const carryTxt=`${carry} skin${carry>1?'s':''} · $${(WK.skinsVal*carry).toFixed(2)}`;
+  let body='';
+  if(WK.skinsFmt==='team'&&skTeam){
+    const netsA=skTeam[0].map(pi=>getNet(pi,hi,r));
+    const netsB=skTeam[1].map(pi=>getNet(pi,hi,r));
+    const bestA=netsA.every(n=>n!==null)?Math.min(...netsA):null;
+    const bestB=netsB.every(n=>n!==null)?Math.min(...netsB):null;
+    const aWins=res&&!res.tied&&res.winner==='a';
+    const bWins=res&&!res.tied&&res.winner==='b';
+    function skTeamBlock(team,nets,best,isWinner,ltr){
+      const players=team.map((pi,idx)=>`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net">${nets[idx]!==null&&nets[idx]===best&&isWinner?'<span class="mp-best">best \u2192 </span>':''}${nets[idx]!==null?'net '+nets[idx]:'\u2014'}</span></div>`).join('');
+      return `<div class="mp-team-block"><div class="mp-team-letter">${ltr}</div><div class="mp-team-players">${players}</div></div>`;
+    }
+    body=skTeamBlock(skTeam[0],netsA,bestA,aWins,'A')+skTeamBlock(skTeam[1],netsB,bestB,bWins,'B');
+  }
+  let leftTxt='',midTxt=carryTxt,midColor='#1D9E75';
+  if(!res){
+    leftTxt='';
+    midColor='var(--color-text-secondary)';
+  } else if(res.tied){
+    leftTxt='Tied';
+    midTxt=`${carry} skin${carry>1?'s':''} carry`;
+    midColor='#D97706';
+  } else if(res.type==='individual'){
+    leftTxt=`${displayName(res.winner)} wins`;
+    midColor='#1D9E75';
+  } else {
+    leftTxt=res.winner==='a'?'A wins':'B wins';
+    midColor='#1D9E75';
+  }
+  const resultBar=`<div class="mp-result-bar"><span class="mp-result-text">${leftTxt}</span><span style="font-size:12px;font-weight:600;color:${midColor}">${midTxt}</span><span class="mp-score-text">${gameRef}</span></div>`;
+  wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdr}${body}${resultBar}</div>`;
 }
 function renderSkinsRound(){
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
@@ -2879,7 +3006,7 @@ function renderExpenses(){
   const exps=STATE.expenses||[];
   const groups={};ECATS.forEach(c=>{groups[c.id]=[];});
   exps.forEach(e=>groups[e.cat]?.push(e));
-  const expLocked=(STATE.settledRounds||[]).includes('expenses');let html=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px">${(isReadOnly||expLocked)?'':`<button class="btn-primary" style="flex:none;padding:8px 16px;font-size:13px" onclick="openExpForm()">+ Add Expense</button>`}</div>`;if(expLocked)html+=`<div style="margin-bottom:12px;padding:10px 14px;background:var(--color-background-secondary);border:1.5px solid var(--color-border-primary);border-radius:var(--border-radius-md);font-size:13px;font-weight:500;color:var(--color-text-primary);text-align:center">Expenses settled — <span style='font-weight:400;color:var(--color-text-secondary)'>Unsettle to make changes</span></div>`;
+  const expLocked=(STATE.settledRounds||[]).includes('expenses');let html=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px">${(isReadOnly||expLocked)?'':`<button class="btn-primary" style="flex:none;padding:8px 16px;font-size:13px" onclick="openExpForm()">+ Add Expense</button>`}</div>`;if(expLocked)html+=`<div style="margin-bottom:12px;padding:10px 14px;background:var(--color-background-secondary);border:1.5px solid var(--color-border-primary);border-radius:var(--border-radius-md);font-size:13px;font-weight:500;color:var(--color-text-primary);text-align:center">Expenses settled - <span style='font-weight:400;color:var(--color-text-secondary)'>Unsettle to make changes</span></div>`;
   let any=false;
   ECATS.forEach(cat=>{
     const items=groups[cat.id];if(!items?.length)return;any=true;
@@ -3230,7 +3357,7 @@ function renderSettle(){
   });
 
   // Transactions
-  html+=`<div class="section-card"><div class="section-hd" style="color:var(--color-text-primary);font-weight:500">Minimum transfers — unsettled balance</div>`;
+  html+=`<div class="section-card"><div class="section-hd" style="color:var(--color-text-primary);font-weight:500">Minimum transfers - unsettled balance</div>`;
   if(!txns.length)html+=`<div style="padding:16px 12px;text-align:center;color:#1D9E75;font-size:14px;font-weight:500">🎉 Everyone's square!</div>`;
   else txns.forEach(t=>{const fr=WK.players[t.from],to=WK.players[t.to];const venmoHandle=(to.venmo||'').replace(/^@/,'')||to.name.toLowerCase();html+=`<div class="settle-txn"><div class="avatar" style="width:32px;height:32px;font-size:12px;background:${fr.bg};color:${fr.fg}">${fr.ini}</div><div style="flex:1;padding:0 8px"><div style="font-size:13px;font-weight:500">${fr.name} → ${to.name}</div><div style="font-size:11px;color:var(--color-text-secondary)">Venmo @${venmoHandle}</div></div><div class="settle-amt">$${t.amt.toFixed(2)}</div></div>`;});
   html+='</div>';
@@ -3287,7 +3414,7 @@ function showRoundDetails(){
 
       <div style="padding:12px 16px 8px">
         <div style="font-size:10px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Handicaps &nbsp;·&nbsp; ${hdcpPct}% adjustment</div>
-        ${netOffLowActive?`<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px;padding:6px 10px;background:var(--color-background-secondary);border-radius:6px">Net off low man active — strokes adjusted relative to ${displayName(lowMan)}</div>`:''}
+        ${netOffLowActive?`<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px;padding:6px 10px;background:var(--color-background-secondary);border-radius:6px">Net off low man active - strokes adjusted relative to ${displayName(lowMan)}</div>`:''}
       <div style="border:0.5px solid var(--color-border-tertiary);border-radius:8px;overflow:hidden">
           <div style="display:grid;grid-template-columns:1fr 52px 52px ${netOffLowActive?'48px ':''} 48px;background:var(--color-background-secondary);padding:6px 10px;font-size:10px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.05em">
             <span>Player</span><span style="text-align:right">USGA</span><span style="text-align:right">Wknd</span>${netOffLowActive?'<span style="text-align:right">CH</span>':''}<span style="text-align:right">${netOffLowActive?'Net':'Course'}</span>
