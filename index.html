@@ -184,7 +184,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(52%) sepia(9
 .vegas-num-row.right{justify-content:flex-end;}
 .vegas-num{font-size:26px;font-weight:500;color:var(--color-text-primary);line-height:1;}
 .vegas-num.flipped{color:#1D9E75;}
-.flip-badge{font-size:10px;background:#E1F5EE;color:#085041;border-radius:var(--border-radius-md);padding:1px 6px;}
+.flip-badge{font-size:10px;background:#9FE1CB;color:#04342C;border-radius:var(--border-radius-md);padding:1px 6px;}
 .double-badge{font-size:10px;background:#9FE1CB;color:#04342C;border-radius:var(--border-radius-md);padding:1px 6px;}
 .vegas-sub{font-size:10px;color:var(--color-text-secondary);margin-top:1px;}
 .divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:8px 0;}
@@ -1738,8 +1738,36 @@ function effHdcp(pi,r){const ch=courseHdcp(pi,r);return STATE.netOffLow?Math.max
 function strokes(pi,hi,r){const h=effHdcp(pi,r),si=WK.rounds[r].course.holes[hi]?.si||hi+1;return Math.floor(h/18)+(h%18>=si?1:0);}
 function getNet(pi,hi,r){const g=STATE.scores[r][hi][pi];return g===null?null:g-strokes(pi,hi,r);}
 function scoreClass(g,par){const d=g-par;if(d<=-2)return'eagle';if(d===-1)return'birdie';if(d===0)return'par';if(d===1)return'bogey';return'double';}
-function bestBird(team,hi,r){const par=WK.rounds[r].course.holes[hi]?.par||4;let b=0;team.forEach(pi=>{const g=STATE.scores[r][hi][pi];if(g===null)return;const d=par-g;if(d>=2)b=Math.max(b,2);else if(d===1)b=Math.max(b,1);});return b;}
-function calcVegas(hi,r){const vSeg=vegasSegForRound(r),si=segForHole(hi,vSeg),tA=STATE.vegTeams[r]?.[si]?.[0],tB=STATE.vegTeams[r]?.[si]?.[1];if(!tA||!tB||tA.length!==2||tB.length!==2)return null;const nA=tA.map(pi=>getNet(pi,hi,r)),nB=tB.map(pi=>getNet(pi,hi,r));if(nA.includes(null)||nB.includes(null))return null;const loA=Math.min(...nA),hiA=Math.max(...nA),loB=Math.min(...nB),hiB=Math.max(...nB);const bA=bestBird(tA,hi,r),bB=bestBird(tB,hi,r);let numA=loA*10+hiA,numB=loB*10+hiB,aFlip=false,bFlip=false,doubled=false;if(bA>0&&bB===0){numB=hiB*10+loB;bFlip=true;if(bA>=2)doubled=true;}else if(bB>0&&bA===0){numA=hiA*10+loA;aFlip=true;if(bB>=2)doubled=true;}else if(bA>0&&bB>0){if(bA>=2&&bB===1){numB=hiB*10+loB;bFlip=true;doubled=true;}else if(bB>=2&&bA===1){numA=hiA*10+loA;aFlip=true;doubled=true;}else{numA=hiA*10+loA;numB=hiB*10+loB;aFlip=true;bFlip=true;}}let diff=Math.abs(numA-numB);if(doubled)diff*=2;const tied=numA===numB;return{numA,numB,diff,aWins:!tied&&numA<numB,tied,aFlip,bFlip,doubled,tA,tB,loA,hiA,loB,hiB};}
+function bestBird(team,hi,r){const par=WK.rounds[r].course.holes[hi]?.par||4;let b=0;team.forEach(pi=>{const n=getNet(pi,hi,r);if(n===null)return;const d=par-n;if(d>=2)b=Math.max(b,2);else if(d===1)b=Math.max(b,1);});return b;}
+function teamBirdCount(team,hi,r){const par=WK.rounds[r].course.holes[hi]?.par||4;return team.filter(pi=>{const n=getNet(pi,hi,r);return n!==null&&(par-n)>=1;}).length;}
+function birdTriggers(team,hi,r){const par=WK.rounds[r].course.holes[hi]?.par||4;return team.reduce((a,pi,idx)=>{const n=getNet(pi,hi,r);if(n!==null&&(par-n)>=1)a.push(idx);return a;},[]);}
+function calcVegas(hi,r){
+  const vSeg=vegasSegForRound(r),si=segForHole(hi,vSeg),tA=STATE.vegTeams[r]?.[si]?.[0],tB=STATE.vegTeams[r]?.[si]?.[1];
+  if(!tA||!tB||tA.length!==2||tB.length!==2)return null;
+  const nA=tA.map(pi=>getNet(pi,hi,r)),nB=tB.map(pi=>getNet(pi,hi,r));
+  if(nA.includes(null)||nB.includes(null))return null;
+  const loA=Math.min(...nA),hiA=Math.max(...nA),loB=Math.min(...nB),hiB=Math.max(...nB);
+  const bA=bestBird(tA,hi,r),cA=teamBirdCount(tA,hi,r);
+  const bB=bestBird(tB,hi,r),cB=teamBirdCount(tB,hi,r);
+  // powerA/powerB: eagle or 2+ birdies = 2, single birdie = 1, none = 0
+  const powA=bA>=2||cA>=2?2:bA>0?1:0;
+  const powB=bB>=2||cB>=2?2:bB>0?1:0;
+  let numA=loA*10+hiA,numB=loB*10+hiB,aFlip=false,bFlip=false,doubled=false;
+  if(powA>0&&powB===0){numB=hiB*10+loB;bFlip=true;if(powA>=2)doubled=true;}
+  else if(powB>0&&powA===0){numA=hiA*10+loA;aFlip=true;if(powB>=2)doubled=true;}
+  else if(powA>0&&powB>0){
+    if(powA>=2&&powB===1){numB=hiB*10+loB;bFlip=true;doubled=true;}
+    else if(powB>=2&&powA===1){numA=hiA*10+loA;aFlip=true;doubled=true;}
+    else{numA=hiA*10+loA;numB=hiB*10+loB;aFlip=true;bFlip=true;}
+  }
+  let diff=Math.abs(numA-numB);
+  if(doubled)diff*=2;
+  const tied=numA===numB;
+  // Track which player indices triggered birdie/better for circle display
+  const trigA=birdTriggers(tA,hi,r);
+  const trigB=birdTriggers(tB,hi,r);
+  return{numA,numB,diff,aWins:!tied&&numA<numB,tied,aFlip,bFlip,doubled,tA,tB,loA,hiA,loB,hiB,trigA,trigB};
+}
 function calcMP(hi,r){const mpG=mpGamesForRound(r),si=segForHole(hi,mpG),tA=STATE.mpTeams[r]?.[si]?.[0],tB=STATE.mpTeams[r]?.[si]?.[1];if(!tA||!tB||tA.length!==2||tB.length!==2)return null;const nA=tA.map(pi=>getNet(pi,hi,r)),nB=tB.map(pi=>getNet(pi,hi,r));if(nA.includes(null)||nB.includes(null))return null;const bestA=Math.min(...nA),bestB=Math.min(...nB),halved=bestA===bestB;return{bestA,bestB,aWins:!halved&&bestA<bestB,halved,tA,tB,nA,nB};}
 function calcTwos(){return WK.players.map((_,pi)=>{let c=0;WK.rounds.forEach((_,r)=>{for(let h=0;h<18;h++)if(STATE.scores[r][h][pi]===2)c++;});return c;});}
 function calcTwosDetail(){return WK.players.map((_,pi)=>{const hits=[];WK.rounds.forEach((_,r)=>{for(let h=0;h<18;h++)if(STATE.scores[r][h][pi]===2)hits.push('R'+(r+1)+' H'+(h+1));});return hits;});}
@@ -1950,39 +1978,54 @@ function renderMPHoleBox(){
   wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdr}${mpTeamBlock(tA,res.nA,res.bestA,res.aWins)}${mpTeamBlock(tB,res.nB,res.bestB,!res.aWins&&!res.halved)}${resultBar}</div>`;
 }
 function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap'),r=STATE.currentRound,hi=STATE.currentHole;if(!gameOn('vegas',STATE.currentRound)){wrap.innerHTML='';return;}if(WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Vegas</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>`;return;}const vSeg=vegasSegForRound(r),si=segForHole(hi,vSeg),tA=STATE.vegTeams[r][si][0],tB=STATE.vegTeams[r][si][1];
-  const hdr=gameBoxHeaderWithTeams(`Vegas - Hole ${hi+1}`,tA,tB);
+  const hdr=gameBoxHeaderWithFmt(`Vegas - Hole ${hi+1}`,'');
   const res=calcVegas(hi,r);let inner='<div style="font-size:13px;color:var(--color-text-secondary)">Enter all scores to calculate</div>';
   if(res){
     const fA=res.aFlip?'<span class="flip-badge">flipped</span>':'';
     const fB=res.bFlip?'<span class="flip-badge">flipped</span>':'';
-    const dbl=res.doubled?'<span class="double-badge">eagle x2</span>':'';
+    const dbl=res.doubled?'<span class="double-badge">x2</span>':'';
     const rt=res.tied?'Tied':(res.aWins?'A wins':'B wins');
     const pt=res.tied?'Tied':'+'+res.diff+' pts';
-    inner=`<div class="vegas-teams-row">
-      <div class="vegas-team-block">
-        <div class="vegas-team-name">Team A</div>
-        <div class="vegas-num-row">
-          <span class="vegas-num${res.aFlip?' flipped':''}">${res.numA}</span>${fA}
+    const vSeg=vegasSegForRound(r),seg=getSegments(vSeg)[si];
+    const gameRef=`G${si+1} H${seg.start+1}-${seg.end}`;
+    function vegasTeamBlock(ltr,team,nets,num,combined,flipBadge,triggers){
+      const rows=team.map((pi,idx)=>{
+        const isTrig=triggers.includes(idx);
+        const netVal=nets[idx]!==null?nets[idx]:'—';
+        const netDisplay=isTrig
+          ?`<span style="font-size:13px;color:var(--color-text-secondary)">net </span><span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid #1D9E75;color:#1D9E75;font-size:12px;font-weight:500">${netVal}</span>`
+          :`<span style="font-size:13px;color:var(--color-text-secondary)">net ${netVal}</span>`;
+        return `<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:3px">${netDisplay}</div>`;
+      }).join('');
+      return `<div style="display:flex;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
+        <div style="flex:1;display:flex;align-items:center">
+          <div class="mp-team-letter">${ltr}</div>
+          <div>
+            <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:3px">${displayName(team[0])}</div>
+            <div style="font-size:13px;color:var(--color-text-secondary)">${displayName(team[1])}</div>
+          </div>
         </div>
-        <div class="vegas-sub">net ${res.loA}+${res.hiA}</div>
-      </div>
-      <div style="font-size:16px;color:var(--color-text-secondary)">vs</div>
-      <div class="vegas-team-block right">
-        <div class="vegas-team-name">Team B</div>
-        <div class="vegas-num-row right">${fB}<span class="vegas-num${res.bFlip?' flipped':''}">${res.numB}</span></div>
-        <div class="vegas-sub">net ${res.loB}+${res.hiB}</div>
-      </div>
-    </div>
-    <div class="result-row" style="background:var(--color-background-secondary);padding:8px 12px;margin-top:0;">
-      <div>
-        <div class="result-winner">${rt}${dbl?` ${dbl}`:''}</div>
-      </div>
-      <div style="text-align:right">
-        <div class="result-label">${res.numA} vs ${res.numB}${res.doubled?' × 2':''}</div>
-        <div class="result-pts${res.tied?' tied':''}">${pt}</div>
-      </div>
-    </div>`;}
-  wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdr}<div class="calc-inner">${inner}</div></div>`;}
+        <div style="flex:1;text-align:center">${rows}</div>
+        <div style="flex:1;text-align:right">
+          <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:4px">${flipBadge}<span class="vegas-num">${num}</span></div>
+          <div class="vegas-sub">${combined}</div>
+        </div>
+      </div>`;
+    }
+    const nA=tA.map(pi=>getNet(pi,hi,r));
+    const nB=tB.map(pi=>getNet(pi,hi,r));
+    inner=vegasTeamBlock('A',tA,nA,res.numA,`${res.loA}+${res.hiA}`,fA,res.trigA)+
+          vegasTeamBlock('B',tB,nB,res.numB,`${res.loB}+${res.hiB}`,fB,res.trigB)+
+          `<div class="mp-result-bar">
+            <div style="flex:1"><span class="mp-result-text">${rt}${dbl?' '+dbl:''}</span></div>
+            <div style="flex:1;text-align:center">
+              <div class="mp-score-text">${res.numA} vs ${res.numB}${res.doubled?' × 2':''}</div>
+              <div class="result-pts${res.tied?' tied':''}">${pt}</div>
+            </div>
+            <div style="flex:1;text-align:right"><span class="mp-score-text">${gameRef}</span></div>
+          </div>`;
+  }
+  wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdr}${inner}</div>`;}
 function renderHoleDots(){const r=STATE.currentRound;document.getElementById('holeDots').innerHTML=Array.from({length:18},(_,i)=>{const done=STATE.scores[r][i].every(s=>s!==null);return`<div class="hdot${done?' done':''}${i===STATE.currentHole?' cur':''}" onclick="jumpHole(${i})">${i+1}</div>`;}).join('');}
 function jumpHole(i){STATE.currentHole=i;updateHoleUI();}
 function changeHole(d){STATE.currentHole=Math.max(0,Math.min(17,STATE.currentHole+d));updateHoleUI();}
