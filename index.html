@@ -630,7 +630,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v73';
+const APP_VERSION='v74';
 
 // ===== THEME =====
 (function(){
@@ -1915,6 +1915,7 @@ function calcMPMatchScore(r,si,throughHole){
   let diff=0; // positive = A leads, negative = B leads
   let lastHolePlayed=-1;
   let closedAtHole=-1;
+  let leadAtClose=-1;
   for(let h=seg.start;h<=throughHole&&h<seg.end;h++){
     const res=calcMP(h,r);
     if(!res)break;
@@ -1925,7 +1926,7 @@ function calcMPMatchScore(r,si,throughHole){
     // check if match is closed (lead > holes remaining in seg)
     const holesPlayedSoFar=h-seg.start+1;
     const holesLeft=holesInSeg-holesPlayedSoFar;
-    if(Math.abs(diff)>holesLeft&&closedAtHole<0)closedAtHole=h;
+    if(Math.abs(diff)>holesLeft&&closedAtHole<0){closedAtHole=h;leadAtClose=Math.abs(diff);}
   }
   if(lastHolePlayed<seg.start)return null; // no holes played yet in seg
   const holesPlayed=lastHolePlayed-seg.start+1;
@@ -1936,7 +1937,7 @@ function calcMPMatchScore(r,si,throughHole){
   if(closedAtHole>=0){
     const closedPlayed=closedAtHole-seg.start+1;
     const closedLeft=holesInSeg-closedPlayed;
-    scoreStr=(leader==='A'?'Team A':'Team B')+' '+lead+'&'+closedLeft;
+    scoreStr=(leader==='A'?'Team A':'Team B')+' '+leadAtClose+'&'+closedLeft;
   } else if(!leader){
     scoreStr='A/S';
   } else if(lead===holesLeft){
@@ -1944,7 +1945,7 @@ function calcMPMatchScore(r,si,throughHole){
   } else {
     scoreStr=(leader==='A'?'Team A':'Team B')+': '+lead+' up';
   }
-  return{diff,lead,leader,holesPlayed,holesLeft,closed:closedAtHole>=0,scoreStr};
+  return{diff,lead,leader,holesPlayed,holesLeft,closed:closedAtHole>=0,closedAtHole,scoreStr};
 }
 function gameBoxHeader(title,rightContent){
   return `<div class="calc-hd"><span>${title}</span>${rightContent?`<span>${rightContent}</span>`:''}</div>`;
@@ -1965,10 +1966,11 @@ function renderMPHoleBox(){
   if(!res){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd" style="flex-direction:column;gap:1px;align-items:stretch"><div><span>Match play</span></div><div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)">2v2 best ball</div></div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter all scores to calculate</div></div>`;return;}
   const tA=STATE.mpTeams[r][si][0],tB=STATE.mpTeams[r][si][1];
   const ms=calcMPMatchScore(r,si,hi);
-  const scoreStr=ms?ms.scoreStr:'A/S';
+  const scoreStr=ms?ms.scoreStr.replace('Team A','A').replace('Team B','B'):'A/S';
+  const isPostClose=ms&&ms.closed&&hi>ms.closedAtHole;
   const seg=getSegments(mpG)[si];
   const hdr=gameBoxHeaderWithFmt('Match play','2v2 best ball');
-  const winnerTxt=res.halved?'Halved':res.aWins?'A wins':'B wins';
+  const winnerTxt=isPostClose?'Match over':res.halved?'Halved':res.aWins?'A wins':'B wins';
   const gameRef=`G${si+1} H${seg.start+1}-${seg.end}`;
   const resultBar=`<div class="mp-result-bar"><span class="mp-result-text">${winnerTxt}</span><span class="mp-result-text" style="font-size:13px;color:#1D9E75">${scoreStr}</span><span class="mp-score-text">${gameRef}</span></div>`;
   function mpTeamBlock(team,scores,bestScore,isWinner){
@@ -2457,19 +2459,56 @@ function renderMPRound(){
     const tA=tm[0],tB=tm[1];
     const nameA=tA.map(i=>displayName(i)).join(' & ');
     const nameB=tB.map(i=>displayName(i)).join(' & ');
-    let pA=0,pB=0,rows='';
+    let rows='';
     for(let h=seg.start;h<seg.end;h++){
       const res=calcMP(h,r);
-      if(!res){rows+=`<div class="hole-row"><span style="color:var(--color-text-secondary)">H${h+1}</span><span style="color:var(--color-text-secondary)">—</span><span></span></div>`;continue;}
-      if(res.aWins)pA+=1;else if(res.halved){pA+=0.5;pB+=0.5;}else pB+=1;
-      const winner=res.halved
-        ?`<span class="carry">Halved</span>`
-        :res.aWins
-          ?`<span style="color:#1D9E75;font-weight:500">${nameA}</span>`
-          :`<span style="color:#1D4ED8;font-weight:500">${nameB}</span>`;
-      rows+=`<div class="hole-row"><span style="color:var(--color-text-secondary)">H${h+1}</span><span>best ${res.bestA} vs ${res.bestB}</span>${winner}</div>`;
+      if(!res){rows+=`<div style="display:grid;grid-template-columns:28px 72px 90px 1fr;align-items:center;padding:7px 14px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px"><span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span><span style="color:var(--color-text-tertiary);text-align:center">-</span><span></span><span></span></div>`;continue;}
+      const ms=calcMPMatchScore(r,si,h);
+      const scoresPair=`<span style="display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500"><span style="color:#1D9E75">${res.bestA}</span><span style="color:var(--color-text-tertiary);margin:0 3px;font-weight:400">vs</span><span style="color:#185FA5">${res.bestB}</span></span>`;
+      let matchStateHtml;
+      if(!ms){
+        matchStateHtml=`<span style="color:var(--color-text-tertiary);font-size:12px;display:flex;align-items:center;justify-content:center">-</span>`;
+      } else if(ms.closed&&h>ms.closedAtHole){
+        matchStateHtml=`<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic;display:flex;align-items:center;justify-content:center">closed out</span>`;
+      } else {
+        const msColor=!ms.leader?'var(--color-text-secondary)':ms.leader==='A'?'#1D9E75':'#185FA5';
+        const msWeight=!ms.leader?'400':'500';
+        const msStr=ms.scoreStr.replace('Team A','A').replace('Team B','B');
+        matchStateHtml=`<span style="color:${msColor};font-weight:${msWeight};font-size:13px;display:flex;align-items:center;justify-content:center">${msStr}</span>`;
+      }
+      const isClosed=ms&&ms.closed&&h>ms.closedAtHole;
+      const winnerHtml=isClosed
+        ?`<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic;text-align:right">${res.halved?'Halved':res.aWins?nameA:nameB}</span>`
+        :res.halved
+          ?`<span style="color:#BA7517;font-size:12px;text-align:right">Halved</span>`
+          :res.aWins
+            ?`<span style="color:#1D9E75;font-weight:500;font-size:12px;text-align:right">${nameA}</span>`
+            :`<span style="color:#185FA5;font-weight:500;font-size:12px;text-align:right">${nameB}</span>`;
+      rows+=`<div style="display:grid;grid-template-columns:28px 72px 90px 1fr;align-items:center;padding:7px 14px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px">\
+<span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span>${scoresPair}${matchStateHtml}${winnerHtml}</div>`;
     }
-    html+=`<div class="section-card" style="margin-bottom:10px"><div class="section-hd" style="flex-direction:column;align-items:flex-start;gap:2px"><span>${seg.label} (H${seg.start+1}–${seg.end})</span><span style="font-size:11px;font-weight:400;color:var(--color-text-tertiary)">A: ${nameA} · B: ${nameB}</span></div>${rows}<div class="seg-total" style="flex-direction:column;gap:2px;align-items:flex-start"><span>${nameA}: ${pA} pts</span><span>${nameB}: ${pB} pts</span></div></div>`;
+    const finalMs=calcMPMatchScore(r,si,seg.end-1);
+    let finalResultHtml;
+    if(!finalMs){
+      finalResultHtml=`<span style="color:var(--color-text-secondary)">In progress</span>`;
+    } else if(!finalMs.leader){
+      finalResultHtml=`<span style="color:var(--color-text-secondary);font-weight:500">Tied - A/S</span>`;
+    } else {
+      const winName=finalMs.leader==='A'?nameA:nameB;
+      const winClr=finalMs.leader==='A'?'#1D9E75':'#185FA5';
+      const scoreStr=finalMs.scoreStr.replace('Team A','A').replace('Team B','B');
+      const resultScore=finalMs.closed?scoreStr.replace(/^[AB] /,''):finalMs.lead+' up';
+      finalResultHtml=`<span style="color:${winClr};font-weight:500">${winName} win - ${resultScore}</span>`;
+    }
+    html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">\
+<div style="padding:10px 14px;border-bottom:0.5px solid var(--color-border-tertiary)">\
+<div style="font-size:14px;font-weight:500;color:var(--color-text-primary)">${seg.label} (H${seg.start+1}-${seg.end})</div>\
+<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">A: ${nameA} · B: ${nameB}</div>\
+</div>\
+${rows}\
+<div style="padding:9px 14px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);font-size:12px;display:flex;align-items:center;gap:6px">\
+<span style="color:var(--color-text-tertiary)">Final result:</span>${finalResultHtml}\
+</div></div>`;
   });
   el.innerHTML=html;
 }
