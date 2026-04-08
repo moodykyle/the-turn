@@ -641,7 +641,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v77.7';
+const APP_VERSION='v78';
 
 // ===== THEME =====
 (function(){
@@ -1771,7 +1771,7 @@ function renderOptPanel(p){
 }
 function rdLabel(i){const cn=WK.rounds[i].courseName,ct=WK.rounds.filter(r=>r.courseName===cn).length;if(ct>1){let o=0;for(let j=0;j<=i;j++)if(WK.rounds[j].courseName===cn)o++;return cn+' ('+o+')';}return cn;}
 function renderRdSel(cid,cur,fn){const el=document.getElementById(cid);if(!el)return;const isEntry=cid==='entryRdSel';el.innerHTML=WK.rounds.map((rd,i)=>{const done=STATE.scores[i].every(h=>h.every(s=>s!==null));const lkd=(STATE.lockedRounds||[]).includes(i);const detailsLink=isEntry&&i===cur?`<div onclick="event.stopPropagation();showRoundDetails()" style="position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,0.5);color:rgba(255,255,255,0.8);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1">i</div>`:'';return`<div class="rd-btn${i===cur?' active':''}${done?' done':''}" onclick="${fn}(${i})">Rd ${i+1}${lkd?' 🔒':''}<br><span style="font-size:9px;opacity:0.75">${rdLabel(i)}</span>${detailsLink}</div>`;}).join('');}
-function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=0;renderRdSel('entryRdSel',r,'switchEntryRound');updateHoleUI();}
+function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=0;STATE.razzleToastOk=false;if(!STATE.razzleHWM)STATE.razzleHWM={};const _roundComplete=STATE.scores[r].every(h=>h.every(s=>s!==null));if(STATE.razzleHWM[r]===undefined)STATE.razzleHWM[r]=_roundComplete?17:-1;renderRdSel('entryRdSel',r,'switchEntryRound');updateHoleUI();}
 function switchCardRound(r){STATE.scRound=r;renderRdSel('cardRdSel',r,'switchCardRound');renderSCGrid();}
 function switchGamesRound(r){STATE.gamesViewRound=r;renderGamesTab();}
 function switchGamesGame(g){STATE.gamesViewGame=g;renderGamesTab();}
@@ -2090,16 +2090,20 @@ function renderRazzleBox(){
   if(!gameOn('razzle',r)){wrap.innerHTML='';return;}
   if(WK.players.length<4){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Razzle Dazzle</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>';return;}
   const matches=calcRazzle(r);
-  // Sweep and 5-hole bonus toasts — fire once per match regardless of score state
-  wrap._bonusAlert=wrap._bonusAlert||{};
+  // Sweep and 5-hole bonus toasts — fire once per match, persisted across reloads
+  if(!STATE.razzleFiredToasts)STATE.razzleFiredToasts={};
+  const _toastOk=STATE.razzleToastOk===true&&!isRoundLocked(r);STATE.razzleToastOk=false;
   matches.forEach(cm=>{
     if(!cm.winner)return;
+    if(isRoundLocked(r))return;
+    if(!_toastOk)return;
     const matchKey='bonus:'+r+':'+cm.mi;
-    if(wrap._bonusAlert[matchKey])return;
-    wrap._bonusAlert[matchKey]=true;
+    if(STATE.razzleFiredToasts[matchKey])return;
     const toastMsgs=[];
     if(cm.sweep&&(WK.razzleSweepBonus||0)>0)toastMsgs.push('Sweep bonus! +$'+(WK.razzleSweepBonus||5).toFixed(2)+' to pot');
     if(cm.fiveHole&&(WK.razzle5HoleBonus||0)>0)toastMsgs.push('5-hole bonus! +$'+(WK.razzle5HoleBonus||5).toFixed(2)+' to pot');
+    if(!toastMsgs.length)return;
+    STATE.razzleFiredToasts[matchKey]=true;
     toastMsgs.forEach((msg,tidx)=>{setTimeout(()=>{const el=document.getElementById('razzleBonusToast'+tidx);if(el)el.remove();const t=document.createElement('div');t.id='razzleBonusToast'+tidx;t.style.cssText='position:fixed;bottom:'+(80+tidx*55)+'px;left:50%;transform:translateX(-50%);background:#185FA5;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3500);},150+tidx*200);});
   });
   if(!matches.length){
@@ -2144,9 +2148,9 @@ function renderRazzleBox(){
     if(birdies.length>0&&(WK.razzleBirdieBonus||2)>0){
       const names=birdies.map(pi=>displayName(pi)).join(', ');
       const bonus='$'+((birdies.length*(WK.razzleBirdieBonus||2)).toFixed(2));
-      wrap._birdieAlert=wrap._birdieAlert||{};
-      const key=r+':'+hi;
-      if(!wrap._birdieAlert[key]){wrap._birdieAlert[key]=true;setTimeout(()=>{const el=document.getElementById('razzleBirdieToast');if(el)el.remove();const t=document.createElement('div');t.id='razzleBirdieToast';t.style.cssText='position:fixed;bottom:185px;left:50%;transform:translateX(-50%);background:#1D9E75;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';t.textContent='Birdie bonus! '+names+' · +'+bonus+' to pot';document.body.appendChild(t);setTimeout(()=>t.remove(),3000);},100);}
+      if(!STATE.razzleFiredToasts)STATE.razzleFiredToasts={};
+      const key='birdie:'+r+':'+hi;
+      if(!STATE.razzleFiredToasts[key]&&!isRoundLocked(r)&&!isRoundComplete(r)){STATE.razzleFiredToasts[key]=true;setTimeout(()=>{const el=document.getElementById('razzleBirdieToast');if(el)el.remove();const t=document.createElement('div');t.id='razzleBirdieToast';t.style.cssText='position:fixed;bottom:185px;left:50%;transform:translateX(-50%);background:#1D9E75;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';t.textContent='Birdie bonus! '+names+' · +'+bonus+' to pot';document.body.appendChild(t);setTimeout(()=>t.remove(),3000);},100);}
     }
   }
   // Per-player badges: team pt goes on the low-sum scorer; ind pt goes on the low-individual scorer
@@ -2171,7 +2175,7 @@ function renderRazzleBox(){
   const teamScoreStr='Team: '+(res?res.sumA:'-')+' vs '+(res?res.sumB:'-');
   const indStr=holeEntry.indPt?('Ind: '+(holeEntry.indPt==='a'?'A':'B')):'Ind: Tied';
   const finalRunA=m.holeLog.length?m.holeLog[m.holeLog.length-1].runA:0;const finalLead=Math.abs(finalRunA);const standingStr=matchClosed?((m.winner==='a'?'A':'B')+' wins '+finalLead+'-0'):(runLeader?runLeader+' '+runLead+'-0':'A/S');
-  const resultBar='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px"><span style="color:var(--color-text-secondary)">'+(holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinner+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB)))+'</span><span style="color:var(--color-text-secondary);text-align:center">'+teamScoreStr+'</span><span style="color:var(--color-text-secondary);text-align:center">'+indStr+'</span><span style="color:#1D9E75;text-align:right;font-weight:500">'+standingStr+'</span></div>';
+  const resultBar='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px"><span style="color:'+(holePtsA===0&&holePtsB===0||holePtsA===holePtsB?'#D97706':'var(--color-text-secondary)')+';">'+(holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinner+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB)))+'</span><span style="color:var(--color-text-secondary);text-align:center">'+teamScoreStr+'</span><span style="color:var(--color-text-secondary);text-align:center">'+indStr+'</span><span style="color:#1D9E75;text-align:right;font-weight:500">'+standingStr+'</span></div>';
   if(res){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+hdr+razzleTeamBlock(tA,res.nA,res.sumA,res.bestA)+razzleTeamBlock(tB,res.nB,res.sumB,res.bestB)+resultBar+'</div>';}
   else{wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+hdr+'<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';}
 }
@@ -2220,6 +2224,9 @@ function confirmRazzleModal(r,mi,nextHole,useDefault){
   if(!STATE.razzleMatchTeams[r])STATE.razzleMatchTeams[r]=[];
   STATE.razzleMatchTeams[r][mi]={tA,tB};
   document.getElementById('razzleModal').remove();
+  if(!STATE.razzleHWM)STATE.razzleHWM={};
+  const _crmHwm=STATE.razzleHWM[r]??-1;
+  if(nextHole>_crmHwm){STATE.razzleHWM[r]=nextHole-1;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}
   STATE.currentHole=nextHole;
   autoSave();updateHoleUI();
 }
@@ -2268,7 +2275,7 @@ function renderRazzleRound(){
         const bonusTags=bonusBits.map(b=>'<span style="font-size:9px;background:rgba(29,158,117,0.15);color:'+b.clr+';border-radius:3px;padding:1px 4px;margin-right:3px">'+b.lbl+'</span>').join('');
         const holeWinLetter=hW==='a'?'A':hW==='b'?'B':null;
         const holeResultColor=hW==='a'?'#1D9E75':hW==='b'?'#185FA5':'var(--color-text-secondary)';
-        const holeResult=holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinLetter+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB));const holeResultColorFinal=holePtsA===0&&holePtsB===0?'#D97706':holeResultColor;
+        const holeResult=holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinLetter+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB));const holeResultColorFinal=holePtsA===0&&holePtsB===0||holePtsA===holePtsB?'#D97706':holeResultColor;
         const standingColor=isClosed?(m.winner==='a'?'#1D9E75':'#185FA5'):'var(--color-text-secondary)';
         html+='<div style="display:grid;grid-template-columns:28px 1fr 1fr 72px;align-items:center;gap:4px;padding:5px 16px 5px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px'+(isPost?';opacity:0.45':'')+'"><span style="color:var(--color-text-tertiary)">H'+(h+1)+'</span><span style="color:'+holeResultColorFinal+';text-align:center">'+holeResult+'</span><span style="text-align:right;padding-right:6px">'+bonusTags+'</span><span style="text-align:right;color:'+standingColor+'">'+scoreStr+'</span></div>';
       }
@@ -2384,11 +2391,13 @@ function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap')
   }
   wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdr}${inner}</div>`;}
 function renderHoleDots(){const r=STATE.currentRound;document.getElementById('holeDots').innerHTML=Array.from({length:18},(_,i)=>{const done=STATE.scores[r][i].every(s=>s!==null);return`<div class="hdot${done?' done':''}${i===STATE.currentHole?' cur':''}" onclick="jumpHole(${i})">${i+1}</div>`;}).join('');}
-function jumpHole(i){STATE.currentHole=i;updateHoleUI();}
-function changeHole(d){const r=STATE.currentRound,curHole=STATE.currentHole,nextHole=Math.max(0,Math.min(17,curHole+d));if(d>0&&gameOn('razzle',r)&&razzleMatchClosedOnHole(r,curHole)){showRazzleTeamModal(r,nextHole);return;}STATE.currentHole=nextHole;updateHoleUI();}
+function jumpHole(i){STATE.razzleToastOk=false;STATE.currentHole=i;updateHoleUI();}
+function changeHole(d){const r=STATE.currentRound,curHole=STATE.currentHole,nextHole=Math.max(0,Math.min(17,curHole+d));if(d>0&&gameOn('razzle',r)&&razzleMatchClosedOnHole(r,curHole)&&!isRoundLocked(r)){const _cms=calcRazzle(r);const _closedM=_cms.find(m=>m.closedOnHole===curHole);const _nextMi=_closedM?_closedM.mi+1:_cms.length;const _teamsSet=STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r]&&STATE.razzleMatchTeams[r][_nextMi];if(!_teamsSet){showRazzleTeamModal(r,nextHole);return;}}if(d>0){if(!STATE.razzleHWM)STATE.razzleHWM={};const hwm=STATE.razzleHWM[r]??-1;if(nextHole>hwm){STATE.razzleHWM[r]=nextHole;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}}else{STATE.razzleToastOk=false;}STATE.currentHole=nextHole;updateHoleUI();}
 function updateHoleUI(){
   if(!WK||!STATE||!WK.rounds||!WK.players)return;
   const r=STATE.currentRound,hi=STATE.currentHole;
+  if(!STATE.razzleHWM)STATE.razzleHWM={};
+  if(STATE.razzleHWM[r]===undefined){const _rc=STATE.scores[r].every(h=>h.every(s=>s!==null));STATE.razzleHWM[r]=_rc?17:-1;}
   if(!WK.rounds[r]||!WK.rounds[r].course){console.error('updateHoleUI: missing round/course for round',r);return;}
   const hole=WK.rounds[r].course.holes?.[hi]||{par:4,si:hi+1};
   const locked=isRoundLocked(r),complete=isRoundComplete(r);
@@ -3049,7 +3058,7 @@ function unsettleItem(key){if(!STATE.settledRounds)return;STATE.settledRounds=ST
 function unsettleRound(r){unsettleItem(r);}
 function isRoundLocked(r){return(STATE.lockedRounds||[]).includes(r);}
 function lockRound(r){if(!STATE.lockedRounds)STATE.lockedRounds=[];if(!STATE.lockedRounds.includes(r))STATE.lockedRounds.push(r);autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();}
-function unlockRound(r){if((STATE.settledRounds||[]).includes(r)){alert('Unsettle this round on the Money tab before unlocking.');return;}if(!STATE.lockedRounds)return;STATE.lockedRounds=STATE.lockedRounds.filter(x=>x!==r);autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();if(document.getElementById('mpanel-golf')?.classList.contains('active'))renderMoney();}
+function unlockRound(r){if((STATE.settledRounds||[]).includes(r)){alert('Unsettle this round on the Money tab before unlocking.');return;}if(!STATE.lockedRounds)return;STATE.lockedRounds=STATE.lockedRounds.filter(x=>x!==r);if(STATE.razzleFiredToasts){Object.keys(STATE.razzleFiredToasts).forEach(k=>{if(k.startsWith('bonus:'+r+':')||k.startsWith('birdie:'+r+':'))delete STATE.razzleFiredToasts[k];});}if(STATE.razzleHWM)STATE.razzleHWM[r]=undefined;autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();if(document.getElementById('mpanel-golf')?.classList.contains('active'))renderMoney();}
 
 function renderMoney(){
   const n=WK.players.length,pot=WK.buyIn*n;
