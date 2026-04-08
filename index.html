@@ -365,8 +365,8 @@ select.course-select,select.ie-sel,select.inline-edit,select.team-dropdown,selec
 /* Collapsible round cards */
 .round-card-body{overflow:hidden;transition:max-height 0.25s ease;}
 .round-card-collapsed .round-card-body{display:none;}
-.round-card-chevron{font-size:11px;color:var(--color-text-secondary);transition:transform 0.2s;}
-.round-card-collapsed .round-card-chevron{transform:rotate(-90deg);}
+.round-card-chevron{font-size:11px;color:#1D9E75;transition:transform 0.2s;}
+
 /* Audit player rows */
 .audit-player-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer;user-select:none;}
 .audit-player-row:last-child{border-bottom:none;}
@@ -504,6 +504,16 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
             <div id="wizVegasExtra" style="display:none;margin-top:10px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px"><span style="font-size:12px;color:var(--color-text-secondary)">Default games/round:</span><select class="ie-sel" id="wizVegasSegs"><option value="1">1 game · 18 holes</option><option value="2">2 games · 9 holes</option><option value="3" selected>3 games · 6 holes</option></select></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12px;color:var(--color-text-secondary)">$</span><input class="ie-num" id="vegasVal" type="number" value="0.50" step="0.25" style="width:90px"/><span style="font-size:12px;color:var(--color-text-secondary)">per point</span></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--color-text-secondary)">Settlement:</span><select class="ie-sel" id="wizVegasSettle"><option value="perplayer">Per player</option><option value="perteam">Per team</option></select></div></div>
           </div>
           <div style="padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
+            <div style="display:flex;align-items:center;gap:10px;margin-top:8px"><div style="flex:1;font-size:13px;color:var(--color-text-primary);display:flex;align-items:center;gap:6px">Razzle Dazzle <span class="info-icon" tabindex="0">i<span class="info-tip">2v2 net team game. Each hole has 2 points: 1 for low team net (sum), 1 for low individual net. Ties cancel. Cornhole scoring - first team to go 3 clear wins the match. Teams rotate automatically.</span></span></div><label class="toggle"><input type="checkbox" id="wizRazzleOn"><span class="toggle-slider"></span></label></div>
+            <div id="wizRazzleExtra" style="display:none;margin-top:10px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12px;color:var(--color-text-secondary)">$ per match</span><input class="ie-num" id="wizRazzleVal" type="number" value="5" min="1" step="1" style="width:80px"/></div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12px;color:var(--color-text-secondary)">$ birdie bonus</span><input class="ie-num" id="wizRazzleBirdie" type="number" value="2" min="0" step="1" style="width:80px"/></div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12px;color:var(--color-text-secondary)">$ sweep bonus</span><input class="ie-num" id="wizRazzleSweep" type="number" value="5" min="0" step="1" style="width:80px"/></div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12px;color:var(--color-text-secondary)">$ 5-hole bonus</span><input class="ie-num" id="wizRazzle5Hole" type="number" value="5" min="0" step="1" style="width:80px"/></div>
+              <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--color-text-secondary)">Settlement:</span><select class="ie-sel" id="wizRazzleSettle"><option value="perplayer">Per player</option><option value="perteam">Per team</option></select></div>
+            </div>
+          </div>
+          <div style="padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
             <div style="display:flex;align-items:center;gap:10px"><div style="flex:1;font-size:13px;color:var(--color-text-primary);display:flex;align-items:center;gap:6px">Two's Club <span class="info-icon" tabindex="0">i<span class="info-tip">Everyone pays into a pot. Any player who makes a 2 on a par 3 splits the pot. No 2s all weekend? Pot rolls over.</span></span></div><label class="toggle"><input type="checkbox" id="wizTwosOn"><span class="toggle-slider"></span></label></div>
             <div id="wizTwosExtra" style="display:none;margin-top:10px"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--color-text-secondary)">$</span><input class="ie-num" id="twosAmt" type="number" value="25" style="width:90px"/><span style="font-size:12px;color:var(--color-text-secondary)">per player into pot</span></div></div>
           </div>
@@ -549,6 +559,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
       <div class="banner" id="banner"></div>
       <div class="scorecard" id="scorecard"></div>
       <div id="snakeEntryWrap"></div>
+      <div id="razzleBoxWrap"></div>
       <div id="skinsBoxWrap"></div><div id="mpBoxWrap"></div><div id="vegasBoxWrap"></div>
       <div class="hole-dots" id="holeDots"></div>
       <button class="footer-btn" id="saveBtn" onclick="saveHole()">Save Hole & Continue →</button>
@@ -630,7 +641,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v74';
+const APP_VERSION='v77';
 
 // ===== THEME =====
 (function(){
@@ -745,6 +756,14 @@ async function s2WriteActive(){
         snake_growth:WK.snakeGrowth||'double',
         snake_increment:WK.snakeIncrement||1,
         snake_payout:WK.snakePayout||'split',
+        razzle_on:gameOnAny('razzle'),
+        razzle_val:WK.razzleVal||5,
+        razzle_birdie_bonus:WK.razzleBirdieBonus||2,
+        razzle_sweep_bonus:WK.razzleSweepBonus||5,
+        razzle_5hole_bonus:WK.razzle5HoleBonus||5,
+        razzle_settle:WK.razzleSettle||'perplayer',
+        razzle_order:STATE.razzleOrder||null,
+        razzle_match_teams:STATE.razzleMatchTeams||null,
         mp_teams:STATE.mpTeams||null,
         vegas_teams:STATE.vegTeams||null,
         skins_teams:STATE.skinsTeams||null,
@@ -760,7 +779,8 @@ async function s2WriteActive(){
           mpOn:!!rd.mpOn,
           vegasOn:!!rd.vegasOn,
           skinsOn:!!rd.skinsOn,
-          snakeOn:!!rd.snakeOn
+          snakeOn:!!rd.snakeOn,
+          razzleOn:!!rd.razzleOn
         })),
         summary:{
           playerNames:WK.players.map((p,i)=>displayName(i)),
@@ -966,6 +986,12 @@ async function s2ReadTrip(tripId){
       snakeGrowth:t.snake_growth||'double',
       snakeIncrement:t.snake_increment||1,
       snakePayout:t.snake_payout||'split',
+      razzleOn:!!t.razzle_on,
+      razzleVal:t.razzle_val||5,
+      razzleBirdieBonus:t.razzle_birdie_bonus||2,
+      razzleSweepBonus:t.razzle_sweep_bonus||5,
+      razzle5HoleBonus:t.razzle_5hole_bonus||5,
+      razzleSettle:t.razzle_settle||'perplayer',
       players:playerRows.map(p=>({
         name:((p.first_name||'')+(p.last_name?' '+p.last_name:'')).trim(),
         idx:p.handicap_idx||0,
@@ -980,7 +1006,8 @@ async function s2ReadTrip(tripId){
         mpOn:rd.mpOn!==undefined?rd.mpOn:!!t.mp_on,
         vegasOn:rd.vegasOn!==undefined?rd.vegasOn:!!t.vegas_on,
         skinsOn:rd.skinsOn!==undefined?rd.skinsOn:!!t.skins_on,
-        snakeOn:rd.snakeOn!==undefined?rd.snakeOn:!!t.snake_on
+        snakeOn:rd.snakeOn!==undefined?rd.snakeOn:!!t.snake_on,
+        razzleOn:rd.razzleOn!==undefined?rd.razzleOn:!!t.razzle_on
       }))
     };
 
@@ -1015,6 +1042,8 @@ async function s2ReadTrip(tripId){
       skinsTeams:t.skins_teams||Array(nR).fill(null).map((_,r=>{const g=skinsGamesForRound(r);return Array(g).fill(null).map(()=>JSON.parse(JSON.stringify([[0,1],[2,3]])));})),
       snakeHolder:t.snake_holder||Array(nR).fill(null).map(()=>Array(18).fill(null)),
       snakePot:t.snake_pot||Array(nR).fill(0),
+      razzleOrder:t.razzle_order||Array(nR).fill(null).map(()=>[0,1,2,3]),
+      razzleMatchTeams:t.razzle_match_teams||Array(nR).fill(null).map(()=>[]),
       settledRounds:t.settled_rounds||[],
       roundSettleData:t.round_settle_data||{},
       lockedRounds:t.locked_rounds||[],
@@ -1335,7 +1364,7 @@ async function homeRemoveCourse(name){if(!confirm('Remove '+name+' from catalog?
 function startNewWeekend(){WK=null;STATE=null;isReadOnly=false;viewingTripId=null;
   const wn=document.getElementById('weekendName');if(wn)wn.value='';
   const wd=document.getElementById('weekendDate');if(wd)wd.value='';
-  ['wizMpOn','wizVegasOn','wizSkinsOn','wizTwosOn','wizSnakeOn'].forEach(id=>{const el=document.getElementById(id);if(el){el.checked=false;el.dispatchEvent(new Event('change'));}});
+  ['wizMpOn','wizVegasOn','wizSkinsOn','wizTwosOn','wizSnakeOn','wizRazzleOn'].forEach(id=>{const el=document.getElementById(id);if(el){el.checked=false;el.dispatchEvent(new Event('change'));}});
   [1,2,3,4].forEach(n=>{const el=document.getElementById('step'+n);if(el)el.classList.remove('active');});wizStep=1;const s1=document.getElementById('step1');if(s1)s1.classList.add('active');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='block';updateDots();}
 function startQuickRound(){
   // Show player count modal instead of prompt
@@ -1387,9 +1416,17 @@ function renderTripList(){
   _renderTripListFromData(loadTrips());
   // Then fetch from schema, re-render, and reconcile localStorage
   s2LoadTripList().then(schemaTrips=>{
+    const localTrips=loadTrips();
     if(schemaTrips&&schemaTrips.length){
-      _renderTripListFromData(schemaTrips);
-      saveTrips(schemaTrips); // prune stale local trips to match Supabase
+      // Merge: Supabase trips take precedence for shared trips, local-only trips are kept
+      const merged=[...schemaTrips];
+      localTrips.forEach(lt=>{if(!merged.find(st=>st.id===lt.id))merged.push(lt);});
+      // Only re-render if Supabase added or changed something not already in local
+      const hasNew=schemaTrips.some(st=>!localTrips.find(lt=>lt.id===st.id&&lt.savedAt===st.savedAt));
+      if(hasNew)_renderTripListFromData(merged);
+      try{localStorage.setItem(LS_TRIPS,JSON.stringify(merged));}catch(e){}
+    } else if(schemaTrips&&schemaTrips.length===0){
+      // Supabase returned empty — don't wipe local trips, just keep showing them
     }
   });
 }
@@ -1628,6 +1665,7 @@ document.getElementById('wizSkinsOn').addEventListener('change',function(){
 });
 document.getElementById('wizTwosOn').addEventListener('change',function(){document.getElementById('wizTwosExtra').style.display=this.checked?'block':'none';});
 document.getElementById('wizSnakeOn').addEventListener('change',function(){document.getElementById('wizSnakeExtra').style.display=this.checked?'block':'none';});
+document.getElementById('wizRazzleOn').addEventListener('change',function(){document.getElementById('wizRazzleExtra').style.display=this.checked?'block':'none';});
 document.getElementById('snakeGrowth').addEventListener('change',function(){document.getElementById('snakeFlatWrap').style.display=this.value==='flat'?'flex':'none';});
 function startWeekend(){const nP=parseInt(document.getElementById('numPlayers').value),nR=parseInt(document.getElementById('numRounds').value),players=[];
   // Build player roster — match library entry for first/last if possible
@@ -1655,8 +1693,9 @@ function startWeekend(){const nP=parseInt(document.getElementById('numPlayers').
     else if(exists&&p.idx&&exists.idx!==p.idx){exists.idx=p.idx;libUpdated=true;}
   });
   if(libUpdated)saveLib();
-  const rounds=[];for(let i=0;i<nR;i++){const cn=document.getElementById('course'+i)?.value||Object.keys(CATALOG)[0];if(!cn){alert('Please select a course for Round '+(i+1)+'.');return;}rounds.push({courseName:cn,course:CATALOG[cn],mpOn:false,vegasOn:false,skinsOn:false,snakeOn:false});}const mpOn=document.getElementById('wizMpOn').checked,vegasOn=document.getElementById('wizVegasOn').checked,twosOn=document.getElementById('wizTwosOn').checked,skinsOn=document.getElementById('wizSkinsOn').checked;const mpGDef=mpOn?parseInt(document.getElementById('wizMpGames').value):3;const skGDef=skinsOn?parseInt(document.getElementById('wizSkinsGames').value):0;const netOffLow=document.getElementById('wizNetOffLow')?.checked||false;const mpSettle=mpOn?(document.getElementById('wizMpSettle')?.value||'perplayer'):'perplayer';const vegasSettle=vegasOn?(document.getElementById('wizVegasSettle')?.value||'perplayer'):'perplayer';const snakeOn=document.getElementById('wizSnakeOn').checked;WK={_id:Date.now()+'',name:document.getElementById('weekendName').value||'My Trip',date:document.getElementById('weekendDate').value||'',players,rounds,hdcpPct:parseFloat(document.getElementById('hdcpPct').value||80)/100,buyIn:parseFloat(document.getElementById('buyIn').value||50),potMethod:document.getElementById('wizPotMethod')?.value||'netstroke',mpOn,mpGamesDefault:mpGDef,mpGamesPerRound:Array(nR).fill(mpGDef),gameVal:mpOn?parseFloat(document.getElementById('gameVal').value||5):5,mpSettle,vegasOn,vegasVal:vegasOn?parseFloat(document.getElementById('vegasVal').value||0.5):0.5,vegasSegsDefault:vegasOn?parseInt(document.getElementById('wizVegasSegs').value):3,vegasSegsPerRound:Array(nR).fill(vegasOn?parseInt(document.getElementById('wizVegasSegs').value):3),vegasSettle,twosOn,twosAmt:twosOn?parseFloat(document.getElementById('twosAmt').value||25):25,skinsOn,skinsVal:skinsOn?parseFloat(document.getElementById('skinsVal').value||5):5,skinsFmt:skinsOn?(document.getElementById('wizSkinsFmt').value||'team'):'team',skinsSettle:skinsOn?(document.getElementById('wizSkinsSettle').value||'perplayer'):'perplayer',skinsGamesDefault:skGDef>0?skGDef:3,skinsGamesPerRound:Array(nR).fill(skGDef>0?skGDef:3),snakeOn,snakeBase:snakeOn?parseFloat(document.getElementById('snakeBase').value||1):1,snakeGrowth:snakeOn?(document.getElementById('snakeGrowth').value||'double'):'double',snakeIncrement:snakeOn?parseFloat(document.getElementById('snakeIncrement').value||1):1,snakePayout:snakeOn?(document.getElementById('snakePayout').value||'split'):'split'};isReadOnly=false;viewingTripId=null;
-  WK.rounds.forEach(rd=>{rd.mpOn=mpOn;rd.vegasOn=vegasOn;rd.skinsOn=skinsOn;rd.snakeOn=snakeOn;});
+  const rounds=[];for(let i=0;i<nR;i++){const cn=document.getElementById('course'+i)?.value||Object.keys(CATALOG)[0];if(!cn){alert('Please select a course for Round '+(i+1)+'.');return;}rounds.push({courseName:cn,course:CATALOG[cn],mpOn:false,vegasOn:false,skinsOn:false,snakeOn:false,razzleOn:false});}const mpOn=document.getElementById('wizMpOn').checked,vegasOn=document.getElementById('wizVegasOn').checked,twosOn=document.getElementById('wizTwosOn').checked,skinsOn=document.getElementById('wizSkinsOn').checked;const mpGDef=mpOn?parseInt(document.getElementById('wizMpGames').value):3;const skGDef=skinsOn?parseInt(document.getElementById('wizSkinsGames').value):0;const netOffLow=document.getElementById('wizNetOffLow')?.checked||false;const mpSettle=mpOn?(document.getElementById('wizMpSettle')?.value||'perplayer'):'perplayer';const vegasSettle=vegasOn?(document.getElementById('wizVegasSettle')?.value||'perplayer'):'perplayer';const snakeOn=document.getElementById('wizSnakeOn').checked;WK={_id:Date.now()+'',name:document.getElementById('weekendName').value||'My Trip',date:document.getElementById('weekendDate').value||'',players,rounds,hdcpPct:parseFloat(document.getElementById('hdcpPct').value||80)/100,buyIn:parseFloat(document.getElementById('buyIn').value||50),potMethod:document.getElementById('wizPotMethod')?.value||'netstroke',mpOn,mpGamesDefault:mpGDef,mpGamesPerRound:Array(nR).fill(mpGDef),gameVal:mpOn?parseFloat(document.getElementById('gameVal').value||5):5,mpSettle,vegasOn,vegasVal:vegasOn?parseFloat(document.getElementById('vegasVal').value||0.5):0.5,vegasSegsDefault:vegasOn?parseInt(document.getElementById('wizVegasSegs').value):3,vegasSegsPerRound:Array(nR).fill(vegasOn?parseInt(document.getElementById('wizVegasSegs').value):3),vegasSettle,twosOn,twosAmt:twosOn?parseFloat(document.getElementById('twosAmt').value||25):25,skinsOn,skinsVal:skinsOn?parseFloat(document.getElementById('skinsVal').value||5):5,skinsFmt:skinsOn?(document.getElementById('wizSkinsFmt').value||'team'):'team',skinsSettle:skinsOn?(document.getElementById('wizSkinsSettle').value||'perplayer'):'perplayer',skinsGamesDefault:skGDef>0?skGDef:3,skinsGamesPerRound:Array(nR).fill(skGDef>0?skGDef:3),snakeOn,snakeBase:snakeOn?parseFloat(document.getElementById('snakeBase').value||1):1,snakeGrowth:snakeOn?(document.getElementById('snakeGrowth').value||'double'):'double',snakeIncrement:snakeOn?parseFloat(document.getElementById('snakeIncrement').value||1):1,snakePayout:snakeOn?(document.getElementById('snakePayout').value||'split'):'split',razzleOn:document.getElementById('wizRazzleOn').checked,razzleVal:parseFloat(document.getElementById('wizRazzleVal')?.value||5),razzleBirdieBonus:parseFloat(document.getElementById('wizRazzleBirdie')?.value||2),razzleSweepBonus:parseFloat(document.getElementById('wizRazzleSweep')?.value||5),razzle5HoleBonus:parseFloat(document.getElementById('wizRazzle5Hole')?.value||5),razzleSettle:(document.getElementById('wizRazzleSettle')?.value||'perplayer')};isReadOnly=false;viewingTripId=null;
+  const razzleOn=document.getElementById('wizRazzleOn').checked;
+  WK.rounds.forEach(rd=>{rd.mpOn=mpOn;rd.vegasOn=vegasOn;rd.skinsOn=skinsOn;rd.snakeOn=snakeOn;rd.razzleOn=razzleOn;});
   if(players.length<4&&skinsOn)WK.skinsFmt='individual';
   initState(netOffLow);launchMainApp();autoSave();}
 
@@ -1681,16 +1720,18 @@ function defaultVegasTeams(r){const g=vegasSegForRound(r),rots=[[[0,1],[2,3]],[[
 function initState(netOffLow){const nR=WK.rounds.length,nP=WK.players.length;const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];const mkSkTeams=r=>{const g=skinsGamesForRound(r);return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));};STATE={currentRound:0,currentHole:0,netOffLow:netOffLow||false,mpViewRound:0,vegasViewRound:0,skinsViewRound:0,scRound:0,optPanel:'teams',teamsRound:0,roundRankOpen:false,moneyTab:'golf',expenses:[],settledRounds:[],roundSettleData:{},lockedRounds:[],scores:Array(nR).fill(null).map(()=>Array(18).fill(null).map(()=>Array(nP).fill(null))),mpTeams:Array(nR).fill(null).map((_,r)=>defaultTeams(r)),vegTeams:Array(nR).fill(null).map((_,r)=>defaultVegasTeams(r)),skinsTeams:Array(nR).fill(null).map((_,r)=>mkSkTeams(r)),
     // Snake: per round, per hole holder index (null = no holder)
     snakeHolder:Array(nR).fill(null).map(()=>Array(18).fill(null)),
-    snakePot:Array(nR).fill(0)
+    snakePot:Array(nR).fill(0),
+    razzleOrder:Array(nR).fill(null).map(()=>[0,1,2,3]),
+    razzleMatchTeams:Array(nR).fill(null).map(()=>[])
   };}
 function launchMainApp(){document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;document.getElementById('mainSub').textContent=(WK.date?WK.date+' · ':'')+WK.rounds[0].courseName;document.getElementById('saveBtn').style.display=isReadOnly?'none':'block';updateTabDimming();setView('entry');}
 const ALL_VIEWS=['entry','card','games','board','money','setup'];
 function setView(v){ALL_VIEWS.forEach(n=>{const el=document.getElementById('view-'+n),btn=document.getElementById('tab-'+n);if(el)el.style.display=n===v?'block':'none';if(btn){btn.classList.remove('active');if(n===v)btn.classList.add('active');}});if(v==='entry'){renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();}if(v==='card'){renderRdSel('cardRdSel',STATE.scRound,'switchCardRound');renderSCGrid();setTimeout(fitScorecardToScreen,50);}if(v==='games'){renderGamesTab();}if(v==='board')renderBoard();if(v==='money')setMoneyTab('golf');if(v==='setup')renderOptions();}
 function updateTabDimming(){
   const gamesBtn=document.getElementById('tab-games');
-  if(gamesBtn)gamesBtn.style.display=(gameOnAny('mp')||gameOnAny('vegas')||gameOnAny('skins'))?'':'none';
+  if(gamesBtn)gamesBtn.style.display=(gameOnAny('mp')||gameOnAny('vegas')||gameOnAny('skins')||gameOnAny('razzle'))?'':'none';
   const cur=ALL_VIEWS.find(n=>{const el=document.getElementById('view-'+n);return el&&el.style.display!=='none';});
-  if(cur==='games'&&!gameOnAny('mp')&&!gameOnAny('vegas')&&!gameOnAny('skins'))setView('board');
+  if(cur==='games'&&!gameOnAny('mp')&&!gameOnAny('vegas')&&!gameOnAny('skins')&&!gameOnAny('razzle'))setView('board');
 }
 
 function gameOn(game,r){
@@ -1700,6 +1741,7 @@ function gameOn(game,r){
   if(game==='vegas')return rd.vegasOn===true;
   if(game==='skins')return rd.skinsOn===true;
   if(game==='snake')return rd.snakeOn===true;
+  if(game==='razzle')return rd.razzleOn===true;
   if(game==='twos')return!!WK.twosOn;
   return false;
 }
@@ -1771,7 +1813,7 @@ function calcVegas(hi,r){
 function calcMP(hi,r){const mpG=mpGamesForRound(r),si=segForHole(hi,mpG),tA=STATE.mpTeams[r]?.[si]?.[0],tB=STATE.mpTeams[r]?.[si]?.[1];if(!tA||!tB||tA.length!==2||tB.length!==2)return null;const nA=tA.map(pi=>getNet(pi,hi,r)),nB=tB.map(pi=>getNet(pi,hi,r));if(nA.includes(null)||nB.includes(null))return null;const bestA=Math.min(...nA),bestB=Math.min(...nB),halved=bestA===bestB;return{bestA,bestB,aWins:!halved&&bestA<bestB,halved,tA,tB,nA,nB};}
 function calcTwos(){return WK.players.map((_,pi)=>{let c=0;WK.rounds.forEach((_,r)=>{for(let h=0;h<18;h++)if(STATE.scores[r][h][pi]===2)c++;});return c;});}
 function calcTwosDetail(){return WK.players.map((_,pi)=>{const hits=[];WK.rounds.forEach((_,r)=>{for(let h=0;h<18;h++)if(STATE.scores[r][h][pi]===2)hits.push('R'+(r+1)+' H'+(h+1));});return hits;});}
-function renderBanner(){if(!gameOn('mp',STATE.currentRound)||WK.players.length<4){document.getElementById('banner').innerHTML='';return;}const r=STATE.currentRound,hi=STATE.currentHole,mpG=mpGamesForRound(r),si=segForHole(hi,mpG);const seg=getSegments(mpG)[si],tA=STATE.mpTeams[r]?.[si]?.[0],tB=STATE.mpTeams[r]?.[si]?.[1];if(!tA||!tB){document.getElementById('banner').innerHTML='';return;}const lmIdx=WK.players.reduce((a,_,i)=>effHdcp(i,r)<effHdcp(a,r)?i:a,0);const badge=STATE.netOffLow?`<span class="hdcp-badge">net off ${displayName(lmIdx)}</span>`:'';const nameA=tA.map(i=>displayName(i)).join(' / '),nameB=tB.map(i=>displayName(i)).join(' / ');document.getElementById('banner').innerHTML=`<div class="banner-game">${seg.label}: A (${nameA}) vs B (${nameB})</div><div class="banner-sub">Holes ${seg.start+1}–${seg.end} ${badge}</div>`;}
+function renderBanner(){document.getElementById('banner').innerHTML='';}
 function renderScorecard(){
   try{
   if(!WK||!STATE||!WK.players||!WK.rounds)return;
@@ -1783,7 +1825,8 @@ function renderScorecard(){
   const snakeHolder=currentSnakeHolder(r,hi);
   document.getElementById('scorecard').innerHTML=WK.players.map((p,i)=>{const g=STATE.scores[r][hi][i],st=strokes(i,hi,r),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}</span>`:`<span class="stroke-tag stroke-no">no stroke</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&snakeHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const roStyle=(isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'';return`<div class="player-row"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}"><button class="adj" onclick="adjScore(${i},-1)">−</button><div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div><button class="adj" onclick="adjScore(${i},1)">+</button></div></div>`;}).join('');
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
-  }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}}
+  }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
+  try{renderRazzleBox();}catch(re){console.error('renderRazzleBox error:',re);const w=document.getElementById('razzleBoxWrap');if(w)w.innerHTML='';}}
 function adjScore(pi,delta){if(isReadOnly)return;if((STATE.lockedRounds||[]).includes(STATE.currentRound))return;const r=STATE.currentRound,hi=STATE.currentHole,par=WK.rounds[r].course.holes[hi]?.par||4,c=STATE.scores[r][hi][pi];STATE.scores[r][hi][pi]=c===null?par:Math.max(1,c+delta);s2MarkDirty(['score'],r+':'+hi);renderScorecard();renderHoleDots();}
 
 // Returns the snake holder index that is active at or before hole hi in round r
@@ -1819,6 +1862,83 @@ function calcSnakePot(r){
     prevHolder=holder;
   }
   return pot;
+}
+
+function razzleTeamsForMatch(r,mi){
+  const ord=(STATE.razzleOrder&&STATE.razzleOrder[r])?STATE.razzleOrder[r]:[0,1,2,3];
+  const rots=[[[ord[0],ord[1]],[ord[2],ord[3]]],[[ord[0],ord[2]],[ord[1],ord[3]]],[[ord[0],ord[3]],[ord[1],ord[2]]]];
+  const overrides=(STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r])?STATE.razzleMatchTeams[r]:[];
+  if(overrides[mi])return[overrides[mi].tA,overrides[mi].tB];
+  return rots[mi%3];
+}
+function calcRazzleHole(hi,r,tA,tB){
+  const nA=tA.map(pi=>getNet(pi,hi,r)),nB=tB.map(pi=>getNet(pi,hi,r));
+  if(nA.includes(null)||nB.includes(null))return null;
+  const sumA=nA[0]+nA[1],sumB=nB[0]+nB[1],bestA=Math.min(...nA),bestB=Math.min(...nB);
+  return{teamPt:sumA<sumB?'a':sumB<sumA?'b':null,indPt:bestA<bestB?'a':bestB<bestA?'b':null,nA,nB,sumA,sumB,bestA,bestB};
+}
+function razzleBirdies(team,hi,r){
+  const par=WK.rounds[r].course.holes[hi]?.par||4;
+  return team.filter(pi=>{const n=getNet(pi,hi,r);return n!==null&&(par-n)>=1;}).length;
+}
+function calcRazzle(r){
+  if(!gameOn('razzle',r))return[];
+  if(WK.players.length<4)return[];
+  if(!WK.razzleVal)WK.razzleVal=5;
+  if(WK.razzleBirdieBonus===undefined||WK.razzleBirdieBonus===null)WK.razzleBirdieBonus=2;
+  if(!WK.razzleSweepBonus)WK.razzleSweepBonus=5;
+  if(!WK.razzle5HoleBonus)WK.razzle5HoleBonus=5;
+  if(!WK.razzleSettle)WK.razzleSettle='perplayer';
+  if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[0,1,2,3]);
+  if(!STATE.razzleMatchTeams)STATE.razzleMatchTeams=WK.rounds.map(()=>[]);
+  if(!STATE.razzleOrder[r])STATE.razzleOrder[r]=[0,1,2,3];
+  if(!STATE.razzleMatchTeams[r])STATE.razzleMatchTeams[r]=[];
+  const base=WK.razzleVal,birdBonus=WK.razzleBirdieBonus,sweepBonus=WK.razzleSweepBonus,fiveBonus=WK.razzle5HoleBonus,settle=WK.razzleSettle;
+  const matches=[];let mi=0,h=0;
+  while(h<18){
+    const teams=razzleTeamsForMatch(r,mi);
+    const tA=teams[0],tB=teams[1];
+    let runA=0,birdieCount=0,holeLog=[],matchStartHole=h,matchClosed=false,closedOnHole=-1;
+    while(h<18){
+      const res=calcRazzleHole(h,r,tA,tB);
+      if(!res)break;
+      let holePtsA=0,holePtsB=0;
+      if(res.teamPt==='a')holePtsA++;else if(res.teamPt==='b')holePtsB++;
+      if(res.indPt==='a')holePtsA++;else if(res.indPt==='b')holePtsB++;
+      runA+=holePtsA-holePtsB;
+      birdieCount+=razzleBirdies(tA,h,r)+razzleBirdies(tB,h,r);
+      const runLead=Math.abs(runA),runLeader=runA>0?'A':runA<0?'B':null;
+      holeLog.push({hi:h,holePtsA,holePtsB,runA,runLead,runLeader,holeResult:holePtsA>holePtsB?'a':holePtsB>holePtsA?'b':'tie',nA:res.nA,nB:res.nB,sumA:res.sumA,sumB:res.sumB,bestA:res.bestA,bestB:res.bestB,teamPt:res.teamPt,indPt:res.indPt});
+      if(Math.abs(runA)>=3){matchClosed=true;closedOnHole=h;h++;break;}
+      h++;
+    }
+    const holesPlayed=closedOnHole>=0?closedOnHole-matchStartHole+1:h-matchStartHole;
+    const winner=matchClosed?(runA>0?'a':'b'):null;
+    const loserPts=winner==='a'?holeLog.reduce((a,x)=>a+x.holePtsB,0):holeLog.reduce((a,x)=>a+x.holePtsA,0);
+    const sweep=matchClosed&&holesPlayed===2&&loserPts===0;
+    const fiveHole=matchClosed&&holesPlayed>=5;
+    let pot=base+birdieCount*birdBonus+(sweep?sweepBonus:0)+(fiveHole?fiveBonus:0);
+    const sv=settleVal(pot,tA.length,settle);
+    if(holesPlayed===0)break;// no scores entered yet — stop processing
+    matches.push({mi,startHole:matchStartHole,endHole:h-1,closedOnHole,tA,tB,winner,holesPlayed,sweep,fiveHole,birdieCount,pot,sv,holeLog});
+    mi++;
+  }
+  return matches;
+}
+function calcRazzleNet(r){
+  const n=WK.players.length,net=Array(n).fill(0);
+  calcRazzle(r).forEach(m=>{
+    if(!m.winner)return;
+    const winTeam=m.winner==='a'?m.tA:m.tB,loseTeam=m.winner==='a'?m.tB:m.tA;
+    winTeam.forEach(pi=>net[pi]+=m.sv);
+    loseTeam.forEach(pi=>net[pi]-=m.sv);
+  });
+  return net;
+}
+function razzleMatchClosedOnHole(r,hi){
+  if(!gameOn('razzle',r))return false;
+  const matches=calcRazzle(r);
+  return matches.some(m=>m.closedOnHole===hi&&hi<17);
 }
 
 function renderSnakeEntry(){
@@ -1958,6 +2078,219 @@ function gameBoxHeaderWithTeams(title,tA,tB){
 function gameBoxHeaderWithFmt(title,fmt){
   return `<div class="calc-hd" style="flex-direction:column;gap:1px;align-items:stretch"><div><span>${title}</span></div><div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)">${fmt}</div></div>`;
 }
+function renderRazzleBox(){
+  const wrap=document.getElementById('razzleBoxWrap');
+  if(!wrap)return;
+  const r=STATE.currentRound,hi=STATE.currentHole;
+  if(!gameOn('razzle',r)){wrap.innerHTML='';return;}
+  if(WK.players.length<4){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Razzle Dazzle</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>';return;}
+  const matches=calcRazzle(r);
+  if(!matches.length){
+    const teams=razzleTeamsForMatch(r,0);
+    const nA=teams[0].map(i=>displayName(i)).join(' & '),nB=teams[1].map(i=>displayName(i)).join(' & ');
+    wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle','Match 1 · '+nA+' vs '+nB)+'<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
+    return;
+  }
+  let activeMatch=null;
+  for(const m of matches){if(hi>=m.startHole&&hi<=m.endHole){activeMatch=m;break;}}
+  if(!activeMatch){
+    const m=matches[0];
+    const nA=m.tA.map(i=>displayName(i)).join(' & '),nB=m.tB.map(i=>displayName(i)).join(' & ');
+    wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle','Match 1 · '+nA+' vs '+nB)+'<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
+    return;
+  }
+  const m=activeMatch,tA=m.tA,tB=m.tB;
+  const nA=tA.map(i=>displayName(i)).join(' & '),nB=tB.map(i=>displayName(i)).join(' & ');
+  const holeEntry=m.holeLog.find(l=>l.hi===hi);
+  if(!holeEntry){
+    wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle','Match '+(m.mi+1)+' · H'+(m.startHole+1))+'<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
+    return;
+  }
+  const {holePtsA,holePtsB,runA,runLead,runLeader}=holeEntry;
+  const matchClosed=m.winner!==null&&hi>=m.closedOnHole;
+  const hdr=gameBoxHeaderWithFmt('Razzle Dazzle','Match '+(m.mi+1)+' · H'+(m.startHole+1)+'-'+(m.endHole+1));
+  let scoreStr;
+  if(matchClosed){scoreStr=(m.winner==='a'?nA:nB)+' wins'+(m.sweep?' (sweep)':' '+m.holesPlayed+' holes');}
+  else if(runLeader){scoreStr=(runLeader==='A'?nA:nB)+' '+runLead+' up';}
+  else{scoreStr='All square';}
+  const holeWinner=holePtsA>holePtsB?'A':holePtsB>holePtsA?'B':null;
+  const holeSummary=holePtsA===0&&holePtsB===0?'Tied (both cancel)':holePtsA===holePtsB?'Split 1-1':(holeWinner+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB));
+  const res=calcRazzleHole(hi,r,tA,tB);
+  // Birdie bonus notification
+  if(res){
+    const par=WK.rounds[r].course.holes[hi]?.par||4;
+    const birdies=[...tA,...tB].filter(pi=>{const n=getNet(pi,hi,r);return n!==null&&(par-n)>=1;});
+    if(birdies.length>0&&(WK.razzleBirdieBonus||2)>0){
+      const names=birdies.map(pi=>displayName(pi)).join(', ');
+      const bonus='$'+((birdies.length*(WK.razzleBirdieBonus||2)).toFixed(2));
+      wrap._birdieAlert=wrap._birdieAlert||{};
+      const key=r+':'+hi;
+      if(!wrap._birdieAlert[key]){wrap._birdieAlert[key]=true;setTimeout(()=>{const el=document.getElementById('razzleBirdieToast');if(el)el.remove();const t=document.createElement('div');t.id='razzleBirdieToast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1D9E75;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';t.textContent='Birdie bonus! '+names+' · +'+bonus+' to pot';document.body.appendChild(t);setTimeout(()=>t.remove(),3000);},100);}
+    }
+  }
+  // Per-player badges: team pt goes on the low-sum scorer; ind pt goes on the low-individual scorer
+  const teamSide=holeEntry.teamPt; // 'a','b', or null
+  const indSide=holeEntry.indPt;   // 'a','b', or null
+  function razzleTeamBlock(team,nets,sumScore,bestScore){
+    const ltr=team===tA?'A':'B';
+    const side=team===tA?'a':'b';
+    const isLowSum=nets[0]+nets[1]===sumScore; // always true, sumScore IS this team's sum
+    const lowSumIdx=nets[0]<=nets[1]?0:1; // tiebreak: first player
+    const lowIndIdx=nets[0]<nets[1]?0:nets[1]<nets[0]?1:-1; // -1 = tie within team
+    const players=team.map((pi,idx)=>{
+      const badges=[];
+      if(teamSide===side&&idx===lowSumIdx)badges.push('team pt');
+      if(indSide===side&&(lowIndIdx===-1?idx===0:idx===lowIndIdx))badges.push('ind pt');
+      const badgeHtml=badges.length?'<span style="font-size:10px;font-weight:600;color:#1D9E75;margin-right:6px">+'+badges.join(' +')+'</span>':'';
+      return '<div class="mp-player-line"><span class="mp-player-name">'+displayName(pi)+'</span><span style="margin-left:auto;display:flex;align-items:center">'+badgeHtml+'<span style="font-size:12px;color:var(--color-text-secondary)">net '+nets[idx]+'</span></span></div>';
+    }).join('');
+    return '<div class="mp-team-block"><div class="mp-team-letter">'+ltr+'</div><div class="mp-team-players">'+players+'</div></div>';
+  }
+  // 4-column result bar — right column: "A 2 up" not full names
+  const teamScoreStr='Team: '+(res?res.sumA:'-')+' vs '+(res?res.sumB:'-');
+  const indStr=holeEntry.indPt?('Ind: '+(holeEntry.indPt==='a'?'A':'B')):'Ind: Tied';
+  const standingStr=matchClosed?(m.winner==='a'?'A':'B')+' wins':(runLeader?runLeader+' '+runLead+' up':'A/S');
+  const resultBar='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px"><span style="color:var(--color-text-secondary)">'+(holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinner+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB)))+'</span><span style="color:var(--color-text-secondary);text-align:center">'+teamScoreStr+'</span><span style="color:var(--color-text-secondary);text-align:center">'+indStr+'</span><span style="color:#1D9E75;text-align:right;font-weight:500">'+standingStr+'</span></div>';
+  if(res){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+hdr+razzleTeamBlock(tA,res.nA,res.sumA,res.bestA)+razzleTeamBlock(tB,res.nB,res.sumB,res.bestB)+resultBar+'</div>';}
+  else{wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+hdr+'<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';}
+}
+function showRazzleTeamModal(r,nextHole){
+  if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[0,1,2,3]);
+  if(!STATE.razzleMatchTeams)STATE.razzleMatchTeams=WK.rounds.map(()=>[]);
+  // Find the match index by looking at closed matches — next match is closedMatch.mi + 1
+  // Don't rely on calcRazzle finding the next match (it won't exist if nextHole has no scores)
+  const matches=calcRazzle(r);
+  const closedMatch=matches.find(m=>m.closedOnHole===nextHole-1);
+  const mi=closedMatch?closedMatch.mi+1:matches.length;
+  const ord=STATE.razzleOrder[r]||[0,1,2,3];
+  const rots=[[[ord[0],ord[1]],[ord[2],ord[3]]],[[ord[0],ord[2]],[ord[1],ord[3]]],[[ord[0],ord[3]],[ord[1],ord[2]]]];
+  const defaultTeams=rots[mi%3];
+  const overrides=STATE.razzleMatchTeams[r]||[];
+  const curTeams=overrides[mi]?[overrides[mi].tA,overrides[mi].tB]:defaultTeams;
+  const old=document.getElementById('razzleModal');if(old)old.remove();
+  const modal=document.createElement('div');
+  modal.id='razzleModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem';
+  function pOptsM(sel){return WK.players.map((p,i)=>'<option value="'+i+'"'+(i===sel?' selected':'')+'>'+displayName(i)+'</option>').join('');}
+  // onchange handler: auto-swap when a player is selected in another slot
+  window._razzleSwap=function(changedId,newVal){
+    const ids=['rdlA0','rdlA1','rdlB0','rdlB1'];
+    ids.forEach(id=>{
+      if(id===changedId)return;
+      const el=document.getElementById(id);
+      if(el&&parseInt(el.value)===parseInt(newVal)){
+        // find what was previously in changedId and put it there
+        const prev=parseInt(document.getElementById(changedId).dataset.prev||document.getElementById(changedId).value);
+        el.value=prev;
+      }
+    });
+    document.getElementById(changedId).dataset.prev=newVal;
+  };
+  modal.innerHTML='<div style="background:var(--color-background-primary);border-radius:12px;padding:20px;max-width:340px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.3)"><div style="font-size:16px;font-weight:600;color:var(--color-text-primary);margin-bottom:4px">Match '+( mi+1)+' teams</div><div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:16px">Hole '+(nextHole+1)+' · confirm teams for this match</div><div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:var(--color-text-tertiary);margin-bottom:6px">TEAM A</div><div style="display:flex;gap:6px;margin-bottom:6px"><select id="rdlA0" data-prev="'+curTeams[0][0]+'" class="team-dropdown" style="flex:1" onchange="_razzleSwap(\'rdlA0\',this.value)">'+pOptsM(curTeams[0][0])+'</select><select id="rdlA1" data-prev="'+curTeams[0][1]+'" class="team-dropdown" style="flex:1" onchange="_razzleSwap(\'rdlA1\',this.value)">'+pOptsM(curTeams[0][1])+'</select></div><div style="font-size:11px;font-weight:600;color:var(--color-text-tertiary);margin-bottom:6px">TEAM B</div><div style="display:flex;gap:6px"><select id="rdlB0" data-prev="'+curTeams[1][0]+'" class="team-dropdown" style="flex:1" onchange="_razzleSwap(\'rdlB0\',this.value)">'+pOptsM(curTeams[1][0])+'</select><select id="rdlB1" data-prev="'+curTeams[1][1]+'" class="team-dropdown" style="flex:1" onchange="_razzleSwap(\'rdlB1\',this.value)">'+pOptsM(curTeams[1][1])+'</select></div></div><div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:16px">Default: '+defaultTeams[0].map(i=>displayName(i)).join(' & ')+' vs '+defaultTeams[1].map(i=>displayName(i)).join(' & ')+'</div><div style="display:flex;gap:10px"><button onclick="confirmRazzleModal('+r+','+mi+','+nextHole+',true)" style="flex:1;padding:10px;border:0.5px solid var(--color-border-tertiary);border-radius:8px;background:var(--color-background-secondary);color:var(--color-text-primary);font-size:14px;cursor:pointer">Use default</button><button onclick="confirmRazzleModal('+r+','+mi+','+nextHole+',false)" style="flex:1;padding:10px;border:none;border-radius:8px;background:#1D9E75;color:#fff;font-size:14px;font-weight:500;cursor:pointer">Confirm</button></div></div>';
+  document.body.appendChild(modal);
+}
+function confirmRazzleModal(r,mi,nextHole,useDefault){
+  const ord=STATE.razzleOrder&&STATE.razzleOrder[r]?STATE.razzleOrder[r]:[0,1,2,3];
+  const rots=[[[ord[0],ord[1]],[ord[2],ord[3]]],[[ord[0],ord[2]],[ord[1],ord[3]]],[[ord[0],ord[3]],[ord[1],ord[2]]]];
+  const defTeams=rots[mi%3];
+  const tA=useDefault?defTeams[0]:[parseInt(document.getElementById('rdlA0').value),parseInt(document.getElementById('rdlA1').value)];
+  const tB=useDefault?defTeams[1]:[parseInt(document.getElementById('rdlB0').value),parseInt(document.getElementById('rdlB1').value)];
+  if(!STATE.razzleMatchTeams)STATE.razzleMatchTeams=WK.rounds.map(()=>[]);
+  if(!STATE.razzleMatchTeams[r])STATE.razzleMatchTeams[r]=[];
+  STATE.razzleMatchTeams[r][mi]={tA,tB};
+  document.getElementById('razzleModal').remove();
+  STATE.currentHole=nextHole;
+  autoSave();updateHoleUI();
+}
+function renderRazzleRound(){
+  const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
+  const el=document.getElementById('gamesContent');
+  if(!gameOn('razzle',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Razzle Dazzle is off for this round</div>';return;}
+  const matches=calcRazzle(r);
+  if(!matches.length){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">No scores yet</div>';return;}
+  const fmt=v=>v>=0?'+$'+v.toFixed(2):'-$'+Math.abs(v).toFixed(2);
+  if(!STATE.razzleExpanded)STATE.razzleExpanded={};
+  let html='<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:8px">'+WK.rounds[r].courseName+' · '+matches.length+' match'+(matches.length!==1?'es':'')+'</div>';
+  matches.forEach(m=>{
+    if(!m.tA||!m.tB)return;
+    const nA=m.tA.map(i=>displayName(i)).join(' & '),nB=m.tB.map(i=>displayName(i)).join(' & ');
+    const aWins=m.winner==='a',bWins=m.winner==='b';
+    const key='m'+m.mi;
+    const expanded=STATE.razzleExpanded[key]===true;// default collapsed
+    // Header summary
+    let statusStr;
+    if(m.winner){const wn=aWins?nA:nB;statusStr='<span style="color:'+(aWins?'#1D9E75':'#185FA5')+';font-weight:500">'+wn+' wins</span> · $'+m.pot.toFixed(2)+(m.sweep?' <span style="font-size:10px;color:#1D9E75">SWEEP</span>':'')+(m.fiveHole?' <span style="font-size:10px;color:#1D9E75">5-HOLE</span>':'');}
+    else if(m.holesPlayed>0){statusStr='<span style="color:var(--color-text-secondary)">In progress</span>';}
+    else{statusStr='<span style="color:var(--color-text-tertiary)">Not started</span>';}
+    html+='<div class="section-card" style="margin-bottom:10px">';
+    html+='<div class="section-hd" style="cursor:pointer;display:flex;align-items:flex-start;gap:8px" onclick="toggleRazzleMatch(\''+key+'\')">';
+    html+='<div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500">Match '+(m.mi+1)+' · H'+(m.startHole+1)+(m.endHole>m.startHole?'-'+(m.endHole+1):'')+' </span><span style="color:#1D9E75;font-size:12px">'+(expanded?'▲':'▼')+'</span></div>';
+    html+='<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:1px">A: '+nA+' · B: '+nB+'</div></div></div>';
+    if(expanded){
+      // Hole rows
+      for(let h=m.startHole;h<=m.endHole;h++){
+        const hl=m.holeLog.find(l=>l.hi===h);
+        if(!hl){html+='<div style="display:grid;grid-template-columns:28px 1fr 80px;align-items:center;padding:5px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px"><span style="color:var(--color-text-tertiary)">H'+(h+1)+'</span><span style="color:var(--color-text-tertiary)">-</span><span></span></div>';continue;}
+        const {holePtsA,holePtsB,runA,runLead,runLeader,teamPt,indPt}=hl;
+        const hW=holePtsA>holePtsB?'a':holePtsB>holePtsA?'b':null;
+        const isClosed=m.winner!==null&&h===m.closedOnHole;
+        const isPost=m.winner!==null&&h>m.closedOnHole;
+        const scoreStr=isPost?'closed':runLeader?(runLeader+' '+runLead+' up'):'A/S';
+        // Bonus indicators inline on the hole row
+        const par=WK.rounds[r].course.holes[h]?.par||4;
+        const birdCount=[...m.tA,...m.tB].filter(pi=>{const n=getNet(pi,h,r);return n!==null&&(par-n)>=1;}).length;
+        const bonusBits=[];
+        if(isClosed&&m.sweep)bonusBits.push({lbl:'sweep',clr:'#1D9E75'});
+        if(isClosed&&m.fiveHole)bonusBits.push({lbl:'5-hole',clr:'#1D9E75'});
+        if(birdCount>0)bonusBits.push({lbl:birdCount+' birdie'+(birdCount>1?'s':''),clr:'#1D9E75'});
+        const bonusTags=bonusBits.map(b=>'<span style="font-size:9px;background:rgba(29,158,117,0.15);color:'+b.clr+';border-radius:3px;padding:1px 4px;margin-right:3px">'+b.lbl+'</span>').join('');
+        const holeWinLetter=hW==='a'?'A':hW==='b'?'B':null;
+        const holeResult=holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinLetter+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB));
+        const holeResultColor=hW==='a'?'#1D9E75':hW==='b'?'#D85A30':'var(--color-text-secondary)';
+        const standingColor=isClosed?'#1D9E75':'var(--color-text-secondary)';
+        html+='<div style="display:grid;grid-template-columns:28px 1fr 1fr 80px;align-items:center;gap:4px;padding:5px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px'+(isPost?';opacity:0.45':'')+'"><span style="color:var(--color-text-tertiary)">H'+(h+1)+'</span><span style="color:'+holeResultColor+'">'+holeResult+'</span><span>'+bonusTags+'</span><span style="text-align:right;color:'+standingColor+'">'+scoreStr+'</span></div>';
+      }
+      // Footer
+      if(m.winner){
+        const bonusDetail=[];
+        if(m.sweep)bonusDetail.push('Sweep +$'+(WK.razzleSweepBonus||5).toFixed(2));
+        if(m.fiveHole)bonusDetail.push('5-hole +$'+(WK.razzle5HoleBonus||5).toFixed(2));
+        if(m.birdieCount>0)bonusDetail.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':'')+' +$'+(m.birdieCount*(WK.razzleBirdieBonus||2)).toFixed(2));
+        const winColor=aWins?'#1D9E75':'#185FA5';
+        html+='<div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px">';
+        html+='<span style="font-weight:500;color:'+winColor+'">'+(aWins?nA:nB)+' wins</span><span style="color:var(--color-text-secondary)"> · pot $'+m.pot.toFixed(2)+'</span>';
+        if(bonusDetail.length)html+='<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:2px">'+bonusDetail.join(' · ')+'</div>';
+        html+='</div>';
+      } else if(m.holesPlayed===0){
+        html+='<div style="padding:8px 12px;font-size:12px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary)">No scores yet</div>';
+      } else {
+        html+='<div style="padding:8px 12px;font-size:12px;color:var(--color-text-secondary);border-top:0.5px solid var(--color-border-tertiary)">No blood</div>';
+      }
+    }
+    html+='</div>';
+  });
+  // Round net
+  const rNet=calcRazzleNet(r);
+  html+='<div class="section-card" style="margin-bottom:10px"><div class="section-hd">Round net</div>';
+  WK.players.forEach((p,i)=>{html+='<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:'+p.bg+';color:'+p.fg+'">'+p.ini+'</div><span>'+displayName(i)+'</span></div><div class="'+(rNet[i]>=0?'money-pos':'money-neg')+'">'+fmt(rNet[i])+'</div></div>';});
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function toggleRazzleMatch(key){
+  if(!STATE.razzleExpanded)STATE.razzleExpanded={};
+  STATE.razzleExpanded[key]=STATE.razzleExpanded[key]===false?true:false;
+  renderRazzleRound();
+}
+function setRazzleOrder(r,pos,pi){
+  if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[0,1,2,3]);
+  const ord=[...STATE.razzleOrder[r]];
+  const existingPos=ord.indexOf(pi);
+  if(existingPos>=0&&existingPos!==pos){const tmp=ord[pos];ord[pos]=pi;ord[existingPos]=tmp;}
+  else{ord[pos]=pi;}
+  STATE.razzleOrder[r]=ord;
+  autoSave();renderTeamsPanel();
+}
 function renderMPHoleBox(){
   const wrap=document.getElementById('mpBoxWrap');
   if(!gameOn('mp',STATE.currentRound)){wrap.innerHTML='';return;}
@@ -2030,7 +2363,7 @@ function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap')
   wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdr}${inner}</div>`;}
 function renderHoleDots(){const r=STATE.currentRound;document.getElementById('holeDots').innerHTML=Array.from({length:18},(_,i)=>{const done=STATE.scores[r][i].every(s=>s!==null);return`<div class="hdot${done?' done':''}${i===STATE.currentHole?' cur':''}" onclick="jumpHole(${i})">${i+1}</div>`;}).join('');}
 function jumpHole(i){STATE.currentHole=i;updateHoleUI();}
-function changeHole(d){STATE.currentHole=Math.max(0,Math.min(17,STATE.currentHole+d));updateHoleUI();}
+function changeHole(d){const r=STATE.currentRound,curHole=STATE.currentHole,nextHole=Math.max(0,Math.min(17,curHole+d));if(d>0&&gameOn('razzle',r)&&razzleMatchClosedOnHole(r,curHole)){showRazzleTeamModal(r,nextHole);return;}STATE.currentHole=nextHole;updateHoleUI();}
 function updateHoleUI(){
   if(!WK||!STATE||!WK.rounds||!WK.players)return;
   const r=STATE.currentRound,hi=STATE.currentHole;
@@ -2257,6 +2590,31 @@ function renderTeamsPanel(){
     html+='</div>';
   }
   // Match Play
+  // Razzle Dazzle card
+  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1"><span>Razzle Dazzle - Rd ${r+1}</span></div><label class="toggle"><input type="checkbox" ${gameOn('razzle',r)?'checked':''} onchange="WK.rounds[${r}].razzleOn=this.checked;if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[0,1,2,3]);if(!STATE.razzleMatchTeams)STATE.razzleMatchTeams=WK.rounds.map(()=>[]);updateTabDimming();renderTeamsPanel()"><span class="toggle-slider"></span></label></div>`;
+  if(gameOn('razzle',r)){
+    if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[0,1,2,3]);
+    if(!STATE.razzleMatchTeams)STATE.razzleMatchTeams=WK.rounds.map(()=>[]);
+    const ord=STATE.razzleOrder[r]||[0,1,2,3];
+    const rots=[[[ord[0],ord[1]],[ord[2],ord[3]]],[[ord[0],ord[2]],[ord[1],ord[3]]],[[ord[0],ord[3]],[ord[1],ord[2]]]];
+    html+=`<div style="padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:6px">Rotation order</div>`;
+    for(let pos=0;pos<4;pos++){html+=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-tertiary);width:40px">Pos ${pos+1}</span><select class="team-dropdown" onchange="setRazzleOrder(${r},${pos},parseInt(this.value))">${pOpts(ord[pos])}</select></div>`;}
+    html+=`</div>`;
+    html+=`<div style="padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:6px">Team rotation</div>`;
+    rots.forEach((rot,ri)=>{const nA=rot[0].map(i=>displayName(i)).join(' & '),nB=rot[1].map(i=>displayName(i)).join(' & ');html+=`<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:3px"><span style="color:var(--color-text-tertiary)">Match ${ri+1},${ri+4},${ri+7}:</span> ${nA} vs ${nB}</div>`;});
+    html+=`</div>`;
+    html+=`<div style="padding:8px 12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">$ per match</span><input class="ie-num" type="number" value="${WK.razzleVal||5}" style="width:80px" onchange="WK.razzleVal=parseFloat(this.value);autoSave()"/></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">$ birdie bonus</span><input class="ie-num" type="number" value="${WK.razzleBirdieBonus||2}" style="width:80px" onchange="WK.razzleBirdieBonus=parseFloat(this.value);autoSave()"/></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">$ sweep bonus</span><input class="ie-num" type="number" value="${WK.razzleSweepBonus||5}" style="width:80px" onchange="WK.razzleSweepBonus=parseFloat(this.value);autoSave()"/></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">$ 5-hole bonus</span><input class="ie-num" type="number" value="${WK.razzle5HoleBonus||5}" style="width:80px" onchange="WK.razzle5HoleBonus=parseFloat(this.value);autoSave()"/></div>
+      <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.razzleSettle=this.value;autoSave()"><option value="perplayer"${(WK.razzleSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.razzleSettle==='perteam'?' selected':''}>Per team</option></select></div>
+    </div>`;
+  } else {
+    html+=`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Razzle Dazzle is off</div>`;
+  }
+  html+=`</div>`;
+
   html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap"><span>Match Play - Rd ${r+1}</span>${gameOn('mp',r)?`<select class="ie-sel" onchange="setMPGamesForRound(${r},parseInt(this.value))"><option value="1"${mpG===1?' selected':''}>1 game · 18h</option><option value="2"${mpG===2?' selected':''}>2 games · 9h</option><option value="3"${mpG===3?' selected':''}>3 games · 6h</option></select>$<input class="ie-num" type="number" value="${WK.gameVal}" style="width:90px" onchange="WK.gameVal=parseFloat(this.value);autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary)">/game</span>${gameOn('skins',r)?`<button class="btn-sm" onclick="copySkinsToMP(${r})">Copy Skins Teams</button>`:''}`:''}</div><label class="toggle"><input type="checkbox" ${gameOn('mp',r)?'checked':''} onchange="WK.rounds[${r}].mpOn=this.checked;updateTabDimming();renderTeamsPanel();renderBanner();renderMPHoleBox()"><span class="toggle-slider"></span></label></div>${gameOn('mp',r)?mpSegs.map((seg,si)=>{const tm=STATE.mpTeams[r][si];if(!tm)return'';const[a0,a1]=tm[0],[b0,b1]=tm[1];return`<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},false)">${pOpts(a0)}</select><select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},false)">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},false)">${pOpts(b0)}</select><select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},false)">${pOpts(b1)}</select></div></div></div>`;}).join('')+`<div class="setup-row" style="border-bottom:none;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.mpSettle=this.value;autoSave()"><option value="perplayer"${(WK.mpSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.mpSettle==='perteam'?' selected':''}>Per team</option></select></div>`:`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Match play is off</div>`}</div>`;
   // Vegas — "Copy Skins Teams" at top of header, "Game" not "Seg"
   const vegOv=WK.vegasSegsPerRound[r];
@@ -2344,6 +2702,7 @@ function renderInfoPanel(){
     {id:'info-matchplay',title:'Match Play',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A team game. Two teams of two compete hole-by-hole using best ball net scoring. The team with the lower best-ball net score wins the hole (1 point), with ties halved (0.5 each).</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Each round can be split into 1, 2, or 3 games with different team pairings. Teams are configured in Options, under Teams &amp; Money.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Settlement can be per player, where each person wins or pays the full game value, or per team where it splits between teammates. Match Play points are the primary standings tiebreaker.</p>`},
     {id:'info-vegas',title:'Vegas',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A team game. Each team's two net scores are combined into a two-digit number with the lower score first. For example, net 3 and net 5 becomes 35. The team with the lower number wins the difference in points.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">If a player makes a birdie or better, the other team's scores are <strong>flipped</strong> (35 becomes 53), which can turn the momentum dramatically.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Dollar value is set per point. Vegas games can follow the same structure as Match Play or run independently.</p>`},
     {id:'info-twos',title:"Two's Club",body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Every player contributes a fixed amount to a pot at the start of the weekend. Any player who makes a net 2 on a par 3 shares the pot equally with other players who also make a 2.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">No 2s all weekend, no blood. Results shown in the Money tab after all holes are played.</p>`},
+    {id:'info-razzle',title:'Razzle Dazzle',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A team match play game played within a rotating 5-hole window. Teams are set by the rotation order and change every match. The goal is to win the match outright and collect the pot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Each hole is worth points based on net scores. The team that wins the most points over the 5 holes wins the match. Teams accumulate a running score and the match can be won before all 5 holes are played if one team goes insurmountable.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Three bonuses add to the pot: <strong>Sweep</strong> (winning all 5 holes), <strong>5-hole bonus</strong> (match goes the full 5 holes), and <strong>Birdie bonus</strong> (any net birdie adds to the pot). All bonuses are configurable in setup.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Results appear in the Games tab per match and in Golf $$ per round. Full Audit includes Razzle in each player's total.</p>`},
     {id:'info-money',title:'Money & Expenses',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The Money tab is where it all comes together. Golf results calculate automatically as you play, so by the end of the weekend the numbers are already there. You can settle up as you go or wait until Sunday and do it all at once.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Golf $$</strong> shows a per-round breakdown of every game, including the Weekend Pot and Two's Club. A Golf Outstanding card tracks the running unsettled balance and updates as you settle items.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Expenses</strong> is built to track off-course costs shared by the group. If one buddy drops a card at the bar, log what everyone owes and settle up later with confidence. Side bets like putting competitions or E9s can be tracked here too, under the Golf &amp; Side Bets category.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Full Audit</strong> gives each player a complete view of their damage across golf and expenses combined. At the bottom, minimum transfers shows the fewest transactions needed to fully settle up. Venmo handles are shown right there in the transfer summary.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Every section has its own Settle button. Settling snapshots the amounts, removes them from the outstanding balance, and dims the card. Unsettle to reverse if needed.</p>`},
     {id:'info-standings',title:'Standings',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The <strong>Standings</strong> tab shows the weekend leaderboards. The primary leaderboard is determined by the <strong>Pot winner</strong> setting in Options → Game Setup - either Net stroke play (lowest cumulative net score) or Match play points (most points). The pot winner method is also what determines who wins the Weekend Pot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">If Match play points is selected as the pot winner, both a Match Play Points leaderboard and a Stroke Play net leaderboard are shown. If Net stroke play is selected, only the net leaderboard is shown.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">A collapsible Best Individual Rounds section ranks each player's single-round net performances across all rounds.</p>`},
     {id:'info-data',title:'Data & Sync',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">All data is stored in the cloud and syncs automatically. When you open the app, it fetches the latest state, making any trip created on one device visible to everyone.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The app also works offline - scores are saved locally and pushed to the cloud when connectivity returns.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Note: the app syncs on load, not in real-time. If two players are scoring simultaneously, close and reopen the app to see each other's latest changes.</p>`},
@@ -2380,6 +2739,7 @@ function showHowToPlay(){
     {id:'htp-matchplay',title:'Match Play',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A team game. Two teams of two compete hole-by-hole using best ball net scoring. The team with the lower score wins the hole, with ties halved. Each round can be split into 1, 2, or 3 games with different team pairings.</p>`},
     {id:'htp-vegas',title:'Vegas',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A team game. Each team's two net scores are combined into a two-digit number with the lower score first. The team with the lower number wins the point difference. A birdie or better flips the other team's number, which can turn the momentum dramatically.</p>`},
     {id:'htp-snake',title:'🐍 Snake',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A putting side game. Manually assign the snake each hole to whoever 3-putted. The first holder sets the pot — each transfer grows it (doubles or flat increment). Whoever holds it at round's end owes the pot to the other players.</p>`},
+    {id:'htp-razzle',title:'Razzle Dazzle',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A rotating team match play game played in 5-hole windows. Teams shift each match based on the rotation order set before the round. Win the match to collect the pot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Three bonuses grow the pot: Sweep (win all 5 holes), 5-hole bonus (match goes the distance), and Birdie bonus (any net birdie). Dollar amounts are set in the wizard or Options.</p>`},
     {id:'htp-twos',title:"Two's Club",body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Everyone contributes to a pot. Any player who makes a net 2 on a par 3 shares the pot. No 2s all weekend, no blood.</p>`},
     {id:'htp-money',title:'Money & Expenses',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Golf results calculate automatically as you play. <strong>Golf $$</strong> shows the per-round breakdown. <strong>Expenses</strong> tracks shared off-course costs and side bets. <strong>Full Audit</strong> shows each player's complete picture with minimum transfers to fully settle up.</p>`},
     {id:'htp-data',title:'Data & Sync',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">All data syncs to the cloud automatically. Open the app on any device to see the current state. The app also works offline - scores are saved locally and pushed to the cloud when connectivity returns.</p>`},
@@ -2429,6 +2789,7 @@ function renderGamesTab(){
   if(gameOn('skins',r))activeGames.push({id:'skins',label:'Skins'});
   if(gameOn('mp',r))activeGames.push({id:'mp',label:'Match Play'});
   if(gameOn('vegas',r))activeGames.push({id:'vegas',label:'Vegas'});
+  if(gameOn('razzle',r))activeGames.push({id:'razzle',label:'Razzle'});
   const gameSel=document.getElementById('gamesGameSel');
   if(activeGames.length===0){
     gameSel.innerHTML='';
@@ -2447,6 +2808,7 @@ function renderGamesContent(){
   if(g==='mp')renderMPRound();
   else if(g==='vegas')renderVegasRound();
   else if(g==='skins')renderSkinsRound();
+  else if(g==='razzle')renderRazzleRound();
 }
 function renderMPRound(){
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
@@ -2647,7 +3009,7 @@ function roundScoreChanged(r){
 // Convert a net-per-player array into explicit player-to-player transfers
 function roundTransfers(netArr){return simplifyDebts(netArr);}
 
-function toggleRoundCard(id){const card=document.getElementById('rcard-'+id);if(card)card.classList.toggle('round-card-collapsed');}
+function toggleRoundCard(id){const card=document.getElementById('rcard-'+id);if(!card)return;const wasCollapsed=card.classList.contains('round-card-collapsed');card.classList.toggle('round-card-collapsed');const chev=card.querySelector('.round-card-chevron');if(chev)chev.textContent=wasCollapsed?'▲':'▼';}
 function toggleAuditPlayer(pi){const body=document.getElementById('audit-body-'+pi);if(body)body.classList.toggle('open');}
 function toggleAuditCat(id){const body=document.getElementById('audit-cat-'+id);if(body)body.classList.toggle('open');}
 
@@ -2714,6 +3076,7 @@ function renderMoney(){
   });
   snakeNetByRound.forEach(rNet=>rNet.forEach((v,i)=>snakeNet[i]+=v));
   snakeNet.forEach((v,i)=>grandTotal[i]+=v);
+  WK.rounds.forEach((_,r)=>{if(gameOn('razzle',r)){const rn=calcRazzleNet(r);rn.forEach((v,i)=>grandTotal[i]+=v);}});
 
   WK.rounds.forEach((_,r)=>{
     const complete=isRoundComplete(r);
@@ -2722,10 +3085,12 @@ function renderMoney(){
     const mpR=gameOn('mp',r)?calcRoundMP(r):{gameResults:[],net:Array(n).fill(0)};
     const vegR=gameOn('vegas',r)?calcRoundVegas(r):{gameResults:[],net:Array(n).fill(0)};
     const skR=gameOn('skins',r)?calcRoundSkins(r):null;
+    const razzleNetR=gameOn('razzle',r)?calcRazzleNet(r):Array(n).fill(0);
     const roundNet=Array(n).fill(0);
     mpR.net.forEach((v,i)=>roundNet[i]+=v);
     vegR.net.forEach((v,i)=>roundNet[i]+=v);
     if(skR)skR.net.forEach((v,i)=>roundNet[i]+=v);
+    razzleNetR.forEach((v,i)=>roundNet[i]+=v);
     snakeNetByRound[r].forEach((v,i)=>roundNet[i]+=v);
     // Use snapshotted amounts for settled rounds so mid-weekend payouts don't double-count
     const snapNet=settled&&STATE.roundSettleData?.[r]?.snapNet;
@@ -2794,28 +3159,35 @@ function renderMoney(){
     }
     if(gameOn('mp',r)&&mpR.gameResults.length){
       html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Match Play — $${WK.gameVal}/game · ${(WK.mpSettle||'perplayer')==='perplayer'?'per player':'per team'}</div>`;
-      mpR.gameResults.forEach(({seg,tA,tB,pA,pB,winner})=>{
+      mpR.gameResults.forEach(({seg,si,tA,tB,pA,pB,winner})=>{
         const mpSv=settleVal(WK.gameVal,tA.length,WK.mpSettle||'perplayer');
         const aWins=winner==='a', bWins=winner==='b', tied=winner==='tie';
         const nameA=tA.map(i=>displayName(i)).join(' & ');
         const nameB=tB.map(i=>displayName(i)).join(' & ');
         const dollarStr=`+$${mpSv.toFixed(2)}`;
-        const gcol='display:grid;grid-template-columns:1fr 52px 64px;align-items:center;gap:4px;padding:2px 0';
+        const finalMs=calcMPMatchScore(r,si,seg.end-1);
+        let scoreLabel='';
+        if(finalMs){
+          if(tied){scoreLabel='A/S';}
+          else{const raw=finalMs.scoreStr||'';scoreLabel=raw.replace(/^Team [AB][\s:]+/,'').trim();}
+        }
+        const gcol='display:grid;grid-template-columns:1fr auto 64px;align-items:center;gap:8px;padding:2px 0';
         html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
           <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">${seg.label}</div>
           <div style="${gcol}">
             <span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}</span>
-            <span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${pA}</span>
+            <span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:var(--color-text-primary)':tied?'color:var(--color-text-secondary)':'visibility:hidden'}">${aWins||tied?scoreLabel:''}</span>
             <span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:#1D9E75':tied?'color:var(--color-text-secondary)':'visibility:hidden'}">${aWins?dollarStr:tied?'Tied':''}</span>
           </div>
           <div style="${gcol}">
             <span style="font-size:13px;${bWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameB}</span>
-            <span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${pB}</span>
+            <span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:var(--color-text-primary)':'visibility:hidden'}">${bWins?scoreLabel:''}</span>
             <span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${bWins?dollarStr:''}</span>
           </div>
         </div>`;
       });
     }
+    if(gameOn('razzle',r)){const rzMatches=calcRazzle(r).filter(m=>m.winner);if(rzMatches.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Razzle Dazzle — $${(WK.razzleVal||5).toFixed(2)}/match · ${(WK.razzleSettle||'perplayer')==='perplayer'?'per player':'per team'}</div>`;rzMatches.forEach(m=>{if(!m.tA||!m.tB)return;const aWins=m.winner==='a',bWins=m.winner==='b';const nameA=m.tA.map(i=>displayName(i)).join(' & ');const nameB=m.tB.map(i=>displayName(i)).join(' & ');const dollarStr='+$'+m.sv.toFixed(2);const bonusBits=[];if(m.sweep)bonusBits.push('sweep');if(m.fiveHole)bonusBits.push('5-hole');if(m.birdieCount>0)bonusBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const bonusNote=bonusBits.length?` <span style="font-size:10px;color:var(--color-text-tertiary)">(${bonusBits.join(', ')})</span>`:'';const gcol='display:grid;grid-template-columns:1fr 64px;align-items:center;gap:8px;padding:2px 0';const winBits=[];if(m.sweep)winBits.push('sweep');else if(m.fiveHole)winBits.push('5-hole');if(m.birdieCount>0)winBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const winNote=winBits.length?' · '+winBits.join(', '):'';html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">Match ${m.mi+1} · H${m.startHole+1}-${m.endHole+1} · pot $${m.pot.toFixed(2)}</div><div style="${gcol}"><span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}${aWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${aWins?dollarStr:''}</span></div><div style="${gcol}"><span style="font-size:13px;${bWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameB}${bWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${bWins?dollarStr:''}</span></div></div>`;});}}
     if(gameOn('vegas',r)&&vegR.gameResults.length){
       html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Vegas — $${WK.vegasVal.toFixed(2)}/pt · ${(WK.vegasSettle||'perplayer')==='perplayer'?'per player':'per team'}</div>`;
       vegR.gameResults.forEach(({seg,tA,tB,ptsA,ptsB,dollarA})=>{
@@ -3244,7 +3616,7 @@ function renderSettle(){
   const potRankData=calcPotRankings();
 
   // Build audit per player
-  const auditGolf=WK.players.map(()=>({pot:0,mp:[],vegas:[],skins:[],settled:[],twos:0,total:0}));
+  const auditGolf=WK.players.map(()=>({pot:0,mp:[],vegas:[],skins:[],razzle:[],settled:[],twos:0,total:0}));
   if(allDone){potRankData.forEach((d,rank)=>{const isW=rank===0;auditGolf[d.pi].pot=isW?(pot-WK.buyIn):-WK.buyIn;});}
   WK.rounds.forEach((_,r)=>{
     const settled_r=(STATE.settledRounds||[]).includes(r);
@@ -3255,6 +3627,7 @@ function renderSettle(){
       return;
     }
     const mpR=gameOn('mp',r)?calcRoundMP(r):{gameResults:[],net:[]};
+    if(gameOn('razzle',r)){const rn=calcRazzleNet(r);rn.forEach((v,i)=>{auditGolf[i].razzle.push({label:'R'+(r+1)+' Razzle',val:v});});}
     mpR.gameResults.forEach(({seg,tA,tB,pA,pB,winner})=>{
       const audMpVal=winner==='tie'?0:settleVal(WK.gameVal,tA.length,WK.mpSettle||'perplayer');
       tA.forEach(pi=>{auditGolf[pi].mp.push({label:`R${r+1} ${seg.label}`,val:winner==='a'?audMpVal:winner==='b'?-audMpVal:0,desc:`vs ${tB.map(i=>displayName(i)).join('&')} (${pA}–${pB})`});});
@@ -3305,7 +3678,7 @@ function renderSettle(){
       else{const others=n-1;WK.players.forEach((_,i)=>{if(i===finalHolder)snakeNet[i]-=sPot;else snakeNet[i]+=sPot/others;});}
     });
   }
-  auditGolf.forEach((a,i)=>{a.total=a.pot+a.mp.reduce((s,x)=>s+x.val,0)+a.vegas.reduce((s,x)=>s+x.val,0)+a.skins.reduce((s,x)=>s+x.val,0)+a.settled.reduce((s,x)=>s+x.val,0)+a.twos+snakeNet[i];});
+  auditGolf.forEach((a,i)=>{a.total=a.pot+a.mp.reduce((s,x)=>s+x.val,0)+a.vegas.reduce((s,x)=>s+x.val,0)+a.skins.reduce((s,x)=>s+x.val,0)+a.razzle.reduce((s,x)=>s+x.val,0)+a.settled.reduce((s,x)=>s+x.val,0)+a.twos+snakeNet[i];});
 
   const expNet=calcExpNetPerPlayer();
   const totalNet=auditGolf.map((a,i)=>a.total+expNet[i]);
@@ -3414,6 +3787,14 @@ function renderSettle(){
         const desc=finalHolder===pi?'holds snake':`${displayName(finalHolder)} holds`;
         html+=subRow(`R${r+1}`,desc,rNet);
       });
+      html+=`</div>`;
+    }
+
+    // Razzle Dazzle — expandable, per-round
+    const rzSum=a.razzle.reduce((s,x)=>s+x.val,0);
+    if(gameOnAny('razzle')&&a.razzle.length){
+      html+=catHdr('Razzle Dazzle',rzSum);
+      a.razzle.forEach(x=>{html+=subRow(x.label,'',x.val);});
       html+=`</div>`;
     }
 
