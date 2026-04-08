@@ -109,7 +109,7 @@ body{background:#F5F4F1;color:#111;font-family:-apple-system,BlinkMacSystemFont,
 .seg-nav{display:flex;padding:0.5rem 1rem 0;gap:0;overflow-x:auto;}
 .seg-btn{flex-shrink:0;flex:1;font-size:10px;padding:6px 2px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;text-align:center;white-space:nowrap;}
 .seg-btn:first-child{border-radius:var(--border-radius-md) 0 0 var(--border-radius-md);}
-.seg-btn:last-child{border-radius:0 var(--border-radius-md) var(--border-radius-md) 0;}
+.seg-btn:last-child{border-radius:0 var(--border-radius-md) var(--border-radius-md) 0;}.seg-btn:only-child{border-radius:var(--border-radius-md);}
 .seg-btn.active{background:#1D9E75!important;color:#ffffff!important;border-color:#1D9E75!important;}
 .seg-btn.dimmed{opacity:0.4;}
 #tab-board:not(.active){border-top:2px solid #1D9E75;}
@@ -641,7 +641,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v77.4';
+const APP_VERSION='v77.7';
 
 // ===== THEME =====
 (function(){
@@ -1726,7 +1726,7 @@ function initState(netOffLow){const nR=WK.rounds.length,nP=WK.players.length;con
     razzleOrder:Array(nR).fill(null).map(()=>[0,1,2,3]),
     razzleMatchTeams:Array(nR).fill(null).map(()=>[])
   };}
-function launchMainApp(){document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;document.getElementById('mainSub').textContent=(WK.date?WK.date+' · ':'')+WK.rounds[0].courseName;document.getElementById('saveBtn').style.display=isReadOnly?'none':'block';updateTabDimming();setView('entry');}
+function launchMainApp(){document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;document.getElementById('mainSub').textContent=WK.date||'';document.getElementById('saveBtn').style.display=isReadOnly?'none':'block';updateTabDimming();setView('entry');}
 const ALL_VIEWS=['entry','card','games','board','money','setup'];
 function setView(v){ALL_VIEWS.forEach(n=>{const el=document.getElementById('view-'+n),btn=document.getElementById('tab-'+n);if(el)el.style.display=n===v?'block':'none';if(btn){btn.classList.remove('active');if(n===v)btn.classList.add('active');}});if(v==='entry'){renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();}if(v==='card'){renderRdSel('cardRdSel',STATE.scRound,'switchCardRound');renderSCGrid();setTimeout(fitScorecardToScreen,50);}if(v==='games'){renderGamesTab();}if(v==='board')renderBoard();if(v==='money')setMoneyTab('golf');if(v==='setup')renderOptions();}
 function updateTabDimming(){
@@ -1769,9 +1769,9 @@ function renderOptPanel(p){
   }
   if(p==='teams')renderTeamsPanel();if(p==='players')renderPlayersPanel();if(p==='weekend')renderWeekendPanel();if(p==='courses')renderCoursesPanel();if(p==='info')renderInfoPanel();
 }
-function rdLabel(i){const cn=WK.rounds[i].courseName,ct=WK.rounds.filter(r=>r.courseName===cn).length;if(ct>1){let o=0;for(let j=0;j<=i;j++)if(WK.rounds[j].courseName===cn)o++;return cn.split(' ')[0]+'('+o+')';}return cn.split(' ')[0];}
+function rdLabel(i){const cn=WK.rounds[i].courseName,ct=WK.rounds.filter(r=>r.courseName===cn).length;if(ct>1){let o=0;for(let j=0;j<=i;j++)if(WK.rounds[j].courseName===cn)o++;return cn+' ('+o+')';}return cn;}
 function renderRdSel(cid,cur,fn){const el=document.getElementById(cid);if(!el)return;const isEntry=cid==='entryRdSel';el.innerHTML=WK.rounds.map((rd,i)=>{const done=STATE.scores[i].every(h=>h.every(s=>s!==null));const lkd=(STATE.lockedRounds||[]).includes(i);const detailsLink=isEntry&&i===cur?`<div onclick="event.stopPropagation();showRoundDetails()" style="position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,0.5);color:rgba(255,255,255,0.8);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1">i</div>`:'';return`<div class="rd-btn${i===cur?' active':''}${done?' done':''}" onclick="${fn}(${i})">Rd ${i+1}${lkd?' 🔒':''}<br><span style="font-size:9px;opacity:0.75">${rdLabel(i)}</span>${detailsLink}</div>`;}).join('');}
-function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=0;document.getElementById('mainSub').textContent=(WK.date?WK.date+' · ':'')+WK.rounds[r].courseName;renderRdSel('entryRdSel',r,'switchEntryRound');updateHoleUI();}
+function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=0;renderRdSel('entryRdSel',r,'switchEntryRound');updateHoleUI();}
 function switchCardRound(r){STATE.scRound=r;renderRdSel('cardRdSel',r,'switchCardRound');renderSCGrid();}
 function switchGamesRound(r){STATE.gamesViewRound=r;renderGamesTab();}
 function switchGamesGame(g){STATE.gamesViewGame=g;renderGamesTab();}
@@ -2267,10 +2267,10 @@ function renderRazzleRound(){
         if(birdCount>0)bonusBits.push({lbl:birdCount+' birdie'+(birdCount>1?'s':''),clr:'#1D9E75'});
         const bonusTags=bonusBits.map(b=>'<span style="font-size:9px;background:rgba(29,158,117,0.15);color:'+b.clr+';border-radius:3px;padding:1px 4px;margin-right:3px">'+b.lbl+'</span>').join('');
         const holeWinLetter=hW==='a'?'A':hW==='b'?'B':null;
-        const holeResult=holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinLetter+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB));
-        const holeResultColor=hW==='a'?'#1D9E75':hW==='b'?'#D85A30':'var(--color-text-secondary)';
-        const standingColor=isClosed?'#1D9E75':'var(--color-text-secondary)';
-        html+='<div style="display:grid;grid-template-columns:28px 1fr 1fr 72px;align-items:center;gap:4px;padding:5px 16px 5px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px'+(isPost?';opacity:0.45':'')+'"><span style="color:var(--color-text-tertiary)">H'+(h+1)+'</span><span style="color:'+holeResultColor+';text-align:center">'+holeResult+'</span><span style="text-align:right;padding-right:6px">'+bonusTags+'</span><span style="text-align:right;color:'+standingColor+'">'+scoreStr+'</span></div>';
+        const holeResultColor=hW==='a'?'#1D9E75':hW==='b'?'#185FA5':'var(--color-text-secondary)';
+        const holeResult=holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinLetter+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB));const holeResultColorFinal=holePtsA===0&&holePtsB===0?'#D97706':holeResultColor;
+        const standingColor=isClosed?(m.winner==='a'?'#1D9E75':'#185FA5'):'var(--color-text-secondary)';
+        html+='<div style="display:grid;grid-template-columns:28px 1fr 1fr 72px;align-items:center;gap:4px;padding:5px 16px 5px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px'+(isPost?';opacity:0.45':'')+'"><span style="color:var(--color-text-tertiary)">H'+(h+1)+'</span><span style="color:'+holeResultColorFinal+';text-align:center">'+holeResult+'</span><span style="text-align:right;padding-right:6px">'+bonusTags+'</span><span style="text-align:right;color:'+standingColor+'">'+scoreStr+'</span></div>';
       }
       // Footer
       if(m.winner){
@@ -2280,8 +2280,8 @@ function renderRazzleRound(){
         if(m.birdieCount>0)bonusDetail.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':'')+' +$'+(m.birdieCount*(WK.razzleBirdieBonus||2)).toFixed(2));
         const winColor=aWins?'#1D9E75':'#185FA5';
         html+='<div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px">';
-        html+='<span style="font-weight:500;color:'+winColor+'">'+(aWins?nA:nB)+' wins</span><span style="color:var(--color-text-secondary)"> · pot $'+m.pot.toFixed(2)+'</span>';
-        if(bonusDetail.length)html+='<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:2px">'+bonusDetail.join(' · ')+'</div>';
+        html+='<span style="font-weight:500;color:'+winColor+'">'+(aWins?nA:nB)+' wins</span>';
+        const baseStr='Base $'+((WK.razzleVal||5).toFixed(2));const allParts=[baseStr].concat(bonusDetail);html+='<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:2px">'+allParts.join(' · ')+' : Total $'+m.pot.toFixed(2)+'</div>';
         html+='</div>';
       } else if(m.holesPlayed===0){
         html+='<div style="padding:8px 12px;font-size:12px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary)">No scores yet</div>';
@@ -2840,7 +2840,7 @@ function renderMPRound(){
   const el=document.getElementById('gamesContent');
   if(!gameOn('mp',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Match play is off for this round</div>';return;}
   const mpG=mpGamesForRound(r),segs=getSegments(mpG);
-  let html=`<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:8px">${WK.rounds[r].courseName} · ${mpG} game${mpG>1?'s':''}</div>`;
+  let html=``;
   segs.forEach((seg,si)=>{
     const tm=STATE.mpTeams[r][si];if(!tm)return;
     const tA=tm[0],tB=tm[1];
@@ -2904,7 +2904,7 @@ function renderVegasRound(){
   const el=document.getElementById('gamesContent');
   if(!gameOn('vegas',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Vegas is off for this round</div>';return;}
   const vG=vegasSegForRound(r),segs=getSegments(vG);
-  let html=`<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:8px">${WK.rounds[r].courseName} · ${vG} game${vG>1?'s':''}</div>`;
+  let html=``;
   segs.forEach((seg,si)=>{
     const tv=STATE.vegTeams[r][si];if(!tv)return;
     const tA=tv[0],tB=tv[1];
@@ -3410,7 +3410,7 @@ function renderSkinsRound(){
   if(!gameOn('skins',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Skins is off for this round</div>';return;}
   const sG=skinsGamesForRound(r),games=calcSkinsRound(r);
   const isIndiv=WK.skinsFmt==='individual';
-  let html=`<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:8px">${WK.rounds[r].courseName} · ${sG} game${sG>1?'s':''}</div>`;
+  let html=``;
   // Assign a stable color per player index for individual mode
   const PLAYER_COLORS=['#1D9E75','#1D4ED8','#D85A30','#9333EA','#CA8A04'];
   const colorA='#1D9E75', colorB='#1D4ED8';
