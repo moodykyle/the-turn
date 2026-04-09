@@ -105,7 +105,7 @@ body{background:#F5F4F1;color:#111;font-family:-apple-system,BlinkMacSystemFont,
 .header-live-dot{width:8px;height:8px;border-radius:50%;background:#1D9E75;flex-shrink:0;}
 .header-flag-icon{flex-shrink:0;display:flex;align-items:center;}
 .event-name{font-size:17px;font-weight:500;color:var(--color-text-primary);}
-.header-sub{font-size:11px;color:var(--color-text-secondary);margin-top:1px;}
+.header-sub{font-size:11px;color:var(--color-text-secondary);margin-top:1px;text-align:center;}
 .seg-nav{display:flex;padding:0.5rem 1rem 0;gap:0;overflow-x:auto;}
 .seg-btn{flex-shrink:0;flex:1;font-size:10px;padding:6px 2px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;text-align:center;white-space:nowrap;}
 .seg-btn:first-child{border-radius:var(--border-radius-md) 0 0 var(--border-radius-md);}
@@ -441,6 +441,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
         <div class="wizard-sub">Takes about 2 minutes.</div>
         <div class="field-row"><div class="field-label">Trip name</div><input class="text-input" id="weekendName" value="" placeholder="e.g. Shaker Cup 2025"/></div>
         <div class="field-row"><div class="field-label">Date</div><input class="text-input" id="weekendDate" type="date" max="2099-12-31"/></div>
+        <div class="field-row"><div class="field-label">Region</div><input class="text-input" id="weekendRegion" value="" placeholder="e.g. Pinehurst, Bandon Dunes"/></div>
         <div style="display:flex;gap:16px;margin-bottom:14px">
           <div style="flex:1"><div class="field-label">Players</div><select class="course-select" id="numPlayers" style="width:100%"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></div>
           <div style="flex:1"><div class="field-label">Rounds</div><select class="course-select" id="numRounds" style="width:100%"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option></select></div>
@@ -559,8 +560,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
       <div class="banner" id="banner"></div>
       <div class="scorecard" id="scorecard"></div>
       <div id="snakeEntryWrap"></div>
-      <div id="razzleBoxWrap"></div>
-      <div id="skinsBoxWrap"></div><div id="mpBoxWrap"></div><div id="vegasBoxWrap"></div>
+      <div id="skinsBoxWrap"></div><div id="razzleBoxWrap"></div><div id="mpBoxWrap"></div><div id="vegasBoxWrap"></div>
       <div class="hole-dots" id="holeDots"></div>
       <button class="footer-btn" id="saveBtn" onclick="saveHole()">Save Hole & Continue →</button>
     </div>
@@ -641,7 +641,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v78';
+const APP_VERSION='v79';
 
 // ===== THEME =====
 (function(){
@@ -733,6 +733,7 @@ async function s2WriteActive(){
         trip_id:tripId,
         name:WK.name||'',
         date:WK.date||'',
+        region:WK.region||'',
         buy_in:WK.buyIn||0,
         hdcp_pct:WK.hdcpPct||0.8,
         pot_method:WK.potMethod||'netstroke',
@@ -961,6 +962,7 @@ async function s2ReadTrip(tripId){
       _id:tripId,
       name:t.name||'',
       date:t.date||'',
+      region:t.region||'',
       buyIn:t.buy_in||0,
       hdcpPct:t.hdcp_pct||0.8,
       potMethod:t.pot_method||'netstroke',
@@ -1365,7 +1367,7 @@ function homeRemoveLibPlayer(i){if(!confirm('Remove '+libDisplayName(PLAYER_LIBR
 async function homeRemoveCourse(name){if(!confirm('Remove '+name+' from catalog?'))return;delete CATALOG[name];try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}try{await fetch(SB_URL+'/rest/v1/courses?name=eq.'+encodeURIComponent(name),{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});}catch(e){}renderLibrarySection();}
 function startNewWeekend(){WK=null;STATE=null;isReadOnly=false;viewingTripId=null;
   const wn=document.getElementById('weekendName');if(wn)wn.value='';
-  const wd=document.getElementById('weekendDate');if(wd)wd.value='';
+  const wd=document.getElementById('weekendDate');if(wd)wd.value='';const wr=document.getElementById('weekendRegion');if(wr)wr.value='';
   ['wizMpOn','wizVegasOn','wizSkinsOn','wizTwosOn','wizSnakeOn','wizRazzleOn'].forEach(id=>{const el=document.getElementById(id);if(el){el.checked=false;el.dispatchEvent(new Event('change'));}});
   [1,2,3,4].forEach(n=>{const el=document.getElementById('step'+n);if(el)el.classList.remove('active');});wizStep=1;const s1=document.getElementById('step1');if(s1)s1.classList.add('active');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='block';updateDots();}
 function startQuickRound(){
@@ -1695,7 +1697,7 @@ function startWeekend(){const nP=parseInt(document.getElementById('numPlayers').
     else if(exists&&p.idx&&exists.idx!==p.idx){exists.idx=p.idx;libUpdated=true;}
   });
   if(libUpdated)saveLib();
-  const rounds=[];for(let i=0;i<nR;i++){const cn=document.getElementById('course'+i)?.value||Object.keys(CATALOG)[0];if(!cn){alert('Please select a course for Round '+(i+1)+'.');return;}rounds.push({courseName:cn,course:CATALOG[cn],mpOn:false,vegasOn:false,skinsOn:false,snakeOn:false,razzleOn:false});}const mpOn=document.getElementById('wizMpOn').checked,vegasOn=document.getElementById('wizVegasOn').checked,twosOn=document.getElementById('wizTwosOn').checked,skinsOn=document.getElementById('wizSkinsOn').checked;const mpGDef=mpOn?parseInt(document.getElementById('wizMpGames').value):3;const skGDef=skinsOn?parseInt(document.getElementById('wizSkinsGames').value):0;const netOffLow=document.getElementById('wizNetOffLow')?.checked||false;const mpSettle=mpOn?(document.getElementById('wizMpSettle')?.value||'perplayer'):'perplayer';const vegasSettle=vegasOn?(document.getElementById('wizVegasSettle')?.value||'perplayer'):'perplayer';const snakeOn=document.getElementById('wizSnakeOn').checked;WK={_id:Date.now()+'',name:document.getElementById('weekendName').value||'My Trip',date:document.getElementById('weekendDate').value||'',players,rounds,hdcpPct:parseFloat(document.getElementById('hdcpPct').value||80)/100,buyIn:parseFloat(document.getElementById('buyIn').value||50),potMethod:document.getElementById('wizPotMethod')?.value||'netstroke',mpOn,mpGamesDefault:mpGDef,mpGamesPerRound:Array(nR).fill(mpGDef),gameVal:mpOn?parseFloat(document.getElementById('gameVal').value||5):5,mpSettle,vegasOn,vegasVal:vegasOn?parseFloat(document.getElementById('vegasVal').value||0.5):0.5,vegasSegsDefault:vegasOn?parseInt(document.getElementById('wizVegasSegs').value):3,vegasSegsPerRound:Array(nR).fill(vegasOn?parseInt(document.getElementById('wizVegasSegs').value):3),vegasSettle,twosOn,twosAmt:twosOn?parseFloat(document.getElementById('twosAmt').value||25):25,skinsOn,skinsVal:skinsOn?parseFloat(document.getElementById('skinsVal').value||5):5,skinsFmt:skinsOn?(document.getElementById('wizSkinsFmt').value||'team'):'team',skinsSettle:skinsOn?(document.getElementById('wizSkinsSettle').value||'perplayer'):'perplayer',skinsGamesDefault:skGDef>0?skGDef:3,skinsGamesPerRound:Array(nR).fill(skGDef>0?skGDef:3),snakeOn,snakeBase:snakeOn?parseFloat(document.getElementById('snakeBase').value||1):1,snakeGrowth:snakeOn?(document.getElementById('snakeGrowth').value||'double'):'double',snakeIncrement:snakeOn?parseFloat(document.getElementById('snakeIncrement').value||1):1,snakePayout:snakeOn?(document.getElementById('snakePayout').value||'split'):'split',razzleOn:document.getElementById('wizRazzleOn').checked,razzleVal:parseFloat(document.getElementById('wizRazzleVal')?.value||5),razzleBirdieBonus:parseFloat(document.getElementById('wizRazzleBirdie')?.value||2),razzleSweepBonus:parseFloat(document.getElementById('wizRazzleSweep')?.value||5),razzle5HoleBonus:parseFloat(document.getElementById('wizRazzle5Hole')?.value||5),razzleSettle:(document.getElementById('wizRazzleSettle')?.value||'perplayer'),razzleBirdieGross:document.getElementById('wizRazzleBirdieGross')?.value==='gross'};isReadOnly=false;viewingTripId=null;
+  const rounds=[];for(let i=0;i<nR;i++){const cn=document.getElementById('course'+i)?.value||Object.keys(CATALOG)[0];if(!cn){alert('Please select a course for Round '+(i+1)+'.');return;}rounds.push({courseName:cn,course:CATALOG[cn],mpOn:false,vegasOn:false,skinsOn:false,snakeOn:false,razzleOn:false});}const mpOn=document.getElementById('wizMpOn').checked,vegasOn=document.getElementById('wizVegasOn').checked,twosOn=document.getElementById('wizTwosOn').checked,skinsOn=document.getElementById('wizSkinsOn').checked;const mpGDef=mpOn?parseInt(document.getElementById('wizMpGames').value):3;const skGDef=skinsOn?parseInt(document.getElementById('wizSkinsGames').value):0;const netOffLow=document.getElementById('wizNetOffLow')?.checked||false;const mpSettle=mpOn?(document.getElementById('wizMpSettle')?.value||'perplayer'):'perplayer';const vegasSettle=vegasOn?(document.getElementById('wizVegasSettle')?.value||'perplayer'):'perplayer';const snakeOn=document.getElementById('wizSnakeOn').checked;WK={_id:Date.now()+'',name:document.getElementById('weekendName').value||'My Trip',date:document.getElementById('weekendDate').value||'',region:document.getElementById('weekendRegion').value||'',players,rounds,hdcpPct:parseFloat(document.getElementById('hdcpPct').value||80)/100,buyIn:parseFloat(document.getElementById('buyIn').value||50),potMethod:document.getElementById('wizPotMethod')?.value||'netstroke',mpOn,mpGamesDefault:mpGDef,mpGamesPerRound:Array(nR).fill(mpGDef),gameVal:mpOn?parseFloat(document.getElementById('gameVal').value||5):5,mpSettle,vegasOn,vegasVal:vegasOn?parseFloat(document.getElementById('vegasVal').value||0.5):0.5,vegasSegsDefault:vegasOn?parseInt(document.getElementById('wizVegasSegs').value):3,vegasSegsPerRound:Array(nR).fill(vegasOn?parseInt(document.getElementById('wizVegasSegs').value):3),vegasSettle,twosOn,twosAmt:twosOn?parseFloat(document.getElementById('twosAmt').value||25):25,skinsOn,skinsVal:skinsOn?parseFloat(document.getElementById('skinsVal').value||5):5,skinsFmt:skinsOn?(document.getElementById('wizSkinsFmt').value||'team'):'team',skinsSettle:skinsOn?(document.getElementById('wizSkinsSettle').value||'perplayer'):'perplayer',skinsGamesDefault:skGDef>0?skGDef:3,skinsGamesPerRound:Array(nR).fill(skGDef>0?skGDef:3),snakeOn,snakeBase:snakeOn?parseFloat(document.getElementById('snakeBase').value||1):1,snakeGrowth:snakeOn?(document.getElementById('snakeGrowth').value||'double'):'double',snakeIncrement:snakeOn?parseFloat(document.getElementById('snakeIncrement').value||1):1,snakePayout:snakeOn?(document.getElementById('snakePayout').value||'split'):'split',razzleOn:document.getElementById('wizRazzleOn').checked,razzleVal:parseFloat(document.getElementById('wizRazzleVal')?.value||5),razzleBirdieBonus:parseFloat(document.getElementById('wizRazzleBirdie')?.value||2),razzleSweepBonus:parseFloat(document.getElementById('wizRazzleSweep')?.value||5),razzle5HoleBonus:parseFloat(document.getElementById('wizRazzle5Hole')?.value||5),razzleSettle:(document.getElementById('wizRazzleSettle')?.value||'perplayer'),razzleBirdieGross:document.getElementById('wizRazzleBirdieGross')?.value==='gross'};isReadOnly=false;viewingTripId=null;
   const razzleOn=document.getElementById('wizRazzleOn').checked;
   WK.rounds.forEach(rd=>{rd.mpOn=mpOn;rd.vegasOn=vegasOn;rd.skinsOn=skinsOn;rd.snakeOn=snakeOn;rd.razzleOn=razzleOn;});
   if(players.length<4&&skinsOn)WK.skinsFmt='individual';
@@ -1726,7 +1728,7 @@ function initState(netOffLow){const nR=WK.rounds.length,nP=WK.players.length;con
     razzleOrder:Array(nR).fill(null).map(()=>[0,1,2,3]),
     razzleMatchTeams:Array(nR).fill(null).map(()=>[])
   };}
-function launchMainApp(){document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;document.getElementById('mainSub').textContent=WK.date||'';document.getElementById('saveBtn').style.display=isReadOnly?'none':'block';updateTabDimming();setView('entry');}
+function launchMainApp(){document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;const _fmtDate=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' · '+_fmtDate(WK.date)):WK.region||_fmtDate(WK.date)||'';document.getElementById('saveBtn').style.display=isReadOnly?'none':'block';updateTabDimming();setView('entry');}
 const ALL_VIEWS=['entry','card','games','board','money','setup'];
 function setView(v){ALL_VIEWS.forEach(n=>{const el=document.getElementById('view-'+n),btn=document.getElementById('tab-'+n);if(el)el.style.display=n===v?'block':'none';if(btn){btn.classList.remove('active');if(n===v)btn.classList.add('active');}});if(v==='entry'){renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();}if(v==='card'){renderRdSel('cardRdSel',STATE.scRound,'switchCardRound');renderSCGrid();setTimeout(fitScorecardToScreen,50);}if(v==='games'){renderGamesTab();}if(v==='board')renderBoard();if(v==='money')setMoneyTab('golf');if(v==='setup')renderOptions();}
 function updateTabDimming(){
@@ -2175,7 +2177,7 @@ function renderRazzleBox(){
   const teamScoreStr='Team: '+(res?res.sumA:'-')+' vs '+(res?res.sumB:'-');
   const indStr=holeEntry.indPt?('Ind: '+(holeEntry.indPt==='a'?'A':'B')):'Ind: Tied';
   const finalRunA=m.holeLog.length?m.holeLog[m.holeLog.length-1].runA:0;const finalLead=Math.abs(finalRunA);const standingStr=matchClosed?((m.winner==='a'?'A':'B')+' wins '+finalLead+'-0'):(runLeader?runLeader+' '+runLead+'-0':'A/S');
-  const resultBar='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px"><span style="color:'+(holePtsA===0&&holePtsB===0||holePtsA===holePtsB?'#D97706':'var(--color-text-secondary)')+';">'+(holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinner+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB)))+'</span><span style="color:var(--color-text-secondary);text-align:center">'+teamScoreStr+'</span><span style="color:var(--color-text-secondary);text-align:center">'+indStr+'</span><span style="color:#1D9E75;text-align:right;font-weight:500">'+standingStr+'</span></div>';
+  const resultBar='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;padding:8px 12px;font-size:11px;background:var(--color-background-secondary)"><span style="color:'+(holePtsA===0&&holePtsB===0||holePtsA===holePtsB?'#D97706':'var(--color-text-secondary)')+';">'+(holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinner+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB)))+'</span><span style="color:var(--color-text-secondary);text-align:center">'+teamScoreStr+'</span><span style="color:var(--color-text-secondary);text-align:center">'+indStr+'</span><span style="color:#1D9E75;text-align:right;font-weight:500">'+standingStr+'</span></div>';
   if(res){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+hdr+razzleTeamBlock(tA,res.nA,res.sumA,res.bestA)+razzleTeamBlock(tB,res.nB,res.sumB,res.bestB)+resultBar+'</div>';}
   else{wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+hdr+'<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';}
 }
@@ -2286,14 +2288,14 @@ function renderRazzleRound(){
         if(m.fiveHole)bonusDetail.push('5-hole +$'+(WK.razzle5HoleBonus||5).toFixed(2));
         if(m.birdieCount>0)bonusDetail.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':'')+' +$'+(m.birdieCount*(WK.razzleBirdieBonus||2)).toFixed(2));
         const winColor=aWins?'#1D9E75':'#185FA5';
-        html+='<div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px">';
+        html+='<div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px;background:var(--color-background-secondary)">';
         html+='<span style="font-weight:500;color:'+winColor+'">'+(aWins?nA:nB)+' wins</span>';
         const baseStr='Base $'+((WK.razzleVal||5).toFixed(2));const allParts=[baseStr].concat(bonusDetail);html+='<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:2px">'+allParts.join(' · ')+' : Total $'+m.pot.toFixed(2)+'</div>';
         html+='</div>';
       } else if(m.holesPlayed===0){
-        html+='<div style="padding:8px 12px;font-size:12px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary)">No scores yet</div>';
+        html+='<div style="padding:8px 12px;font-size:12px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)">No scores yet</div>';
       } else {
-        html+='<div style="padding:8px 12px;font-size:12px;color:var(--color-text-secondary);border-top:0.5px solid var(--color-border-tertiary)">No blood</div>';
+        html+='<div style="padding:8px 12px;font-size:12px;color:var(--color-text-secondary);border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)">No blood</div>';
       }
     }
     html+='</div>';
@@ -2417,7 +2419,7 @@ function updateHoleUI(){
   if(!bn){bn=document.createElement('div');bn.id='lockedRoundBanner';bn.style.cssText='margin:0.5rem 1rem;padding:8px 12px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:12px;color:var(--color-text-secondary);text-align:center';bn.textContent='🔒 Round locked - scores are final. Unlock to make changes.';const sc=document.getElementById('scorecard');if(sc&&sc.parentNode)sc.parentNode.insertBefore(bn,sc);}
   document.getElementById('lockedRoundBanner').style.display=locked?'block':'none';
   if(document.getElementById('scorecard'))document.getElementById('scorecard').style.opacity=locked?'0.45':'1';
-  renderBanner();renderScorecard();renderHoleDots();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();}
+  renderBanner();renderScorecard();renderHoleDots();renderSkinsBoxWrap();renderMPHoleBox();renderVegasBoxWrap();}
 function saveHole(){if(isReadOnly)return;const r=STATE.currentRound,hi=STATE.currentHole;if(!STATE.scores[r][hi].every(s=>s!==null)){alert('Enter all scores first.');return;}autoSave();if(hi<17)changeHole(1);else setView('board');}
 function renderSCGrid(){
   const r=STATE.scRound,holes=WK.rounds[r].course.holes;
@@ -2716,7 +2718,7 @@ function renderWeekendPanel(){
   const themeState=getThemeState();
   const themeIcon=themeState==='dark'?'🌙':themeState==='light'?'☀️':'🌓';
   const themeNext=themeState==='system'?'Dark':themeState==='dark'?'Light':'Auto';
-  let html=`<div class="section-card"><div class="section-hd">Trip details</div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Name</span><input class="inline-edit" value="${WK.name}" onchange="WK.name=this.value;document.getElementById('mainTitle').textContent=WK.name"/></div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Date</span><input class="inline-edit" type="date" value="${WK.date}" max="2099-12-31" onchange="WK.date=this.value"/></div>${WK.rounds.map((rd,i)=>{const rdOpts=Object.keys(CATALOG).map(n=>`<option value="${n}"${rd.courseName===n?' selected':''}>${n}</option>`).join('');return`<div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Rd ${i+1}</span><select class="inline-edit" onchange="WK.rounds[${i}].courseName=this.value;WK.rounds[${i}].course=CATALOG[this.value];renderWeekendPanel()">${rdOpts}</select>${WK.rounds.length>1?`<button class="btn-danger" onclick="removeRound(${i})" style="flex-shrink:0">✕</button>`:''}</div>`;}).join('')}<div style="padding:8px 12px;display:flex;align-items:center;gap:8px;border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Add round:</span><select class="course-select" id="newRoundCourse" style="flex:1">${Object.keys(CATALOG).map(n=>`<option value="${n}">${n}</option>`).join('')}</select><button class="btn-sm" onclick="addRound()">+ Add</button></div></div>`;
+  let html=`<div class="section-card"><div class="section-hd">Trip details</div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Name</span><input class="inline-edit" value="${WK.name}" onchange="WK.name=this.value;document.getElementById('mainTitle').textContent=WK.name"/></div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Date</span><input class="inline-edit" type="date" value="${WK.date}" max="2099-12-31" onchange="WK.date=this.value;const _fD=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' · '+_fD(WK.date)):WK.region||_fD(WK.date)||''"/></div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Region</span><input class="inline-edit" value="${WK.region||''}" placeholder="e.g. Pinehurst" onchange="WK.region=this.value;const _fR=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' · '+_fR(WK.date)):WK.region||_fR(WK.date)||''"/></div>${WK.rounds.map((rd,i)=>{const rdOpts=Object.keys(CATALOG).map(n=>`<option value="${n}"${rd.courseName===n?' selected':''}>${n}</option>`).join('');return`<div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Rd ${i+1}</span><select class="inline-edit" onchange="WK.rounds[${i}].courseName=this.value;WK.rounds[${i}].course=CATALOG[this.value];renderWeekendPanel()">${rdOpts}</select>${WK.rounds.length>1?`<button class="btn-danger" onclick="removeRound(${i})" style="flex-shrink:0">✕</button>`:''}</div>`;}).join('')}<div style="padding:8px 12px;display:flex;align-items:center;gap:8px;border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Add round:</span><select class="course-select" id="newRoundCourse" style="flex:1">${Object.keys(CATALOG).map(n=>`<option value="${n}">${n}</option>`).join('')}</select><button class="btn-sm" onclick="addRound()">+ Add</button></div></div>`;
   html+=`<div class="section-card" style="margin-top:14px"><div class="section-hd">Display</div><div class="setup-row" style="justify-content:space-between"><div><div style="font-size:13px;color:var(--color-text-primary)">${themeIcon} Appearance</div><div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">Currently: ${themeState==='system'?'System default':themeState==='dark'?'Dark mode':'Light mode'}</div></div><button class="btn-sm" onclick="toggleTheme()" style="flex-shrink:0">Switch to ${themeNext}</button></div></div>`;
   html+=`</div>`;
   document.getElementById('opt-panel-weekend').innerHTML=html;
@@ -2821,9 +2823,9 @@ function renderGamesTab(){
   renderRdSel('gamesRdSel',r,'switchGamesRound');
   const activeGames=[];
   if(gameOn('skins',r))activeGames.push({id:'skins',label:'Skins'});
+  if(gameOn('razzle',r))activeGames.push({id:'razzle',label:'Razzle'});
   if(gameOn('mp',r))activeGames.push({id:'mp',label:'Match Play'});
   if(gameOn('vegas',r))activeGames.push({id:'vegas',label:'Vegas'});
-  if(gameOn('razzle',r))activeGames.push({id:'razzle',label:'Razzle'});
   const gameSel=document.getElementById('gamesGameSel');
   if(activeGames.length===0){
     gameSel.innerHTML='';
@@ -2897,7 +2899,7 @@ function renderMPRound(){
       finalResultHtml=`<span style="color:${winClr};font-weight:500">${winName} win - ${resultScore}</span>`;
     }
     html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">\
-<div style="padding:10px 14px;border-bottom:0.5px solid var(--color-border-tertiary)">\
+<div style="padding:10px 14px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)">\
 <div style="font-size:14px;font-weight:500;color:var(--color-text-primary)">${seg.label} (H${seg.start+1}-${seg.end})</div>\
 <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">A: ${nameA} · B: ${nameB}</div>\
 </div>\
@@ -3027,10 +3029,12 @@ function settleRound(r){
   const mpR=gameOn('mp',r)?calcRoundMP(r):{net:Array(WK.players.length).fill(0)};
   const vegR=gameOn('vegas',r)?calcRoundVegas(r):{net:Array(WK.players.length).fill(0)};
   const skR=gameOn('skins',r)?calcRoundSkins(r):null;
+  const rzR=gameOn('razzle',r)?calcRazzleNet(r):null;
   const snapNet=Array(WK.players.length).fill(0);
   mpR.net.forEach((v,i)=>snapNet[i]+=v);
   vegR.net.forEach((v,i)=>snapNet[i]+=v);
   if(skR)skR.net.forEach((v,i)=>snapNet[i]+=v);
+  if(rzR)rzR.forEach((v,i)=>snapNet[i]+=v);
   STATE.roundSettleData[r]={settledAt:new Date().toISOString(),scoreHash,snapNet};
   STATE.settledRounds.push(r);
   autoSave();
@@ -3073,7 +3077,7 @@ function renderMoney(){
   const potSettled=(STATE.settledRounds||[]).includes('pot');
   html+=`<div class="section-card round-card-collapsed" id="rcard-pot" style="margin-bottom:14px;${potSettled?'opacity:0.6;':''}">`;
   const potSumm=allDone?potData.map(d=>{const p=WK.players[d.pi],isW=d===potData[0],v=isW?(pot-WK.buyIn):-WK.buyIn;return`<span style="color:${v>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(d.pi)} ${fmt(v)}</span>`;}).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">Settles after all holes</span>`;
-  html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('pot')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Weekend pot — $${pot}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${potSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${potSettled?`<button class="btn-sm" style="font-size:10px;opacity:0.55" onclick="event.stopPropagation();unsettleItem('pot')">Unsettle</button>`:allDone?`<button class="btn-sm" onclick="event.stopPropagation();settleItem('pot')">Settle</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
+  html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('pot')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Weekend pot — $${pot}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${potSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${potSettled?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleItem('pot')">Unsettle</button>`:allDone?`<button class="btn-sm" onclick="event.stopPropagation();settleItem('pot')">Settle</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
   html+=`<div class="round-card-body">`;
   if(!allDone)html+=`<div class="pending-box">Settles after all ${totalHoles()} holes. ${totalHoles()-totalHolesPlayed()} remaining.</div>`;
   else{
@@ -3134,7 +3138,7 @@ function renderMoney(){
     const summParts=complete?WK.players.map((p,i)=>`<span style="color:${roundNet[i]>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(i)} ${fmt(roundNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">In progress</span>`;
 
     html+=`<div class="section-card round-card-collapsed" id="rcard-${r}" style="margin-bottom:14px;${settled?'opacity:0.6;':''}">`;
-    const lkd_r=isRoundLocked(r);html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard(${r})"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Round ${r+1} — ${WK.rounds[r].courseName}${lkd_r?' 🔒':''}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${summParts}</div></div><div style="display:flex;align-items:center;gap:8px">${settled&&!changed?`<button class="btn-sm" style="font-size:10px;opacity:0.55" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:settled&&changed?`<span style="color:#D97706;font-size:11px">⚠ Changed</span><button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:complete?`<button class="btn-sm" onclick="event.stopPropagation();settleRound(${r})">Settle</button>`:''} ${lkd_r&&!settled?`<button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unlockRound(${r})">Unlock</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
+    const lkd_r=isRoundLocked(r);html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard(${r})"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Round ${r+1} — ${WK.rounds[r].courseName}${lkd_r?' 🔒':''}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${summParts}</div></div><div style="display:flex;align-items:center;gap:8px">${settled&&!changed?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:settled&&changed?`<span style="color:#D97706;font-size:11px">⚠ Changed</span><button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:complete?`<button class="btn-sm" onclick="event.stopPropagation();settleRound(${r})">Settle</button>`:''} ${lkd_r&&!settled?`<button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unlockRound(${r})">Unlock</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
     html+=`<div class="round-card-body">`;
     if(changed)html+=`<div style="padding:8px 12px;background:#FEF3C7;border-bottom:0.5px solid #F59E0B;font-size:12px;color:#92400E">⚠ Scores edited after settlement - amounts are current.</div>`;
     if(!complete){html+=`<div class="pending-box">Scores incomplete</div></div></div>`;return;}
@@ -3274,7 +3278,7 @@ function renderMoney(){
     const twosSettled=(STATE.settledRounds||[]).includes('twos');
     const twosSumm=tot>0?WK.players.map((p,i)=>`<span style="color:${twosNet[i]>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(i)} ${fmt(twosNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">No 2s yet</span>`;
     html+=`<div class="section-card round-card-collapsed" id="rcard-twos" style="margin-bottom:14px;${twosSettled?'opacity:0.6;':''}">`;
-    html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('twos')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Two's Club — pot $${tp}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${twosSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${twosSettled?`<button class="btn-sm" style="font-size:10px;opacity:0.55" onclick="event.stopPropagation();unsettleItem('twos')">Unsettle</button>`:`<button class="btn-sm" onclick="event.stopPropagation();settleItem('twos')">Settle</button>`}<span class="round-card-chevron">▼</span></div></div>`;
+    html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('twos')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Two's Club — pot $${tp}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${twosSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${twosSettled?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleItem('twos')">Unsettle</button>`:`<button class="btn-sm" onclick="event.stopPropagation();settleItem('twos')">Settle</button>`}<span class="round-card-chevron">▼</span></div></div>`;
     html+=`<div class="round-card-body">`;
     if(!tot)html+=`<div class="pending-box">No 2s yet - pot carries</div>`;
     else{
@@ -3530,7 +3534,7 @@ function renderExpenses(){
   const fmt=v=>v>=0?'+$'+v.toFixed(2):'-$'+Math.abs(v).toFixed(2);
   html+=`<div class="section-card round-card-collapsed" id="rcard-expenses" style="margin-bottom:14px;${expSettled?'opacity:0.6;':''}">`;
   const expSumm=WK.players.map((p,i)=>`<span style="color:${expNet[i]>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(i)} ${fmt(expNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>');
-  html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('expenses')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span style="font-weight:500">Expense summary</span><div style="display:flex;gap:4px;flex-wrap:wrap">${expSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${expSettled?`<button class="btn-sm" style="font-size:10px;opacity:0.55" onclick="event.stopPropagation();unsettleItem('expenses')">Unsettle</button>`:!isReadOnly?`<button class="btn-sm" onclick="event.stopPropagation();settleItem('expenses')">Settle</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
+  html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('expenses')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span style="font-weight:500">Expense summary</span><div style="display:flex;gap:4px;flex-wrap:wrap">${expSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${expSettled?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleItem('expenses')">Unsettle</button>`:!isReadOnly?`<button class="btn-sm" onclick="event.stopPropagation();settleItem('expenses')">Settle</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
   html+=`<div class="round-card-body">`;
   WK.players.forEach((p,i)=>{html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(i)}</span></div><div class="${expNet[i]>=0?'money-pos':'money-neg'}">${fmt(expNet[i])}</div></div>`;});
   if(expTxns.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Transfers</div>`;expTxns.forEach(t=>{html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px">${displayName(t.from)} → ${displayName(t.to)}</span><span style="font-size:13px;font-weight:500;color:#D85A30">$${t.amt.toFixed(2)}</span></div>`;});}
@@ -3661,7 +3665,7 @@ function renderSettle(){
       return;
     }
     const mpR=gameOn('mp',r)?calcRoundMP(r):{gameResults:[],net:[]};
-    if(gameOn('razzle',r)){const rn=calcRazzleNet(r);rn.forEach((v,i)=>{auditGolf[i].razzle.push({label:'R'+(r+1)+' Razzle',val:v});});}
+    if(gameOn('razzle',r)){calcRazzle(r).forEach(m=>{if(!m.winner)return;const winTeam=m.winner==='a'?m.tA:m.tB,loseTeam=m.winner==='a'?m.tB:m.tA;const desc='H'+(m.startHole+1)+'-'+(m.endHole+1);winTeam.forEach(pi=>{auditGolf[pi].razzle.push({label:'R'+(r+1)+' Match '+(m.mi+1),val:m.sv,desc});});loseTeam.forEach(pi=>{auditGolf[pi].razzle.push({label:'R'+(r+1)+' Match '+(m.mi+1),val:-m.sv,desc});});});}
     mpR.gameResults.forEach(({seg,tA,tB,pA,pB,winner})=>{
       const audMpVal=winner==='tie'?0:settleVal(WK.gameVal,tA.length,WK.mpSettle||'perplayer');
       tA.forEach(pi=>{auditGolf[pi].mp.push({label:`R${r+1} ${seg.label}`,val:winner==='a'?audMpVal:winner==='b'?-audMpVal:0,desc:`vs ${tB.map(i=>displayName(i)).join('&')} (${pA}–${pB})`});});
@@ -3826,9 +3830,9 @@ function renderSettle(){
 
     // Razzle Dazzle — expandable, per-round
     const rzSum=a.razzle.reduce((s,x)=>s+x.val,0);
-    if(gameOnAny('razzle')&&a.razzle.length){
+    if(gameOnAny('razzle')&&a.razzle.some(x=>x.val!==0)){
       html+=catHdr('Razzle Dazzle',rzSum);
-      a.razzle.forEach(x=>{html+=subRow(x.label,'',x.val);});
+      a.razzle.filter(x=>x.val!==0).forEach(x=>{html+=subRow(x.label,x.desc||'',x.val);});
       html+=`</div>`;
     }
 
