@@ -640,7 +640,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v81.4';
+const APP_VERSION='v81.5';
 
 // ===== THEME =====
 (function(){
@@ -765,6 +765,8 @@ async function s2WriteActive(){
         razzle_birdie_gross:!!WK.razzleBirdieGross,
         razzle_order:STATE.razzleOrder||null,
         razzle_match_teams:STATE.razzleMatchTeams||null,
+        razzle_fired_toasts:STATE.razzleFiredToasts||null,
+        razzle_hwm:STATE.razzleHWM||null,
         mp_teams:STATE.mpTeams||null,
         vegas_teams:STATE.vegTeams||null,
         skins_teams:STATE.skinsTeams||null,
@@ -1069,6 +1071,8 @@ async function s2ReadTrip(tripId){
       snakePot:t.snake_pot||Array(nR).fill(0),
       razzleOrder:t.razzle_order||Array(nR).fill(null).map(()=>[0,1,2,3]),
       razzleMatchTeams:t.razzle_match_teams||Array(nR).fill(null).map(()=>[]),
+      razzleFiredToasts:t.razzle_fired_toasts||{},
+      razzleHWM:t.razzle_hwm||{},
       settledRounds:t.settled_rounds||[],
       roundSettleData:t.round_settle_data||{},
       lockedRounds:t.locked_rounds||[],
