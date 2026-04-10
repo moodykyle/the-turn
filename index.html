@@ -640,7 +640,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v81.5';
+const APP_VERSION='v81.7';
 
 // ===== THEME =====
 (function(){
@@ -1575,7 +1575,31 @@ function viewTrip(id){
   // Snake safety guards for trips saved before v59
   if(!STATE.snakeHolder)STATE.snakeHolder=WK.rounds.map(()=>Array(18).fill(null));
   if(!STATE.snakePot)STATE.snakePot=WK.rounds.map(()=>0);
-  isReadOnly=false;viewingTripId=id;launchMainApp();s2ValidateOnLoad();
+  isReadOnly=false;viewingTripId=id;
+  // Pre-populate razzle state so toasts and team modal don't re-fire on existing scores
+  if(!STATE.razzleFiredToasts)STATE.razzleFiredToasts={};
+  if(!STATE.razzleMatchTeams)STATE.razzleMatchTeams=WK.rounds.map(()=>[]);
+  WK.rounds.forEach((_,r)=>{
+    if(!gameOn('razzle',r))return;
+    if(!STATE.razzleMatchTeams[r])STATE.razzleMatchTeams[r]=[];
+    // Mark all birdie keys for holes that already have scores
+    for(let hi=0;hi<18;hi++){
+      const allScored=STATE.scores[r][hi].every(s=>s!==null);
+      if(allScored)STATE.razzleFiredToasts['birdie:'+r+':'+hi]=true;
+    }
+    // For closed matches: mark toasts fired and pre-populate team overrides so modal doesn't re-fire
+    const matches=calcRazzle(r);
+    matches.forEach(m=>{
+      if(m.winner){
+        STATE.razzleFiredToasts['bonus:'+r+':'+m.mi]=true;
+        // If teams not already saved for this match, save them now from calcRazzle result
+        if(!STATE.razzleMatchTeams[r][m.mi]){
+          STATE.razzleMatchTeams[r][m.mi]={tA:m.tA,tB:m.tB};
+        }
+      }
+    });
+  });
+  launchMainApp();s2ValidateOnLoad();
   });}
 function resumeTrip(){if(!viewingTripId)return;isReadOnly=false;viewingTripId=null;document.getElementById('saveBtn').style.display='block';updateHoleUI();setMoneyTab(STATE.moneyTab||'golf');renderOptPanel(STATE.optPanel||'weekend');}
 function nameToIni(n){
