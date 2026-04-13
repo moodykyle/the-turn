@@ -368,7 +368,7 @@ select.course-select,select.ie-sel,select.inline-edit,select.team-dropdown,selec
 .round-card-chevron{font-size:11px;color:#1D9E75;transition:transform 0.2s;}
 
 /* Audit player rows */
-.audit-player-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer;user-select:none;}
+.audit-player-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer;user-select:none;}.audit-player-chevron{font-size:12px;color:#1D9E75;padding-right:4px;flex-shrink:0;transition:transform 0.2s;}
 .audit-player-row:last-child{border-bottom:none;}
 .audit-player-body{display:none;border-bottom:0.5px solid var(--color-border-tertiary);}
 .audit-player-body.open{display:block;}
@@ -640,7 +640,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v81.7';
+const APP_VERSION='v82';
 
 // ===== THEME =====
 (function(){
@@ -2311,13 +2311,13 @@ function renderRazzleRound(){
     const expanded=STATE.razzleExpanded[key]===true;// default collapsed
     // Header summary
     let statusStr;
-    if(m.winner){const wn=aWins?nA:nB;statusStr='<span style="color:'+(aWins?'#1D9E75':'#185FA5')+';font-weight:500">'+wn+' wins</span> · $'+m.pot.toFixed(2)+(m.sweep?' <span style="font-size:10px;color:#1D9E75">SWEEP</span>':'')+(m.fiveHole?' <span style="font-size:10px;color:#1D9E75">5-HOLE</span>':'');}
+    if(m.winner){const wn=aWins?nA:nB;statusStr='<span style="color:'+(aWins?'#1D9E75':'#185FA5')+';font-weight:500">'+wn+' wins</span>'+'<span style="color:'+(aWins?'#1D9E75':'#185FA5')+'"> · $'+m.pot.toFixed(2)+'</span>';}
     else if(m.holesPlayed>0){statusStr='<span style="color:var(--color-text-secondary)">In progress</span>';}
     else{statusStr='<span style="color:var(--color-text-tertiary)">Not started</span>';}
-    html+='<div class="section-card" style="margin-bottom:10px">';
-    html+='<div class="section-hd" style="cursor:pointer;display:flex;align-items:flex-start;gap:8px" onclick="toggleRazzleMatch(\''+key+'\')">';
-    html+='<div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500">Match '+(m.mi+1)+' · H'+(m.startHole+1)+(m.endHole>m.startHole?'-'+(m.endHole+1):'')+' </span><span style="color:#1D9E75;font-size:12px">'+(expanded?'▲':'▼')+'</span></div>';
-    html+='<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:1px">A: '+nA+' · B: '+nB+'</div></div></div>';
+    html+='<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">';
+    html+='<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary);display:flex;align-items:flex-start;gap:8px" onclick="toggleRazzleMatch(\''+key+'\')">';
+    html+='<div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Match '+(m.mi+1)+' · H'+(m.startHole+1)+(m.endHole>m.startHole?'-'+(m.endHole+1):'')+' </span><span style="color:#1D9E75;font-size:12px">'+(expanded?'▲':'▼')+'</span></div>';
+    html+='<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">A: '+nA+' · B: '+nB+'</div>';html+='<div style="margin-top:4px;font-size:12px">'+statusStr+'</div></div></div>';
     if(expanded){
       // Hole rows
       for(let h=m.startHole;h<=m.endHole;h++){
@@ -2362,11 +2362,6 @@ function renderRazzleRound(){
     }
     html+='</div>';
   });
-  // Round net
-  const rNet=calcRazzleNet(r);
-  html+='<div class="section-card" style="margin-bottom:10px"><div class="section-hd">Round net</div>';
-  WK.players.forEach((p,i)=>{html+='<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:'+p.bg+';color:'+p.fg+'">'+p.ini+'</div><span>'+displayName(i)+'</span></div><div class="'+(rNet[i]>=0?'money-pos':'money-neg')+'">'+fmt(rNet[i])+'</div></div>';});
-  html+='</div>';
   el.innerHTML=html;
 }
 
@@ -2375,6 +2370,10 @@ function toggleRazzleMatch(key){
   STATE.razzleExpanded[key]=!STATE.razzleExpanded[key];
   renderRazzleRound();
 }
+function toggleExpCat(id){if(!STATE.expCatExpanded)STATE.expCatExpanded={};STATE.expCatExpanded[id]=!STATE.expCatExpanded[id];renderExpenses();}
+function toggleMPGame(key){if(!STATE.mpExpanded)STATE.mpExpanded={};STATE.mpExpanded[key]=!STATE.mpExpanded[key];renderMPRound();}
+function toggleVegasGame(key){if(!STATE.vegasExpanded)STATE.vegasExpanded={};STATE.vegasExpanded[key]=!STATE.vegasExpanded[key];renderVegasRound();}
+function toggleSkinsGame(key){if(!STATE.skinsExpanded)STATE.skinsExpanded={};STATE.skinsExpanded[key]=!STATE.skinsExpanded[key];renderSkinsRound();}
 function setRazzleOrder(r,pos,pi){
   if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[0,1,2,3]);
   const ord=[...STATE.razzleOrder[r]];
@@ -2387,12 +2386,12 @@ function setRazzleOrder(r,pos,pi){
 function renderMPHoleBox(){
   const wrap=document.getElementById('mpBoxWrap');
   if(!gameOn('mp',STATE.currentRound)){wrap.innerHTML='';return;}
-  if(WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd" style="flex-direction:column;gap:1px;align-items:stretch"><div><span>Match play</span></div><div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)">2v2 best ball</div></div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>`;return;}
+  if(WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd" style="flex-direction:column;gap:1px;align-items:stretch"><div><span>Match Play</span></div><div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)">2v2 best ball</div></div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>`;return;}
   const r=STATE.currentRound,hi=STATE.currentHole,mpG=mpGamesForRound(r),si=segForHole(hi,mpG);
   const tA=STATE.mpTeams[r][si][0],tB=STATE.mpTeams[r][si][1];
   const seg=getSegments(mpG)[si];
   const mpFmtLabel='2v2 best ball';
-  const hdr=gameBoxHeaderWithFmt(`Match play · G${si+1} H${seg.start+1}-${seg.end}`,mpFmtLabel);
+  const hdr=gameBoxHeaderWithFmt(`Match Play · G${si+1} H${seg.start+1}-${seg.end}`,mpFmtLabel);
   function mpTeamBlock(team,scores,bestScore,isWinner){
     const players=team.map((pi,idx)=>{const s=scores?scores[idx]:null;return`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net">${s!==null&&s===bestScore&&isWinner?'<span class="mp-best">best → </span>':''}${s!==null?'net '+s:'—'}</span></div>`;}).join('');
     return `<div class="mp-team-block"><div class="mp-team-letter">${team===tA?'A':'B'}</div><div class="mp-team-players">${players}</div></div>`;
@@ -2795,16 +2794,11 @@ function renderCoursesPanel(){let html=`<div style="margin-bottom:10px"><button 
 function renderInfoPanel(){
   const sections=[
     {id:'info-about',title:'About The Turn',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The Turn is a golf weekend scoring app built to fill the needs of my own buddies trip, The Shaker Cup, which started in 2009. What began with pencil and paper eventually moved to Google Sheets, which served its purpose for a few years before the complexity of the games outgrew what a spreadsheet could handle cleanly. The Turn was built to fill that space.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">It handles handicap-adjusted scoring, multiple game formats, expense tracking, and money settlement. It runs from a single URL that works on any phone. Team games require 4 players. Individual Skins works with any group size.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Version <strong>${APP_VERSION}</strong> · Make the turn. Skip the drama.</p>`},
-    {id:'info-setup',title:'Setting Up',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">There are two ways to start: <strong>New Trip</strong> for a multi-round weekend, or <strong>Quick Round</strong> for a one-off round with no trip ceremony.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:6px"><strong>Quick Round</strong>: tap it on the home screen, enter the number of players, and you go straight to player setup. One round, auto-named by date. Everything else works the same as a full trip.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>New Trip</strong>: the full setup wizard walks you through four steps:</p><ul style="font-size:13px;color:var(--color-text-secondary);line-height:1.8;padding-left:18px;margin-bottom:8px"><li><strong>Trip details</strong>: name, date, number of players and rounds</li><li><strong>Players</strong>: type a name or pick from your library. Handicap index auto-fills for known players.</li><li><strong>Courses</strong>: select a course for each round from the built-in catalog, or add a custom course.</li><li><strong>Games &amp; Money</strong>: toggle Match Play, Vegas, Skins, Two's Club, Snake, and set dollar amounts and buy-in.</li></ul><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">All data syncs automatically. Anyone who opens the app sees the current state.</p>`},
+    {id:'info-setup',title:'Setting Up',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">There are two ways to start: <strong>New Trip</strong> for a multi-round weekend, or <strong>Quick Round</strong> for a one-off round with no trip ceremony.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:6px"><strong>Quick Round</strong>: tap it on the home screen, enter the number of players, and you go straight to player setup. One round, auto-named by date. Everything else works the same as a full trip.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>New Trip</strong>: the full setup wizard walks you through four steps:</p><ul style="font-size:13px;color:var(--color-text-secondary);line-height:1.8;padding-left:18px;margin-bottom:8px"><li><strong>Trip details</strong>: name, date, number of players and rounds</li><li><strong>Players</strong>: type a name or pick from your library. Handicap index auto-fills for known players.</li><li><strong>Courses</strong>: select a course for each round from the built-in catalog, or add a custom course.</li><li><strong>Games &amp; Money</strong>: toggle Match Play, Vegas, Skins, Razzle Dazzle, Two's Club, Snake, and set dollar amounts and buy-in.</li></ul><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">All data syncs automatically. Anyone who opens the app sees the current state.</p>`},
     {id:'info-weekend',title:'Winning the Weekend',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The Weekend Pot is funded by each player's buy-in. The winner takes the pot (minus their own buy-in); everyone else loses their buy-in.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The winner is determined by the <strong>Pot winner</strong> method set in Options → Game Setup:</p><ul style="font-size:13px;color:var(--color-text-secondary);line-height:1.8;padding-left:18px;margin-bottom:8px"><li><strong>Net stroke play</strong>: lowest cumulative net score across all rounds wins.</li><li><strong>Match play points</strong>: most Match Play points across all rounds wins.</li></ul><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">The same method drives the primary Standings leaderboard, so the leader board always reflects who's winning the pot.</p>`},
     {id:'info-scoring',title:'Entering Scores',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Use the <strong>Entry</strong> tab to enter gross scores hole by hole. Net scores are calculated automatically using each player's course handicap (USGA index × slope ÷ 113, adjusted by the handicap % you set). Optionally, net scores can be calculated relative to the low handicap player in the group, which can be enabled in Options under Game Setup.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The scorecard updates live as you enter scores. Tap the left/right arrows to move between holes, or use the round selector to switch rounds.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">After all 18 holes are entered, a <strong>Lock Round</strong> button appears at the bottom of the Entry tab. Locking freezes scores for that round. A 🔒 appears on the round tab and the +/− buttons are disabled. Use <strong>Unlock</strong> on the Money tab to re-open a locked (but unsettled) round if a score needs correcting.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">A save indicator confirms when scores are written to the cloud.</p>`},
-    {id:'info-skins',title:'Skins',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Win a hole outright (lowest net score) to claim the skin. If the hole is tied, the skin carries to the next hole and accumulates. A carry can be worth 2, 3, or more skins.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Played as Team 2v2 by default. One team must beat the other's best ball to win the skin. Individual Skins is also available, where all players compete independently and the outright low scorer takes the hole.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Dollar value is per skin. A 3-skin carry on a $5 game is worth $15.</p>`},
-    {id:'info-razzle',title:'Razzle Dazzle',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A rotating team game. Four players split into two teams of two, with pairings rotating each match. The goal is to be the first team to reach 3 points.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Each hole awards up to 2 points: 1 point for the team with the lower combined net score (team point), and 1 point for the player with the lowest individual net score across both teams (individual point).</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Three bonuses add to the pot: <strong>Sweep</strong> - winning 3 points across just 2 holes. <strong>5-hole bonus</strong> - a kicker awarded when neither team reaches 3 points before the 5th hole, rewarding a close match. <strong>Birdie bonus</strong> - any birdie (net or gross, configurable) adds a fixed amount to the pot per birdie.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">All dollar amounts and bonuses are configurable in the wizard and Options. Results appear in the Games tab per match, Golf $$ per round, and Full Audit per player.</p>`},
-    {id:'info-matchplay',title:'Match Play',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A team game. Two teams of two compete hole-by-hole using best ball net scoring. The team with the lower best-ball net score wins the hole (1 point), with ties halved (0.5 each).</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Each round can be split into 1, 2, or 3 games with different team pairings. Teams are configured in Options, under Teams &amp; Money.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Settlement can be per player, where each person wins or pays the full game value, or per team where it splits between teammates. Match Play points are the primary standings tiebreaker.</p>`},
-    {id:'info-vegas',title:'Vegas',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A team game. Each team's two net scores are combined into a two-digit number with the lower score first. For example, net 3 and net 5 becomes 35. The team with the lower number wins the difference in points.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">If a player makes a birdie or better, the other team's scores are <strong>flipped</strong> (35 becomes 53), which can turn the momentum dramatically.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Dollar value is set per point. Vegas games can follow the same structure as Match Play or run independently.</p>`},
-    {id:'info-twos',title:"Two's Club",body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Every player contributes a fixed amount to a pot at the start of the weekend. Any player who makes a net 2 on a par 3 shares the pot equally with other players who also make a 2.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">No 2s all weekend, no blood. Results shown in the Money tab after all holes are played.</p>`},
-    
-    {id:'info-money',title:'Money & Expenses',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The Money tab is where it all comes together. Golf results calculate automatically as you play, so by the end of the weekend the numbers are already there. You can settle up as you go or wait until Sunday and do it all at once.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Golf $$</strong> shows a per-round breakdown of every game, including the Weekend Pot and Two's Club. A Golf Outstanding card tracks the running unsettled balance and updates as you settle items.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Expenses</strong> is built to track off-course costs shared by the group. If one buddy drops a card at the bar, log what everyone owes and settle up later with confidence. Side bets like putting competitions or E9s can be tracked here too, under the Golf &amp; Side Bets category.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Full Audit</strong> gives each player a complete view of their damage across golf and expenses combined. At the bottom, minimum transfers shows the fewest transactions needed to fully settle up. Venmo handles are shown right there in the transfer summary.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Every section has its own Settle button. Settling snapshots the amounts, removes them from the outstanding balance, and dims the card. Unsettle to reverse if needed.</p>`},
+    {id:'info-games',title:'Games',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">There are a thousand golf games that can be played during a round, and a thousand variations of each. It should stand to reason that this app might not check every box. It was built as a best-effort to fill the needs of one group - and even then it has fallen short at times. Below are the mechanics as this app plays them. If your group plays it differently, the Options panel is where you can adjust most of the dollar values and settings.</p><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(){const b=document.getElementById('info-game-skins-b');const c=document.getElementById('info-game-skins-c');const open=b.style.display==='none';b.style.display=open?'block':'none';c.textContent=open?'▲':'▼';})() "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Skins</span><span id="info-game-skins-c" style="font-size:11px;color:#1D9E75">▼</span></div><div id="info-game-skins-b" style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Win a hole outright (lowest net score) to claim the skin. Tied holes carry the value forward and accumulate. A 3-skin carry on a $5 game is worth $15.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Played as Team 2v2 by default - one team must beat the other's best ball. Individual Skins is also available, where all players compete independently.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(){const b=document.getElementById('info-game-razzledazzle-b');const c=document.getElementById('info-game-razzledazzle-c');const open=b.style.display==='none';b.style.display=open?'block':'none';c.textContent=open?'▲':'▼';})() "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Razzle Dazzle</span><span id="info-game-razzledazzle-c" style="font-size:11px;color:#1D9E75">▼</span></div><div id="info-game-razzledazzle-b" style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A rotating team game. Four players split into two teams of two, with pairings rotating each match. First team to 3 points wins the match pot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Each hole awards up to 2 points: 1 for low team combined net score, 1 for low individual net score across all four players.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Three bonuses: <strong>Sweep</strong> (3 points in 2 holes), <strong>5-hole bonus</strong> (match reaches hole 5 without a winner), <strong>Birdie bonus</strong> (per birdie, net or gross - configurable). All amounts configurable in setup and Options.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(){const b=document.getElementById('info-game-matchplay-b');const c=document.getElementById('info-game-matchplay-c');const open=b.style.display==='none';b.style.display=open?'block':'none';c.textContent=open?'▲':'▼';})() "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Match Play</span><span id="info-game-matchplay-c" style="font-size:11px;color:#1D9E75">▼</span></div><div id="info-game-matchplay-b" style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Two teams of two compete hole-by-hole using best ball net scoring. The team with the lower best-ball net wins the hole (1 point), ties are halved (0.5 each).</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Each round can run as 1, 2, or 3 games with rotating team pairings. Teams are set in Options. Settlement can be per player or split between teammates.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(){const b=document.getElementById('info-game-vegas-b');const c=document.getElementById('info-game-vegas-c');const open=b.style.display==='none';b.style.display=open?'block':'none';c.textContent=open?'▲':'▼';})() "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Vegas</span><span id="info-game-vegas-c" style="font-size:11px;color:#1D9E75">▼</span></div><div id="info-game-vegas-b" style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Each team combines their two net scores into a two-digit number, lower score first. Net 3 and net 5 becomes 35. The team with the lower number wins the point difference.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">A birdie or better flips the other team's digits (35 becomes 53), which can swing a hole dramatically. Dollar value is set per point.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(){const b=document.getElementById('info-game-snake-b');const c=document.getElementById('info-game-snake-c');const open=b.style.display==='none';b.style.display=open?'block':'none';c.textContent=open?'▲':'▼';})() "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Snake</span><span id="info-game-snake-c" style="font-size:11px;color:#1D9E75">▼</span></div><div id="info-game-snake-b" style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A putting side game. Manually assign the snake each hole to whoever 3-putted. The first holder sets the starting pot - each transfer grows it (doubles or flat increment).</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Whoever holds the snake at the end of the round pays out. Payout options: holder pays each other player, or holder pays into a pot split among the rest.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(){const b=document.getElementById('info-game-twosclub-b');const c=document.getElementById('info-game-twosclub-c');const open=b.style.display==='none';b.style.display=open?'block':'none';c.textContent=open?'▲':'▼';})() "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Two's Club</span><span id="info-game-twosclub-c" style="font-size:11px;color:#1D9E75">▼</span></div><div id="info-game-twosclub-b" style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Every player contributes a fixed amount to a pot at the start of the weekend. Any player who makes a net 2 on a par 3 shares the pot equally with any others who also make a 2.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">No 2s all weekend, no blood.</p></div></div>`},
+        {id:'info-money',title:'Money & Expenses',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The Money tab is where it all comes together. Golf results calculate automatically as you play, so by the end of the weekend the numbers are already there. You can settle up as you go or wait until Sunday and do it all at once.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Golf $$</strong> shows a per-round breakdown of every game, including the Weekend Pot and Two's Club. A Golf Outstanding card tracks the running unsettled balance and updates as you settle items.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Expenses</strong> is built to track off-course costs shared by the group. If one buddy drops a card at the bar, log what everyone owes and settle up later with confidence. Side bets like putting competitions can be tracked here too, under the Golf &amp; Side Bets category.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Full Audit</strong> gives each player a complete view of their damage across golf and expenses combined. At the bottom, minimum transfers shows the fewest transactions needed to fully settle up. Venmo handles are shown right there in the transfer summary.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Dollar values throughout are <strong>net amounts</strong>. Rather than tracking every individual transaction between every player, the app calculates each person's net position and then finds the minimum transfers to settle everything. This keeps the money moving in as few payments as possible - no back-and-forth, no drama. Drill into any game or player card in Full Audit to see the granular per-game, per-round breakdown behind the number.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Every section has its own Settle button. Settling snapshots the amounts, removes them from the outstanding balance, and dims the card. Unsettle to reverse if needed.</p>`},
     {id:'info-standings',title:'Standings',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The <strong>Standings</strong> tab shows the weekend leaderboards. The primary leaderboard is determined by the <strong>Pot winner</strong> setting in Options → Game Setup - either Net stroke play (lowest cumulative net score) or Match play points (most points). The pot winner method is also what determines who wins the Weekend Pot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">If Match play points is selected as the pot winner, both a Match Play Points leaderboard and a Stroke Play net leaderboard are shown. If Net stroke play is selected, only the net leaderboard is shown.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">A collapsible Best Individual Rounds section ranks each player's single-round net performances across all rounds.</p>`},
     {id:'info-data',title:'Data & Sync',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">All data is stored in the cloud and syncs automatically. When you open the app, it fetches the latest state, making any trip created on one device visible to everyone.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The app also works offline - scores are saved locally and pushed to the cloud when connectivity returns.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Note: the app syncs on load, not in real-time. If two players are scoring simultaneously, close and reopen the app to see each other's latest changes.</p>`},
   ];
@@ -2833,17 +2827,11 @@ function showHowToPlay(){
   const old=document.getElementById('howToPlayModal');if(old)old.remove();
   const sections=[
     {id:'htp-about',title:'About The Turn',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The Turn is a golf weekend scoring app built to fill the needs of my own buddies trip, The Shaker Cup, which started in 2009. What began with pencil and paper eventually moved to Google Sheets, which served its purpose for a few years before the complexity of the games outgrew what a spreadsheet could handle cleanly. The Turn was built to fill that space.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">It handles handicap-adjusted scoring, multiple game formats (Match Play, Vegas, Skins, Two's Club, Snake), expense tracking, and money settlement. It runs from a single URL that works on any phone. Team games require 4 players. Individual Skins works with any group size.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Version <strong>${APP_VERSION}</strong> · Make the turn. Skip the drama.</p>`},
-    {id:'htp-setup',title:'Setting Up',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">There are two ways to start: <strong>New Trip</strong> for a multi-round weekend, or <strong>Quick Round</strong> for a one-off round with no trip ceremony.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:6px"><strong>Quick Round</strong>: tap it on the home screen, enter the number of players, and you go straight to player setup. One round, auto-named by date. Everything else works the same as a full trip.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>New Trip</strong>: the full setup wizard walks you through four steps:</p><ul style="font-size:13px;color:var(--color-text-secondary);line-height:1.8;padding-left:18px;margin-bottom:8px"><li><strong>Trip details</strong>: name, date, number of players and rounds</li><li><strong>Players</strong>: type a name or pick from your library. Handicap index auto-fills for known players.</li><li><strong>Courses</strong>: select a course for each round from the built-in catalog, or add a custom course.</li><li><strong>Games &amp; Money</strong>: toggle Match Play, Vegas, Skins, Two's Club, Snake, and set dollar amounts and buy-in.</li></ul><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">All data syncs automatically. Anyone who opens the app sees the current state.</p>`},
+    {id:'htp-setup',title:'Setting Up',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">There are two ways to start: <strong>New Trip</strong> for a multi-round weekend, or <strong>Quick Round</strong> for a one-off round with no trip ceremony.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:6px"><strong>Quick Round</strong>: tap it on the home screen, enter the number of players, and you go straight to player setup. One round, auto-named by date. Everything else works the same as a full trip.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>New Trip</strong>: the full setup wizard walks you through four steps:</p><ul style="font-size:13px;color:var(--color-text-secondary);line-height:1.8;padding-left:18px;margin-bottom:8px"><li><strong>Trip details</strong>: name, date, number of players and rounds</li><li><strong>Players</strong>: type a name or pick from your library. Handicap index auto-fills for known players.</li><li><strong>Courses</strong>: select a course for each round from the built-in catalog, or add a custom course.</li><li><strong>Games &amp; Money</strong>: toggle Match Play, Vegas, Skins, Razzle Dazzle, Two's Club, Snake, and set dollar amounts and buy-in.</li></ul><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">All data syncs automatically. Anyone who opens the app sees the current state.</p>`},
     {id:'htp-weekend',title:'Winning the Weekend',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The Weekend Pot is funded by each player's buy-in. The winner takes the pot (minus their buy-in); everyone else loses theirs. Winner is determined by either <strong>Net stroke play</strong> (lowest cumulative net score) or <strong>Match play points</strong> (most points), configured in Options under Game Setup. The same method drives the primary Standings leaderboard.</p>`},
     {id:'htp-scoring',title:'Entering Scores',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Use the <strong>Entry</strong> tab to enter gross scores hole by hole. Net scores are calculated automatically. You can optionally net scores off the low handicap player in the group, enabled in Options under Game Setup.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">After all 18 holes are entered, a Lock Round button appears. Locking freezes scores. Use Settle on the Money tab to record that cash has moved.</p>`},
-    {id:'htp-skins',title:'Skins',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Win a hole outright to claim the skin. Tied holes carry the value forward. A 3-skin carry on a $5 game is worth $15. Played as Team 2v2 by default, with an Individual option where each player competes on their own.</p>`},
-    {id:'htp-razzle',title:'Razzle Dazzle',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A rotating team game. Two teams of two, pairings rotate each match. First team to 3 points wins the pot. Each hole awards up to 2 points: 1 for low team score, 1 for low individual score.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Three bonuses: <strong>Sweep</strong> (3 points in 2 holes), <strong>5-hole bonus</strong> (match reaches hole 5), <strong>Birdie bonus</strong> (per birdie, net or gross). All amounts configurable in setup.</p>`},
-    {id:'htp-matchplay',title:'Match Play',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A team game. Two teams of two compete hole-by-hole using best ball net scoring. The team with the lower score wins the hole, with ties halved. Each round can be split into 1, 2, or 3 games with different team pairings.</p>`},
-    {id:'htp-vegas',title:'Vegas',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A team game. Each team's two net scores are combined into a two-digit number with the lower score first. The team with the lower number wins the point difference. A birdie or better flips the other team's number, which can turn the momentum dramatically.</p>`},
-    {id:'htp-snake',title:'🐍 Snake',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A putting side game. Manually assign the snake each hole to whoever 3-putted. The first holder sets the pot — each transfer grows it (doubles or flat increment). Whoever holds it at round's end owes the pot to the other players.</p>`},
-    
-    {id:'htp-twos',title:"Two's Club",body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Everyone contributes to a pot. Any player who makes a net 2 on a par 3 shares the pot. No 2s all weekend, no blood.</p>`},
-    {id:'htp-money',title:'Money & Expenses',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Golf results calculate automatically as you play. <strong>Golf $$</strong> shows the per-round breakdown. <strong>Expenses</strong> tracks shared off-course costs and side bets. <strong>Full Audit</strong> shows each player's complete picture with minimum transfers to fully settle up.</p>`},
+    {id:'htp-games',title:'Games',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">There are a thousand golf games that can be played during a round, and a thousand variations of each. This app was built as a best-effort to fill the needs of one group - and even then it has fallen short at times. Below are the mechanics as this app plays them. If your group plays differently, most dollar values and settings are adjustable in Options.</p><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(){var b=document.getElementById('htp-g-skins-b');var c=document.getElementById('htp-g-skins-c');var open=b.style.display==='none';b.style.display=open?'block':'none';c.textContent=open?'\u25b2':'\u25bc';})() "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Skins</span><span id="htp-g-skins-c" style="font-size:11px;color:#1D9E75">▼</span></div><div id="htp-g-skins-b" style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Win a hole outright (lowest net score) to claim the skin. Tied holes carry the value forward. A 3-skin carry on a $5 game is worth $15.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Played as Team 2v2 by default - one team must beat the other's best ball. Individual Skins is also available where all players compete independently.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(){var b=document.getElementById('htp-g-razzledazzle-b');var c=document.getElementById('htp-g-razzledazzle-c');var open=b.style.display==='none';b.style.display=open?'block':'none';c.textContent=open?'\u25b2':'\u25bc';})() "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Razzle Dazzle</span><span id="htp-g-razzledazzle-c" style="font-size:11px;color:#1D9E75">▼</span></div><div id="htp-g-razzledazzle-b" style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A rotating team game. Four players split into two teams of two, pairings rotate each match. First team to 3 points wins the match pot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Each hole awards up to 2 points: 1 for low team combined net score, 1 for low individual net score across all four players.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Three bonuses: <strong>Sweep</strong> (3 points in 2 holes), <strong>5-hole bonus</strong> (match reaches hole 5 without a winner), <strong>Birdie bonus</strong> (per birdie, net or gross). All amounts configurable in setup and Options.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(){var b=document.getElementById('htp-g-matchplay-b');var c=document.getElementById('htp-g-matchplay-c');var open=b.style.display==='none';b.style.display=open?'block':'none';c.textContent=open?'\u25b2':'\u25bc';})() "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Match Play</span><span id="htp-g-matchplay-c" style="font-size:11px;color:#1D9E75">▼</span></div><div id="htp-g-matchplay-b" style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Two teams of two compete hole-by-hole using best ball net scoring. The team with the lower best-ball net wins the hole (1 point), ties are halved (0.5 each).</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Each round can run as 1, 2, or 3 games with rotating team pairings. Teams are set in Options. Settlement can be per player or split between teammates.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(){var b=document.getElementById('htp-g-vegas-b');var c=document.getElementById('htp-g-vegas-c');var open=b.style.display==='none';b.style.display=open?'block':'none';c.textContent=open?'\u25b2':'\u25bc';})() "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Vegas</span><span id="htp-g-vegas-c" style="font-size:11px;color:#1D9E75">▼</span></div><div id="htp-g-vegas-b" style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Each team combines their two net scores into a two-digit number, lower score first. Net 3 and net 5 becomes 35. The team with the lower number wins the point difference.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">A birdie or better flips the other team's digits (35 becomes 53), which can swing a hole dramatically. Dollar value is set per point.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(){var b=document.getElementById('htp-g-snake-b');var c=document.getElementById('htp-g-snake-c');var open=b.style.display==='none';b.style.display=open?'block':'none';c.textContent=open?'\u25b2':'\u25bc';})() "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Snake</span><span id="htp-g-snake-c" style="font-size:11px;color:#1D9E75">▼</span></div><div id="htp-g-snake-b" style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A putting side game. Manually assign the snake each hole to whoever 3-putted. The first holder sets the pot - each transfer grows it (doubles or flat increment).</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Whoever holds the snake at round's end pays out. Payout options: holder pays each other player, or the pot splits among the rest.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(){var b=document.getElementById('htp-g-twosclub-b');var c=document.getElementById('htp-g-twosclub-c');var open=b.style.display==='none';b.style.display=open?'block':'none';c.textContent=open?'\u25b2':'\u25bc';})() "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Two's Club</span><span id="htp-g-twosclub-c" style="font-size:11px;color:#1D9E75">▼</span></div><div id="htp-g-twosclub-b" style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Every player contributes a fixed amount to a pot at the start of the weekend. Any player who makes a net 2 on a par 3 shares the pot equally with any others who also make a 2.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">No 2s all weekend, no blood.</p></div></div>`},
+        {id:'htp-money',title:'Money & Expenses',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Golf results calculate automatically as you play. <strong>Golf $$</strong> shows the per-round breakdown. <strong>Expenses</strong> tracks shared off-course costs and side bets. <strong>Full Audit</strong> shows each player's complete picture.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Dollar values are <strong>net amounts</strong>. The app calculates each person's net position and finds the minimum transfers to fully settle everything - keeping money moving in as few payments as possible. Drill into any game section or player card in Full Audit to see the granular breakdown behind the number.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Minimum transfers and Venmo handles appear at the bottom of Full Audit. Each section has its own Settle button to snapshot amounts and track what's been paid.</p>`},
     {id:'htp-data',title:'Data & Sync',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">All data syncs to the cloud automatically. Open the app on any device to see the current state. The app also works offline - scores are saved locally and pushed to the cloud when connectivity returns.</p>`},
   ];
   const accordionHtml=sections.map(s=>`
@@ -2915,64 +2903,47 @@ function renderGamesContent(){
 function renderMPRound(){
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
   const el=document.getElementById('gamesContent');
-  if(!gameOn('mp',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Match play is off for this round</div>';return;}
+  if(!gameOn('mp',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Match Play is off for this round</div>';return;}
   const mpG=mpGamesForRound(r),segs=getSegments(mpG);
+  if(!STATE.mpExpanded)STATE.mpExpanded={};
   let html=``;
   segs.forEach((seg,si)=>{
     const tm=STATE.mpTeams[r][si];if(!tm)return;
     const tA=tm[0],tB=tm[1];
     const nameA=tA.map(i=>displayName(i)).join(' & ');
     const nameB=tB.map(i=>displayName(i)).join(' & ');
-    let rows='';
-    for(let h=seg.start;h<seg.end;h++){
-      const res=calcMP(h,r);
-      if(!res){rows+=`<div style="display:grid;grid-template-columns:28px 72px 90px 1fr;align-items:center;padding:7px 14px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px"><span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span><span style="color:var(--color-text-tertiary);text-align:center">-</span><span></span><span></span></div>`;continue;}
-      const ms=calcMPMatchScore(r,si,h);
-      const scoresPair=`<span style="display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500"><span style="color:#1D9E75">${res.bestA}</span><span style="color:var(--color-text-tertiary);margin:0 3px;font-weight:400">vs</span><span style="color:#185FA5">${res.bestB}</span></span>`;
-      let matchStateHtml;
-      if(!ms){
-        matchStateHtml=`<span style="color:var(--color-text-tertiary);font-size:12px;display:flex;align-items:center;justify-content:center">-</span>`;
-      } else if(ms.closed&&h>ms.closedAtHole){
-        matchStateHtml=`<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic;display:flex;align-items:center;justify-content:center">closed out</span>`;
-      } else {
-        const msColor=!ms.leader?'var(--color-text-secondary)':ms.leader==='A'?'#1D9E75':'#185FA5';
-        const msWeight=!ms.leader?'400':'500';
-        const msStr=ms.scoreStr.replace('Team A','A').replace('Team B','B');
-        matchStateHtml=`<span style="color:${msColor};font-weight:${msWeight};font-size:13px;display:flex;align-items:center;justify-content:center">${msStr}</span>`;
-      }
-      const isClosed=ms&&ms.closed&&h>ms.closedAtHole;
-      const winnerHtml=isClosed
-        ?`<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic;text-align:right">${res.halved?'Halved':res.aWins?nameA:nameB}</span>`
-        :res.halved
-          ?`<span style="color:#BA7517;font-size:12px;text-align:right">Halved</span>`
-          :res.aWins
-            ?`<span style="color:#1D9E75;font-weight:500;font-size:12px;text-align:right">${nameA}</span>`
-            :`<span style="color:#185FA5;font-weight:500;font-size:12px;text-align:right">${nameB}</span>`;
-      rows+=`<div style="display:grid;grid-template-columns:28px 72px 90px 1fr;align-items:center;padding:7px 14px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px">\
-<span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span>${scoresPair}${matchStateHtml}${winnerHtml}</div>`;
-    }
+    const key='r'+r+'g'+si;
+    const expanded=STATE.mpExpanded[key]===true;
     const finalMs=calcMPMatchScore(r,si,seg.end-1);
-    let finalResultHtml;
-    if(!finalMs){
-      finalResultHtml=`<span style="color:var(--color-text-secondary)">In progress</span>`;
-    } else if(!finalMs.leader){
-      finalResultHtml=`<span style="color:var(--color-text-secondary);font-weight:500">Tied - A/S</span>`;
-    } else {
-      const winName=finalMs.leader==='A'?nameA:nameB;
-      const winClr=finalMs.leader==='A'?'#1D9E75':'#185FA5';
-      const scoreStr=finalMs.scoreStr.replace('Team A','A').replace('Team B','B');
-      const resultScore=finalMs.closed?scoreStr.replace(/^[AB] /,''):finalMs.lead+' up';
-      finalResultHtml=`<span style="color:${winClr};font-weight:500">${winName} win - ${resultScore}</span>`;
+    let summaryHtml;
+    if(!finalMs){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
+    else if(!finalMs.leader){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">Tied - A/S</span>`;}
+    else{const winName=finalMs.leader==='A'?nameA:nameB;const winClr=finalMs.leader==='A'?'#1D9E75':'#185FA5';const resultScore=finalMs.closed?finalMs.scoreStr.replace('Team A','A').replace('Team B','B').replace(/^[AB] /,''):finalMs.lead+' up';summaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winName} win - ${resultScore}</span>`;}
+    html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
+    html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary);display:flex;align-items:flex-start;gap:8px" onclick="toggleMPGame('${key}')">`;
+    html+=`<div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500">${seg.label} (H${seg.start+1}-${seg.end})</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
+    html+=`<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">A: ${nameA} \xb7 B: ${nameB}</div>`;
+    html+=`<div style="margin-top:4px">${summaryHtml}</div>`;
+    html+=`</div></div>`;
+    if(expanded){
+      let rows='';
+      for(let h=seg.start;h<seg.end;h++){
+        const res=calcMP(h,r);
+        if(!res){rows+=`<div style="display:grid;grid-template-columns:28px 72px 90px 1fr;align-items:center;padding:7px 14px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px"><span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span><span style="color:var(--color-text-tertiary);text-align:center">-</span><span></span><span></span></div>`;continue;}
+        const ms=calcMPMatchScore(r,si,h);
+        const scoresPair=`<span style="display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500"><span style="color:#1D9E75">${res.bestA}</span><span style="color:var(--color-text-tertiary);margin:0 3px;font-weight:400">vs</span><span style="color:#185FA5">${res.bestB}</span></span>`;
+        let matchStateHtml;
+        if(!ms){matchStateHtml=`<span style="color:var(--color-text-tertiary);font-size:12px;display:flex;align-items:center;justify-content:center">-</span>`;}
+        else if(ms.closed&&h>ms.closedAtHole){matchStateHtml=`<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic;display:flex;align-items:center;justify-content:center">closed out</span>`;}
+        else{const msColor=!ms.leader?'var(--color-text-secondary)':ms.leader==='A'?'#1D9E75':'#185FA5';const msWeight=!ms.leader?'400':'500';const msStr=ms.scoreStr.replace('Team A','A').replace('Team B','B');matchStateHtml=`<span style="color:${msColor};font-weight:${msWeight};font-size:13px;display:flex;align-items:center;justify-content:center">${msStr}</span>`;}
+        const isClosed=ms&&ms.closed&&h>ms.closedAtHole;
+        const winnerHtml=isClosed?`<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic;text-align:right">${res.halved?'Halved':res.aWins?nameA:nameB}</span>`:res.halved?`<span style="color:#BA7517;font-size:12px;text-align:right">Halved</span>`:res.aWins?`<span style="color:#1D9E75;font-weight:500;font-size:12px;text-align:right">${nameA}</span>`:`<span style="color:#185FA5;font-weight:500;font-size:12px;text-align:right">${nameB}</span>`;
+        rows+=`<div style="display:grid;grid-template-columns:28px 72px 90px 1fr;align-items:center;padding:7px 14px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px"><span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span>${scoresPair}${matchStateHtml}${winnerHtml}</div>`;
+      }
+      html+=rows;
+      html+=`<div style="padding:9px 14px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);font-size:12px;display:flex;align-items:center;gap:6px"><span style="color:var(--color-text-tertiary)">Final result:</span>${summaryHtml}</div>`;
     }
-    html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">\
-<div style="padding:10px 14px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)">\
-<div style="font-size:14px;font-weight:500;color:var(--color-text-primary)">${seg.label} (H${seg.start+1}-${seg.end})</div>\
-<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">A: ${nameA} · B: ${nameB}</div>\
-</div>\
-${rows}\
-<div style="padding:9px 14px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);font-size:12px;display:flex;align-items:center;gap:6px">\
-<span style="color:var(--color-text-tertiary)">Final result:</span>${finalResultHtml}\
-</div></div>`;
+    html+=`</div>`;
   });
   el.innerHTML=html;
 }
@@ -2981,26 +2952,46 @@ function renderVegasRound(){
   const el=document.getElementById('gamesContent');
   if(!gameOn('vegas',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Vegas is off for this round</div>';return;}
   const vG=vegasSegForRound(r),segs=getSegments(vG);
+  if(!STATE.vegasExpanded)STATE.vegasExpanded={};
   let html=``;
   segs.forEach((seg,si)=>{
     const tv=STATE.vegTeams[r][si];if(!tv)return;
     const tA=tv[0],tB=tv[1];
     const nameA=tA.map(i=>displayName(i)).join(' & ');
     const nameB=tB.map(i=>displayName(i)).join(' & ');
-    let totA=0,totB=0,rows='';
-    for(let h=seg.start;h<seg.end;h++){
-      const res=calcVegas(h,r);
-      if(!res){rows+=`<div class="hole-row"><span style="color:var(--color-text-secondary)">H${h+1}</span><span style="color:var(--color-text-secondary)">—</span><span></span></div>`;continue;}
-      if(res.tied){rows+=`<div class="hole-row"><span style="color:var(--color-text-secondary)">H${h+1}</span><span style="text-align:center">${res.numA} vs ${res.numB}</span><span class="carry">Tied</span></div>`;continue;}
-      if(res.aWins)totA+=res.diff;else totB+=res.diff;
-      const flipBadge=res.aFlip||res.bFlip?`<span style="font-size:9px;color:var(--color-text-tertiary);white-space:nowrap"> (flip)</span>`:'';
-      const dblBadge=res.doubled?` <span style="font-size:10px;color:var(--color-text-tertiary)">(x2)</span>`:'';
-      const winTeam=res.aWins?nameA:nameB;
-      const winClr=res.aWins?'#1D9E75':'#1D4ED8';
-      const winner=`<span style="color:${winClr};font-weight:500">${winTeam}<br>+${res.diff}</span>`;
-      rows+=`<div class="hole-row"><span style="color:var(--color-text-secondary)">H${h+1}${flipBadge}${dblBadge}</span><span>${res.numA} vs ${res.numB}</span><span style="display:flex;flex-direction:column;align-items:flex-end;text-align:right">${winner}</span></div>`;
+    const key='r'+r+'g'+si;
+    const expanded=STATE.vegasExpanded[key]===true;
+    let totA=0,totB=0;
+    for(let h=seg.start;h<seg.end;h++){const res=calcVegas(h,r);if(!res||res.tied)continue;if(res.aWins)totA+=res.diff;else totB+=res.diff;}
+    const net=totA-totB;
+    let summaryHtml;
+    if(totA===0&&totB===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
+    else if(net===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">Tied</span>`;}
+    else{const winName=net>0?nameA:nameB;const winClr=net>0?'#1D9E75':'#185FA5';const absDiff=Math.abs(net);summaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winName} +${absDiff} pts</span>`;}
+    html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
+    html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary);display:flex;align-items:flex-start;gap:8px" onclick="toggleVegasGame('${key}')">`;
+    html+=`<div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500">${seg.label} (H${seg.start+1}-${seg.end})</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
+    html+=`<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">A: ${nameA} \xb7 B: ${nameB}</div>`;
+    html+=`<div style="margin-top:4px">${summaryHtml}</div>`;
+    html+=`</div></div>`;
+    if(expanded){
+      let rows='';
+      for(let h=seg.start;h<seg.end;h++){
+        const res=calcVegas(h,r);
+        if(!res){rows+=`<div class="hole-row"><span style="color:var(--color-text-secondary)">H${h+1}</span><span style="color:var(--color-text-secondary)">-</span><span></span></div>`;continue;}
+        if(res.tied){rows+=`<div class="hole-row"><span style="color:var(--color-text-secondary)">H${h+1}</span><span style="text-align:center">${res.numA} vs ${res.numB}</span><span class="carry">Tied</span></div>`;continue;}
+        const flipBadge=res.aFlip||res.bFlip?`<span style="font-size:9px;color:var(--color-text-tertiary);white-space:nowrap"> (flip)</span>`:'';
+        const dblBadge=res.doubled?` <span style="font-size:10px;color:var(--color-text-tertiary)">(x2)</span>`:'';
+        const winTeam=res.aWins?nameA:nameB;
+        const winClr=res.aWins?'#1D9E75':'#1D4ED8';
+        const winner=`<span style="color:${winClr};font-weight:500">${winTeam}<br>+${res.diff}</span>`;
+        rows+=`<div class="hole-row"><span style="color:var(--color-text-secondary)">H${h+1}${flipBadge}${dblBadge}</span><span>${res.numA} vs ${res.numB}</span><span style="display:flex;flex-direction:column;align-items:flex-end;text-align:right">${winner}</span></div>`;
+      }
+      let totA2=0,totB2=0;for(let h=seg.start;h<seg.end;h++){const res=calcVegas(h,r);if(!res||res.tied)continue;if(res.aWins)totA2+=res.diff;else totB2+=res.diff;}
+      html+=rows;
+      html+=`<div class="seg-total" style="flex-direction:column;gap:2px;align-items:flex-start"><span>${nameA}: ${totA2} pts</span><span>${nameB}: ${totB2} pts</span></div>`;
     }
-    html+=`<div class="section-card" style="margin-bottom:10px"><div class="section-hd" style="flex-direction:column;align-items:flex-start;gap:2px"><span>${seg.label} (H${seg.start+1}–${seg.end})</span><span style="font-size:11px;font-weight:400;color:var(--color-text-tertiary)">A: ${nameA} · B: ${nameB}</span></div>${rows}<div class="seg-total" style="flex-direction:column;gap:2px;align-items:flex-start"><span>${nameA}: ${totA} pts</span><span>${nameB}: ${totB} pts</span></div></div>`;
+    html+=`</div>`;
   });
   el.innerHTML=html;
 }
@@ -3115,7 +3106,7 @@ function roundScoreChanged(r){
 function roundTransfers(netArr){return simplifyDebts(netArr);}
 
 function toggleRoundCard(id){const card=document.getElementById('rcard-'+id);if(!card)return;const wasCollapsed=card.classList.contains('round-card-collapsed');card.classList.toggle('round-card-collapsed');const chev=card.querySelector('.round-card-chevron');if(chev)chev.textContent=wasCollapsed?'▲':'▼';}
-function toggleAuditPlayer(pi){const body=document.getElementById('audit-body-'+pi);if(body)body.classList.toggle('open');}
+function toggleAuditPlayer(pi){const body=document.getElementById('audit-body-'+pi);if(body){body.classList.toggle('open');const row=body.previousElementSibling;if(row){const chev=row.querySelector('.audit-player-chevron');if(chev)chev.textContent=body.classList.contains('open')?'▲':'▼';}}}
 function toggleAuditCat(id){const body=document.getElementById('audit-cat-'+id);if(body)body.classList.toggle('open');}
 
 // ResizeObserver watches the actual container and fires after browser finishes layout
@@ -3489,60 +3480,66 @@ function renderSkinsRound(){
   if(!gameOn('skins',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Skins is off for this round</div>';return;}
   const sG=skinsGamesForRound(r),games=calcSkinsRound(r);
   const isIndiv=WK.skinsFmt==='individual';
+  if(!STATE.skinsExpanded)STATE.skinsExpanded={};
   let html=``;
-  // Assign a stable color per player index for individual mode
   const PLAYER_COLORS=['#1D9E75','#1D4ED8','#D85A30','#9333EA','#CA8A04'];
   const colorA='#1D9E75', colorB='#1D4ED8';
-  games.forEach(({seg,holes,teams})=>{
-    let rows='',skinsA=0,skinsB=0;
-    const playerTally={}; // for individual: pi -> skin count
-    holes.forEach(({h,pending,tied,winner,type,skinsWon,carry})=>{
-      let winTxt='', winColor='var(--color-text-primary)', midTxt='';
-      if(pending){
-        winTxt=`<span style="color:var(--color-text-secondary)">—</span>`;
-        midTxt='—';
-      } else if(tied){
-        midTxt=`<span class="carry">${carry} skin${carry!==1?'s':''}</span>`;
-        winTxt=`<span class="carry">Tied (carries)</span>`;
-      } else if(skinsWon){
-        if(isIndiv){
-          // winner is player index
-          const pi=winner;
-          playerTally[pi]=(playerTally[pi]||0)+skinsWon;
-          winColor=PLAYER_COLORS[pi%PLAYER_COLORS.length];
-          midTxt=`<span style="color:${winColor};font-weight:500">${skinsWon} skin${skinsWon!==1?'s':''}</span>`;
-          winTxt=displayName(pi);
-        } else {
-          const teamColor=winner==='a'?colorA:colorB;
-          if(winner==='a')skinsA+=skinsWon; else skinsB+=skinsWon;
-          midTxt=`<span style="color:${teamColor};font-weight:500">${skinsWon} skin${skinsWon!==1?'s':''}</span>`;
-          winColor=teamColor;
-          winTxt=(winner==='a'?(teams?.[0]||[]).map(i=>displayName(i)).join(' & '):(teams?.[1]||[]).map(i=>displayName(i)).join(' & '));
-        }
-      } else {
-        midTxt='—';
-      }
-      rows+=`<div class="hole-row"><span style="color:var(--color-text-secondary)">H${h+1}</span><span>${midTxt}</span><span style="font-weight:${skinsWon?500:400};color:${skinsWon?winColor:'inherit'}">${winTxt}</span></div>`;
+  games.forEach(({seg,holes,teams},gi)=>{
+    const key='r'+r+'g'+gi;
+    const expanded=STATE.skinsExpanded[key]===true;
+    // Compute totals for summary
+    let skinsA=0,skinsB=0;
+    const playerTallyPre={};
+    holes.forEach(({winner,skinsWon,tied})=>{
+      if(!skinsWon||tied)return;
+      if(isIndiv){playerTallyPre[winner]=(playerTallyPre[winner]||0)+skinsWon;}
+      else{if(winner==='a')skinsA+=skinsWon;else skinsB+=skinsWon;}
     });
-    let teamHdr='';
-    if(!isIndiv&&teams){
-      teamHdr=`A: ${teams[0].map(i=>displayName(i)).join(' & ')} · B: ${teams[1].map(i=>displayName(i)).join(' & ')}`;
-    }
-    let footer='';
-    if(isIndiv){
-      // Show per-player tally
-      const parts=WK.players.map((p,pi)=>{
-        const s=playerTally[pi]||0;
-        const c=PLAYER_COLORS[pi%PLAYER_COLORS.length];
-        return`<span style="color:${s>0?c:'var(--color-text-secondary)'}">${displayName(pi)}: ${s}</span>`;
-      }).join('<span style="margin:0 4px;color:var(--color-text-tertiary)">·</span>');
-      footer=`<div class="seg-total" style="flex-wrap:wrap;gap:4px">${parts}</div>`;
+    let summaryHtml;
+    const totalSkins=isIndiv?Object.values(playerTallyPre).reduce((a,b)=>a+b,0):skinsA+skinsB;
+    if(totalSkins===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
+    else if(isIndiv){
+      const top=Object.entries(playerTallyPre).sort((a,b)=>b[1]-a[1])[0];
+      const topName=displayName(parseInt(top[0]));
+      summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">${topName} leads - ${top[1]} skin${top[1]!==1?'s':''}</span>`;
     } else {
-      const nA=teams?teams[0].map(i=>displayName(i)).join(' & '):'A';
-      const nB=teams?teams[1].map(i=>displayName(i)).join(' & '):'B';
-      footer=`<div class="seg-total" style="flex-direction:column;gap:2px;align-items:flex-start"><span>${nA}: ${skinsA} skins</span><span>${nB}: ${skinsB} skins</span></div>`;
+      const net=skinsA-skinsB;
+      if(net===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">Tied</span>`;}
+      else{const winName=net>0?(teams?teams[0].map(i=>displayName(i)).join(' & '):'A'):(teams?teams[1].map(i=>displayName(i)).join(' & '):'B');const winClr=net>0?colorA:colorB;const absDiff=Math.abs(net);summaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winName} +${absDiff} skin${absDiff!==1?'s':''}</span>`;}
     }
-    html+=`<div class="section-card" style="margin-bottom:10px"><div class="section-hd" style="flex-direction:column;align-items:flex-start;gap:2px"><span>${seg.label} (H${seg.start+1}–${seg.end})</span>${teamHdr?`<span style="font-size:11px;font-weight:400;color:var(--color-text-tertiary)">${teamHdr}</span>`:''}</div>${rows}${footer}</div>`;
+    let teamHdr='';
+    if(!isIndiv&&teams){teamHdr=`A: ${teams[0].map(i=>displayName(i)).join(' & ')} \xb7 B: ${teams[1].map(i=>displayName(i)).join(' & ')}`;}
+    html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
+    html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary);display:flex;align-items:flex-start;gap:8px" onclick="toggleSkinsGame('${key}')">`;
+    html+=`<div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500">${seg.label} (H${seg.start+1}-${seg.end})</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
+    if(teamHdr)html+=`<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">${teamHdr}</div>`;
+    html+=`<div style="margin-top:4px">${summaryHtml}</div>`;
+    html+=`</div></div>`;
+    if(expanded){
+      let rows='',skinsA2=0,skinsB2=0;
+      const playerTally={};
+      holes.forEach(({h,pending,tied,winner,type,skinsWon,carry})=>{
+        let winTxt='', winColor='var(--color-text-primary)', midTxt='';
+        if(pending){winTxt=`<span style="color:var(--color-text-secondary)">-</span>`;midTxt='-';}
+        else if(tied){midTxt=`<span class="carry">${carry} skin${carry!==1?'s':''}</span>`;winTxt=`<span class="carry">Tied (carries)</span>`;}
+        else if(skinsWon){
+          if(isIndiv){const pi=winner;playerTally[pi]=(playerTally[pi]||0)+skinsWon;winColor=PLAYER_COLORS[pi%PLAYER_COLORS.length];midTxt=`<span style="color:${winColor};font-weight:500">${skinsWon} skin${skinsWon!==1?'s':''}</span>`;winTxt=displayName(pi);}
+          else{const teamColor=winner==='a'?colorA:colorB;if(winner==='a')skinsA2+=skinsWon;else skinsB2+=skinsWon;midTxt=`<span style="color:${teamColor};font-weight:500">${skinsWon} skin${skinsWon!==1?'s':''}</span>`;winColor=teamColor;winTxt=(winner==='a'?(teams?.[0]||[]).map(i=>displayName(i)).join(' & '):(teams?.[1]||[]).map(i=>displayName(i)).join(' & '));}
+        } else {midTxt='-';}
+        rows+=`<div class="hole-row"><span style="color:var(--color-text-secondary)">H${h+1}</span><span>${midTxt}</span><span style="font-weight:${skinsWon?500:400};color:${skinsWon?winColor:'inherit'}">${winTxt}</span></div>`;
+      });
+      let footer='';
+      if(isIndiv){
+        const parts=WK.players.map((p,pi)=>{const s=playerTally[pi]||0;const c=PLAYER_COLORS[pi%PLAYER_COLORS.length];return`<span style="color:${s>0?c:'var(--color-text-secondary)'}">${displayName(pi)}: ${s}</span>`;}).join('<span style="margin:0 4px;color:var(--color-text-tertiary)">\xb7</span>');
+        footer=`<div class="seg-total" style="flex-wrap:wrap;gap:4px">${parts}</div>`;
+      } else {
+        const nA=teams?teams[0].map(i=>displayName(i)).join(' & '):'A';
+        const nB=teams?teams[1].map(i=>displayName(i)).join(' & '):'B';
+        footer=`<div class="seg-total" style="flex-direction:column;gap:2px;align-items:flex-start"><span>${nA}: ${skinsA2} skins</span><span>${nB}: ${skinsB2} skins</span></div>`;
+      }
+      html+=rows+footer;
+    }
+    html+=`</div>`;
   });
   el.innerHTML=html;
 }
@@ -3569,8 +3566,10 @@ function renderExpenses(){
   ECATS.forEach(cat=>{
     const items=groups[cat.id];if(!items?.length)return;any=true;
     const ctot=items.reduce((t,e)=>t+e.amount,0);
-    html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span>${cat.e} ${cat.l}</span><span style="font-weight:400">$${ctot.toFixed(2)}</span></div>`;
-    items.forEach((e,ei)=>{
+    if(!STATE.expCatExpanded)STATE.expCatExpanded={};
+    const catExpanded=STATE.expCatExpanded[cat.id]===true;
+    html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd" style="cursor:pointer" onclick="toggleExpCat('${cat.id}')"><span>${cat.e} ${cat.l}</span><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:400">$${ctot.toFixed(2)}</span><span style="font-size:11px;color:#1D9E75">${catExpanded?'▲':'▼'}</span></div></div>`;
+    if(catExpanded){items.forEach((e,ei)=>{
       const pn=WK.players[e.paidBy]?.name||'?';
       const splitDesc=e.customSplit?'custom split':`split ${e.owes.length} ways`;
       const bdyId=`exp-bdy-${e.id}`;
@@ -3584,13 +3583,13 @@ function renderExpenses(){
         else{bdyHtml+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0 3px 10px;border-left:2px solid var(--color-border-tertiary);margin:2px 0"><span style="font-size:11px;color:var(--color-text-secondary)">${on}</span><span style="font-size:11px;font-weight:500;color:#D85A30">owes $${o.amt.toFixed(2)}</span></div>`;}
       });
       html+=`<div class="exp-item">
-        <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="(()=>{const b=document.getElementById('${bdyId}');b.style.display=b.style.display==='none'?'block':'none';})()">
+        <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="(()=>{const b=document.getElementById('${bdyId}');const open=b.style.display==='none';b.style.display=open?'block':'none';const arr=document.getElementById('${bdyId}-arr');if(arr)arr.textContent=open?'▲':'▼';})()">
           <div><div class="exp-hd" style="margin-bottom:1px"><span class="exp-desc">${e.desc}</span><span class="exp-amt" style="margin-left:12px">$${e.amount.toFixed(2)}</span></div><div class="exp-meta">Paid by ${pn} · ${splitDesc}</div></div>
-          <span style="font-size:10px;color:var(--color-text-tertiary);padding-left:8px">▼</span>
+          <span id="${bdyId}-arr" style="font-size:10px;color:#1D9E75;padding-left:8px">▼</span>
         </div>
         <div id="${bdyId}" style="display:none;margin-top:6px">${bdyHtml}${(isReadOnly||expLocked)?'':`<div style="display:flex;gap:6px;margin-top:8px"><button class="btn-sm" onclick="openExpForm('${e.id}')">Edit</button><button class="btn-danger" onclick="deleteExp('${e.id}')">Delete</button></div>`}</div>
       </div>`;
-    });
+    });}
     html+='</div>';
   });
   if(!any){html+=`<div style="text-align:center;padding:2rem 0;color:var(--color-text-secondary);font-size:13px">No expenses yet.<br>Tap + Add Expense to start.</div>`;document.getElementById('expensesContent').innerHTML=html;return;}
@@ -3733,6 +3732,8 @@ function renderSettle(){
     const mpR=gameOn('mp',r)?calcRoundMP(r):{gameResults:[],net:[]};
     if(gameOn('razzle',r)){calcRazzle(r).forEach(m=>{if(!m.winner)return;const winTeam=m.winner==='a'?m.tA:m.tB,loseTeam=m.winner==='a'?m.tB:m.tA;const desc='H'+(m.startHole+1)+'-'+(m.endHole+1);winTeam.forEach(pi=>{auditGolf[pi].razzle.push({label:'R'+(r+1)+' Match '+(m.mi+1),val:m.sv,desc});});loseTeam.forEach(pi=>{auditGolf[pi].razzle.push({label:'R'+(r+1)+' Match '+(m.mi+1),val:-m.sv,desc});});});}
     mpR.gameResults.forEach(({seg,tA,tB,pA,pB,winner})=>{
+      const segHasScores=STATE.scores[r].slice(seg.start,seg.end).some(h=>h.some(s=>s!==null));
+      if(!segHasScores)return;
       const audMpVal=winner==='tie'?0:settleVal(roundVal('gameVal',r,WK.gameVal),tA.length,WK.mpSettle||'perplayer');
       tA.forEach(pi=>{auditGolf[pi].mp.push({label:`R${r+1} ${seg.label}`,val:winner==='a'?audMpVal:winner==='b'?-audMpVal:0,desc:`vs ${tB.map(i=>displayName(i)).join('&')} (${pA}–${pB})`});});
       tB.forEach(pi=>{auditGolf[pi].mp.push({label:`R${r+1} ${seg.label}`,val:winner==='b'?audMpVal:winner==='a'?-audMpVal:0,desc:`vs ${tA.map(i=>displayName(i)).join('&')} (${pB}–${pA})`});});
@@ -3842,7 +3843,7 @@ function renderSettle(){
     if(myExps.length||expNet[pi]!==0)html+=`<span style="font-size:11px;color:var(--color-text-secondary)">Exp <span style="color:${expNet[pi]>=0?'#1D9E75':'#D85A30'};font-weight:500">${fmt(expNet[pi])}</span></span>`;
     html+=`</div>`;
     html+=`<div style="margin-top:3px"><span style="font-size:11px;color:var(--color-text-secondary)">Total <span style="font-size:14px;font-weight:700;color:${totalNet[pi]>=0?'#1D9E75':'#D85A30'}">${fmt(totalNet[pi])}</span></span></div>`;
-    html+=`</div><span style="font-size:12px;color:var(--color-text-tertiary)">▼</span>`;
+    html+=`</div><span class="audit-player-chevron" style="margin-right:4px">▼</span>`;
     html+='</div>';
 
     // Expandable body
@@ -3851,7 +3852,7 @@ function renderSettle(){
     // Helper: collapsible category row
     const catId=(name)=>`${pi}-${name.replace(/\s/g,'')}`;
     const subRow=(label,desc,val)=>`<div style="display:grid;grid-template-columns:80px 1fr 64px;align-items:baseline;gap:4px;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:11px;color:var(--color-text-tertiary)">${label}</span><span style="font-size:12px;color:var(--color-text-secondary)">${desc}</span><span style="font-size:12px;text-align:right;font-weight:500;color:${val>=0?'#1D9E75':'#D85A30'}">${fmt(val)}</span></div>`;
-    const catHdr=(name,sum,extra='')=>{const id=catId(name);return`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary);cursor:pointer" onclick="toggleAuditCat('${id}')"><span style="font-size:11px;font-weight:600;color:var(--color-text-primary)">${name}${extra?` <span style='font-size:10px;font-weight:400;color:var(--color-text-secondary)'>${extra}</span>`:''}</span><span style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:600;color:${sum>=0?'#1D9E75':'#D85A30'}">${fmt(sum)}</span><span style="font-size:10px;color:var(--color-text-tertiary)">▼</span></span></div><div class="audit-cat-body" id="audit-cat-${id}">`};
+    const catHdr=(name,sum,extra='')=>{const id=catId(name);return`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary);cursor:pointer" onclick="toggleAuditCat('${id}')"><span style="font-size:11px;font-weight:600;color:var(--color-text-primary)">${name}${extra?` <span style='font-size:10px;font-weight:400;color:var(--color-text-secondary)'>${extra}</span>`:''}</span><span style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:600;color:${sum>=0?'#1D9E75':'#D85A30'}">${fmt(sum)}</span><span class="audit-cat-chevron" style="font-size:10px;color:#1D9E75">▼</span></span></div><div class="audit-cat-body" id="audit-cat-${id}">`};
 
     // Settled rounds — top-level rows, one per settled round
     a.settled.forEach(s=>{
