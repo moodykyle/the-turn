@@ -599,6 +599,7 @@ const CATALOG={};
 let PLAYER_LIBRARY=[];
 
 // Parse a full name string into {first, last} — splits on last space
+function genUUID(){return([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));}
 function parseName(nameStr){
   const s=(nameStr||'').trim();
   const sp=s.lastIndexOf(' ');
@@ -640,7 +641,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v82';
+const APP_VERSION='v83';
 
 // ===== THEME =====
 (function(){
@@ -816,13 +817,14 @@ async function s2WriteActive(){
       const rows=WK.players.map((p,pi)=>({
         player_id:s2PlayerId(pi),
         trip_id:tripId,
-        first_name:(p.name||'').split(' ')[0]||'',
-        last_name:(p.name||'').split(' ').slice(1).join(' ')||'',
+        first_name:p.first||((p.name||'').split(' ')[0]||''),
+        last_name:p.last||((p.name||'').split(' ').slice(1).join(' ')||''),
         handicap_idx:p.idx||0,
         bg_color:p.bg||'',
         fg_color:p.fg||'',
         ini:p.ini||'',
-        player_index:pi
+        player_index:pi,
+        library_id:p.lid||null
       }));
       await s2Upsert('players',rows);
       _s2Dirty.players=false;
@@ -1010,6 +1012,9 @@ async function s2ReadTrip(tripId){
       razzleBirdieGross:!!t.razzle_birdie_gross,
       players:playerRows.map(p=>({
         name:((p.first_name||'')+(p.last_name?' '+p.last_name:'')).trim(),
+        first:p.first_name||'',
+        last:p.last_name||'',
+        lid:p.library_id||'',
         idx:p.handicap_idx||0,
         bg:p.bg_color||'#2e7d32',
         fg:p.fg_color||'#ffffff',
@@ -1209,20 +1214,21 @@ function showConnStatus(ok){
   }
 }
 
-function getSyncPayload(){return{library:PLAYER_LIBRARY};}
+function getSyncPayload(){return{};} // library now lives in player_library table, not blob
 
 function applySyncPayload(d){
   if(!d)return;
   // Trips now live in new schema — no longer applied from blob
-  if(d.library&&d.library.length>0){
-    // Migrate old {name,idx} entries to {first,last,idx,venmo}
+  // Blob library: migration fallback only — only apply if table load returned nothing
+  if(PLAYER_LIBRARY.length===0&&d.library&&d.library.length>0){
     PLAYER_LIBRARY=d.library.map(p=>{
-      if(p.first!==undefined&&p.last!==undefined)return p;
-      // Legacy entry: name only — parse into first/last
+      if(p.first!==undefined&&p.last!==undefined)return{...p,lid:p.lid||''};
       const parsed=parseName(p.first||p.name||'');
-      return{first:parsed.first,last:parsed.last,idx:p.idx||0,venmo:p.venmo||''};
+      return{lid:'',first:parsed.first,last:parsed.last,idx:p.idx||0,venmo:p.venmo||''};
     });
     try{localStorage.setItem(LS_LIB,JSON.stringify(PLAYER_LIBRARY));}catch(e){}
+    // Push blob players up to the table so they are persisted going forward
+    saveLibrary();
   }
   // Courses now live in Supabase courses table — no longer applied from blob
 }
@@ -1263,21 +1269,53 @@ async function syncOnLoad(){
 }
 
 // Local-only storage helpers (cache layer)
+// Load library from localStorage cache (sync, called at startup before async fetch)
 function loadLib(){
   try{
     const d=localStorage.getItem(LS_LIB);
     if(d){
       const lib=JSON.parse(d);
-      // Migrate old {name,idx} entries
       PLAYER_LIBRARY=lib.map(p=>{
         if(p.first!==undefined&&p.last!==undefined)return p;
         const parsed=parseName(p.first||p.name||'');
-        return{first:parsed.first,last:parsed.last,idx:p.idx||0,venmo:p.venmo||''};
+        return{first:parsed.first,last:parsed.last,idx:p.idx||0,venmo:p.venmo||'',lid:p.lid||''};
       });
     }
   }catch(e){}
 }
-function saveLib(){try{localStorage.setItem(LS_LIB,JSON.stringify(PLAYER_LIBRARY));}catch(e){}scheduleSbSave();}
+// Load library from Supabase player_library table — authoritative source
+async function loadLibrary(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/player_library?select=library_id,first_name,last_name,handicap_idx,venmo&order=last_name.asc',{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    });
+    if(r.ok){
+      const rows=await r.json();
+      if(rows&&rows.length){
+        PLAYER_LIBRARY=rows.map(p=>({lid:p.library_id,first:p.first_name||'',last:p.last_name||'',idx:parseFloat(p.handicap_idx)||0,venmo:p.venmo||''}));
+        try{localStorage.setItem(LS_LIB,JSON.stringify(PLAYER_LIBRARY));}catch(e){}
+        return;
+      }
+    }
+  }catch(e){}
+  // Fallback: already populated from loadLib() (localStorage cache) — nothing more to do
+}
+// Save entire library to Supabase player_library table
+async function saveLibrary(){
+  try{
+    const rows=PLAYER_LIBRARY.map(p=>{
+      if(!p.lid)p.lid=genUUID();
+      return{library_id:p.lid,first_name:p.first||'',last_name:p.last||'',handicap_idx:p.idx||0,venmo:p.venmo||''};
+    });
+    await s2Upsert('player_library',rows);
+    try{localStorage.setItem(LS_LIB,JSON.stringify(PLAYER_LIBRARY));}catch(e){}
+  }catch(e){
+    // Fallback: at least keep localStorage in sync
+    try{localStorage.setItem(LS_LIB,JSON.stringify(PLAYER_LIBRARY));}catch(e2){}
+  }
+}
+// saveLib: localStorage + schedule Supabase table write (no longer writes to blob)
+function saveLib(){try{localStorage.setItem(LS_LIB,JSON.stringify(PLAYER_LIBRARY));}catch(e){}saveLibrary();}
 async function loadCourses(){
   // Try Supabase first
   try{
@@ -1388,7 +1426,7 @@ function renderLibrarySection(){
   el.innerHTML=html;
 }
 
-function homeRemoveLibPlayer(i){if(!confirm('Remove '+libDisplayName(PLAYER_LIBRARY[i])+' from library?'))return;PLAYER_LIBRARY.splice(i,1);saveLib();renderLibrarySection();}
+function homeRemoveLibPlayer(i){if(!confirm('Remove '+libDisplayName(PLAYER_LIBRARY[i])+' from library?'))return;const lid=PLAYER_LIBRARY[i].lid;PLAYER_LIBRARY.splice(i,1);saveLib();if(lid){try{fetch(SB_URL+'/rest/v1/player_library?library_id=eq.'+encodeURIComponent(lid),{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});}catch(e){}}renderLibrarySection();}
 async function homeRemoveCourse(name){if(!confirm('Remove '+name+' from catalog?'))return;delete CATALOG[name];try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}try{await fetch(SB_URL+'/rest/v1/courses?name=eq.'+encodeURIComponent(name),{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});}catch(e){}renderLibrarySection();}
 function startNewWeekend(){WK=null;STATE=null;isReadOnly=false;viewingTripId=null;
   const wn=document.getElementById('weekendName');if(wn)wn.value='';
@@ -1744,8 +1782,9 @@ function startWeekend(){const nP=parseInt(document.getElementById('numPlayers').
       (p.last||'').toLowerCase()===last.toLowerCase()
     );
     const venmo=libMatch?(libMatch.venmo||''):'';
+    const lid=libMatch?(libMatch.lid||''):'';
     const displayN=last?last:first; // temp name — resolveDisplayNames will fix
-    players.push({name:displayN,first,last,venmo,idx:parseFloat(document.getElementById('pidx'+i)?.value||10),bg:c.bg,fg:c.fg,ini:(first).substring(0,2).toUpperCase()});
+    players.push({name:displayN,first,last,venmo,lid,idx:parseFloat(document.getElementById('pidx'+i)?.value||10),bg:c.bg,fg:c.fg,ini:(first).substring(0,2).toUpperCase()});
   }
   // Resolve display names — last name default, first initial + last on conflict
   resolveDisplayNames(players);
@@ -1754,8 +1793,8 @@ function startWeekend(){const nP=parseInt(document.getElementById('numPlayers').
   players.forEach(p=>{
     if(!p.first)return;
     const exists=PLAYER_LIBRARY.find(l=>(l.first||'').toLowerCase()===p.first.toLowerCase()&&(l.last||'').toLowerCase()===(p.last||'').toLowerCase());
-    if(!exists){PLAYER_LIBRARY.push({first:p.first,last:p.last||'',idx:p.idx||0,venmo:p.venmo||''});libUpdated=true;}
-    else if(exists&&p.idx&&exists.idx!==p.idx){exists.idx=p.idx;libUpdated=true;}
+    if(!exists){const newLid=genUUID();PLAYER_LIBRARY.push({lid:newLid,first:p.first,last:p.last||'',idx:p.idx||0,venmo:p.venmo||''});p.lid=newLid;libUpdated=true;}
+    else{p.lid=exists.lid;if(p.idx&&exists.idx!==p.idx){exists.idx=p.idx;libUpdated=true;}}
   });
   if(libUpdated)saveLib();
   const rounds=[];for(let i=0;i<nR;i++){const cn=document.getElementById('course'+i)?.value||Object.keys(CATALOG)[0];if(!cn){alert('Please select a course for Round '+(i+1)+'.');return;}rounds.push({courseName:cn,course:CATALOG[cn],mpOn:false,vegasOn:false,skinsOn:false,snakeOn:false,razzleOn:false});}const mpOn=document.getElementById('wizMpOn').checked,vegasOn=document.getElementById('wizVegasOn').checked,twosOn=document.getElementById('wizTwosOn').checked,skinsOn=document.getElementById('wizSkinsOn').checked;const mpGDef=mpOn?parseInt(document.getElementById('wizMpGames').value):3;const skGDef=skinsOn?parseInt(document.getElementById('wizSkinsGames').value):0;const netOffLow=document.getElementById('wizNetOffLow')?.checked||false;const mpSettle=mpOn?(document.getElementById('wizMpSettle')?.value||'perplayer'):'perplayer';const vegasSettle=vegasOn?(document.getElementById('wizVegasSettle')?.value||'perplayer'):'perplayer';const snakeOn=document.getElementById('wizSnakeOn').checked;WK={_id:Date.now()+'',name:document.getElementById('weekendName').value||'My Trip',date:document.getElementById('weekendDate').value||'',region:document.getElementById('weekendRegion').value||'',players,rounds,hdcpPct:parseFloat(document.getElementById('hdcpPct').value||80)/100,buyIn:parseFloat(document.getElementById('buyIn').value||50),potMethod:document.getElementById('wizPotMethod')?.value||'netstroke',mpOn,mpGamesDefault:mpGDef,mpGamesPerRound:Array(nR).fill(mpGDef),gameVal:mpOn?parseFloat(document.getElementById('gameVal').value||5):5,mpSettle,vegasOn,vegasVal:vegasOn?parseFloat(document.getElementById('vegasVal').value||0.5):0.5,vegasSegsDefault:vegasOn?parseInt(document.getElementById('wizVegasSegs').value):3,vegasSegsPerRound:Array(nR).fill(vegasOn?parseInt(document.getElementById('wizVegasSegs').value):3),vegasSettle,twosOn,twosAmt:twosOn?parseFloat(document.getElementById('twosAmt').value||25):25,skinsOn,skinsVal:skinsOn?parseFloat(document.getElementById('skinsVal').value||5):5,skinsFmt:skinsOn?(document.getElementById('wizSkinsFmt').value||'team'):'team',skinsSettle:skinsOn?(document.getElementById('wizSkinsSettle').value||'perplayer'):'perplayer',skinsGamesDefault:skGDef>0?skGDef:3,skinsGamesPerRound:Array(nR).fill(skGDef>0?skGDef:3),snakeOn,snakeBase:snakeOn?parseFloat(document.getElementById('snakeBase').value||1):1,snakeGrowth:snakeOn?(document.getElementById('snakeGrowth').value||'double'):'double',snakeIncrement:snakeOn?parseFloat(document.getElementById('snakeIncrement').value||1):1,snakePayout:snakeOn?(document.getElementById('snakePayout').value||'split'):'split',razzleOn:document.getElementById('wizRazzleOn').checked,razzleVal:parseFloat(document.getElementById('wizRazzleVal')?.value||5),razzleBirdieBonus:parseFloat(document.getElementById('wizRazzleBirdie')?.value||5),razzleSweepBonus:parseFloat(document.getElementById('wizRazzleSweep')?.value||5),razzle5HoleBonus:parseFloat(document.getElementById('wizRazzle5Hole')?.value||5),razzleSettle:(document.getElementById('wizRazzleSettle')?.value||'perplayer'),razzleBirdieGross:document.getElementById('wizRazzleBirdieGross')?.value==='gross'};isReadOnly=false;viewingTripId=null;
@@ -2736,18 +2775,19 @@ function renderTeamsPanel(){
   document.getElementById('opt-panel-teams').innerHTML=html;
 }
 function setDropSkins(gameIdx,slot,pIdx,roundIdx){if(isReadOnly)return;if(!STATE.skinsTeams)return;const teams=STATE.skinsTeams[roundIdx][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;renderTeamsPanel();}
-function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span>Active players</span></div>`;WK.players.forEach((p,i)=>{const eff=effHdcp(i,r);html+=`<div class="setup-row"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><input class="inline-edit" value="${p.name}" style="flex:1;min-width:60px" onchange="WK.players[${i}].name=this.value;WK.players[${i}].ini=this.value.substring(0,2).toUpperCase();renderPlayersPanel();renderScorecard();renderBanner();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin:0 3px">idx</span><input class="ie-num" type="number" step="0.1" value="${p.idx}" style="width:70px" onchange="WK.players[${i}].idx=parseFloat(this.value)||0;renderPlayersPanel();renderScorecard();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px;white-space:nowrap">→ ${eff}</span>${WK.players.length>2?`<button class="btn-danger" onclick="removePlayer(${i})">✕</button>`:''}</div>`;});html+=`</div>`;if(WK.players.length<12)html+=`<button class="btn-sm" onclick="addPlayer()" style="margin-bottom:14px">+ Add player</button>`;
+function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span>Active players</span></div>`;WK.players.forEach((p,i)=>{const eff=effHdcp(i,r);html+=`<div class="setup-row"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><input class="inline-edit" value="${p.name}" style="flex:1;min-width:60px" onchange="WK.players[${i}].name=this.value;WK.players[${i}].ini=this.value.substring(0,2).toUpperCase();renderPlayersPanel();renderScorecard();renderBanner();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin:0 3px">idx</span><input class="ie-num" type="number" step="0.1" value="${p.idx}" style="width:70px" onchange="WK.players[${i}].idx=parseFloat(this.value)||0;renderPlayersPanel();renderScorecard();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px;white-space:nowrap">→ ${eff}</span>${WK.players.length>2?`<button class="btn-danger" onclick="removePlayer(${i})">✕</button>`:''}</div>`;});const apListId='addPlayerLibList';const apSorted=[...PLAYER_LIBRARY].sort((a,b)=>(a.last||'').localeCompare(b.last||''));html+=`<datalist id="${apListId}">${apSorted.map(p=>`<option value="${libDisplayName(p)}">`).join('')}</datalist>`;if(WK.players.length<12){html+=`<div style="border-top:0.5px solid var(--color-border-tertiary)"><div id="addPlayerRow" style="display:none;padding:10px 12px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><input class="text-input" id="apFirst" list="${apListId}" placeholder="First" style="flex:2;font-size:13px;padding:6px 8px" oninput="onAddPlayerInput()"/><input class="text-input" id="apLast" placeholder="Last" style="flex:2;font-size:13px;padding:6px 8px"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0">Hdcp</span><input class="ie-num" id="apIdx" type="number" step="0.1" placeholder="10" style="width:58px;flex-shrink:0"/></div><div style="display:flex;gap:8px"><button class="btn-primary" style="font-size:12px;padding:5px 12px" onclick="confirmAddPlayer()">Save</button><button class="btn-secondary" style="font-size:12px;padding:5px 12px" onclick="toggleAddPlayerRow()">Cancel</button></div></div><button class="btn-sm" id="addPlayerToggleBtn" onclick="toggleAddPlayerRow()" style="margin:8px 12px">+ Add player</button></div>`;}html+=`</div>`;
   if(PLAYER_LIBRARY.length===0){
     html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Player library <span style="font-size:11px;font-weight:400;color:var(--color-text-secondary)">- saved for quick setup</span></div><div style="padding:12px;font-size:13px;color:var(--color-text-secondary);text-align:center">No players yet - added automatically when you create a trip.</div></div>`;
   } else {
     html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Player library <span style="font-size:11px;font-weight:400;color:var(--color-text-secondary)">- saved for quick setup</span></div>`;
     const sortedLib=PLAYER_LIBRARY.map((p,i)=>({p,i})).sort((a,b)=>(a.p.last||'').localeCompare(b.p.last||''));sortedLib.forEach(({p,i})=>{
-      const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
+      const activeMatch=WK?WK.players.find(function(ap){return ap.lid&&ap.lid===p.lid;}):null;
+      const c=activeMatch?{bg:activeMatch.bg,fg:activeMatch.fg}:AVATAR_PALETTE[i%AVATAR_PALETTE.length];
       const initials=((p.first||'')[0]||'')+((p.last||'')[0]||'');
       const eid='lib_edit_'+i;
       const venmoDisplay=p.venmo?` · @${(p.venmo||'').replace(/^@/,'')}`:'';
       html+=`<div style="border-bottom:0.5px solid var(--color-border-tertiary)">
-        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px">
+        <div id="${eid}_display" style="display:flex;align-items:center;gap:8px;padding:8px 12px">
           <div class="avatar" style="width:28px;height:28px;font-size:10px;background:${c.bg};color:${c.fg};flex-shrink:0">${initials.toUpperCase()||'?'}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">${p.first||''} ${p.last||''}</div>
@@ -2756,9 +2796,10 @@ function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="s
           <button class="btn-sm" id="${eid}_btn" onclick="toggleEditPanel('${eid}','${eid}_btn')">Edit</button>
         </div>
         <div id="${eid}" style="display:none;padding:8px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary)">
-          <div style="display:flex;gap:6px;margin-bottom:6px">
-            <input class="text-input" value="${p.first||''}" placeholder="First" style="flex:1;padding:5px 8px;font-size:13px" onchange="PLAYER_LIBRARY[${i}].first=this.value;saveLib();renderPlayersPanel()"/>
-            <input class="text-input" value="${p.last||''}" placeholder="Last" style="flex:1;padding:5px 8px;font-size:13px" onchange="PLAYER_LIBRARY[${i}].last=this.value;saveLib();renderPlayersPanel()"/>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+            <div class="avatar" style="width:28px;height:28px;font-size:10px;background:${c.bg};color:${c.fg};flex-shrink:0">${initials.toUpperCase()||'?'}</div>
+            <input class="text-input" value="${p.first||''}" placeholder="First" style="flex:1;padding:5px 8px;font-size:13px" onchange="PLAYER_LIBRARY[${i}].first=this.value;saveLib()"/>
+            <input class="text-input" value="${p.last||''}" placeholder="Last" style="flex:1;padding:5px 8px;font-size:13px" onchange="PLAYER_LIBRARY[${i}].last=this.value;saveLib()"/>
           </div>
           <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
             <span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0">Hdcp</span>
@@ -2766,7 +2807,10 @@ function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="s
             <span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px">@</span>
             <input class="text-input" value="${(p.venmo||'').replace(/^@/,'')}" placeholder="Venmo handle" style="flex:1;padding:5px 8px;font-size:13px" onchange="PLAYER_LIBRARY[${i}].venmo=this.value.replace(/^@/,'');saveLib()"/>
           </div>
-          <button class="btn-danger" style="font-size:11px" onclick="removeLibPlayer(${i})">Remove from library</button>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <button class="btn-danger" style="font-size:11px" onclick="removeLibPlayer(${i})">Remove from library</button>
+            <button class="btn-sm" onclick="toggleEditPanel('${eid}','${eid}_btn')">Save</button>
+          </div>
         </div>
       </div>`;
     });
@@ -2774,9 +2818,13 @@ function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="s
   }
   document.getElementById('opt-panel-players').innerHTML=html;
 }
-function toggleEditPanel(eid,btnId){const panel=document.getElementById(eid);const btn=document.getElementById(btnId);if(!panel)return;const isOpen=panel.style.display!=='none';panel.style.display=isOpen?'none':'block';if(btn)btn.textContent=isOpen?'Edit':'Save';}
-function addLibPlayer(){const first=(document.getElementById('newLibFirst')?.value||'').trim(),last=(document.getElementById('newLibLast')?.value||'').trim(),idx=parseFloat(document.getElementById('newLibIdx')?.value||10),venmo=(document.getElementById('newLibVenmo')?.value||'').trim();if(!first)return;PLAYER_LIBRARY.push({first,last,idx,venmo});saveLib();renderPlayersPanel();}
-function removeLibPlayer(i){PLAYER_LIBRARY.splice(i,1);saveLib();renderPlayersPanel();}
+function toggleEditPanel(eid,btnId){const panel=document.getElementById(eid);const btn=document.getElementById(btnId);const display=document.getElementById(eid+'_display');if(!panel)return;const isOpen=panel.style.display!=='none';panel.style.display=isOpen?'none':'block';if(display)display.style.display=isOpen?'flex':'none';if(btn)btn.style.display=isOpen?'inline-block':'none';if(isOpen){const m=eid.match(/lib_edit_(\d+)/);if(m&&WK){const libP=PLAYER_LIBRARY[parseInt(m[1])];if(libP&&libP.lid){WK.players.forEach(function(p){if(p.lid&&p.lid===libP.lid){p.first=libP.first;p.last=libP.last;p.idx=libP.idx;if(libP.venmo!==undefined)p.venmo=libP.venmo;resolveDisplayNames(WK.players);}});autoSave();}}renderPlayersPanel();}}
+function addLibPlayer(){const first=(document.getElementById('newLibFirst')?.value||'').trim(),last=(document.getElementById('newLibLast')?.value||'').trim(),idx=parseFloat(document.getElementById('newLibIdx')?.value||10),venmo=(document.getElementById('newLibVenmo')?.value||'').trim();if(!first)return;const dup=PLAYER_LIBRARY.find(p=>(p.first||'').toLowerCase()===first.toLowerCase()&&(p.last||'').toLowerCase()===last.toLowerCase());if(dup){alert(first+' '+last+' is already in the library.');return;}PLAYER_LIBRARY.push({lid:genUUID(),first,last,idx,venmo});saveLib();renderPlayersPanel();}
+function removeLibPlayer(i){const lid=PLAYER_LIBRARY[i].lid;PLAYER_LIBRARY.splice(i,1);saveLib();if(lid){try{fetch(SB_URL+'/rest/v1/player_library?library_id=eq.'+encodeURIComponent(lid),{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});}catch(e){}}renderPlayersPanel();}
+function toggleAddPlayerRow(){const row=document.getElementById('addPlayerRow');const btn=document.getElementById('addPlayerToggleBtn');if(!row)return;const opening=row.style.display==='none';row.style.display=opening?'block':'none';if(btn)btn.style.display=opening?'none':'inline-block';if(opening)setTimeout(function(){var el=document.getElementById('apFirst');if(el)el.focus();},50);}
+function onAddPlayerInput(){var raw=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var fullMatch=PLAYER_LIBRARY.find(function(p){return libDisplayName(p).toLowerCase()===raw.toLowerCase();});if(fullMatch){var f=document.getElementById('apFirst'),l=document.getElementById('apLast'),x=document.getElementById('apIdx');if(f)f.value=fullMatch.first||'';if(l)l.value=fullMatch.last||'';if(x)x.value=fullMatch.idx;return;}var match=PLAYER_LIBRARY.find(function(p){return(p.first||'').toLowerCase()===raw.toLowerCase();});if(match){var l=document.getElementById('apLast'),x=document.getElementById('apIdx');if(l&&!l.value)l.value=match.last||'';if(x&&!x.value)x.value=match.idx;}}
+function confirmAddPlayer(){var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=parseFloat(document.getElementById('apIdx')?document.getElementById('apIdx').value:10)||10;if(!first){alert('Enter a first name.');return;}if(WK.players.length>=12)return;var c=pickColor();var newP={name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};var allPlayers=WK.players.concat([newP]);resolveDisplayNames(allPlayers);WK.players.push(newP);WK.rounds.forEach(function(_,r){STATE.scores[r].forEach(function(h){h.push(null);});});var exists=PLAYER_LIBRARY.find(function(p){return(p.first||'').toLowerCase()===first.toLowerCase()&&(p.last||'').toLowerCase()===last.toLowerCase();});if(!exists){var newLid=genUUID();PLAYER_LIBRARY.push({lid:newLid,first:first,last:last,idx:idx,venmo:''});newP.lid=newLid;saveLib();}else{newP.lid=exists.lid;if(exists.idx!==idx){exists.idx=idx;saveLib();}}renderPlayersPanel();renderTeamsPanel();renderScorecard();autoSave();}
+function toggleNewLibForm(){var form=document.getElementById('newLibForm');var btn=document.getElementById('newLibToggleBtn');if(!form)return;var opening=form.style.display==='none';form.style.display=opening?'block':'none';if(btn)btn.textContent=opening?'Cancel':'+ Add player';if(opening)setTimeout(function(){var el=document.getElementById('newLibFirst');if(el)el.focus();},50);}
 function addPlayer(){if(WK.players.length>=12)return;const c=pickColor(),i=WK.players.length;WK.players.push({name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));});renderPlayersPanel();renderTeamsPanel();}
 function removePlayer(idx){if(WK.players.length<=2){alert('Need at least 2 players.');return;}WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=fixTeams(STATE.mpTeams);STATE.vegTeams=fixTeams(STATE.vegTeams);renderPlayersPanel();renderTeamsPanel();renderScorecard();}
 function renderWeekendPanel(){
@@ -3939,8 +3987,8 @@ function renderSettle(){
 function renderMoneyGolf(){renderMoney();}
 
 // Init
-loadLib();
-loadCourses().then(()=>{
+loadLib(); // sync cache load first so library is available immediately
+Promise.all([loadCourses(),loadLibrary()]).then(()=>{
   syncOnLoad().then(()=>{
     renderTripList();
     renderLibrarySection();
