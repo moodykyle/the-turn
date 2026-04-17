@@ -642,7 +642,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v86';
+const APP_VERSION='v84';
 
 // ===== THEME =====
 (function(){
@@ -3895,15 +3895,17 @@ function renderSettle(){
     html+=`<span style="font-size:11px;color:var(--color-text-secondary)">Total <span style="font-size:13px;font-weight:600;color:${totalNet[pi]>=0?'#1D9E75':'#D85A30'}">${fmt(totalNet[pi])}</span></span>`;
     html+=`</div>`;
     const settledAmt=totalNet[pi]-outstandingNet[pi];
-    if(settledAmt!==0){
+    const fullySettled=settledAmt!==0&&Math.abs(outstandingNet[pi])<0.01;
+    if(settledAmt!==0&&!fullySettled){
       const stillLabel=outstandingNet[pi]>=0?'Still owed':'Still owe';
-    const stillColor=outstandingNet[pi]>=0?'#1D9E75':'#D97706';
-    html+=`<div style="border-top:0.5px solid var(--color-border-tertiary);margin-top:8px;padding-top:8px;display:flex;gap:10px;align-items:baseline">`;
-      if(settledAmt!==0)html+=`<div style="flex:1"><div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:2px">Settled</div><div style="font-size:20px;color:var(--color-text-secondary)">${fmt(settledAmt)}</div></div><div style="width:0.5px;background:var(--color-border-tertiary);align-self:stretch"></div>`;
-      if(outstandingNet[pi]!==0)html+=`<div style="flex:1;text-align:${settledAmt!==0?'right':'left'}"><div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:2px">${stillLabel}</div><div style="font-size:20px;font-weight:500;color:${stillColor}">${fmt(outstandingNet[pi])}</div></div>`;
+      const stillColor=outstandingNet[pi]>=0?'#1D9E75':'#D97706';
+      html+=`<div style="border-top:0.5px solid var(--color-border-tertiary);margin-top:8px;padding-top:8px;display:flex;gap:10px;align-items:baseline">`;
+      html+=`<div style="flex:1"><div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:2px">Settled</div><div style="font-size:20px;color:var(--color-text-secondary)">${fmt(settledAmt)}</div></div><div style="width:0.5px;background:var(--color-border-tertiary);align-self:stretch"></div>`;
+      html+=`<div style="flex:1;text-align:right"><div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:2px">${stillLabel}</div><div style="font-size:20px;font-weight:500;color:${stillColor}">${fmt(outstandingNet[pi])}</div></div>`;
       html+=`</div>`;
     }
-    html+=`</div><span class="audit-player-chevron" style="margin-right:4px">▼</span>`;
+    const _badge=fullySettled?`<span style="background:#E1F5EE;color:#0F6E56;font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0">&#10003; Settled</span>`:'';
+    html+=`</div>${_badge}<span class="audit-player-chevron" style="margin-right:4px">▼</span>`;
     html+='</div>';
 
     // Expandable body
@@ -3989,7 +3991,11 @@ function renderSettle(){
     const _sl=outstandingNet[pi]>=0?'Still owed':'Still owe';
     const _sc=outstandingNet[pi]>=0?'#1D9E75':'#D97706';
     if(settledAmt!==0){
-      html+=`<div class="seg-total" style="background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary)"><span style="font-size:12px;color:var(--color-text-secondary);font-weight:400">Settled <span style="font-weight:500;color:var(--color-text-secondary)">${fmt(settledAmt)}</span></span><span style="font-size:13px;font-weight:500;color:${_sc}">${_sl} ${fmt(outstandingNet[pi])}</span></div>`;
+      if(fullySettled){
+        html+=`<div class="seg-total" style="background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary)"><span style="font-size:12px;color:var(--color-text-secondary);font-weight:400">Settled <span style="font-weight:500;color:var(--color-text-secondary)">${fmt(settledAmt)}</span></span><span style="font-size:13px;color:var(--color-text-tertiary)">Remaining $0.00</span></div>`;
+      } else {
+        html+=`<div class="seg-total" style="background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary)"><span style="font-size:12px;color:var(--color-text-secondary);font-weight:400">Settled <span style="font-weight:500;color:var(--color-text-secondary)">${fmt(settledAmt)}</span></span><span style="font-size:13px;font-weight:500;color:${_sc}">${_sl} ${fmt(outstandingNet[pi])}</span></div>`;
+      }
     } else {
       html+=`<div class="seg-total"><span style="font-weight:600">Net total</span><span style="font-size:15px;font-weight:700;color:${totalNet[pi]>=0?'#1D9E75':'#D85A30'}">${fmt(totalNet[pi])}</span></div>`;
     }
