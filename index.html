@@ -645,7 +645,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v85';
+const APP_VERSION='v86';
 
 // ===== THEME =====
 (function(){
@@ -800,7 +800,11 @@ async function s2WriteActive(){
           ...(rd.razzleSweepBonus!=null&&{razzleSweepBonus:rd.razzleSweepBonus}),
           ...(rd.razzle5HoleBonus!=null&&{razzle5HoleBonus:rd.razzle5HoleBonus}),
           ...(rd.razzleBirdieGross!=null&&{razzleBirdieGross:rd.razzleBirdieGross}),
-          ...(rd.razzleSettle!=null&&{razzleSettle:rd.razzleSettle})
+          ...(rd.razzleSettle!=null&&{razzleSettle:rd.razzleSettle}),
+          ...(rd.wolfPlacement!=null&&{wolfPlacement:rd.wolfPlacement}),
+          ...(rd.wolfBlindMult!=null&&{wolfBlindMult:rd.wolfBlindMult}),
+          ...(rd.wolfLoneMode!=null&&{wolfLoneMode:rd.wolfLoneMode}),
+          ...(rd.wolfPartnerMode!=null&&{wolfPartnerMode:rd.wolfPartnerMode})
         })),
         summary:{
           playerNames:WK.players.map((p,i)=>displayName(i)),
@@ -1046,7 +1050,11 @@ async function s2ReadTrip(tripId){
         ...(rd.razzleSweepBonus!=null&&{razzleSweepBonus:rd.razzleSweepBonus}),
         ...(rd.razzle5HoleBonus!=null&&{razzle5HoleBonus:rd.razzle5HoleBonus}),
         ...(rd.razzleBirdieGross!=null&&{razzleBirdieGross:rd.razzleBirdieGross}),
-        ...(rd.razzleSettle!=null&&{razzleSettle:rd.razzleSettle})
+        ...(rd.razzleSettle!=null&&{razzleSettle:rd.razzleSettle}),
+        ...(rd.wolfPlacement!=null&&{wolfPlacement:rd.wolfPlacement}),
+        ...(rd.wolfBlindMult!=null&&{wolfBlindMult:rd.wolfBlindMult}),
+        ...(rd.wolfLoneMode!=null&&{wolfLoneMode:rd.wolfLoneMode}),
+        ...(rd.wolfPartnerMode!=null&&{wolfPartnerMode:rd.wolfPartnerMode})
       }))
     };
 
@@ -1938,7 +1946,7 @@ function renderScorecard(){
   const hole=WK.rounds[r].course.holes[hi]||{par:4,si:hi+1};
   // Determine current snake holder (last set on or before this hole)
   const snakeHolder=currentSnakeHolder(r,hi);
-  document.getElementById('scorecard').innerHTML=WK.players.map((p,i)=>{const g=STATE.scores[r][hi][i],st=strokes(i,hi,r),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}</span>`:`<span class="stroke-tag stroke-no">no stroke</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&snakeHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const roStyle=(isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'';return`<div class="player-row"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}"><button class="adj" onclick="adjScore(${i},-1)">−</button><div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div><button class="adj" onclick="adjScore(${i},1)">+</button></div></div>`;}).join('');
+  const wolfActive=gameOn('wolf',r);const displayOrder=wolfActive?wolfTeeOrder(hi,r):WK.players.map((_,idx)=>idx);document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=strokes(i,hi,r),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}</span>`:`<span class="stroke-tag stroke-no">no stroke</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&snakeHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const roStyle=(isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'';return`<div class="player-row"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}"><button class="adj" onclick="adjScore(${i},-1)">−</button><div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div><button class="adj" onclick="adjScore(${i},1)">+</button></div></div>`;}).join('');
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
   try{renderRazzleBox();}catch(re){console.error('renderRazzleBox error:',re);const w=document.getElementById('razzleBoxWrap');if(w)w.innerHTML='';}
@@ -2727,7 +2735,7 @@ function wolfOrderForRound(r){return(STATE.wolfOrder&&STATE.wolfOrder[r])||[0,1,
 function wolfPicksForRound(r){return(STATE.wolfPicks&&STATE.wolfPicks[r])||Array(18).fill(null);}
 function wolfForHole(hi,r){
   const order=wolfOrderForRound(r);
-  const placement=WK.wolfPlacement||'last';
+  const placement=(WK.rounds[r]&&WK.rounds[r].wolfPlacement)||WK.wolfPlacement||'last';
   const wolfIdx=placement==='last'?(3-hi%4+4)%4:hi%4;
   if(hi<16)return order[wolfIdx];
   const pts=calcWolfPoints(r,hi-1);
@@ -2739,12 +2747,27 @@ function wolfForHole(hi,r){
   for(let i=0;i<order.length;i++){if(tiedPis.includes(order[i]))return order[i];}
   return order[wolfIdx];
 }
+function wolfTeeOrder(hi,r){
+  const order=wolfOrderForRound(r);
+  const placement=(WK.rounds[r]&&WK.rounds[r].wolfPlacement)||WK.wolfPlacement||'last';
+  const wolfPi=wolfForHole(hi,r);
+  const wolfPos=order.indexOf(wolfPi);
+  const seq=[];
+  if(placement==='last'){
+    for(let s=1;s<=3;s++)seq.push(order[(wolfPos+s)%4]);
+    seq.push(wolfPi);
+  }else{
+    seq.push(wolfPi);
+    for(let s=1;s<=3;s++)seq.push(order[(wolfPos+s)%4]);
+  }
+  return seq;
+}
 function calcWolfPoints(r,throughHole){
   const through=throughHole!==undefined?throughHole:17;
   const pts=WK.players.map((_,i)=>({pi:i,pts:0}));
   const picks=wolfPicksForRound(r);
-  const blindMult=WK.wolfBlindMult||2;
-  const loneMode=WK.wolfLoneMode||'A';
+  const blindMult=(WK.rounds[r]&&WK.rounds[r].wolfBlindMult!=null?WK.rounds[r].wolfBlindMult:WK.wolfBlindMult)||2;
+  const loneMode=(WK.rounds[r]&&WK.rounds[r].wolfLoneMode)||WK.wolfLoneMode||'A';
   for(let hi=0;hi<=through;hi++){
     const pick=picks[hi];
     if(!pick)continue;
@@ -2759,7 +2782,7 @@ function calcWolfPoints(r,throughHole){
       if(partnerNet===null)continue;
       const teamA=[wolf,partneri];
       const teamB=others.filter(i=>i!==partneri);
-      const partnerMode=WK.wolfPartnerMode||'bestball';
+      const partnerMode=(WK.rounds[r]&&WK.rounds[r].wolfPartnerMode)||WK.wolfPartnerMode||'bestball';
       let sA,sB;
       if(partnerMode==='bestball'){
         sA=Math.min(...teamA.map(i=>{const n=getNet(i,hi,r);return n===null?99:n;}));
@@ -2791,14 +2814,14 @@ function openWolfPickModal(hi,r){
   const wolf=wolfForHole(hi,r);
   const wolfName=displayName(wolf);
   const order=wolfOrderForRound(r);
-  const placement=WK.wolfPlacement||'last';
+  const placement=(WK.rounds[r]&&WK.rounds[r].wolfPlacement)||WK.wolfPlacement||'last';
   const wolfIdx=order.indexOf(wolf);
   // Build others in actual tee order for this hole
   const others=placement==='last'
     ?[order[(wolfIdx+1)%4],order[(wolfIdx+2)%4],order[(wolfIdx+3)%4]]
     :[order[(wolfIdx+1)%4],order[(wolfIdx+2)%4],order[(wolfIdx+3)%4]];
   const existingPick=wolfPicksForRound(r)[hi];
-  const blindMult=WK.wolfBlindMult||2;
+  const blindMult=(WK.rounds[r]&&WK.rounds[r].wolfBlindMult!=null?WK.rounds[r].wolfBlindMult:WK.wolfBlindMult)||2;
   const blindOff=blindMult===1;
   const isBlind=existingPick&&existingPick.type==='blind';
   const wolfPill='<span style="font-size:10px;background:#085041;color:#9FE1CB;padding:1px 6px;border-radius:999px;font-weight:400;margin-left:4px">wolf</span>';
@@ -2854,8 +2877,8 @@ function renderWolfBox(){
   const wolfPill=`<span style="font-size:10px;background:#085041;color:#9FE1CB;padding:1px 6px;border-radius:999px;font-weight:400;margin-left:4px">wolf</span>`;
   const pick=wolfPicksForRound(r)[hi];
   const locked=isRoundLocked(r);
-  const loneMode=WK.wolfLoneMode||'A';
-  const blindMult=WK.wolfBlindMult||2;
+  const loneMode=(WK.rounds[r]&&WK.rounds[r].wolfLoneMode)||WK.wolfLoneMode||'A';
+  const blindMult=(WK.rounds[r]&&WK.rounds[r].wolfBlindMult!=null?WK.rounds[r].wolfBlindMult:WK.wolfBlindMult)||2;
   const changePick=!locked?`<button class="btn-sm" onclick="openWolfPickModal(${hi},${r})">Change pick</button>`:'';
   let html='<div class="calc-box" style="margin-top:0.75rem">';
   if(!pick){
@@ -2901,7 +2924,7 @@ function renderWolfBox(){
       const others=WK.players.map((_,i)=>i).filter(i=>i!==wolf&&i!==partneri);
       const wolfNet=getNet(wolf,hi,r);
       const partnerNet=getNet(partneri,hi,r);
-      const partnerMode=WK.wolfPartnerMode||'bestball';
+      const partnerMode=(WK.rounds[r]&&WK.rounds[r].wolfPartnerMode)||WK.wolfPartnerMode||'bestball';
       let sA,sB;
       if(partnerMode==='bestball'){
         sA=Math.min(wolfNet!==null?wolfNet:99,partnerNet!==null?partnerNet:99);
@@ -3067,8 +3090,8 @@ function renderTeamsPanel(){
     const wOrd=wolfOrderForRound(r);
     html+=`<div style="padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:2px">Tee order</div><div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:8px">Hitting order each hole. Wolf placement sets who hits last (wolf) or first.</div>`;
     for(let pos=0;pos<4;pos++){html+=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-tertiary);width:40px">Pos ${pos+1}</span><select class="team-dropdown" onchange="setWolfOrder(${r},${pos},parseInt(this.value))">${pOpts(wOrd[pos])}</select></div>`;}
-    html+=`<div style="display:flex;align-items:center;gap:8px;margin-top:8px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Wolf placement</span><select class="ie-sel" onchange="WK.wolfPlacement=this.value;autoSave()"><option value="last"${(WK.wolfPlacement||'last')==='last'?' selected':''}>Last to hit</option><option value="first"${WK.wolfPlacement==='first'?' selected':''}>First to hit</option></select></div></div>`;
-    html+=`<div style="padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">$ per point</span><input class="ie-num" type="number" placeholder="${WK.wolfVal||1}" value="${WK.rounds[r].wolfVal!=null?WK.rounds[r].wolfVal:''}" step="0.25" style="width:80px" oninput="const v=this.value.trim();if(v===''){delete WK.rounds[${r}].wolfVal;}else{WK.rounds[${r}].wolfVal=parseFloat(v);}autoSave();"/></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Blind wolf</span><select class="ie-sel" onchange="WK.wolfBlindMult=parseInt(this.value);autoSave()"><option value="2"${(WK.wolfBlindMult||2)===2?' selected':''}>2x points</option><option value="3"${(WK.wolfBlindMult||2)===3?' selected':''}>3x points</option><option value="1"${(WK.wolfBlindMult||2)===1?' selected':''}>Off</option></select></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Lone wolf scoring</span><select class="ie-sel" onchange="WK.wolfLoneMode=this.value;autoSave()"><option value="A"${(WK.wolfLoneMode||'A')==='A'?' selected':''}>vs best net of 3</option><option value="B"${(WK.wolfLoneMode||'A')==='B'?' selected':''}>score x2 vs best 2</option></select></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Partner scoring</span><select class="ie-sel" onchange="WK.wolfPartnerMode=this.value;autoSave()"><option value="bestball"${(WK.wolfPartnerMode||'bestball')==='bestball'?' selected':''}>Best ball</option><option value="combined"${(WK.wolfPartnerMode||'bestball')==='combined'?' selected':''}>Combined net</option></select></div></div>`;
+    html+=`<div style="display:flex;align-items:center;gap:8px;margin-top:8px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Wolf placement</span><select class="ie-sel" onchange="WK.rounds[${r}].wolfPlacement=this.value;renderScorecard();autoSave()"><option value="last"${((WK.rounds[r].wolfPlacement||WK.wolfPlacement||'last')==='last')?' selected':''}>Last to hit</option><option value="first"${((WK.rounds[r].wolfPlacement||WK.wolfPlacement)==='first')?' selected':''}>First to hit</option></select></div></div>`;
+    html+=`<div style="padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">$ per point</span><input class="ie-num" type="number" placeholder="${WK.wolfVal||1}" value="${WK.rounds[r].wolfVal!=null?WK.rounds[r].wolfVal:''}" step="0.25" style="width:80px" oninput="const v=this.value.trim();if(v===''){delete WK.rounds[${r}].wolfVal;}else{WK.rounds[${r}].wolfVal=parseFloat(v);}autoSave();"/></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Blind wolf</span><select class="ie-sel" onchange="WK.rounds[${r}].wolfBlindMult=parseInt(this.value);autoSave()"><option value="2"${((WK.rounds[r].wolfBlindMult!=null?WK.rounds[r].wolfBlindMult:WK.wolfBlindMult)||2)===2?' selected':''}>2x points</option><option value="3"${((WK.rounds[r].wolfBlindMult!=null?WK.rounds[r].wolfBlindMult:WK.wolfBlindMult)||2)===3?' selected':''}>3x points</option><option value="1"${((WK.rounds[r].wolfBlindMult!=null?WK.rounds[r].wolfBlindMult:WK.wolfBlindMult)||2)===1?' selected':''}>Off</option></select></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Lone wolf scoring</span><select class="ie-sel" onchange="WK.rounds[${r}].wolfLoneMode=this.value;autoSave()"><option value="A"${((WK.rounds[r].wolfLoneMode||WK.wolfLoneMode||'A')==='A')?' selected':''}>vs best net of 3</option><option value="B"${((WK.rounds[r].wolfLoneMode||WK.wolfLoneMode||'A')==='B')?' selected':''}>score x2 vs best 2</option></select></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Partner scoring</span><select class="ie-sel" onchange="WK.rounds[${r}].wolfPartnerMode=this.value;autoSave()"><option value="bestball"${((WK.rounds[r].wolfPartnerMode||WK.wolfPartnerMode||'bestball')==='bestball')?' selected':''}>Best ball</option><option value="combined"${((WK.rounds[r].wolfPartnerMode||WK.wolfPartnerMode||'bestball')==='combined')?' selected':''}>Combined net</option></select></div></div>`;
   }else{html+=`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Wolf is off</div>`;}
   html+=`</div>`;
     // Two's Club
