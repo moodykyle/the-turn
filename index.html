@@ -418,7 +418,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
         </button>
         <button class="home-new-btn" onclick="startQuickRound()" style="margin-top:8px">⚡ Quick Round</button>
         <button onclick="showHowToPlay()" style="width:100%;padding:11px;background:transparent;color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:14px;cursor:pointer;margin-top:8px;letter-spacing:0.01em">How to Play</button>
-        <div id="resumeCardSlot"></div>
+
       </div>
       <div class="home-trips-section" style="margin-top:0.25rem">
         <div id="tripList"></div>
@@ -562,8 +562,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
       <div class="hole-nav"><button class="nav-btn" id="prevBtn" onclick="changeHole(-1)" disabled>&#8592;</button><div style="text-align:center"><div class="hole-label" id="holeLabel"></div><div style="font-size:13px;color:var(--color-text-secondary)" id="holeMeta"></div></div><button class="nav-btn" id="nextBtn" onclick="changeHole(1)">&#8594;</button></div>
       <div class="banner" id="banner"></div>
       <div class="scorecard" id="scorecard"></div>
-      <div id="snakeEntryWrap"></div>
-      <div id="skinsBoxWrap"></div><div id="razzleBoxWrap"></div><div id="wolfBoxWrap"></div><div id="mpBoxWrap"></div><div id="vegasBoxWrap"></div>
+      <div id="wolfBoxWrap"></div><div id="snakeEntryWrap"></div><div id="skinsBoxWrap"></div><div id="razzleBoxWrap"></div><div id="mpBoxWrap"></div><div id="vegasBoxWrap"></div>
       <div class="hole-dots" id="holeDots"></div>
       <button class="footer-btn" id="saveBtn" onclick="saveHole()">Save Hole & Continue →</button>
     </div>
@@ -645,7 +644,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v87';
+const APP_VERSION='v88';
 
 // ===== THEME =====
 (function(){
@@ -1519,75 +1518,49 @@ function renderTripList(){
 
 function _renderTripListFromData(trips){
   const el=document.getElementById('tripList');
-  const resumeSlot=document.getElementById('resumeCardSlot');
-
-  // Resume card — most recent incomplete trip
-  const activeTrip=trips.find(t=>!t.complete);
-  if(resumeSlot){
-    if(activeTrip){
-      const pct=activeTrip.totalHoles>0?Math.round(activeTrip.holesPlayed/activeTrip.totalHoles*100):0;
-      const playerAvis=activeTrip.playerNames.slice(0,4).map((n,i)=>{
-        const c=activeTrip.playerColors?.[i]||AVATAR_PALETTE[i%AVATAR_PALETTE.length];
-        const ini=activeTrip.playerInis?.[i]||nameToIni(n);
-        return`<div class="avatar" style="width:28px;height:28px;font-size:10px;background:${c.bg};color:${c.fg}">${ini}</div>`;
-      }).join('');
-      resumeSlot.innerHTML=`<div class="home-resume-card" onclick="viewTrip('${activeTrip.id}')">
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
-            <div class="home-resume-name">${activeTrip.name||'Active Trip'}</div>
-            <span style="font-size:11px;font-weight:600;color:#1D9E75;flex-shrink:0;margin-left:8px">Resume →</span>
-          </div>
-          <div class="home-resume-meta">${pct}% complete · ${activeTrip.courses.length} round${activeTrip.courses.length!==1?'s':''}</div>
-          <div style="display:flex;gap:3px;margin-top:6px;align-items:center;justify-content:space-between">
-            <div style="display:flex;gap:3px">${playerAvis}</div>
-            <button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();deleteTrip('${activeTrip.id}',this)">Delete</button>
-          </div>
-        </div>
-      </div>`;
-    } else {
-      resumeSlot.innerHTML='';
-    }
-  }
 
   if(trips.length===0){
-    el.innerHTML=`<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0;font-size:13px">No previous trips yet.<br>Start your first trip above.</div>`;
+    el.innerHTML=`<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0;font-size:13px">No trips yet.<br>Start your first trip above.</div>`;
     return;
   }
 
-  // Filter out the active trip from the list if it's shown in resume card
-  const listTrips=activeTrip?trips.filter(t=>t.id!==activeTrip.id):trips;
-
-  let html='';
-  if(listTrips.length>0){
-    html+=`<div class="home-trips-label" style="margin-top:1rem">Previous Trips</div>`;
-    html+=listTrips.map(t=>{
-      const pct=t.totalHoles>0?Math.round(t.holesPlayed/t.totalHoles*100):0;
-      const statusHtml=t.complete
-        ?`<span class="trip-status complete">✓ Complete</span>`
-        :`<span class="trip-status inprogress">${pct}% complete</span>`;
-      const playerAvis=t.playerNames.slice(0,4).map((n,i)=>{
-        const c=t.playerColors?.[i]||AVATAR_PALETTE[i%AVATAR_PALETTE.length];
-        const ini=t.playerInis?.[i]||nameToIni(n);
-        return`<div class="avatar" style="width:30px;height:30px;font-size:11px;background:${c.bg};color:${c.fg}">${ini}</div>`;
-      }).join('');
-      const winnerLine=t.complete&&t.winner?`<span style="font-size:11px;color:#1D9E75;font-weight:500">🏆 ${t.winner}</span>`:'';
-      return`<div class="trip-card" onclick="viewTrip('${t.id}')">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px">
-          <div class="trip-card-name">${t.name||'Unnamed Trip'}</div>
-          ${statusHtml}
-        </div>
-        <div class="trip-card-meta">${t.date||'No date'} · ${t.courses.length} round${t.courses.length!==1?'s':''} · ${t.playerNames.length} players</div>
-        <div class="trip-card-progress"><div class="trip-card-progress-fill" style="width:${t.complete?100:pct}%"></div></div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div class="trip-card-players">${playerAvis}</div>
-          <div style="display:flex;align-items:center;gap:8px">${winnerLine}<button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();deleteTrip('${t.id}',this)">Delete</button></div>
-        </div>
-      </div>`;
+  const inProgressTrips=trips.filter(t=>!t.complete);
+  const completedTrips=trips.filter(t=>t.complete);
+  function buildTripCard(t,isResume){
+    const pct=t.totalHoles>0?Math.round(t.holesPlayed/t.totalHoles*100):0;
+    const statusHtml=t.complete
+      ?`<span class="trip-status complete">✓ Complete</span>`
+      :isResume?`<span style="font-size:11px;font-weight:600;color:#1D9E75;flex-shrink:0">Resume →</span>`
+      :`<span class="trip-status inprogress">${pct}% complete</span>`;
+    const playerAvis=t.playerNames.slice(0,4).map((n,i)=>{
+      const c=t.playerColors?.[i]||AVATAR_PALETTE[i%AVATAR_PALETTE.length];
+      const ini=t.playerInis?.[i]||nameToIni(n);
+      return`<div class="avatar" style="width:30px;height:30px;font-size:11px;background:${c.bg};color:${c.fg}">${ini}</div>`;
     }).join('');
-  } else if(activeTrip) {
-    // Only trip is the active one shown in resume card — no list needed
-    html='';
+    const winnerLine=t.complete&&t.winner?`<span style="font-size:11px;color:#1D9E75;font-weight:500">🏆 ${t.winner}</span>`:'';
+    return`<div class="trip-card" onclick="viewTrip('${t.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px">
+        <div class="trip-card-name">${t.name||'Unnamed Trip'}</div>
+        ${statusHtml}
+      </div>
+      <div class="trip-card-meta">${t.date||'No date'} · ${t.courses.length} round${t.courses.length!==1?'s':''} · ${t.playerNames.length} players</div>
+      <div class="trip-card-progress"><div class="trip-card-progress-fill" style="width:${t.complete?100:pct}%"></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="trip-card-players">${playerAvis}</div>
+        <div style="display:flex;align-items:center;gap:8px">${winnerLine}<button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();deleteTrip('${t.id}',this)">Delete</button></div>
+      </div>
+    </div>`;
   }
+  let html='';
+  if(inProgressTrips.length>0){
+    html+=`<div class="home-trips-label" style="margin-top:1rem">In Progress</div>`;
+    html+=inProgressTrips.map((t,i)=>buildTripCard(t,i===0)).join('');
+  }
+  if(completedTrips.length>0){
+    html+=`<div class="home-trips-label" style="margin-top:1rem">Completed</div>`;
+    html+=completedTrips.map(buildTripCard).join('');
+  }
+
   el.innerHTML=html;
 }
 function viewTrip(id){
