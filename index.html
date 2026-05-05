@@ -3365,7 +3365,7 @@ function renderMPRound(){
       let rows='';
       for(let h=seg.start;h<seg.end;h++){
         const res=calcMP(h,r);
-        if(!res){rows+=`<div style="display:grid;grid-template-columns:28px 72px 90px 1fr;align-items:center;padding:7px 14px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px"><span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span><span style="color:var(--color-text-tertiary);text-align:center">-</span><span></span><span></span></div>`;continue;}
+        if(!res){rows+=`<div style="display:grid;grid-template-columns:28px 56px 70px auto;align-items:center;padding:7px 14px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px"><span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span><span style="color:var(--color-text-tertiary);text-align:center">-</span><span></span><span></span></div>`;continue;}
         const ms=calcMPMatchScore(r,si,h);
         const scoresPair=`<span style="display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500"><span style="color:#1D9E75">${res.bestA}</span><span style="color:var(--color-text-tertiary);margin:0 3px;font-weight:400">vs</span><span style="color:#185FA5">${res.bestB}</span></span>`;
         let matchStateHtml;
@@ -3374,7 +3374,7 @@ function renderMPRound(){
         else{const msColor=!ms.leader?'var(--color-text-secondary)':ms.leader==='A'?'#1D9E75':'#185FA5';const msWeight=!ms.leader?'400':'500';const msStr=ms.scoreStr.replace('Team A','A').replace('Team B','B');matchStateHtml=`<span style="color:${msColor};font-weight:${msWeight};font-size:13px;display:flex;align-items:center;justify-content:center">${msStr}</span>`;}
         const isClosed=ms&&ms.closed&&h>ms.closedAtHole;
         const winnerHtml=isClosed?`<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic;text-align:right">${res.halved?'Halved':res.aWins?nameA:nameB}</span>`:res.halved?`<span style="color:#BA7517;font-size:12px;text-align:right">Halved</span>`:res.aWins?`<span style="color:#1D9E75;font-weight:500;font-size:12px;text-align:right">${nameA}</span>`:`<span style="color:#185FA5;font-weight:500;font-size:12px;text-align:right">${nameB}</span>`;
-        rows+=`<div style="display:grid;grid-template-columns:28px 72px 90px 1fr;align-items:center;padding:7px 14px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px"><span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span>${scoresPair}${matchStateHtml}${winnerHtml}</div>`;
+        rows+=`<div style="display:grid;grid-template-columns:28px 56px 70px auto;align-items:center;padding:7px 14px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px"><span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span>${scoresPair}${matchStateHtml}${winnerHtml}</div>`;
       }
       html+=rows;
       html+=`<div style="padding:9px 14px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);font-size:12px;display:flex;align-items:center;gap:6px"><span style="color:var(--color-text-tertiary)">Final result:</span>${summaryHtml}</div>`;
@@ -4361,8 +4361,8 @@ function renderHammerRound(){
         }
       }
       const displayPot=hs.conceded?hs.concedeVal:pot;
-      const potLabel=hs.conceded?`$${displayPot.toFixed(2)} <span style="font-size:10px;color:var(--color-text-tertiary)">(conceded)</span>`:`$${displayPot.toFixed(2)}`;
-      html+=`<div style="display:grid;grid-template-columns:28px 100px 1fr auto;gap:4px;align-items:center;padding:5px 12px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px"><span style="font-size:11px;color:var(--color-text-tertiary)">H${h+1}</span><span style="font-size:11px;color:var(--color-text-secondary)">${potLabel}</span><span style="font-size:12px;white-space:nowrap">${throwIcons}</span>${winnerHtml}</div>`;
+      const potLabel=hs.conceded?`<em style="color:var(--color-text-tertiary)">$${displayPot.toFixed(2)}</em>`:`$${displayPot.toFixed(2)}`;
+      html+=`<div style="display:grid;grid-template-columns:28px 56px 70px auto;align-items:center;padding:5px 12px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px"><span style="font-size:11px;color:var(--color-text-tertiary)">H${h+1}</span><span style="font-size:11px;color:var(--color-text-secondary)">${potLabel}</span><span style="font-size:12px;white-space:nowrap;text-align:left">${throwIcons}</span><span style="text-align:right">${winnerHtml}</span></div>`;
     }
     const fmtNet=v=>v>=0?'+$'+v.toFixed(2):'-$'+Math.abs(v).toFixed(2);
     const _sv=payout==='perteam'?0.5:1;const _net=(res?(res.netA-res.netB)*_sv:0);const rA=res?fmtNet(_net):'';const rB=res?fmtNet(-_net):'';
