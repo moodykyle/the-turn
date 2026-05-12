@@ -648,7 +648,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v89.1';
+const APP_VERSION='v89.2';
 
 // ===== THEME =====
 (function(){
@@ -1110,7 +1110,7 @@ async function s2ReadTrip(tripId){
       skinsTeams:t.skins_teams||Array(nR).fill(null).map((_,r=>{const g=skinsGamesForRound(r);return Array(g).fill(null).map(()=>JSON.parse(JSON.stringify([[0,1],[2,3]])));})),
       snakeHolder:t.snake_holder||Array(nR).fill(null).map(()=>Array(18).fill(null)),
       snakePot:t.snake_pot||Array(nR).fill(0),
-      wolfOrder:t.wolf_order||Array(nR).fill(null).map(()=>[0,1,2,3]),wolfPicks:t.wolf_picks||Array(nR).fill(null).map(()=>Array(18).fill(null)),hammerTeams:t.hammer_teams||Array(nR).fill(null).map((_,ri)=>defaultHammerTeams(ri)),hammerState:t.hammer_state||Array(nR).fill(null).map(()=>Array(18).fill(null)),razzleOrder:t.razzle_order||Array(nR).fill(null).map(()=>[0,1,2,3]),
+      wolfOrder:t.wolf_order||Array(nR).fill(null).map(()=>[0,1,2,3]),wolfPicks:t.wolf_picks||Array(nR).fill(null).map(()=>Array(18).fill(null)),hammerTeams:t.hammer_teams||Array(nR).fill(null).map(()=>[[[0,1],[2,3]]]),hammerState:t.hammer_state||Array(nR).fill(null).map(()=>Array(18).fill(null)),razzleOrder:t.razzle_order||Array(nR).fill(null).map(()=>[0,1,2,3]),
       razzleMatchTeams:t.razzle_match_teams||Array(nR).fill(null).map(()=>[]),
       razzleFiredToasts:t.razzle_fired_toasts||{},
       razzleHWM:t.razzle_hwm||{},
