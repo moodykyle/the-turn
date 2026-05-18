@@ -649,7 +649,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v91';
+const APP_VERSION='v92';
 
 // ===== THEME =====
 (function(){
@@ -2481,14 +2481,22 @@ function renderRazzleRound(){
     const key='m'+m.mi;
     const expanded=STATE.razzleExpanded[key]===true;// default collapsed
     // Header summary
+    const totalHolesInRound=WK.rounds[r].course.holes.length;
+    const roundComplete=STATE.scores[r]&&STATE.scores[r][totalHolesInRound-1]&&STATE.scores[r][totalHolesInRound-1].every(s=>s!==null);
     let statusStr;
-    if(m.winner){const wn=aWins?nA:nB;statusStr='<span style="color:'+(aWins?'#1D9E75':'#185FA5')+';font-weight:500">'+wn+' wins</span>'+'<span style="color:'+(aWins?'#1D9E75':'#185FA5')+'"> · $'+m.pot.toFixed(2)+'</span>';}
-    else if(m.holesPlayed>0){statusStr='<span style="color:var(--color-text-secondary)">In progress</span>';}
-    else{statusStr='<span style="color:var(--color-text-tertiary)">Not started</span>';}
+    if(m.winner){const wLtr=aWins?'A':'B';const wClr=aWins?'#1D9E75':'#185FA5';statusStr='<span style="font-size:11px;color:var(--color-text-tertiary)">Match Result: </span><span style="color:'+wClr+';font-weight:500">'+wLtr+' wins · $'+m.pot.toFixed(2)+'</span>';}
+    else if(roundComplete||m.holesPlayed===0&&!roundComplete){
+      if(m.holesPlayed===0){statusStr='<span style="font-size:11px;color:var(--color-text-tertiary)">Match Result: </span><span style="color:var(--color-text-tertiary)">Not started</span>';}
+      else if(roundComplete){statusStr='<span style="font-size:11px;color:var(--color-text-tertiary)">Match Result: </span><span style="color:var(--color-text-secondary);font-weight:500">No Blood</span>';}
+      else{statusStr='<span style="font-size:11px;color:var(--color-text-tertiary)">Match Result: </span><span style="color:var(--color-text-secondary)">In progress</span>';}
+    }
+    else{statusStr='<span style="font-size:11px;color:var(--color-text-tertiary)">Match Result: </span><span style="color:var(--color-text-secondary)">In progress</span>';}
     html+='<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">';
-    html+='<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary);display:flex;align-items:flex-start;gap:8px" onclick="toggleRazzleMatch(\''+key+'\')">';
-    html+='<div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Match '+(m.mi+1)+' · H'+(m.startHole+1)+(m.endHole>m.startHole?'-'+(m.endHole+1):'')+' </span><span style="color:#1D9E75;font-size:12px">'+(expanded?'▲':'▼')+'</span></div>';
-    html+='<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">A: '+nA+' · B: '+nB+'</div>';html+='<div style="margin-top:4px;font-size:12px">'+statusStr+'</div></div></div>';
+    html+='<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleRazzleMatch(\''+key+'\')">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Match '+(m.mi+1)+' · H'+(m.startHole+1)+(m.endHole>m.startHole?'-'+(m.endHole+1):'')+'</span><span style="color:#1D9E75;font-size:12px">'+(expanded?'▲':'▼')+'</span></div>';
+    html+='<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#1D9E75;margin-bottom:2px">TEAM A</div><div style="font-size:11px;font-weight:500;color:#1D9E75">'+nA+'</div></div><div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">'+nB+'</div></div></div>';
+    html+='<div style="font-size:12px;padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">'+statusStr+'</div>';
+    html+='</div>';
     if(expanded){
       // Hole rows
       for(let h=m.startHole;h<=m.endHole;h++){
@@ -2522,7 +2530,7 @@ function renderRazzleRound(){
         if(m.birdieCount>0)bonusDetail.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':'')+' +$'+(m.birdieCount*(roundVal('razzleBirdieBonus',r,WK.razzleBirdieBonus||5))).toFixed(2));
         const winColor=aWins?'#1D9E75':'#185FA5';
         html+='<div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px;background:var(--color-background-secondary)">';
-        html+='<span style="font-weight:500;color:'+winColor+'">'+(aWins?nA:nB)+' wins</span>';
+        html+='<span style="font-weight:500;color:'+winColor+'">'+(aWins?'A':'B')+' wins</span>';
         const baseStr='Base $'+(roundVal('razzleVal',r,WK.razzleVal||5).toFixed(2));const allParts=[baseStr].concat(bonusDetail);html+='<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:2px">'+allParts.join(' · ')+' : Total $'+m.pot.toFixed(2)+'</div>';
         html+='</div>';
       } else if(m.holesPlayed===0){
@@ -2543,6 +2551,7 @@ function toggleRazzleMatch(key){
 }
 function toggleExpCat(id){if(!STATE.expCatExpanded)STATE.expCatExpanded={};STATE.expCatExpanded[id]=!STATE.expCatExpanded[id];renderExpenses();}
 function toggleMPGame(key){if(!STATE.mpExpanded)STATE.mpExpanded={};STATE.mpExpanded[key]=!STATE.mpExpanded[key];renderMPRound();}
+function toggleHammerGame(key){if(!STATE.hammerExpanded)STATE.hammerExpanded={};STATE.hammerExpanded[key]=!STATE.hammerExpanded[key];renderHammerRound();}
 function toggleVegasGame(key){if(!STATE.vegasExpanded)STATE.vegasExpanded={};STATE.vegasExpanded[key]=!STATE.vegasExpanded[key];renderVegasRound();}
 function toggleSkinsGame(key){if(!STATE.skinsExpanded)STATE.skinsExpanded={};STATE.skinsExpanded[key]=!STATE.skinsExpanded[key];renderSkinsRound();}
 function setRazzleOrder(r,pos,pi){
@@ -3496,7 +3505,7 @@ function renderMPRound(){
     let origSummaryHtml;
     if(!finalMs){origSummaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
     else if(!finalMs.leader){origSummaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">Tied - A/S</span>`;}
-    else{const winName=finalMs.leader==='A'?nameA:nameB;const winClr=finalMs.leader==='A'?'#1D9E75':'#185FA5';const resultScore=finalMs.closed?finalMs.scoreStr.replace('Team A','A').replace('Team B','B').replace(/^[AB] /,''):finalMs.lead+' up';origSummaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winName} win - ${resultScore}</span>`;}
+    else{const winLtr=finalMs.leader==='A'?'A':'B';const winClr=finalMs.leader==='A'?'#1D9E75':'#185FA5';const resultScore=finalMs.closed?finalMs.scoreStr.replace('Team A','A').replace('Team B','B').replace(/^[AB] /,''):finalMs.lead+' up';origSummaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winLtr} wins - ${resultScore}</span>`;}
 
     // Compute press net for top-level header
     const origVal=roundVal('gameVal',r,WK.gameVal);
@@ -3511,33 +3520,44 @@ function renderMPRound(){
     const headerSummary=presses.length>0&&origNet!==null?`<span style="color:${netClr};font-weight:500;font-size:12px">Net: ${netStr}</span>`:origSummaryHtml;
 
     html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
-    html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary);display:flex;align-items:flex-start;gap:8px" onclick="toggleMPGame('${key}')">`;
-    html+=`<div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500">${seg.label} (H${seg.start+1}-${seg.end})</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
-    html+=`<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">A: ${nameA} · B: ${nameB}</div>`;
-    html+=`<div style="margin-top:4px">${headerSummary}</div>`;
-    html+=`</div></div>`;
+    const netResultLabel2=(()=>{if(origNet===null)return'In progress';if(pressNetA===0)return'No Blood';return pressNetA>0?`A wins · +$${Math.abs(pressNetA).toFixed(2)}`:`B wins · +$${Math.abs(pressNetA).toFixed(2)}`;})();
+    const netResultClr2=pressNetA>0?'#1D9E75':pressNetA<0?'#185FA5':'var(--color-text-secondary)';
+    html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleMPGame('${key}')">`;
+    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">${seg.label} (H${seg.start+1}-${seg.end})</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
+    html+=`<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px">`;
+    html+=`<div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#1D9E75;margin-bottom:2px">TEAM A</div><div style="font-size:11px;font-weight:500;color:#1D9E75">${nameA}</div></div>`;
+    html+=`<div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">${nameB}</div></div>`;
+    html+=`</div>`;
+    html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">${seg.label} Net Result: <span style="font-weight:500;color:${netResultClr2}">${netResultLabel2}</span></div>`;
+    html+=`</div>`;
 
     if(expanded){
       // Shared hole row builder
       function buildHoleRows(startH,endH,msFunc,closedWinnerName,isPress){
         let rows='';
-        const leftBorder='';
-        const padLeft='14px';
         for(let h=startH;h<endH;h++){
           const res=calcMP(h,r);
-          if(!res){rows+=`<div style="display:grid;grid-template-columns:28px 56px 70px auto;align-items:center;padding:7px ${padLeft};border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px;${leftBorder}"><span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span><span style="color:var(--color-text-tertiary);text-align:center">-</span><span></span><span></span></div>`;continue;}
+          const pressOnHole=!isPress&&presses.find(p=>p.startHole===h);
+          const holeLabel=pressOnHole
+            ?`<span style="display:inline-block;background:#1e3d52;color:#5bb8e8;border-radius:5px;font-size:10px;font-weight:700;padding:2px 5px;letter-spacing:0.03em">H${h+1}</span>`
+            :`<span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span>`;
+          if(!res){rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div><div style="width:52px;flex-shrink:0;font-size:12px;color:var(--color-text-tertiary)">-</div><div style="flex:1;padding-left:16px"></div><div style="width:40px;flex-shrink:0"></div></div>`;continue;}
           const ms=msFunc(h);
-          const scoresPair=`<span style="display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500"><span style="color:#1D9E75">${res.bestA}</span><span style="color:var(--color-text-tertiary);margin:0 3px;font-weight:400">vs</span><span style="color:#185FA5">${res.bestB}</span></span>`;
+          const scoresPair=`<div style="width:52px;flex-shrink:0;font-size:12px;font-weight:500"><span style="color:#1D9E75">${res.bestA}</span><span style="color:var(--color-text-tertiary);margin:0 3px;font-weight:400">vs</span><span style="color:#185FA5">${res.bestB}</span></div>`;
           let matchStateHtml;
-          if(!ms){matchStateHtml=`<span style="color:var(--color-text-tertiary);font-size:12px;display:flex;align-items:center;justify-content:center">-</span>`;}
-          else if(ms.closed&&h>ms.closedAtHole){matchStateHtml=`<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic;display:flex;align-items:center;justify-content:center">closed out</span>`;}
-          else{const msColor=!ms.leader?'var(--color-text-secondary)':ms.leader==='A'?'#1D9E75':'#185FA5';const msWeight=!ms.leader?'400':'500';const msStr=ms.scoreStr.replace('Team A','A').replace('Team B','B');matchStateHtml=`<span style="color:${msColor};font-weight:${msWeight};font-size:13px;display:flex;align-items:center;justify-content:center">${msStr}</span>`;}
+          if(!ms){matchStateHtml=`<div style="flex:1;padding-left:16px"><span style="color:var(--color-text-tertiary);font-size:12px">-</span></div>`;}
+          else if(ms.closed&&h>ms.closedAtHole){matchStateHtml=`<div style="flex:1;padding-left:16px"><span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic">closed out</span></div>`;}
+          else{const msColor=!ms.leader?'var(--color-text-secondary)':ms.leader==='A'?'#1D9E75':'#185FA5';const msWeight=!ms.leader?'400':'600';const msStr=ms.scoreStr.replace('Team A','A').replace('Team B','B');matchStateHtml=`<div style="flex:1;padding-left:16px"><span style="color:${msColor};font-weight:${msWeight};font-size:12px">${msStr}</span></div>`;}
           const isClosed=ms&&ms.closed&&h>ms.closedAtHole;
-          const pressOnHole=presses.find(p=>p.startHole===h);
-          const pressBadge=pressOnHole?`<span style="display:inline-block;background:#185FA5;color:#fff;font-size:9px;font-weight:600;border-radius:3px;padding:1px 4px;margin-left:4px;vertical-align:middle">${pressOnHole.auto?'AUTO':'PRESS'}</span>`:'';
-          const closedName=closedWinnerName||(ms&&ms.leader==='A'?nameA:ms&&ms.leader==='B'?nameB:'');
-          const winnerHtml=isClosed?`<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic;text-align:right">${res.halved?'Halved':closedName}</span>`:res.halved?`<span style="color:#BA7517;font-size:12px;text-align:right">Halved</span>`:res.aWins?`<span style="color:#1D9E75;font-weight:500;font-size:12px;text-align:right">${nameA}</span>`:`<span style="color:#185FA5;font-weight:500;font-size:12px;text-align:right">${nameB}</span>`;
-          rows+=`<div style="display:grid;grid-template-columns:28px 56px 70px auto;align-items:center;padding:7px ${padLeft};border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px;${leftBorder}"><span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}${pressBadge}</span>${scoresPair}${matchStateHtml}${winnerHtml}</div>`;
+          const closedLeader=closedWinnerName?(ms&&ms.leader==='A'?'A':'B'):(ms&&ms.leader==='A'?'A':ms&&ms.leader==='B'?'B':'');
+          const winnerHtml=isClosed
+            ?`<div style="width:40px;flex-shrink:0;text-align:right"><span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic">${res.halved?'Halved':(closedLeader==='A'?'A':'B')}</span></div>`
+            :res.halved
+              ?`<div style="width:40px;flex-shrink:0;text-align:right"><span style="color:#BA7517;font-size:12px;font-weight:500">Halved</span></div>`
+              :res.aWins
+                ?`<div style="width:40px;flex-shrink:0;text-align:right"><span style="color:#1D9E75;font-weight:700;font-size:12px">A</span></div>`
+                :`<div style="width:40px;flex-shrink:0;text-align:right"><span style="color:#185FA5;font-weight:700;font-size:12px">B</span></div>`;
+          rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div>${scoresPair}${matchStateHtml}${winnerHtml}</div>`;
         }
         return rows;
       }
@@ -3559,13 +3579,15 @@ function renderMPRound(){
       const origNetStr=origNet!=null?(origNet>0?`+$${origNet.toFixed(2)}`:origNet<0?`-$${Math.abs(origNet).toFixed(2)}`:'$0.00'):'';
       const origNetClr=origNet>0?'#1D9E75':origNet<0?'#185FA5':'var(--color-text-secondary)';
       html+=`<div style="margin:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden">`;
-      html+=`<div style="background:var(--color-background-secondary);padding:9px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="STATE.mpExpanded['${betKey}']=!STATE.mpExpanded['${betKey}'];renderMPRound()">`;
-      html+=`<span style="font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em">Match Play · $${origVal.toFixed(2)}</span>`;
-      html+=`<span style="display:flex;align-items:center;gap:8px">${origSummaryHtml}<span style="font-size:11px;font-weight:500;color:${origNetClr}">${origNetStr}</span><span style="font-size:11px;color:#1D9E75;transition:transform 0.2s;display:inline-block;transform:${betExp?'rotate(180deg)':'rotate(0deg)'}"">▼</span></span>`;
+      html+=`<div style="background:var(--color-background-secondary);padding:7px 12px;display:flex;align-items:center;cursor:pointer;gap:0" onclick="STATE.mpExpanded['${betKey}']=!STATE.mpExpanded['${betKey}'];renderMPRound()">`;
+      html+=`<div style="width:36px;flex-shrink:0"><span style="font-size:11px;font-weight:600;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap">MATCH PLAY</span></div>`;
+      html+=`<div style="width:52px;flex-shrink:0"></div>`;
+      html+=`<div style="flex:1;padding-left:16px;display:flex;align-items:center;gap:5px;min-width:0">${origSummaryHtml}${origNetStr?`<span style="color:var(--color-text-tertiary);font-size:11px">·</span><span style="font-size:12px;font-weight:700;color:${origNetClr}">${origNetStr}</span>`:''}</div>`;
+      html+=`<div style="width:40px;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end"><span style="font-size:11px;color:#1D9E75;transition:transform 0.2s;display:inline-block;transform:${betExp?'rotate(180deg)':'rotate(0deg)'}">▼</span></div>`;
       html+=`</div>`;
       if(betExp){
         html+=buildHoleRows(seg.start,seg.end,h=>calcMPMatchScore(r,si,h),null,false);
-        html+=`<div style="padding:7px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--color-text-tertiary)">Match Play result</span>${origSummaryHtml}</div>`;
+        html+=`<div style="background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);padding:7px 12px;display:flex;align-items:center;gap:0"><div style="width:36px;flex-shrink:0"><span style="font-size:11px;color:var(--color-text-tertiary);white-space:nowrap">Result</span></div><div style="width:52px;flex-shrink:0"></div><div style="flex:1;padding-left:16px">${origSummaryHtml}</div><div style="width:40px;flex-shrink:0"></div></div>`;
       }
       html+=`</div>`;
 
@@ -3578,23 +3600,27 @@ function renderMPRound(){
         let pressSummary,pressNetStr='',pressNetClr='var(--color-text-secondary)';
         if(!pr){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
         else if(pr.winner==='tie'){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">A/S</span>`;pressNetStr='$0.00';}
-        else{const wn=pr.winner==='a'?nameA:nameB;const wclr=pr.winner==='a'?'#1D9E75':'#185FA5';pressSummary=`<span style="color:${wclr};font-weight:500;font-size:12px">${wn} win</span>`;const pnetv=pr.winner==='a'?pr.sv:-pr.sv;pressNetStr=(pnetv>0?'+':'')+'$'+Math.abs(pnetv).toFixed(2);pressNetClr=pnetv>0?'#1D9E75':pnetv<0?'#185FA5':'var(--color-text-secondary)';}
+        else{const wLtr=pr.winner==='a'?'A':'B';const wclr=pr.winner==='a'?'#1D9E75':'#185FA5';pressSummary=`<span style="color:${wclr};font-weight:500;font-size:12px">${wLtr} wins</span>`;const pnetv=pr.winner==='a'?pr.sv:-pr.sv;pressNetStr=(pnetv>0?'+':'')+'$'+Math.abs(pnetv).toFixed(2);pressNetClr=pnetv>0?'#1D9E75':pnetv<0?'#185FA5':'var(--color-text-secondary)';}
         const pressWinName=pr?(pr.winner==='a'?nameA:pr.winner==='b'?nameB:''):'';
         html+=`<div style="margin:0 10px 8px;border:0.5px solid var(--color-border-tertiary);border-left:2px solid #1D9E75;border-radius:var(--border-radius-md);overflow:hidden">`;
-        html+=`<div style="background:var(--color-background-secondary);padding:9px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="STATE.mpExpanded['${pressKey}']=!STATE.mpExpanded['${pressKey}'];renderMPRound()">`;
-        html+=`<span style="font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em">${pressLabel}</span>`;
-        html+=`<span style="display:flex;align-items:center;gap:8px">${pressSummary}<span style="font-size:11px;font-weight:500;color:${pressNetClr}">${pressNetStr}</span><span style="font-size:11px;color:#1D9E75;transition:transform 0.2s;display:inline-block;transform:${pressExp?'rotate(180deg)':'rotate(0deg)'}"">▼</span></span>`;
+        const pressShortLabel=`PRESS · H${p.startHole+1}-${seg.end}`;
+        html+=`<div style="background:var(--color-background-secondary);padding:7px 12px;display:flex;align-items:center;cursor:pointer;gap:0" onclick="STATE.mpExpanded['${pressKey}']=!STATE.mpExpanded['${pressKey}'];renderMPRound()">`;
+        html+=`<div style="width:36px;flex-shrink:0"><span style="font-size:11px;font-weight:600;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap">${pressShortLabel}</span></div>`;
+        html+=`<div style="width:52px;flex-shrink:0"></div>`;
+        html+=`<div style="flex:1;padding-left:16px;display:flex;align-items:center;gap:5px;min-width:0">${pressSummary}${pressNetStr?`<span style="color:var(--color-text-tertiary);font-size:11px">·</span><span style="font-size:12px;font-weight:700;color:${pressNetClr}">${pressNetStr}</span>`:''}</div>`;
+        html+=`<div style="width:40px;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end"><span style="font-size:11px;color:#1D9E75;transition:transform 0.2s;display:inline-block;transform:${pressExp?'rotate(180deg)':'rotate(0deg)'}">▼</span></div>`;
         html+=`</div>`;
         if(pressExp){
           html+=buildHoleRows(p.startHole,seg.end,h=>calcPressMsForHole(p,h),pressWinName,true);
-          html+=`<div style="padding:7px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--color-text-tertiary)">Press result</span>${pressSummary}</div>`;
+          html+=`<div style="background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);padding:7px 12px;display:flex;align-items:center;gap:0"><div style="width:36px;flex-shrink:0"><span style="font-size:11px;color:var(--color-text-tertiary);white-space:nowrap">Result</span></div><div style="width:52px;flex-shrink:0"></div><div style="flex:1;padding-left:16px">${pressSummary}</div><div style="width:40px;flex-shrink:0"></div></div>`;
         }
         html+=`</div>`;
       });
 
       // Net card - always visible when presses exist
       if(presses.length>0){
-        html+=`<div style="margin:0 10px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;background:var(--color-background-secondary);display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em">${seg.label} net</span><span style="font-weight:500;font-size:13px;color:${netClr}">${netStr}</span></div>`;
+        const gameNetDisplay=pressNetA===0?'No Blood':pressNetA>0?`A wins · +$${Math.abs(pressNetA).toFixed(2)}`:`B wins · +$${Math.abs(pressNetA).toFixed(2)}`;
+        html+=`<div style="margin:0 10px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;background:var(--color-background-secondary);display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">${seg.label} Net Result</span><span style="font-weight:600;font-size:12px;color:${netClr}">${gameNetDisplay}</span></div>`;
       }
     }
     html+=`</div>`;
@@ -3620,32 +3646,41 @@ function renderVegasRound(){
     const net=totA-totB;
     let summaryHtml;
     if(totA===0&&totB===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
-    else if(net===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">Tied</span>`;}
-    else{const winName=net>0?nameA:nameB;const winClr=net>0?'#1D9E75':'#185FA5';const absDiff=Math.abs(net);summaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winName} +${absDiff} pts</span>`;}
+    else if(net===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">No Blood</span>`;}
+    else{const winLtr2=net>0?'A':'B';const winClr=net>0?'#1D9E75':'#185FA5';const absDiff=Math.abs(net);summaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winLtr2} wins · +${absDiff} pts</span>`;}
     html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
-    html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary);display:flex;align-items:flex-start;gap:8px" onclick="toggleVegasGame('${key}')">`;
-    html+=`<div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500">${seg.label} (H${seg.start+1}-${seg.end})</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
-    html+=`<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">A: ${nameA} \xb7 B: ${nameB}</div>`;
-    html+=`<div style="margin-top:4px">${summaryHtml}</div>`;
-    html+=`</div></div>`;
+    html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleVegasGame('${key}')">`;
+    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">${seg.label} (H${seg.start+1}-${seg.end})</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
+    html+=`<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#1D9E75;margin-bottom:2px">TEAM A</div><div style="font-size:11px;font-weight:500;color:#1D9E75">${nameA}</div></div><div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">${nameB}</div></div></div>`;
+    const vegNetLabel=(()=>{if(totA===0&&totB===0)return'In progress';const n2=totA-totB;if(n2===0)return'No Blood';return n2>0?`A wins · +${Math.abs(n2)} pts`:`B wins · +${Math.abs(n2)} pts`;})();
+    const vegNetClr=(totA-totB)>0?'#1D9E75':(totA-totB)<0?'#185FA5':'var(--color-text-secondary)';
+    html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">${seg.label} Net Result: <span style="font-weight:500;color:${vegNetClr}">${vegNetLabel}</span></div>`;
+    html+=`</div>`;
     if(expanded){
       let rows='';
       for(let h=seg.start;h<seg.end;h++){
         const res=calcVegas(h,r);
-        if(!res){rows+=`<div class="hole-row"><span style="color:var(--color-text-secondary)">H${h+1}</span><span style="color:var(--color-text-secondary)">-</span><span></span></div>`;continue;}
-        if(res.tied){rows+=`<div class="hole-row"><span style="color:var(--color-text-secondary)">H${h+1}</span><span style="text-align:center">${res.numA} vs ${res.numB}</span><span class="carry">Tied</span></div>`;continue;}
-        const flipBadge=res.aFlip||res.bFlip?`<span style="font-size:9px;color:var(--color-text-tertiary);white-space:nowrap"> (flip)</span>`:'';
+        const isFlip=res&&(res.aFlip||res.bFlip);
+        const holeLabel=isFlip
+          ?`<span style="display:inline-block;background:#1e3d52;color:#5bb8e8;border-radius:5px;font-size:10px;font-weight:700;padding:2px 5px;letter-spacing:0.03em">H${h+1}</span>`
+          :`<span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span>`;
+        if(!res){rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div><div style="flex:1;font-size:12px;color:var(--color-text-tertiary)">-</div><div style="width:60px;flex-shrink:0"></div></div>`;continue;}
+        const scoresHtml=`<div style="flex:1;font-size:12px;font-weight:500;color:var(--color-text-primary);padding-left:8px">${res.numA} vs ${res.numB}</div>`;
         const dblBadge=res.doubled?` <span style="font-size:10px;color:var(--color-text-tertiary)">(x2)</span>`:'';
-        const winTeam=res.aWins?nameA:nameB;
-        const winClr=res.aWins?'#1D9E75':'#1D4ED8';
-        const winner=`<span style="color:${winClr};font-weight:500">${winTeam}<br>+${res.diff}</span>`;
-        rows+=`<div class="hole-row"><span style="color:var(--color-text-secondary)">H${h+1}${flipBadge}${dblBadge}</span><span>${res.numA} vs ${res.numB}</span><span style="display:flex;flex-direction:column;align-items:flex-end;text-align:right">${winner}</span></div>`;
+        if(res.tied){rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div>${scoresHtml}<div style="width:60px;flex-shrink:0;text-align:right"><span style="color:#BA7517;font-size:12px;font-weight:500">Tied</span></div></div>`;continue;}
+        const winLtr=res.aWins?'A':'B';
+        const winClr=res.aWins?'#1D9E75':'#185FA5';
+        const resultHtml=`<div style="width:60px;flex-shrink:0;text-align:right"><span style="color:${winClr};font-size:12px;font-weight:600">${winLtr} +${res.diff}${dblBadge}</span></div>`;
+        rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div>${scoresHtml}${resultHtml}</div>`;
       }
       let totA2=0,totB2=0;for(let h=seg.start;h<seg.end;h++){const res=calcVegas(h,r);if(!res||res.tied)continue;if(res.aWins)totA2+=res.diff;else totB2+=res.diff;}
+      const net2=totA2-totB2;
+      const netLabel2=net2===0?'No Blood':net2>0?`A wins · +${Math.abs(net2)} pts`:`B wins · +${Math.abs(net2)} pts`;
+      const netClr2=net2>0?'#1D9E75':net2<0?'#185FA5':'var(--color-text-secondary)';
       html+=rows;
-      html+=`<div class="seg-total" style="flex-direction:column;gap:2px;align-items:flex-start"><span>${nameA}: ${totA2} pts</span><span>${nameB}: ${totB2} pts</span></div>`;
-    }
-    html+=`</div>`;
+      html+=`<div style="display:flex;justify-content:center;align-items:center;gap:32px;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)"><span style="font-size:12px;font-weight:600;color:#1D9E75">A: ${totA2} pts</span><span style="font-size:12px;font-weight:600;color:#185FA5">B: ${totB2} pts</span></div>`;
+      html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">${seg.label} Net Result</span><span style="font-size:12px;font-weight:600;color:${netClr2}">${netLabel2}</span></div>`;
+    }html+=`</div>`;
   });
   el.innerHTML=html;
 }
@@ -3992,7 +4027,7 @@ function renderMoney(){
       });
     }
     // Snake — inside round card
-    if(gameOnAny('snake')){
+    if(gameOn('snake',r)){
       const rNet=snakeNetByRound[r];
       let finalHolder=null;
       if(STATE.snakeHolder&&STATE.snakeHolder[r]){for(let h=17;h>=0;h--){if(STATE.snakeHolder[r][h]!==null){finalHolder=STATE.snakeHolder[r][h];break;}}}
@@ -4012,6 +4047,27 @@ function renderMoney(){
         const ptStr=p.pts>0?`+${p.pts} pts`:p.pts<0?`${p.pts} pts`:'0 pts';
         const dolStr=dollars>0?`+$${dollars.toFixed(2)}`:dollars<0?`-$${Math.abs(dollars).toFixed(2)}`:'$0.00';
         html+=`<div class="money-row"><span style="font-size:13px;color:var(--color-text-primary)">${displayName(p.pi)}</span><div style="display:flex;gap:10px;align-items:baseline"><span style="font-size:12px;color:${col}">${ptStr}</span><span style="font-size:12px;font-weight:500;color:${col};min-width:52px;text-align:right">${dolStr}</span></div></div>`;
+      });
+    }
+    // Hammer
+    if(gameOn('hammer',r)){
+      const hSegsMoney=hammerSegsForRound(r);
+      const hamPayoutM=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');
+      const hamSvM=hamPayoutM==='perteam'?0.5:1;
+      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Hammer — $${roundVal('hammerVal',r,WK.hammerVal||2)}/hole · ${hamPayoutM==='perteam'?'per team':'per player'}</div>`;
+      getSegments(hSegsMoney).forEach((_seg2,si2)=>{
+        const resM=calcHammerSegResult(r,si2);if(!resM)return;
+        const tmM=STATE.hammerTeams?.[r]?.[si2];if(!tmM)return;
+        const netVM=(resM.netA-resM.netB)*hamSvM;
+        html+=`<div style="padding:4px 12px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:10px;color:var(--color-text-tertiary)">Game ${si2+1} (H${_seg2.start+1}-${_seg2.end})</div>`;
+        const allPis=[...tmM[0],...tmM[1]];
+        allPis.forEach(pi=>{
+          const isA=tmM[0].includes(pi);
+          const playerNet=isA?netVM:-netVM;
+          const col=playerNet>0?'#1D9E75':playerNet<0?'#D85A30':'var(--color-text-secondary)';
+          const dolStr=playerNet>0?`+$${playerNet.toFixed(2)}`:playerNet<0?`-$${Math.abs(playerNet).toFixed(2)}`:'$0.00';
+          html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${WK.players[pi].bg};color:${WK.players[pi].fg}">${WK.players[pi].ini}</div><span>${displayName(pi)}</span></div><div class="${playerNet>=0?'money-pos':'money-neg'}">${dolStr}</div></div>`;
+        });
       });
     }
     // Explicit player-to-player transfers
@@ -4200,38 +4256,44 @@ function renderSkinsRound(){
       summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">${topName} leads - ${top[1]} skin${top[1]!==1?'s':''}</span>`;
     } else {
       const net=skinsA-skinsB;
-      if(net===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">Tied</span>`;}
-      else{const winName=net>0?(teams?teams[0].map(i=>displayName(i)).join(' & '):'A'):(teams?teams[1].map(i=>displayName(i)).join(' & '):'B');const winClr=net>0?colorA:colorB;const absDiff=Math.abs(net);summaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winName} +${absDiff} skin${absDiff!==1?'s':''}</span>`;}
+      if(net===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">No Blood</span>`;}
+      else{const winLtr=net>0?'A':'B';const winClr=net>0?colorA:colorB;const absDiff=Math.abs(net);summaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winLtr} wins · +${absDiff} skin${absDiff!==1?'s':''}</span>`;}
     }
-    let teamHdr='';
-    if(!isIndiv&&teams){teamHdr=`A: ${teams[0].map(i=>displayName(i)).join(' & ')} \xb7 B: ${teams[1].map(i=>displayName(i)).join(' & ')}`;}
     html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
-    html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary);display:flex;align-items:flex-start;gap:8px" onclick="toggleSkinsGame('${key}')">`;
-    html+=`<div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500">${seg.label} (H${seg.start+1}-${seg.end})</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
-    if(teamHdr)html+=`<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">${teamHdr}</div>`;
-    html+=`<div style="margin-top:4px">${summaryHtml}</div>`;
-    html+=`</div></div>`;
+    html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleSkinsGame('${key}')")>`;
+    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">${seg.label} (H${seg.start+1}-${seg.end})</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
+    if(!isIndiv&&teams){
+      const nA=teams[0].map(i=>displayName(i)).join(' & ');
+      const nB=teams[1].map(i=>displayName(i)).join(' & ');
+      html+=`<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#1D9E75;margin-bottom:2px">TEAM A</div><div style="font-size:11px;font-weight:500;color:#1D9E75">${nA}</div></div><div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">${nB}</div></div></div>`;
+    }
+    html+=`<div style="font-size:12px;padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Game Result: ${summaryHtml}</div>`;
+    html+=`</div>`;
     if(expanded){
       let rows='',skinsA2=0,skinsB2=0;
       const playerTally={};
       holes.forEach(({h,pending,tied,winner,type,skinsWon,carry})=>{
         let winTxt='', winColor='var(--color-text-primary)', midTxt='';
         if(pending){winTxt=`<span style="color:var(--color-text-secondary)">-</span>`;midTxt='-';}
-        else if(tied){midTxt=`<span class="carry">${carry} skin${carry!==1?'s':''}</span>`;winTxt=`<span class="carry">Tied (carries)</span>`;}
+        else if(tied){midTxt=`<span style="color:#BA7517;font-size:12px;font-weight:500">${carry} skin${carry!==1?'s':''}</span>`;winTxt=`<span style="color:#BA7517;font-size:12px;font-weight:500;white-space:nowrap">Carried Over</span>`;}
         else if(skinsWon){
-          if(isIndiv){const pi=winner;playerTally[pi]=(playerTally[pi]||0)+skinsWon;winColor=PLAYER_COLORS[pi%PLAYER_COLORS.length];midTxt=`<span style="color:${winColor};font-weight:500">${skinsWon} skin${skinsWon!==1?'s':''}</span>`;winTxt=displayName(pi);}
-          else{const teamColor=winner==='a'?colorA:colorB;if(winner==='a')skinsA2+=skinsWon;else skinsB2+=skinsWon;midTxt=`<span style="color:${teamColor};font-weight:500">${skinsWon} skin${skinsWon!==1?'s':''}</span>`;winColor=teamColor;winTxt=(winner==='a'?(teams?.[0]||[]).map(i=>displayName(i)).join(' & '):(teams?.[1]||[]).map(i=>displayName(i)).join(' & '));}
+          if(isIndiv){const pi=winner;playerTally[pi]=(playerTally[pi]||0)+skinsWon;winColor=PLAYER_COLORS[pi%PLAYER_COLORS.length];midTxt=`<span style="color:${winColor};font-weight:500;font-size:12px">${skinsWon} skin${skinsWon!==1?'s':''}</span>`;winTxt=displayName(pi);}
+          else{const teamColor=winner==='a'?colorA:colorB;if(winner==='a')skinsA2+=skinsWon;else skinsB2+=skinsWon;midTxt=`<span style="color:${teamColor};font-weight:500;font-size:12px">${skinsWon} skin${skinsWon!==1?'s':''}</span>`;winColor=teamColor;winTxt=`<span style="font-size:12px;font-weight:700;color:${teamColor}">${winner==='a'?'A':'B'}</span>`;}
         } else {midTxt='-';}
-        rows+=`<div class="hole-row"><span style="color:var(--color-text-secondary)">H${h+1}</span><span>${midTxt}</span><span style="font-weight:${skinsWon?500:400};color:${skinsWon?winColor:'inherit'}">${winTxt}</span></div>`;
+        const bA2=!isIndiv&&teams?teams[0].map(pi=>skinNet(pi,h,r)).filter(x=>x!==null):[];
+        const bB2=!isIndiv&&teams?teams[1].map(pi=>skinNet(pi,h,r)).filter(x=>x!==null):[];
+        const scoresPair=(!isIndiv&&bA2.length&&bB2.length)?`<span style="font-size:12px;font-weight:500"><span style="color:#1D9E75">${Math.min(...bA2)}</span><span style="color:var(--color-text-tertiary);margin:0 3px;font-weight:400">vs</span><span style="color:#185FA5">${Math.min(...bB2)}</span></span>`:`<span></span>`;
+        rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-top:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0"><span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span></div><div style="width:52px;flex-shrink:0">${scoresPair}</div><div style="flex:1;padding-left:16px">${midTxt}</div><div style="flex-shrink:0;text-align:right">${winTxt}</div></div>`;
       });
       let footer='';
       if(isIndiv){
         const parts=WK.players.map((p,pi)=>{const s=playerTally[pi]||0;const c=PLAYER_COLORS[pi%PLAYER_COLORS.length];return`<span style="color:${s>0?c:'var(--color-text-secondary)'}">${displayName(pi)}: ${s}</span>`;}).join('<span style="margin:0 4px;color:var(--color-text-tertiary)">\xb7</span>');
         footer=`<div class="seg-total" style="flex-wrap:wrap;gap:4px">${parts}</div>`;
       } else {
-        const nA=teams?teams[0].map(i=>displayName(i)).join(' & '):'A';
-        const nB=teams?teams[1].map(i=>displayName(i)).join(' & '):'B';
-        footer=`<div class="seg-total" style="flex-direction:column;gap:2px;align-items:flex-start"><span>${nA}: ${skinsA2} skins</span><span>${nB}: ${skinsB2} skins</span></div>`;
+        const skNet=skinsA2-skinsB2;
+        const skNetLabel=skNet===0?'No Blood':skNet>0?`A wins · +${Math.abs(skNet)} skin${Math.abs(skNet)!==1?'s':''}`: `B wins · +${Math.abs(skNet)} skin${Math.abs(skNet)!==1?'s':''}`;
+        const skNetClr=skNet>0?'#1D9E75':skNet<0?'#185FA5':'var(--color-text-secondary)';
+        footer=`<div style="display:flex;justify-content:center;align-items:center;gap:32px;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)"><span style="font-size:12px;font-weight:600;color:#1D9E75">A: ${skinsA2} skin${skinsA2!==1?'s':''}</span><span style="font-size:12px;font-weight:600;color:#185FA5">B: ${skinsB2} skin${skinsB2!==1?'s':''}</span></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">${seg.label} Net Result</span><span style="font-size:12px;font-weight:600;color:${skNetClr}">${skNetLabel}</span></div>`;
       }
       html+=rows+footer;
     }
@@ -4573,8 +4635,18 @@ function renderHammerRound(){
     const res=calcHammerSegResult(r,si);
     const _sv2=payout==='perteam'?0.5:1;const _netA=(res.netA-res.netB)*_sv2,_netB=-_netA;const lead=res?((_netA>0?nameA+' +$'+_netA.toFixed(2)+' each':_netB>0?nameB+' +$'+_netB.toFixed(2)+' each':'All square')+(res.carryPot>0?' · $'+res.carryPot.toFixed(2)+' carries':'')):'In progress';
     html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
-    const _payoutLbl='';
-    html+=`<div style="padding:10px 14px;background:var(--color-background-secondary)"><div style="font-size:13px;font-weight:500">Game ${si+1} (H${seg.start+1}-${seg.end})</div><div style="font-size:11px;color:var(--color-text-tertiary);margin-top:1px">A: ${nameA} \xb7 B: ${nameB}</div><div style="font-size:12px;color:#1D9E75;margin-top:4px">${lead}</div></div>`;
+    const hammerKey='r'+r+'g'+si;
+    if(!STATE.hammerExpanded)STATE.hammerExpanded={};
+    const hammerExp=STATE.hammerExpanded[hammerKey]===true;
+    const hammerNetA=res?(res.netA-res.netB)*_sv2:0;
+    const hammerNetClr=hammerNetA>0?'#1D9E75':hammerNetA<0?'#185FA5':'var(--color-text-secondary)';
+    const hammerNetLabel=(()=>{if(!res)return'In progress';if(hammerNetA===0&&res.carryPot===0)return'No Blood';if(hammerNetA===0)return'In progress';const wLtr=hammerNetA>0?'A':'B';const fullAmt=res?Math.abs(res.netA-res.netB):0;const perPlayerAmt=payout==='perteam'?fullAmt/2:fullAmt;return`${wLtr} wins · +$${perPlayerAmt.toFixed(2)} each`;})();
+    html+=`<div style="padding:10px 14px;background:var(--color-background-secondary);cursor:pointer" onclick="toggleHammerGame('${hammerKey}')">`;
+    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">Game ${si+1} (H${seg.start+1}-${seg.end})</span><span style="color:#1D9E75;font-size:12px">${hammerExp?'▲':'▼'}</span></div>`;
+    html+=`<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#1D9E75;margin-bottom:2px">TEAM A</div><div style="font-size:11px;font-weight:500;color:#1D9E75">${nameA}</div></div><div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">${nameB}</div></div></div>`;
+    html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Game Result: <span style="font-weight:500;color:${hammerNetClr}">${hammerNetLabel}</span></div>`;
+    html+=`</div>`;
+    if(hammerExp){
     let carryPot=0;
     for(let h=seg.start;h<seg.end;h++){
       const hs=STATE.hammerState?.[r]?.[h]||{throws:[],conceded:false,concedeVal:0};
@@ -4584,9 +4656,8 @@ function renderHammerRound(){
       let winnerHtml='',potNext=0;
       if(hs.conceded){
         const winTeam=hs.concededBy===0?1:0;
-        const wn=winTeam===0?nameA:nameB;
         const wClrC=winTeam===0?'#1D9E75':'#185FA5';
-        winnerHtml=`<span style="font-size:12px;font-weight:500;color:${wClrC}">${wn}</span>`;
+        winnerHtml=`<span style="font-size:12px;font-weight:700;color:${wClrC}">${winTeam===0?'A':'B'}</span>`;
         carryPot=0;
       } else {
         const scoring=roundVal('hammerScoring',r,WK.hammerScoring||'bestball');
@@ -4598,8 +4669,8 @@ function renderHammerRound(){
           const sA=scoring==='bestball'?Math.min(...nA2):nA2.reduce((s,v)=>s+v,0);
           const sB=scoring==='bestball'?Math.min(...nB2):nB2.reduce((s,v)=>s+v,0);
           const halveCarry=roundVal('hammerHalve',r,WK.hammerHalve||'carry');
-          if(sA===sB){winnerHtml=`<span style="font-size:11px;color:var(--color-text-tertiary)">Tied (carries)</span>`;carryPot=halveCarry==='carry'?pot:0;}
-          else{const wn=sA<sB?nameA:nameB;const wClr=sA<sB?'#1D9E75':'#185FA5';winnerHtml=`<span style="font-size:12px;font-weight:500;color:${wClr}">${wn}</span>`;carryPot=0;}
+          if(sA===sB){winnerHtml=`<span style="font-size:12px;font-weight:500;color:#BA7517;white-space:nowrap">Carried Over</span>`;carryPot=halveCarry==='carry'?pot:0;}
+          else{const wClr=sA<sB?'#1D9E75':'#185FA5';winnerHtml=`<span style="font-size:12px;font-weight:700;color:${wClr}">${sA<sB?'A':'B'}</span>`;carryPot=0;}
         }
       }
       const displayPot=hs.conceded?hs.concedeVal:pot;
@@ -4607,8 +4678,15 @@ function renderHammerRound(){
       html+=`<div style="display:grid;grid-template-columns:28px 56px 70px auto;align-items:center;padding:5px 12px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px"><span style="font-size:11px;color:var(--color-text-tertiary)">H${h+1}</span><span style="font-size:11px;color:var(--color-text-secondary)">${potLabel}</span><span style="font-size:12px;white-space:nowrap;text-align:left">${throwIcons}</span><span style="text-align:right">${winnerHtml}</span></div>`;
     }
     const fmtNet=v=>v>=0?'+$'+v.toFixed(2):'-$'+Math.abs(v).toFixed(2);
-    const _sv=payout==='perteam'?0.5:1;const _net=(res?(res.netA-res.netB)*_sv:0);const rA=res?fmtNet(_net):'';const rB=res?fmtNet(-_net):'';
-        html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:11px;color:var(--color-text-secondary)">Through H${seg.end}${_payoutLbl}</span><span style="font-size:11px;font-weight:500;color:var(--color-text-primary)">A ${rA} \xb7 B ${rB}</span></div>`;
+    const _sv=payout==='perteam'?0.5:1;
+    const _totA=res?res.netA:0;const _totB=res?res.netB:0;
+    const _netFull=_totA-_totB;
+    const _netClrFinal=_netFull>0?'#1D9E75':_netFull<0?'#185FA5':'var(--color-text-secondary)';
+    const payoutLbl2=payout==='perteam'?'Per team':'Per player';
+    const _netLabelFinal=_netFull===0?'No Blood':_netFull>0?`A wins · +$${Math.abs(_netFull).toFixed(2)} · ${payoutLbl2}`:`B wins · +$${Math.abs(_netFull).toFixed(2)} · ${payoutLbl2}`;
+    html+=`<div style="display:flex;justify-content:center;align-items:center;gap:32px;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)"><span style="font-size:12px;font-weight:600;color:#1D9E75">A: ${fmtNet(_totA)}</span><span style="font-size:12px;font-weight:600;color:#185FA5">B: ${fmtNet(_totB)}</span></div>`;
+    html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Game ${si+1} Net Result</span><span style="font-size:12px;font-weight:600;color:${_netClrFinal}">${_netLabelFinal}</span></div>`;
+    } // end hammerExp
     html+=`</div>`;
   });
   el.innerHTML=html;
