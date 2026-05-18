@@ -649,7 +649,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v92';
+const APP_VERSION='v93';
 
 // ===== THEME =====
 (function(){
@@ -3827,7 +3827,7 @@ function renderMoney(){
   const potSettled=(STATE.settledRounds||[]).includes('pot');
   html+=`<div class="section-card round-card-collapsed" id="rcard-pot" style="margin-bottom:14px;${potSettled?'opacity:0.6;':''}">`;
   const potSumm=allDone?potData.map(d=>{const p=WK.players[d.pi],isW=d===potData[0],v=isW?(pot-WK.buyIn):-WK.buyIn;return`<span style="color:${v>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(d.pi)} ${fmt(v)}</span>`;}).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">Settles after all holes</span>`;
-  html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('pot')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Weekend pot — $${pot}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${potSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${potSettled?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleItem('pot')">Unsettle</button>`:allDone?`<button class="btn-sm" onclick="event.stopPropagation();settleItem('pot')">Settle</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
+  html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('pot')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Weekend pot - $${pot}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${potSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${potSettled?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleItem('pot')">Unsettle</button>`:allDone?`<button class="btn-sm" onclick="event.stopPropagation();settleItem('pot')">Settle</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
   html+=`<div class="round-card-body">`;
   if(!allDone)html+=`<div class="pending-box">Settles after all ${totalHoles()} holes. ${totalHoles()-totalHolesPlayed()} remaining.</div>`;
   else{
@@ -3893,14 +3893,14 @@ function renderMoney(){
     const summParts=complete?WK.players.map((p,i)=>`<span style="color:${roundNet[i]>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(i)} ${fmt(roundNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">In progress</span>`;
 
     html+=`<div class="section-card round-card-collapsed" id="rcard-${r}" style="margin-bottom:14px;${settled?'opacity:0.6;':''}">`;
-    const lkd_r=isRoundLocked(r);html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard(${r})"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Round ${r+1} — ${WK.rounds[r].courseName}${lkd_r?' 🔒':''}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${summParts}</div></div><div style="display:flex;align-items:center;gap:8px">${settled&&!changed?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:settled&&changed?`<span style="color:#D97706;font-size:11px">⚠ Changed</span><button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:complete?`<button class="btn-sm" onclick="event.stopPropagation();settleRound(${r})">Settle</button>`:''} ${lkd_r&&!settled?`<button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unlockRound(${r})">Unlock</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
+    const lkd_r=isRoundLocked(r);html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard(${r})"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Round ${r+1} - ${WK.rounds[r].courseName}${lkd_r?' 🔒':''}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${summParts}</div></div><div style="display:flex;align-items:center;gap:8px">${settled&&!changed?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:settled&&changed?`<span style="color:#D97706;font-size:11px">⚠ Changed</span><button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:complete?`<button class="btn-sm" onclick="event.stopPropagation();settleRound(${r})">Settle</button>`:''} ${lkd_r&&!settled?`<button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unlockRound(${r})">Unlock</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
     html+=`<div class="round-card-body">`;
     if(changed)html+=`<div style="padding:8px 12px;background:#FEF3C7;border-bottom:0.5px solid #F59E0B;font-size:12px;color:#92400E">⚠ Scores edited after settlement - amounts are current.</div>`;
     if(!complete){html+=`<div class="pending-box">Scores incomplete</div></div></div>`;return;}
 
     if(gameOn('skins',r)&&skR&&skR.gameResults.length){
       const isIndivMoney=WK.skinsFmt==='individual';
-      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Skins — $${roundVal('skinsVal',r,WK.skinsVal)}/skin · ${isIndivMoney?'Individual':(WK.skinsSettle||'perplayer')==='perplayer'?'per player':'per team'}</div>`;
+      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Skins - $${roundVal('skinsVal',r,WK.skinsVal)}/skin · ${isIndivMoney?'Individual':(WK.skinsSettle||'perplayer')==='perplayer'?'per player':'per team'}</div>`;
       skR.gameResults.forEach((gr)=>{
         if(gr.individual){
           // Individual skins: one row per player
@@ -3951,7 +3951,7 @@ function renderMoney(){
       });
     }
     if(gameOn('mp',r)&&mpR.gameResults.length){
-      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Match Play — $${roundVal('gameVal',r,WK.gameVal)}/game · ${(WK.mpSettle||'perplayer')==='perplayer'?'per player':'per team'}</div>`;
+      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Match Play - $${roundVal('gameVal',r,WK.gameVal)}/game · ${(WK.mpSettle||'perplayer')==='perplayer'?'per player':'per team'}</div>`;
       mpR.gameResults.forEach(({seg,si,tA,tB,pA,pB,winner})=>{
         const mpSv=settleVal(roundVal('gameVal',r,WK.gameVal),tA.length,WK.mpSettle||'perplayer');
         const aWins=winner==='a', bWins=winner==='b', tied=winner==='tie';
@@ -4002,9 +4002,9 @@ function renderMoney(){
         </div>${pressHtml}`;
       });
     }
-    if(gameOn('razzle',r)){const rzMatches=calcRazzle(r).filter(m=>m.winner);if(rzMatches.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Razzle Dazzle — $${roundVal('razzleVal',r,WK.razzleVal||5).toFixed(2)}/match · ${(roundVal('razzleSettle',r,WK.razzleSettle||'perplayer'))==='perplayer'?'per player':'per team'}</div>`;rzMatches.forEach(m=>{if(!m.tA||!m.tB)return;const aWins=m.winner==='a',bWins=m.winner==='b';const nameA=m.tA.map(i=>displayName(i)).join(' & ');const nameB=m.tB.map(i=>displayName(i)).join(' & ');const dollarStr='+$'+m.sv.toFixed(2);const bonusBits=[];if(m.sweep)bonusBits.push('sweep');if(m.fiveHole)bonusBits.push('5-hole');if(m.birdieCount>0)bonusBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const bonusNote=bonusBits.length?` <span style="font-size:10px;color:var(--color-text-tertiary)">(${bonusBits.join(', ')})</span>`:'';const gcol='display:grid;grid-template-columns:1fr 64px;align-items:center;gap:8px;padding:2px 0';const winBits=[];if(m.sweep)winBits.push('sweep');else if(m.fiveHole)winBits.push('5-hole');if(m.birdieCount>0)winBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const winNote=winBits.length?' · '+winBits.join(', '):'';html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">Match ${m.mi+1} · H${m.startHole+1}-${m.endHole+1} · pot $${m.pot.toFixed(2)}</div><div style="${gcol}"><span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}${aWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${aWins?dollarStr:''}</span></div><div style="${gcol}"><span style="font-size:13px;${bWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameB}${bWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${bWins?dollarStr:''}</span></div></div>`;});}}
+    if(gameOn('razzle',r)){const rzMatches=calcRazzle(r).filter(m=>m.winner);if(rzMatches.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Razzle Dazzle - $${roundVal('razzleVal',r,WK.razzleVal||5).toFixed(2)}/match · ${(roundVal('razzleSettle',r,WK.razzleSettle||'perplayer'))==='perplayer'?'per player':'per team'}</div>`;rzMatches.forEach(m=>{if(!m.tA||!m.tB)return;const aWins=m.winner==='a',bWins=m.winner==='b';const nameA=m.tA.map(i=>displayName(i)).join(' & ');const nameB=m.tB.map(i=>displayName(i)).join(' & ');const dollarStr='+$'+m.sv.toFixed(2);const bonusBits=[];if(m.sweep)bonusBits.push('sweep');if(m.fiveHole)bonusBits.push('5-hole');if(m.birdieCount>0)bonusBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const bonusNote=bonusBits.length?` <span style="font-size:10px;color:var(--color-text-tertiary)">(${bonusBits.join(', ')})</span>`:'';const gcol='display:grid;grid-template-columns:1fr 64px;align-items:center;gap:8px;padding:2px 0';const winBits=[];if(m.sweep)winBits.push('sweep');else if(m.fiveHole)winBits.push('5-hole');if(m.birdieCount>0)winBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const winNote=winBits.length?' · '+winBits.join(', '):'';html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">Match ${m.mi+1} · H${m.startHole+1}-${m.endHole+1} · pot $${m.pot.toFixed(2)}</div><div style="${gcol}"><span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}${aWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${aWins?dollarStr:''}</span></div><div style="${gcol}"><span style="font-size:13px;${bWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameB}${bWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${bWins?dollarStr:''}</span></div></div>`;});}}
     if(gameOn('vegas',r)&&vegR.gameResults.length){
-      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Vegas — $${roundVal('vegasVal',r,WK.vegasVal).toFixed(2)}/pt · ${(WK.vegasSettle||'perplayer')==='perplayer'?'per player':'per team'}</div>`;
+      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Vegas - $${roundVal('vegasVal',r,WK.vegasVal).toFixed(2)}/pt · ${(WK.vegasSettle||'perplayer')==='perplayer'?'per player':'per team'}</div>`;
       vegR.gameResults.forEach(({seg,tA,tB,ptsA,ptsB,dollarA})=>{
         const aWins=dollarA>0, bWins=dollarA<0, tied=dollarA===0;
         const nameA=tA.map(i=>displayName(i)).join(' & ');
@@ -4033,13 +4033,13 @@ function renderMoney(){
       if(STATE.snakeHolder&&STATE.snakeHolder[r]){for(let h=17;h>=0;h--){if(STATE.snakeHolder[r][h]!==null){finalHolder=STATE.snakeHolder[r][h];break;}}}
       const sPot=calcSnakePot(r);
       const hasSnake=finalHolder!==null;
-      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">🐍 Snake${hasSnake?` — pot $${sPot.toFixed(2)} · ${displayName(finalHolder)} holds`:' — not set'}</div>`;
+      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">🐍 Snake${hasSnake?` - pot $${sPot.toFixed(2)} · ${displayName(finalHolder)} holds`:' - not set'}</div>`;
       if(!hasSnake){html+=`<div class="pending-box">No snake assigned this round</div>`;}
       else{WK.players.forEach((p,i)=>{html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(i)}${i===finalHolder?' 🐍':''}</span></div><div class="${rNet[i]>=0?'money-pos':'money-neg'}">${fmt(rNet[i])}</div></div>`;});}
     }
     // Wolf
     if(gameOn('wolf',r)&&wolfPtsR){
-      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary)">Wolf — $${wolfVal}/pt</div>`;
+      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary)">Wolf - $${wolfVal}/pt</div>`;
       const wolfSorted=[...wolfPtsR].sort((a,b)=>b.pts-a.pts);
       wolfSorted.forEach(p=>{
         const dollars=p.pts*wolfVal;
@@ -4054,20 +4054,21 @@ function renderMoney(){
       const hSegsMoney=hammerSegsForRound(r);
       const hamPayoutM=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');
       const hamSvM=hamPayoutM==='perteam'?0.5:1;
-      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Hammer — $${roundVal('hammerVal',r,WK.hammerVal||2)}/hole · ${hamPayoutM==='perteam'?'per team':'per player'}</div>`;
+      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Hammer - $${roundVal('hammerVal',r,WK.hammerVal||2)}/hole · ${hamPayoutM==='perteam'?'per team':'per player'}</div>`;
       getSegments(hSegsMoney).forEach((_seg2,si2)=>{
         const resM=calcHammerSegResult(r,si2);if(!resM)return;
         const tmM=STATE.hammerTeams?.[r]?.[si2];if(!tmM)return;
         const netVM=(resM.netA-resM.netB)*hamSvM;
-        html+=`<div style="padding:4px 12px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:10px;color:var(--color-text-tertiary)">Game ${si2+1} (H${_seg2.start+1}-${_seg2.end})</div>`;
-        const allPis=[...tmM[0],...tmM[1]];
-        allPis.forEach(pi=>{
-          const isA=tmM[0].includes(pi);
-          const playerNet=isA?netVM:-netVM;
-          const col=playerNet>0?'#1D9E75':playerNet<0?'#D85A30':'var(--color-text-secondary)';
-          const dolStr=playerNet>0?`+$${playerNet.toFixed(2)}`:playerNet<0?`-$${Math.abs(playerNet).toFixed(2)}`:'$0.00';
-          html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${WK.players[pi].bg};color:${WK.players[pi].fg}">${WK.players[pi].ini}</div><span>${displayName(pi)}</span></div><div class="${playerNet>=0?'money-pos':'money-neg'}">${dolStr}</div></div>`;
-        });
+        const winTeam=netVM>0?0:netVM<0?1:null;
+        const namesA=tmM[0].map(pi=>displayName(pi)).join(' & ');
+        const namesB=tmM[1].map(pi=>displayName(pi)).join(' & ');
+        const potAmt=Math.abs(netVM);
+        const potStr=`+$${potAmt%1===0?potAmt.toFixed(2):potAmt.toFixed(2)}`;
+        const boldA=winTeam===0;
+        const boldB=winTeam===1;
+        html+=`<div style="padding:6px 12px 2px;font-size:10px;color:var(--color-text-tertiary)">Game ${si2+1}</div>`;
+        html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 12px 1px"><span style="font-size:13px;${boldA?'font-weight:700;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${namesA}</span>${boldA?`<span style="font-size:13px;font-weight:600;color:#1D9E75">${potStr}</span>`:''}</div>`;
+        html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:1px 12px 6px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px;${boldB?'font-weight:700;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${namesB}</span>${boldB?`<span style="font-size:13px;font-weight:600;color:#1D9E75">${potStr}</span>`:''}</div>`;
       });
     }
     // Explicit player-to-player transfers
@@ -4088,7 +4089,7 @@ function renderMoney(){
     const twosSettled=(STATE.settledRounds||[]).includes('twos');
     const twosSumm=tot>0?WK.players.map((p,i)=>`<span style="color:${twosNet[i]>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(i)} ${fmt(twosNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">No 2s yet</span>`;
     html+=`<div class="section-card round-card-collapsed" id="rcard-twos" style="margin-bottom:14px;${twosSettled?'opacity:0.6;':''}">`;
-    html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('twos')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Two's Club — pot $${tp}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${twosSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${twosSettled?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleItem('twos')">Unsettle</button>`:`<button class="btn-sm" onclick="event.stopPropagation();settleItem('twos')">Settle</button>`}<span class="round-card-chevron">▼</span></div></div>`;
+    html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('twos')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Two's Club - pot $${tp}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${twosSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${twosSettled?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleItem('twos')">Unsettle</button>`:`<button class="btn-sm" onclick="event.stopPropagation();settleItem('twos')">Settle</button>`}<span class="round-card-chevron">▼</span></div></div>`;
     html+=`<div class="round-card-body">`;
     if(!tot)html+=`<div class="pending-box">No 2s yet - pot carries</div>`;
     else{
