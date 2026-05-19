@@ -569,7 +569,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
       <div id="hammerBoxWrap"></div><div id="wolfBoxWrap"></div><div id="snakeEntryWrap"></div><div id="skinsBoxWrap"></div><div id="razzleBoxWrap"></div><div id="mpBoxWrap"></div><div id="vegasBoxWrap"></div>
       <div class="hole-dots" id="holeDots"></div>
       <button class="footer-btn" id="saveBtn" onclick="saveHole()">Save Hole & Continue →</button>
-      <button id="resetHoleBtn" onclick="resetHole()" style="display:none;width:100%;margin-top:8px;padding:10px;font-size:13px;color:var(--color-text-tertiary);background:none;border:none;cursor:pointer;text-decoration:underline">Reset this hole</button>
+      <button id="resetHoleBtn" onclick="resetHole()" style="display:none;margin:6px 1rem 0;width:calc(100% - 2rem);padding:12px;font-size:14px;font-weight:500;color:#C0392B;background:transparent;border:0.5px solid #C0392B;border-radius:var(--border-radius-md);cursor:pointer;">Clear Hole</button>
     </div>
     <div id="view-card" style="display:none"><div class="rd-sel" id="cardRdSel"></div><div id="scGridWrap"></div></div>
     <div id="view-games" style="display:none" class="view">
@@ -649,7 +649,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v94.1';
+const APP_VERSION='v94.8';
 
 // ===== THEME =====
 (function(){
@@ -2872,7 +2872,21 @@ function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
     }
     html+=`</div>`;
   });
-  html+=`</div>`;const entries=calcRoundRankings();const isOpen=STATE.roundRankOpen;html+=`<div class="collapsible-hd${isOpen?' open':''}" onclick="toggleRoundRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Best individual rounds</span><span style="font-size:12px;color:#1D9E75">${isOpen?'▲':'▼'}</span></div>`;if(isOpen){if(entries.length===0){html+=`<div class="collapsible-body"><div style="padding:16px 12px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Complete at least one full round to see rankings</div></div>`;}else{html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;entries.forEach(e=>{const p=WK.players[e.pi];const ci=WK.rounds.findIndex(r=>r.courseName===e.courseName);const cbg=COURSE_COLORS[ci%COURSE_COLORS.length];const cfg=COURSE_FG[ci%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const badgeLabel=(()=>{const sameNameRounds=WK.rounds.filter(r=>r.courseName===e.courseName);if(sameNameRounds.length<=1)return e.courseName.split(' ')[0];const idx=WK.rounds.findIndex((r,ri)=>r.courseName===e.courseName&&WK.rounds.slice(0,ri+1).filter(x=>x.courseName===e.courseName).length===WK.rounds.slice(0,e.r+1).filter(x=>x.courseName===e.courseName).length);const occ=WK.rounds.slice(0,e.r+1).filter(r=>r.courseName===e.courseName).length;return e.courseName.split(' ')[0]+'('+occ+')';})();html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${p.name}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}}document.getElementById('boardContent').innerHTML=html;}
+  html+=`</div>`;const entries=calcRoundRankings();const isOpen=STATE.roundRankOpen;html+=`<div class="collapsible-hd${isOpen?' open':''}" onclick="toggleRoundRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Best individual rounds</span><span style="font-size:12px;color:#1D9E75">${isOpen?'▲':'▼'}</span></div>`;if(isOpen){if(entries.length===0){html+=`<div class="collapsible-body"><div style="padding:16px 12px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Complete at least one full round to see rankings</div></div>`;}else{html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;entries.forEach(e=>{const p=WK.players[e.pi];const ci=WK.rounds.findIndex(r=>r.courseName===e.courseName);const cbg=COURSE_COLORS[ci%COURSE_COLORS.length];const cfg=COURSE_FG[ci%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const badgeLabel=(()=>{
+  const allNames=WK.rounds.map(r=>r.courseName);
+  // Find longest common prefix shared by 2+ names
+  function commonPrefix(a,b){let i=0;while(i<a.length&&i<b.length&&a[i]===b[i])i++;return a.slice(0,i);}
+  let prefix='';
+  for(let i=0;i<allNames.length;i++){for(let j=i+1;j<allNames.length;j++){const cp=commonPrefix(allNames[i],allNames[j]);if(cp.length>prefix.length)prefix=cp;}}
+  // Trim prefix to last word boundary
+  if(prefix.length>2){const trimmed=prefix.trimEnd();const lastSpace=trimmed.lastIndexOf(' ');prefix=lastSpace>0?trimmed.slice(0,lastSpace+1):trimmed+' ';}else{prefix='';}
+  // Strip prefix from names that start with it, leave others as-is
+  const displayName2=prefix.length>0&&e.courseName.startsWith(prefix)?e.courseName.slice(prefix.length):e.courseName;
+  // If duplicate course name in trip, append occurrence number
+  const sameNameRounds=WK.rounds.filter(r=>r.courseName===e.courseName);
+  if(sameNameRounds.length>1){const occ=WK.rounds.slice(0,e.r+1).filter(r=>r.courseName===e.courseName).length;return displayName2+' ('+occ+')';}
+  return displayName2||e.courseName;
+})();html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${p.name}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}}document.getElementById('boardContent').innerHTML=html;}
 function pOpts(sel){return WK.players.map((p,i)=>`<option value="${i}"${i===sel?' selected':''}>${displayName(i)}</option>`).join('');}
 function setWolfOrder(r,pos,newPi){
   if(!STATE.wolfOrder)STATE.wolfOrder=WK.rounds.map(()=>[0,1,2,3]);
@@ -3523,12 +3537,12 @@ function renderMPRound(){
     const netResultLabel2=(()=>{if(origNet===null||!finalMs)return'In progress';if(!finalMs.closed)return finalMs.scoreStr.replace('Team A','A').replace('Team B','B');if(pressNetA===0)return'No Blood';return pressNetA>0?`A wins · +$${Math.abs(pressNetA).toFixed(2)}`:`B wins · +$${Math.abs(pressNetA).toFixed(2)}`;})();
     const netResultClr2=pressNetA>0?'#1D9E75':pressNetA<0?'#185FA5':'var(--color-text-secondary)';
     html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleMPGame('${key}')">`;
-    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">${seg.label} (H${seg.start+1}-${seg.end})</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
+    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">Match ${si+1} · H${seg.start+1}-${seg.end}</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
     html+=`<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px">`;
     html+=`<div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#1D9E75;margin-bottom:2px">TEAM A</div><div style="font-size:11px;font-weight:500;color:#1D9E75">${nameA}</div></div>`;
     html+=`<div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">${nameB}</div></div>`;
     html+=`</div>`;
-    html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">${seg.label} Net Result: <span style="font-weight:500;color:${netResultClr2}">${netResultLabel2}</span></div>`;
+    html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Match Result: <span style="font-weight:500;color:${netResultClr2}">${netResultLabel2}</span></div>`;
     html+=`</div>`;
 
     if(expanded){
@@ -3620,7 +3634,7 @@ function renderMPRound(){
       // Net card - always visible when presses exist
       if(presses.length>0){
         const gameNetDisplay=pressNetA===0?'No Blood':pressNetA>0?`A wins · +$${Math.abs(pressNetA).toFixed(2)}`:`B wins · +$${Math.abs(pressNetA).toFixed(2)}`;
-        html+=`<div style="margin:0 10px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;background:var(--color-background-secondary);display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">${seg.label} Net Result</span><span style="font-weight:600;font-size:12px;color:${netClr}">${gameNetDisplay}</span></div>`;
+        html+=`<div style="margin:0 10px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;background:var(--color-background-secondary);display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Match Result</span><span style="font-weight:600;font-size:12px;color:${netClr}">${gameNetDisplay}</span></div>`;
       }
     }
     html+=`</div>`;
@@ -4026,6 +4040,28 @@ function renderMoney(){
         </div>`;
       });
     }
+    // Hammer
+    if(gameOn('hammer',r)){
+      const hSegsMoney=hammerSegsForRound(r);
+      const hamPayoutM=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');
+      const hamSvM=hamPayoutM==='perteam'?0.5:1;
+      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Hammer - $${roundVal('hammerVal',r,WK.hammerVal||2)}/hole · ${hamPayoutM==='perteam'?'per team':'per player'}</div>`;
+      getSegments(hSegsMoney).forEach((_seg2,si2)=>{
+        const resM=calcHammerSegResult(r,si2);if(!resM)return;
+        const tmM=STATE.hammerTeams?.[r]?.[si2];if(!tmM)return;
+        const netVM=(resM.netA-resM.netB)*hamSvM;
+        const winTeam=netVM>0?0:netVM<0?1:null;
+        const namesA=tmM[0].map(pi=>displayName(pi)).join(' & ');
+        const namesB=tmM[1].map(pi=>displayName(pi)).join(' & ');
+        const potAmt=Math.abs(netVM);
+        const potStr=`+$${potAmt%1===0?potAmt.toFixed(2):potAmt.toFixed(2)}`;
+        const boldA=winTeam===0;
+        const boldB=winTeam===1;
+        html+=`<div style="padding:6px 12px 2px;font-size:10px;color:var(--color-text-tertiary)">Game ${si2+1}</div>`;
+        html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 12px 1px"><span style="font-size:13px;${boldA?'font-weight:700;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${namesA}</span>${boldA?`<span style="font-size:13px;font-weight:600;color:#1D9E75">${potStr}</span>`:''}</div>`;
+        html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:1px 12px 6px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px;${boldB?'font-weight:700;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${namesB}</span>${boldB?`<span style="font-size:13px;font-weight:600;color:#1D9E75">${potStr}</span>`:''}</div>`;
+      });
+    }
     // Snake — inside round card
     if(gameOn('snake',r)){
       const rNet=snakeNetByRound[r];
@@ -4049,28 +4085,7 @@ function renderMoney(){
         html+=`<div class="money-row"><span style="font-size:13px;color:var(--color-text-primary)">${displayName(p.pi)}</span><div style="display:flex;gap:10px;align-items:baseline"><span style="font-size:12px;color:${col}">${ptStr}</span><span style="font-size:12px;font-weight:500;color:${col};min-width:52px;text-align:right">${dolStr}</span></div></div>`;
       });
     }
-    // Hammer
-    if(gameOn('hammer',r)){
-      const hSegsMoney=hammerSegsForRound(r);
-      const hamPayoutM=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');
-      const hamSvM=hamPayoutM==='perteam'?0.5:1;
-      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Hammer - $${roundVal('hammerVal',r,WK.hammerVal||2)}/hole · ${hamPayoutM==='perteam'?'per team':'per player'}</div>`;
-      getSegments(hSegsMoney).forEach((_seg2,si2)=>{
-        const resM=calcHammerSegResult(r,si2);if(!resM)return;
-        const tmM=STATE.hammerTeams?.[r]?.[si2];if(!tmM)return;
-        const netVM=(resM.netA-resM.netB)*hamSvM;
-        const winTeam=netVM>0?0:netVM<0?1:null;
-        const namesA=tmM[0].map(pi=>displayName(pi)).join(' & ');
-        const namesB=tmM[1].map(pi=>displayName(pi)).join(' & ');
-        const potAmt=Math.abs(netVM);
-        const potStr=`+$${potAmt%1===0?potAmt.toFixed(2):potAmt.toFixed(2)}`;
-        const boldA=winTeam===0;
-        const boldB=winTeam===1;
-        html+=`<div style="padding:6px 12px 2px;font-size:10px;color:var(--color-text-tertiary)">Game ${si2+1}</div>`;
-        html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 12px 1px"><span style="font-size:13px;${boldA?'font-weight:700;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${namesA}</span>${boldA?`<span style="font-size:13px;font-weight:600;color:#1D9E75">${potStr}</span>`:''}</div>`;
-        html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:1px 12px 6px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px;${boldB?'font-weight:700;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${namesB}</span>${boldB?`<span style="font-size:13px;font-weight:600;color:#1D9E75">${potStr}</span>`:''}</div>`;
-      });
-    }
+
     // Explicit player-to-player transfers
     const txns=simplifyDebts(roundNet);
     html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Round transfers</div>`;
@@ -4552,9 +4567,9 @@ function renderHammerBox(){
   const maxH=roundVal('hammerMax',r,WK.hammerMax!=null?WK.hammerMax:0);
   const mode=roundVal('hammerMode',r,WK.hammerMode||'any');
   const lastThrower=hs.throws.length>0?hs.throws[hs.throws.length-1]:-1;
-  const pendingResponse=hs.throws.length>0&&!hs.conceded&&!hs.accepted&&!allIn;
-  const canThrowA=!locked&&!hs.conceded&&!allIn&&!pendingResponse&&(maxH===0||hs.throws.length<maxH)&&(mode!=='alt'||lastThrower!==0);
-  const canThrowB=!locked&&!hs.conceded&&!allIn&&!pendingResponse&&(maxH===0||hs.throws.length<maxH)&&(mode!=='alt'||lastThrower!==1);
+  const pendingResponse=hs.throws.length>0&&!hs.conceded&&!hs.accepted;
+  const canThrowA=!locked&&!hs.conceded&&!pendingResponse&&(maxH===0||hs.throws.length<maxH)&&(mode!=='alt'||lastThrower!==0);
+  const canThrowB=!locked&&!hs.conceded&&!pendingResponse&&(maxH===0||hs.throws.length<maxH)&&(mode!=='alt'||lastThrower!==1);
   const fmt=v=>'$'+v.toFixed(2);
   // Pre-doubling pot for concede label
   let preDoubleVal=roundVal('hammerVal',r,WK.hammerVal||2)+calcHammerCarry(r,si,hi);
@@ -4573,7 +4588,7 @@ function renderHammerBox(){
     const otherThrew=pendingResponse&&lastThrower!==(teamIdx);
     // Left action: hammer button, thrown badge, accept/concede, or nothing
     let leftAction='';
-    if(!allIn&&!hs.conceded){
+    if(!hs.conceded){
       if(otherThrew){
         leftAction=`<div style="display:flex;gap:6px;flex-shrink:0;margin-right:8px;align-items:center"><button style="background:#1D9E75;color:white;border:none;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center" onclick="resolveHammer('accept',${r},${hi})" title="Accept">✓</button><button style="background:#C0392B;color:white;border:none;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center" onclick="resolveHammer('concede',${r},${hi})" title="Concede (${fmt(preDoubleVal)})">✕</button></div>`;
       } else if(thrown){
@@ -4643,9 +4658,9 @@ function renderHammerRound(){
     const hammerNetClr=hammerNetA>0?'#1D9E75':hammerNetA<0?'#185FA5':'var(--color-text-secondary)';
     const hammerNetLabel=(()=>{if(!res)return'In progress';if(hammerNetA===0&&res.carryPot===0)return'No Blood';if(hammerNetA===0)return'In progress';const wLtr=hammerNetA>0?'A':'B';const fullAmt=res?Math.abs(res.netA-res.netB):0;const perPlayerAmt=payout==='perteam'?fullAmt/2:fullAmt;return`${wLtr} wins · +$${perPlayerAmt.toFixed(2)} each`;})();
     html+=`<div style="padding:10px 14px;background:var(--color-background-secondary);cursor:pointer" onclick="toggleHammerGame('${hammerKey}')">`;
-    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">Game ${si+1} (H${seg.start+1}-${seg.end})</span><span style="color:#1D9E75;font-size:12px">${hammerExp?'▲':'▼'}</span></div>`;
+    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">Match ${si+1} · H${seg.start+1}-${seg.end}</span><span style="color:#1D9E75;font-size:12px">${hammerExp?'▲':'▼'}</span></div>`;
     html+=`<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#1D9E75;margin-bottom:2px">TEAM A</div><div style="font-size:11px;font-weight:500;color:#1D9E75">${nameA}</div></div><div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">${nameB}</div></div></div>`;
-    html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Game Result: <span style="font-weight:500;color:${hammerNetClr}">${hammerNetLabel}</span></div>`;
+    html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Match Result: <span style="font-weight:500;color:${hammerNetClr}">${hammerNetLabel}</span></div>`;
     html+=`</div>`;
     if(hammerExp){
     let carryPot=0;
