@@ -649,7 +649,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v93';
+const APP_VERSION='v94.1';
 
 // ===== THEME =====
 (function(){
@@ -2582,7 +2582,7 @@ function renderMPHoleBox(){
   // Press button and cancel — always built regardless of score state
   const activePresses2=getPresses(r2,si2);
   let pressBtn='';
-  if(pressesOnForRound(r2)&&!isRoundLocked(r2)&&hi<seg.end-1){
+  if(pressesOnForRound(r2)&&!isRoundLocked(r2)&&hi<seg.end){
     const cancelPart=activePresses2.length>0?`<button style="flex:1;padding:9px;background:transparent;border:0.5px solid var(--color-border-secondary);border-radius:8px;color:var(--color-text-secondary);font-size:12px;cursor:pointer" onclick="cancelLastPress(${r2},${si2});renderMPHoleBox()">Cancel</button>`:'';
     pressBtn=`<div style="padding:10px 12px 8px;display:flex;gap:8px"><button style="flex:3;padding:9px;background:#1D9E75;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:500;cursor:pointer" onclick="addPress(${r2},${si2},${hi},false);renderMPHoleBox()">Press</button>${cancelPart}</div>`;
   }
@@ -2594,7 +2594,7 @@ function renderMPHoleBox(){
     const pLabel=p.auto?'Auto-press':'Press '+(pi+1);
     const pStatus=pr?(pr.scoreStr||(pr.winner==='tie'?'A/S':pr.winner==='a'?'A leads':'B leads')):'—';
     const pClr=pr?'#1D9E75':'var(--color-text-tertiary)';
-    pressRows+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;font-size:11px;background:var(--color-background-secondary);${pi>0?'border-top:0.5px solid var(--color-border-tertiary);':''}"><span style="color:var(--color-text-secondary);font-weight:500">${pLabel} H${p.startHole+1}-${seg.end} · $${p.val.toFixed(2)}</span><span style="color:${pClr};font-weight:500">${pStatus}</span></div>`;
+    pressRows+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;font-size:11px;background:var(--color-background-secondary);${pi>0?'border-top:0.5px solid var(--color-border-tertiary);':''}"><span style="color:var(--color-text-secondary);font-weight:500">${pLabel} ${p.startHole+1===seg.end?'H'+(p.startHole+1):'H'+(p.startHole+1)+'-'+seg.end} · $${p.val.toFixed(2)}</span><span style="color:${pClr};font-weight:500">${pStatus}</span></div>`;
   });
   const pressCard=pressRows?`<div style="margin:8px 12px 10px;border:0.5px solid var(--color-border-tertiary);border-left:2px solid #1D9E75;border-radius:6px;overflow:hidden"><div style="padding:4px 10px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.05em">Presses</div>${pressRows}</div>`:'';
   let cancelBtn='';
@@ -3505,7 +3505,7 @@ function renderMPRound(){
     let origSummaryHtml;
     if(!finalMs){origSummaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
     else if(!finalMs.leader){origSummaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">Tied - A/S</span>`;}
-    else{const winLtr=finalMs.leader==='A'?'A':'B';const winClr=finalMs.leader==='A'?'#1D9E75':'#185FA5';const resultScore=finalMs.closed?finalMs.scoreStr.replace('Team A','A').replace('Team B','B').replace(/^[AB] /,''):finalMs.lead+' up';origSummaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winLtr} wins - ${resultScore}</span>`;}
+    else if(finalMs.closed){const winLtr=finalMs.leader==='A'?'A':'B';const winClr=finalMs.leader==='A'?'#1D9E75':'#185FA5';const resultScore=finalMs.scoreStr.replace('Team A','A').replace('Team B','B').replace(/^[AB] /,'');origSummaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winLtr} wins - ${resultScore}</span>`;}else{const ipClr=finalMs.leader==='A'?'#1D9E75':'#185FA5';const ipStr=finalMs.scoreStr.replace('Team A','A').replace('Team B','B');origSummaryHtml=`<span style="color:${ipClr};font-weight:500;font-size:12px">${ipStr}</span>`;}
 
     // Compute press net for top-level header
     const origVal=roundVal('gameVal',r,WK.gameVal);
@@ -3520,7 +3520,7 @@ function renderMPRound(){
     const headerSummary=presses.length>0&&origNet!==null?`<span style="color:${netClr};font-weight:500;font-size:12px">Net: ${netStr}</span>`:origSummaryHtml;
 
     html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
-    const netResultLabel2=(()=>{if(origNet===null)return'In progress';if(pressNetA===0)return'No Blood';return pressNetA>0?`A wins · +$${Math.abs(pressNetA).toFixed(2)}`:`B wins · +$${Math.abs(pressNetA).toFixed(2)}`;})();
+    const netResultLabel2=(()=>{if(origNet===null||!finalMs)return'In progress';if(!finalMs.closed)return finalMs.scoreStr.replace('Team A','A').replace('Team B','B');if(pressNetA===0)return'No Blood';return pressNetA>0?`A wins · +$${Math.abs(pressNetA).toFixed(2)}`:`B wins · +$${Math.abs(pressNetA).toFixed(2)}`;})();
     const netResultClr2=pressNetA>0?'#1D9E75':pressNetA<0?'#185FA5':'var(--color-text-secondary)';
     html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleMPGame('${key}')">`;
     html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">${seg.label} (H${seg.start+1}-${seg.end})</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
@@ -3596,14 +3596,14 @@ function renderMPRound(){
         const pr=calcPressResult(r,si,p);
         const pressKey=key+'p'+pi;
         const pressExp=STATE.mpExpanded[pressKey]===true;
-        const pressLabel=(p.auto?'Auto-press':'Press '+(pi+1))+' · H'+(p.startHole+1)+'-'+seg.end+' · $'+p.val.toFixed(2);
+        const pressLabel=(p.auto?'Auto-press':'Press '+(pi+1))+' · '+(p.startHole+1===seg.end?'H'+(p.startHole+1):'H'+(p.startHole+1)+'-'+seg.end)+' · $'+p.val.toFixed(2);
         let pressSummary,pressNetStr='',pressNetClr='var(--color-text-secondary)';
         if(!pr){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
         else if(pr.winner==='tie'){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">A/S</span>`;pressNetStr='$0.00';}
         else{const wLtr=pr.winner==='a'?'A':'B';const wclr=pr.winner==='a'?'#1D9E75':'#185FA5';pressSummary=`<span style="color:${wclr};font-weight:500;font-size:12px">${wLtr} wins</span>`;const pnetv=pr.winner==='a'?pr.sv:-pr.sv;pressNetStr=(pnetv>0?'+':'')+'$'+Math.abs(pnetv).toFixed(2);pressNetClr=pnetv>0?'#1D9E75':pnetv<0?'#185FA5':'var(--color-text-secondary)';}
         const pressWinName=pr?(pr.winner==='a'?nameA:pr.winner==='b'?nameB:''):'';
         html+=`<div style="margin:0 10px 8px;border:0.5px solid var(--color-border-tertiary);border-left:2px solid #1D9E75;border-radius:var(--border-radius-md);overflow:hidden">`;
-        const pressShortLabel=`PRESS · H${p.startHole+1}-${seg.end}`;
+        const pressShortLabel=`PRESS · ${p.startHole+1===seg.end?'H'+(p.startHole+1):'H'+(p.startHole+1)+'-'+seg.end}`;
         html+=`<div style="background:var(--color-background-secondary);padding:7px 12px;display:flex;align-items:center;cursor:pointer;gap:0" onclick="STATE.mpExpanded['${pressKey}']=!STATE.mpExpanded['${pressKey}'];renderMPRound()">`;
         html+=`<div style="width:36px;flex-shrink:0"><span style="font-size:11px;font-weight:600;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap">${pressShortLabel}</span></div>`;
         html+=`<div style="width:52px;flex-shrink:0"></div>`;
@@ -3969,7 +3969,7 @@ function renderMoney(){
         let pressHtml='';
         getPresses(r,si).forEach((p,pi)=>{
           const pr=calcPressResult(r,si,p);if(!pr)return;
-          const pLabel=(p.auto?'Auto-press':'Press '+(pi+1))+' · H'+(p.startHole+1)+'-'+seg.end;
+          const pLabel=(p.auto?'Auto-press':'Press '+(pi+1))+' · '+(p.startHole+1===seg.end?'H'+(p.startHole+1):'H'+(p.startHole+1)+'-'+seg.end);
           const pWinA=pr.winner==='a',pWinB=pr.winner==='b',pTied=pr.winner==='tie';
           const pDollar=pWinA?`+$${pr.sv.toFixed(2)}`:pWinB?`-$${pr.sv.toFixed(2)}`:'';
           const pScore=pr.scoreStr||'A/S';
