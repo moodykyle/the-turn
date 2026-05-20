@@ -24,19 +24,20 @@
     grad.addColorStop(0,'#0f2419');grad.addColorStop(1,'#1a3a28');
     ctx.fillStyle=grad;ctx.fill();
     const s=size/192;
-    const cx=72*s,staffTop=18*s,staffBot=158*s,ballR=12*s;
-    const groundY=162*s,groundX1=10*s,groundX2=182*s;
-    ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=4*s;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(groundX1,groundY);ctx.lineTo(groundX2,groundY);ctx.stroke();
-    ctx.strokeStyle='#ffffff';ctx.lineWidth=5*s;
+    const cx=72*s,staffTop=18*s,staffBot=168*s;
+    // ground shadow ellipse
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(cx,staffBot,32*s,10*s,0,0,Math.PI*2);
+    ctx.fillStyle='rgba(29,158,117,0.3)';
+    ctx.fill();
+    ctx.restore();
+    // pole
+    ctx.strokeStyle='#1D9E75';ctx.lineWidth=6*s;ctx.lineCap='round';
     ctx.beginPath();ctx.moveTo(cx,staffBot);ctx.lineTo(cx,staffTop);ctx.stroke();
+    // flag triangle
     ctx.fillStyle='#1D9E75';
-    ctx.beginPath();ctx.moveTo(cx,staffTop);ctx.lineTo(cx+68*s,staffTop+24*s);ctx.lineTo(cx,staffTop+48*s);ctx.closePath();ctx.fill();
-    ctx.fillStyle='#ffffff';
-    ctx.beginPath();ctx.arc(cx,staffBot,ballR,0,Math.PI*2);ctx.fill();
-    const arcY=staffBot-28*s;
-    ctx.strokeStyle='rgba(29,158,117,0.5)';ctx.lineWidth=3*s;
-    ctx.beginPath();ctx.moveTo(cx-30*s,arcY);ctx.quadraticCurveTo(cx,arcY-14*s,cx+30*s,arcY);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx,staffTop);ctx.lineTo(cx+72*s,staffTop+28*s);ctx.lineTo(cx,staffTop+56*s);ctx.closePath();ctx.fill();
     return c.toDataURL('image/png');
   }
   function injectIcons(){
@@ -396,12 +397,10 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
       <div class="home-hero">
         <div style="display:flex;align-items:flex-start;justify-content:space-between">
           <div class="home-logo-mark">
-            <svg width="46" height="62" viewBox="0 0 46 62" xmlns="http://www.w3.org/2000/svg">
-              <line x1="4" y1="58" x2="42" y2="58" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="17" y1="58" x2="17" y2="7" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
-              <path d="M17 7 L42 16 L17 25Z" fill="#1D9E75"/>
-              <circle cx="17" cy="58" r="4.5" fill="#ffffff"/>
-              <path d="M5 47 Q17 41 29 47" fill="none" stroke="rgba(29,158,117,0.35)" stroke-width="1.2" stroke-linecap="round"/>
+            <svg width="46" height="72" viewBox="0 0 46 72" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="17" cy="66" rx="16" ry="6" fill="#1D9E75" opacity="0.3"/>
+              <line x1="17" y1="66" x2="17" y2="5" stroke="#1D9E75" stroke-width="3" stroke-linecap="round"/>
+              <path d="M17 5 L46 19 L17 33 Z" fill="#1D9E75"/>
             </svg>
             <div class="home-wordmark">
               <span class="home-wm-the">The</span>
@@ -409,7 +408,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
               <div class="home-wm-rule"></div>
             </div>
           </div>
-          <button class="home-theme-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle dark/light mode"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button>
+          
         </div>
         <div class="home-tagline">Make the turn. Skip the drama.</div>
       </div>
@@ -439,7 +438,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
     <div class="wizard">
       <div class="step-dots" id="stepDots"></div>
       <div class="wizard-step active" id="step1">
-        <div class="wizard-title">Trip setup</div>
+        <div class="wizard-title">Trip Setup</div>
         <div class="wizard-sub">Takes about 2 minutes.</div>
         <div class="field-row"><div class="field-label">Trip name</div><input class="text-input" id="weekendName" value="" placeholder="e.g. Shaker Cup 2025"/></div>
         <div class="field-row"><div class="field-label">Date</div><input class="text-input" id="weekendDate" type="date" max="2099-12-31"/></div>
@@ -482,8 +481,8 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
         <div class="wizard-nav"><button class="btn-secondary" id="step3Back">← Back</button><button class="btn-primary" id="step3Next">Next →</button></div>
       </div>
       <div class="wizard-step" id="step4">
-        <div class="wizard-title">Money & games</div>
-        <div class="wizard-sub">Set trip-wide stakes and which games to play. Dollar values can be overridden per round in Options after the trip is created.</div>
+        <div class="wizard-title">Money & Games</div>
+        <div class="wizard-sub">These are your trip defaults. Everything here can be adjusted per round in Options.</div>
         <div id="playerCountWarning" style="display:none;background:#FAEEDA;border:0.5px solid #EFB880;border-radius:var(--border-radius-md);padding:10px 12px;margin-bottom:14px;"></div>
         <div class="field-row"><div class="field-label" style="display:flex;align-items:center;gap:6px">Weekend buy-in per player ($) <span class="info-icon" tabindex="0">i<span class="info-tip">Each player puts this into the pot. Winner is determined by the method selected below.</span></span></div><input id="buyIn" type="number" value="50" style="width:90px;padding:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:14px;background:var(--color-background-primary);color:var(--color-text-primary);"/></div><div class="field-row"><div class="field-label">Weekend winner</div><select id="wizPotMethod" class="course-select" style="width:100%;padding:8px 10px;font-size:14px;"><option value="netstroke">Net stroke play (lowest net score)</option><option value="matchplay">Match play points (most points)</option></select></div>
         <div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;margin-bottom:14px">
@@ -591,7 +590,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
     </div>
     <div id="view-setup" style="display:none" class="view">
       <div class="view-title">Options</div>
-      <div class="opt-nav"><button class="opt-btn" id="opt-btn-weekend" onclick="setOptPanel('weekend')">Weekend</button><button class="opt-btn" id="opt-btn-teams" onclick="setOptPanel('teams')">Game<br>Setup</button><button class="opt-btn" id="opt-btn-players" onclick="setOptPanel('players')">Players</button><button class="opt-btn" id="opt-btn-courses" onclick="setOptPanel('courses')">Courses</button><button class="opt-btn" id="opt-btn-info" onclick="setOptPanel('info')">General Info</button></div>
+      <div class="opt-nav"><button class="opt-btn" id="opt-btn-weekend" onclick="setOptPanel('weekend')">Weekend</button><button class="opt-btn" id="opt-btn-teams" onclick="setOptPanel('teams')">Game<br>Setup</button><button class="opt-btn" id="opt-btn-players" onclick="setOptPanel('players')">Players</button><button class="opt-btn" id="opt-btn-courses" onclick="setOptPanel('courses')">Courses</button><button class="opt-btn" id="opt-btn-info" onclick="setOptPanel('info')">General</button></div>
       <div id="opt-panel-teams" class="opt-panel"></div>
       <div id="opt-panel-players" class="opt-panel"></div>
       <div id="opt-panel-weekend" class="opt-panel"></div>
@@ -649,7 +648,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v94.8';
+const APP_VERSION='v95.5';
 
 // ===== THEME =====
 (function(){
@@ -692,6 +691,7 @@ function toggleTheme(){
     localStorage.removeItem('theturn_theme');
   }
   updateThemeUI();
+  if(document.getElementById('opt-panel-info')&&document.getElementById('opt-panel-info').innerHTML)renderInfoPanel();
 }
 const LS_TRIPS='theturn_trips',LS_LIB='theturn_library',LS_COURSES='theturn_courses';
 const ECATS=[{id:'lodging',e:'🏠',l:'Lodging'},{id:'food',e:'🍔',l:'Food'},{id:'drinks',e:'🍺',l:'Drinks'},{id:'golf',e:'⛳',l:'Golf & Side Bets'},{id:'misc',e:'📦',l:'Misc'}];
@@ -2886,7 +2886,7 @@ function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
   const sameNameRounds=WK.rounds.filter(r=>r.courseName===e.courseName);
   if(sameNameRounds.length>1){const occ=WK.rounds.slice(0,e.r+1).filter(r=>r.courseName===e.courseName).length;return displayName2+' ('+occ+')';}
   return displayName2||e.courseName;
-})();html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${p.name}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}}document.getElementById('boardContent').innerHTML=html;}
+})();html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${displayName(e.pi)}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}}document.getElementById('boardContent').innerHTML=html;}
 function pOpts(sel){return WK.players.map((p,i)=>`<option value="${i}"${i===sel?' selected':''}>${displayName(i)}</option>`).join('');}
 function setWolfOrder(r,pos,newPi){
   if(!STATE.wolfOrder)STATE.wolfOrder=WK.rounds.map(()=>[0,1,2,3]);
@@ -3378,7 +3378,6 @@ function renderWeekendPanel(){
   const themeIcon=themeState==='dark'?'🌙':themeState==='light'?'☀️':'🌓';
   const themeNext=themeState==='system'?'Dark':themeState==='dark'?'Light':'Auto';
   let html=`<div class="section-card"><div class="section-hd">Trip details</div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Name</span><input class="inline-edit" value="${WK.name}" onchange="WK.name=this.value;document.getElementById('mainTitle').textContent=WK.name"/></div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Date</span><input class="inline-edit" type="date" value="${WK.date}" max="2099-12-31" onchange="WK.date=this.value;const _fD=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' · '+_fD(WK.date)):WK.region||_fD(WK.date)||''"/></div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Region</span><input class="inline-edit" value="${WK.region||''}" placeholder="e.g. Pinehurst" onchange="WK.region=this.value;const _fR=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' · '+_fR(WK.date)):WK.region||_fR(WK.date)||''"/></div>${WK.rounds.map((rd,i)=>{const rdOpts=Object.keys(CATALOG).map(n=>`<option value="${n}"${rd.courseName===n?' selected':''}>${n}</option>`).join('');return`<div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Rd ${i+1}</span><select class="inline-edit" onchange="WK.rounds[${i}].courseName=this.value;WK.rounds[${i}].course=CATALOG[this.value];renderWeekendPanel()">${rdOpts}</select>${WK.rounds.length>1?`<button class="btn-danger" onclick="removeRound(${i})" style="flex-shrink:0">✕</button>`:''}</div>`;}).join('')}<div style="padding:8px 12px;display:flex;align-items:center;gap:8px;border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Add round:</span><select class="course-select" id="newRoundCourse" style="flex:1">${Object.keys(CATALOG).map(n=>`<option value="${n}">${n}</option>`).join('')}</select><button class="btn-sm" onclick="addRound()">+ Add</button></div></div>`;
-  html+=`<div class="section-card" style="margin-top:14px"><div class="section-hd">Display</div><div class="setup-row" style="justify-content:space-between"><div><div style="font-size:13px;color:var(--color-text-primary)">${themeIcon} Appearance</div><div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">Currently: ${themeState==='system'?'System default':themeState==='dark'?'Dark mode':'Light mode'}</div></div><button class="btn-sm" onclick="toggleTheme()" style="flex-shrink:0">Switch to ${themeNext}</button></div></div>`;
   html+=`</div>`;
   document.getElementById('opt-panel-weekend').innerHTML=html;
 }
@@ -3396,7 +3395,11 @@ function renderInfoPanel(){
     {id:'info-standings',title:'Standings',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The <strong>Standings</strong> tab shows the weekend leaderboards. The primary leaderboard is determined by the <strong>Weekend winner</strong> setting in Options → Game Setup - either Net stroke play (lowest cumulative net score) or Match play points (most points). The weekend winner method is also what determines who wins the Weekend Pot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">If Match play points is selected as the weekend winner, both a Match Play Points leaderboard and a Stroke Play net leaderboard are shown. If Net stroke play is selected, only the net leaderboard is shown.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">A collapsible Best Individual Rounds section ranks each player's single-round net performances across all rounds.</p>`},
     {id:'info-data',title:'Data & Sync',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">All data is stored in the cloud and syncs automatically. When you open the app, it fetches the latest state, making any trip created on one device visible to everyone.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The app also works offline - scores are saved locally and pushed to the cloud when connectivity returns.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Note: the app syncs on load, not in real-time. If two players are scoring simultaneously, close and reopen the app to see each other's latest changes.</p>`},
   ];
-  const html=sections.map(s=>`
+  const themeState2=document.body.classList.contains('force-dark')?'dark':document.body.classList.contains('force-light')?'light':'system';
+  const themeIcon2=themeState2==='dark'?'🌙':themeState2==='light'?'☀️':'🌙';
+  const themeNext2=themeState2==='dark'?'Light':'Dark';
+  let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Display</div><div class="setup-row" style="justify-content:space-between"><div><div style="font-size:13px;color:var(--color-text-primary)">${themeIcon2} Appearance</div><div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">Currently: ${themeState2==='system'?'System default':themeState2==='dark'?'Dark mode':'Light mode'}</div></div><button class="btn-sm" onclick="toggleTheme()" style="flex-shrink:0">Switch to ${themeNext2}</button></div></div>`;
+  html+=sections.map(s=>`
     <div class="section-card" style="margin-bottom:10px">
       <div class="section-hd" style="cursor:pointer" onclick="toggleInfoSection('${s.id}')">
         <span>${s.title}</span>
@@ -3534,7 +3537,7 @@ function renderMPRound(){
     const headerSummary=presses.length>0&&origNet!==null?`<span style="color:${netClr};font-weight:500;font-size:12px">Net: ${netStr}</span>`:origSummaryHtml;
 
     html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
-    const netResultLabel2=(()=>{if(origNet===null||!finalMs)return'In progress';if(!finalMs.closed)return finalMs.scoreStr.replace('Team A','A').replace('Team B','B');if(pressNetA===0)return'No Blood';return pressNetA>0?`A wins · +$${Math.abs(pressNetA).toFixed(2)}`:`B wins · +$${Math.abs(pressNetA).toFixed(2)}`;})();
+    const netResultLabel2=(()=>{if(origNet===null||!finalMs)return'In progress';if(!finalMs.closed){if(pressNetA>0)return`A wins · +$${Math.abs(pressNetA).toFixed(2)}`;if(pressNetA<0)return`B wins · +$${Math.abs(pressNetA).toFixed(2)}`;return finalMs.scoreStr.replace('Team A','A').replace('Team B','B');}if(pressNetA===0)return'No Blood';return pressNetA>0?`A wins · +$${Math.abs(pressNetA).toFixed(2)}`:`B wins · +$${Math.abs(pressNetA).toFixed(2)}`;})();
     const netResultClr2=pressNetA>0?'#1D9E75':pressNetA<0?'#185FA5':'var(--color-text-secondary)';
     html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleMPGame('${key}')">`;
     html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">Match ${si+1} · H${seg.start+1}-${seg.end}</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
