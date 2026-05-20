@@ -394,6 +394,10 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
   <!-- SPLASH -->
   <div id="splashScreen" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#0f2419 0%,#1a3a28 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
     <div style="position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(29,158,117,0.18) 0%,transparent 70%);pointer-events:none;"></div>
+    <div style="margin-bottom:28px;text-align:center;animation:splashWordmark 0.4s ease 1.8s both;">
+      <div style="font-family:'DM Sans',sans-serif;font-weight:300;font-size:11px;color:#1D9E75;letter-spacing:0.32em;text-transform:uppercase;margin-bottom:4px;">THE</div>
+      <div style="font-family:'Bebas Neue',cursive;font-size:52px;color:#ffffff;letter-spacing:0.05em;line-height:0.9;">TURN</div>
+    </div>
     <div style="position:relative;width:120px;height:200px;">
       <svg id="splashHole" style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);animation:splashHoleAppear 0.35s ease 0.1s both;" width="90" height="28" viewBox="0 0 90 28" xmlns="http://www.w3.org/2000/svg">
         <ellipse cx="45" cy="14" rx="42" ry="13" fill="rgba(29,158,117,0.3)"/>
@@ -403,8 +407,10 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
         <path d="M34 8 L80 30 L34 52 Z" fill="#1D9E75"/>
       </svg>
     </div>
+
   </div>
   <style>
+    @keyframes splashWordmark{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
     @keyframes splashHoleAppear{from{opacity:0;transform:translateX(-50%) scale(0);}to{opacity:1;transform:translateX(-50%) scale(1);}}
     @keyframes splashFlagDrop{0%{top:-160px;opacity:0;}40%{opacity:1;}70%{top:42px;}82%{top:34px;}91%{top:40px;}100%{top:38px;}}
   </style>
@@ -666,7 +672,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v95.8';
+const APP_VERSION='v95.11';
 
 // ===== THEME =====
 (function(){
@@ -5110,7 +5116,7 @@ Promise.all([loadCourses(),loadLibrary()]).then(()=>{
     renderTripList();
     renderLibrarySection();
     const elapsed=Date.now()-_splashStart;
-    const remain=Math.max(0,1500-elapsed);
+    const remain=Math.max(0,2500-elapsed);
     setTimeout(dismissSplash,remain);
   });
 });
