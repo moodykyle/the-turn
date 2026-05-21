@@ -672,7 +672,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null;
-const APP_VERSION='v95.13';
+const APP_VERSION='v95.15';
 
 // ===== THEME =====
 (function(){
@@ -2220,7 +2220,7 @@ function renderSnakeEntry(){
   const options=`<option value="">— No holder —</option>`+
     WK.players.map((p,i)=>`<option value="${i}"${currentHolder===i?' selected':''}>${displayName(i)}</option>`).join('')+
     (currentHolder!==null?`<option value="clear">⬜ Clear snake</option>`:'');
-  wrap.innerHTML=`<div style="margin:0.5rem 1rem 0;padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary)">
+  wrap.innerHTML=`<div style="margin:0.75rem 1rem 0;padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary)">
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:16px">🐍</span>
       <span style="font-size:12px;font-weight:500;color:var(--color-text-primary)">Snake holder</span>
@@ -5116,7 +5116,7 @@ Promise.all([loadCourses(),loadLibrary()]).then(()=>{
     renderTripList();
     renderLibrarySection();
     const elapsed=Date.now()-_splashStart;
-    const remain=Math.max(0,2500-elapsed);
+    const remain=Math.max(0,2800-elapsed);
     setTimeout(dismissSplash,remain);
   });
 });
