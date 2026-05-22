@@ -672,7 +672,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v96.33';
+const APP_VERSION='v97.11';
 
 // ===== THEME =====
 (function(){
@@ -1510,55 +1510,222 @@ function startNewWeekend(){WK=null;STATE=null;isReadOnly=false;viewingTripId=nul
   const wd=document.getElementById('weekendDate');if(wd)wd.value='';const wr=document.getElementById('weekendRegion');if(wr)wr.value='';
   ['wizMpOn','wizVegasOn','wizSkinsOn','wizTwosOn','wizSnakeOn','wizRazzleOn'].forEach(id=>{const el=document.getElementById(id);if(el){el.checked=false;el.dispatchEvent(new Event('change'));}});
   [1,2,3,4].forEach(n=>{const el=document.getElementById('step'+n);if(el)el.classList.remove('active');});wizStep=1;const s1=document.getElementById('step1');if(s1)s1.classList.add('active');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='block';updateDots();}
-function _qrModalHtml(step,selectedN){
-  if(step===1){
-    return`<div style="background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);overflow:hidden;width:320px;max-width:calc(100vw - 40px)">
-      <div style="padding:18px 20px 14px;border-bottom:0.5px solid var(--color-border-tertiary)">
-        <div style="display:inline-block;font-size:11px;font-weight:500;color:#1D9E75;background:rgba(29,158,117,0.12);border-radius:4px;padding:2px 8px;margin-bottom:8px">Quick Round</div>
-        <div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">How many players?</div>
-      </div>
-      ${[2,3,4].map(n=>`<div onclick="window._qrSelectPlayers(${n})" style="display:flex;align-items:center;justify-content:space-between;padding:15px 20px;border-bottom:0.5px solid var(--color-border-tertiary);border-left:3px solid ${n===selectedN?'#1D9E75':'transparent'};cursor:pointer">
-        <span style="font-size:15px;font-weight:${n===selectedN?500:400};color:var(--color-text-primary)">${n} players</span>
-        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid ${n===selectedN?'#1D9E75':'var(--color-border-secondary)'};background:${n===selectedN?'#1D9E75':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          ${n===selectedN?'<div style="width:8px;height:8px;border-radius:50%;background:#fff"></div>':''}
-        </div>
-      </div>`).join('')}
-      <div onclick="document.getElementById('qrModal').style.display='none'" style="padding:14px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Cancel</div>
-    </div>`;
-  } else {
-    return`<div style="background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);overflow:hidden;width:320px;max-width:calc(100vw - 40px)">
-      <div style="padding:18px 20px 14px;border-bottom:0.5px solid var(--color-border-tertiary)">
-        <div style="display:inline-block;font-size:11px;font-weight:500;color:#1D9E75;background:rgba(29,158,117,0.12);border-radius:4px;padding:2px 8px;margin-bottom:8px">Quick Round</div>
-        <div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">How many holes?</div>
-      </div>
-      <div onclick="window._qrSelectHoles('18')" style="display:flex;align-items:center;justify-content:space-between;padding:15px 20px;border-bottom:0.5px solid var(--color-border-tertiary);border-left:3px solid #1D9E75;cursor:pointer">
-        <span style="font-size:15px;font-weight:500;color:var(--color-text-primary)">18 holes</span>
-        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid #1D9E75;background:#1D9E75;display:flex;align-items:center;justify-content:center;flex-shrink:0"><div style="width:8px;height:8px;border-radius:50%;background:#fff"></div></div>
-      </div>
-      <div onclick="window._qrSelectHoles('front')" style="display:flex;align-items:center;justify-content:space-between;padding:15px 20px;border-bottom:0.5px solid var(--color-border-tertiary);border-left:3px solid transparent;cursor:pointer">
-        <div><div style="font-size:15px;color:var(--color-text-primary)">Front 9</div><div style="font-size:12px;color:var(--color-text-tertiary);margin-top:2px">Holes 1-9</div></div>
-        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--color-border-secondary);flex-shrink:0"></div>
-      </div>
-      <div onclick="window._qrSelectHoles('back')" style="display:flex;align-items:center;justify-content:space-between;padding:15px 20px;border-bottom:0.5px solid var(--color-border-tertiary);border-left:3px solid transparent;cursor:pointer">
-        <div><div style="font-size:15px;color:var(--color-text-primary)">Back 9</div><div style="font-size:12px;color:var(--color-text-tertiary);margin-top:2px">Holes 10-18</div></div>
-        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--color-border-secondary);flex-shrink:0"></div>
-      </div>
-      <div onclick="document.getElementById('qrModal').style.display='none'" style="padding:14px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Cancel</div>
-    </div>`;
-  }
+// ── Quick Round Modal (fully self-contained, 4 steps) ──
+let _qrS={step:1,n:4,holes:'18',course:null}; // QR state
+
+function _qrRender(){
+  const modal=document.getElementById('qrModal');
+  if(!modal)return;
+  const inner=modal.querySelector('.qr-inner');
+  if(inner)inner.innerHTML=_qrStepHtml();
 }
-window._qrPendingPlayers=4;
-window._qrSelectPlayers=function(n){
-  window._qrPendingPlayers=n;
-  const modal=document.getElementById('qrModal');
-  if(modal)modal.querySelector('.qr-inner').innerHTML=_qrModalHtml(2,n);
+
+function _qrStepHtml(){
+  const pill='<div style="display:inline-block;font-size:11px;font-weight:500;color:#1D9E75;background:rgba(29,158,117,0.12);border-radius:4px;padding:2px 8px;margin-bottom:10px">Quick Round</div>';
+  const card='background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);overflow:hidden;width:340px;max-width:calc(100vw - 32px)';
+  // Dots
+  const dots=Array.from({length:5},(_,i)=>'<div style="width:7px;height:7px;border-radius:50%;background:'+(_qrS.step===i+1?'#1D9E75':'var(--color-border-secondary)')+'"></div>').join('');
+  const dotsRow='<div style="display:flex;justify-content:center;gap:6px;padding:12px 0 4px">'+dots+'</div>';
+
+  if(_qrS.step===1){
+    const rows=[2,3,4].map(function(n){
+      const active=n===_qrS.n;
+      return'<div onclick="window._qrSetN(this)" data-val="'+n+'" style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--color-border-tertiary);border-left:3px solid '+(active?'#1D9E75':'transparent')+';cursor:pointer">'
+        +'<span style="font-size:15px;font-weight:'+(active?500:400)+';color:var(--color-text-primary)">'+n+' players</span>'
+        +'<div style="width:20px;height:20px;border-radius:50%;border:1.5px solid '+(active?'#1D9E75':'var(--color-border-secondary)')+';background:'+(active?'#1D9E75':'transparent')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(active?'<div style="width:8px;height:8px;border-radius:50%;background:#fff"></div>':'')+'</div>'
+        +'</div>';
+    }).join('');
+    return'<div style="'+card+'">'+dotsRow
+      +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">How many players?</div></div>'
+      +rows
+      +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
+      +'<div onclick="window._qrClose()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Cancel</div>'
+      +'</div>';
+  }
+
+  if(_qrS.step===2){
+    const selCourse=_qrS.course||Object.keys(CATALOG)[0]||'';
+    const courseOpts=Object.keys(CATALOG).map(function(cn){return'<option value='+JSON.stringify(cn)+(cn===selCourse?' selected':'')+'>'+cn+'</option>';}).join('');
+    const holesOpts=[{val:'18',label:'18 holes',sub:''},{val:'front',label:'Front 9',sub:'Holes 1-9'},{val:'back',label:'Back 9',sub:'Holes 10-18'}];
+    const holesRows=holesOpts.map(function(o){
+      const active=o.val===_qrS.holes;
+      return'<div onclick="window._qrSetHoles(this)" data-val='+JSON.stringify(o.val)+' style="display:flex;align-items:center;justify-content:space-between;padding:13px 20px;border-bottom:0.5px solid var(--color-border-tertiary);border-left:3px solid '+(active?'#1D9E75':'transparent')+';cursor:pointer">'
+        +'<div>'+(o.sub?'<div style="font-size:15px;font-weight:'+(active?500:400)+';color:var(--color-text-primary)">'+o.label+'</div><div style="font-size:12px;color:var(--color-text-tertiary);margin-top:2px">'+o.sub+'</div>':'<span style="font-size:15px;font-weight:'+(active?500:400)+';color:var(--color-text-primary)">'+o.label+'</span>')+'</div>'
+        +'<div style="width:20px;height:20px;border-radius:50%;border:1.5px solid '+(active?'#1D9E75':'var(--color-border-secondary)')+';background:'+(active?'#1D9E75':'transparent')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(active?'<div style="width:8px;height:8px;border-radius:50%;background:#fff"></div>':'')+'</div>'
+        +'</div>';
+    }).join('');
+    return'<div style="'+card+'">'+dotsRow
+      +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">Course &amp; holes</div></div>'
+      +'<div style="padding:12px 20px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:6px">Course</div><div style="position:relative"><select onchange="window._qrSet(\'course\',this.value)" style="width:100%;font-size:14px;background:var(--color-background-primary);color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:8px 32px 8px 10px;appearance:none;-webkit-appearance:none">'+courseOpts+'</select><span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:14px;color:#1D9E75;pointer-events:none">&#9662;</span></div></div>'
+      +holesRows
+      +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
+      +'<div onclick="window._qrBack()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">\u2190 Back</div>'
+      +'</div>';
+  }
+
+  if(_qrS.step===3){
+    // Player entry — reuse same IDs as wizard so onPlayerNameInput works
+    const sortedLib=[...PLAYER_LIBRARY].sort(function(a,b){return(a.last||'').localeCompare(b.last||'');});
+    const datalist='<datalist id="playerLibList">'+sortedLib.map(function(p){return'<option value='+JSON.stringify(libDisplayName(p))+' data-idx="'+p.idx+'">';}).join('')+'</datalist>';
+    const rows=Array.from({length:_qrS.n},function(_,i){
+      const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
+      return'<div style="display:flex;align-items:center;gap:8px;padding:10px 20px;border-bottom:0.5px solid var(--color-border-tertiary)">'
+        +'<div class="avatar" style="background:'+c.bg+';color:'+c.fg+';width:34px;height:34px;font-size:11px;flex-shrink:0" id="pavi'+i+'">P'+(i+1)+'</div>'
+        +'<div style="flex:1;display:flex;gap:6px;min-width:0">'
+        +'<input class="text-input" id="pfirst'+i+'" list="playerLibList" value="" placeholder="First" oninput="onPlayerNameInput('+i+')" style="flex:1;min-width:0;font-size:13px;padding:7px 8px"/>'
+        +'<input class="text-input" id="plast'+i+'" value="" placeholder="Last" style="flex:1;min-width:0;font-size:13px;padding:7px 8px"/>'
+        +'</div>'
+        +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
+        +'<span style="font-size:11px;color:var(--color-text-secondary)">Hdcp</span>'
+        +'<input id="pidx'+i+'" type="number" step="0.1" min="0" max="54" value="" style="width:56px;padding:7px 6px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary)" placeholder=""/>'
+        +'</div>'
+        +'</div>';
+    }).join('');
+    return'<div style="'+card+';max-height:90vh;overflow-y:auto">'+dotsRow+datalist
+      +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">Players</div><div style="font-size:12px;color:var(--color-text-secondary);margin-top:3px">Type a name or pick from your library</div></div>'
+      +rows
+      +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
+      +'<div onclick="window._qrBack()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">\u2190 Back</div>'
+      +'</div>';
+  }
+
+  if(_qrS.step===4){
+    const hdcpPct=Math.round((_qrS.hdcpPct||0.8)*100);
+    const netOffLow=_qrS.netOffLow||false;
+    return'<div style="'+card+'">'+dotsRow
+      +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">Handicap options</div></div>'
+      +'<div style="padding:14px 20px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between">'
+        +'<div><div style="font-size:14px;font-weight:500;color:var(--color-text-primary)">Handicap adjustment</div><div style="font-size:12px;color:var(--color-text-tertiary);margin-top:2px">% of USGA index applied</div></div>'
+        +'<div style="display:flex;align-items:center;gap:6px"><input id="qrHdcpPct" type="number" min="0" max="100" value="'+hdcpPct+'" style="width:60px;padding:7px 8px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:14px;background:var(--color-background-primary);color:var(--color-text-primary);text-align:right"><span style="font-size:13px;color:var(--color-text-secondary)">%</span></div>'
+      +'</div>'
+      +'<div style="padding:14px 20px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between">'
+        +'<div><div style="font-size:14px;font-weight:500;color:var(--color-text-primary)">Net off low man</div><div style="font-size:12px;color:var(--color-text-tertiary);margin-top:2px">Handicap strokes relative to lowest</div></div>'
+        +'<label class="toggle"><input type="checkbox" id="qrNetOffLow"'+(netOffLow?' checked':'')+' onchange="_qrS.netOffLow=this.checked"><span class="toggle-slider"></span></label>'
+      +'</div>'
+      +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue →</button></div>'
+      +'<div onclick="window._qrBack()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">← Back</div>'
+      +'</div>';
+  }
+
+  if(_qrS.step===5){
+    const cn=_qrS.course||Object.keys(CATALOG)[0]||'';
+    const holeLabel=_qrS.holes==='front'?'Front 9':_qrS.holes==='back'?'Back 9':'18 holes';
+    const subtitle=cn+' \u00b7 '+holeLabel+' \u00b7 '+_qrS.n+' players';
+    const body=_gsHtml(pill,subtitle);
+    return'<div style="'+card+';max-height:90vh;overflow-y:auto">'+dotsRow
+      +body
+      +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrFinish()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Start Round \u2192</button></div>'
+      +'<div onclick="window._qrSkipGames()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Skip - no games</div>'
+      +'<div onclick="window._qrBack()" style="padding:8px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">\u2190 Back</div>'
+      +'</div>';
+  }
+  return '';
+}
+
+window._qrClose=function(){const m=document.getElementById('qrModal');if(m)m.style.display='none';};
+window._qrSetHoles=function(el){_qrS.holes=el.dataset.val;_qrRender();};
+window._qrSetN=function(el){_qrS.n=parseInt(el.dataset.val);_qrRender();};
+window._qrSet=function(key,val){_qrS[key]=val;_qrRender();};
+window._qrBack=function(){
+  if(_qrS.step>1){
+    _qrS.step--;
+    _qrRender();
+    if(_qrS.step===3&&_qrS.players&&_qrS.players.length){
+      _qrS.players.forEach(function(p,i){
+        const fe=document.getElementById('pfirst'+i);if(fe)fe.value=p.first||'';
+        const le=document.getElementById('plast'+i);if(le)le.value=p.last||'';
+        const ie=document.getElementById('pidx'+i);if(ie)ie.value=p.idx||'';
+        const av=document.getElementById('pavi'+i);if(av&&p.first)av.textContent=p.first.substring(0,2).toUpperCase();
+      });
+    }
+  }
 };
-window._qrSelectHoles=function(holes){
-  const modal=document.getElementById('qrModal');
-  if(modal)modal.style.display='none';
-  startQuickRoundFinal(window._qrPendingPlayers,holes);
+window._qrNext=function(){
+  if(_qrS.step===3){
+    const pl=[];for(let i=0;i<_qrS.n;i++){pl.push({first:(document.getElementById('pfirst'+i)?.value||'').trim()||('Player '+(i+1)),last:(document.getElementById('plast'+i)?.value||'').trim(),idx:parseFloat(document.getElementById('pidx'+i)?.value||10)||10});}
+    _qrS.players=pl;_gsGames={};
+  }
+  if(_qrS.step===4){_qrS.hdcpPct=parseFloat(document.getElementById('qrHdcpPct')?.value||80)/100;_qrS.netOffLow=document.getElementById('qrNetOffLow')?.checked||false;}
+  if(_qrS.step<5){_qrS.step++;_qrRender();}
 };
+
+window._qrFinish=function(){_qrLaunchRound();};
+window._qrSkipGames=function(){_gsGames={};_qrLaunchRound();};
+
+function _qrLaunchRound(){
+  const n=_qrS.n;
+  const cn=_qrS.course||Object.keys(CATALOG)[0];
+  const holes=_qrS.holes;
+  const nineHole=holes==='front'?'front':holes==='back'?'back':null;
+  const today=new Date().toISOString().split('T')[0];
+  const suffix=holes==='front'?' - Front 9':holes==='back'?' - Back 9':'';
+
+  // Read from _qrS.players (saved when user advanced from step 3)
+  const savedPl=_qrS.players||[];
+  const players=[];
+  for(let i=0;i<n;i++){
+    const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
+    const sp=savedPl[i]||{};
+    const first=sp.first||('Player '+(i+1));
+    const last=sp.last||'';
+    const libMatch=PLAYER_LIBRARY.find(function(p){return(p.first||'').toLowerCase()===first.toLowerCase()&&(p.last||'').toLowerCase()===last.toLowerCase();});
+    const venmo=libMatch?(libMatch.venmo||''):'';
+    const lid=libMatch?(libMatch.lid||''):'';
+    const displayN=last?last:first;
+    players.push({name:displayN,first,last,venmo,lid,idx:sp.idx||10,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()});
+  }
+  resolveDisplayNames(players);
+  let libUpdated=false;
+  players.forEach(function(p){
+    if(!p.first)return;
+    const exists=PLAYER_LIBRARY.find(function(l){return(l.first||'').toLowerCase()===p.first.toLowerCase()&&(l.last||'').toLowerCase()===(p.last||'').toLowerCase();});
+    if(!exists){const newLid=genUUID();PLAYER_LIBRARY.push({lid:newLid,first:p.first,last:p.last||'',idx:p.idx||0,venmo:p.venmo||''});p.lid=newLid;libUpdated=true;}
+    else{p.lid=exists.lid;if(p.idx&&exists.idx!==p.idx){exists.idx=p.idx;libUpdated=true;}}
+  });
+  if(libUpdated)saveLib();
+  window._qrClose();
+
+  const th=nineHole?9:18;
+  const g=3;
+  const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];
+  const round={courseName:cn,course:CATALOG[cn],...(nineHole&&{nineHole}),mpOn:false,vegasOn:false,skinsOn:false,snakeOn:false,razzleOn:false,wolfOn:false,hammerOn:false,twosOn:false,hammerSegs:1,isE9:false,inStandings:true};
+  _gsApplyToRound(round);
+
+  WK={
+    _id:Date.now()+'',
+    name:'Quick Round'+suffix+' - '+today,
+    date:today,region:'',players,
+    rounds:[round],
+    hdcpPct:_qrS.hdcpPct||0.8,
+    buyIn:0,potMethod:'netstroke',
+    isQuickRound:true,
+    mpOn:false,mpGamesDefault:nineHole?1:g,mpGamesPerRound:[nineHole?1:g],gameVal:5,mpSettle:'perplayer',
+    vegasOn:false,vegasVal:0.5,vegasSegsDefault:nineHole?1:3,vegasSegsPerRound:[nineHole?1:3],vegasSettle:'perplayer',
+    twosOn:false,twosAmt:25,
+    skinsOn:false,skinsVal:5,skinsFmt:n<4?'individual':'team',skinsSettle:'perplayer',skinsGamesDefault:nineHole?1:3,skinsGamesPerRound:[nineHole?1:3],
+    snakeOn:false,snakeBase:1,snakeGrowth:'double',snakeIncrement:1,snakePayout:'split',
+    wolfOn:false,wolfVal:1,wolfBlindMult:2,wolfLoneMode:'A',wolfPartnerMode:'bestball',
+    razzleOn:false,razzleVal:5,razzleBirdieBonus:5,razzleSweepBonus:5,razzle5HoleBonus:5,razzleSettle:'perplayer',razzleBirdieGross:false,
+    hammerOn:false,hammerVal:2,hammerSegsDefault:1,hammerMode:'any',hammerMax:0,hammerPayout:'perplayer',hammerHalve:'carry',hammerScoring:'bestball',hammerFirstTeam:0,hammerSegsPerRound:[1],
+    pressesOn:false,pressVal:null,autoPressOn:false,autoPressThreshold:2
+  };
+  // Apply _gsGames dollar values to WK
+  _gsApplyToWK();
+  // Ensure skinsFmt is correct for player count
+  if(n<4)WK.skinsFmt='individual';
+  WK.rounds.forEach(function(rd){if(n<4)rd.skinsOn=rd.skinsOn&&true;});
+
+  isReadOnly=false;viewingTripId=null;_isQuickRoundWizard=false;
+  window._qrNineHole=nineHole;
+  window._qrWasQR=true;
+  initState(_qrS.netOffLow||false);
+  launchMainApp();
+  autoSave();
+}
+
 function startQuickRound(){
+  _qrS={step:1,n:4,holes:'18',course:Object.keys(CATALOG)[0]||null,players:[],hdcpPct:0.8,netOffLow:false};
+  _gsGames={};
   let modal=document.getElementById('qrModal');
   if(!modal){
     modal=document.createElement('div');
@@ -1566,45 +1733,13 @@ function startQuickRound(){
     modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;';
     const inner=document.createElement('div');
     inner.className='qr-inner';
-    inner.innerHTML=_qrModalHtml(1,4);
     modal.appendChild(inner);
     document.body.appendChild(modal);
-  } else {
-    modal.querySelector('.qr-inner').innerHTML=_qrModalHtml(1,4);
   }
-  window._qrPendingPlayers=4;
   modal.style.display='flex';
+  _qrRender();
 }
-function startQuickRoundWithPlayers(n){startQuickRoundFinal(n,'18');}
-function startQuickRoundFinal(n,holes){
-  WK=null;STATE=null;isReadOnly=false;viewingTripId=null;
-  window._qrNineHole=(holes==='front'?'front':holes==='back'?'back':null);
-  window._qrWasQR=true;
-  _isQuickRoundWizard=true;
-  const _qrTH=window._qrNineHole?9:18;
-  const today=new Date().toISOString().split('T')[0];
-  const nameEl=document.getElementById('weekendName');
-  const dateEl=document.getElementById('weekendDate');
-  const roundsEl=document.getElementById('numRounds');
-  const playersEl=document.getElementById('numPlayers');
-  const suffix=holes==='front'?' - Front 9':holes==='back'?' - Back 9':'';
-  if(nameEl)nameEl.value='Quick Round'+suffix+' - '+today;
-  if(dateEl)dateEl.value=today;
-  if(roundsEl)roundsEl.value='1';
-  if(playersEl)playersEl.value=String(n);
-  const wizTitle=document.querySelector('#wizardScreen [style*="font-size:16px"]');
-  if(wizTitle)wizTitle.textContent='Quick Round';
-  ['wizMpGames','wizVegasSegs','wizSkinsGames'].forEach(id=>{const el=document.getElementById(id);if(el){el.innerHTML=segOptionHtml(_qrTH,_qrTH===9?1:3);}});
-  const wizHam=document.getElementById('wizHammerSegs');if(wizHam){wizHam.innerHTML=segOptionHtml(_qrTH,1);}
-  [1,2,3,4].forEach(n=>{const el=document.getElementById('step'+n);if(el)el.classList.remove('active');});
-  wizStep=2;
-  buildPlayerFields();
-  const s2=document.getElementById('step2');if(s2)s2.classList.add('active');
-  document.getElementById('homeScreen').style.display='none';
-  document.getElementById('wizardScreen').style.display='block';
-  const _sb=document.getElementById('startBtn');if(_sb)_sb.textContent='Start Round →';
-  updateDots();
-}
+function startQuickRoundWithPlayers(n){_qrS={step:1,n:n,holes:'18',course:Object.keys(CATALOG)[0]||null};startQuickRound();}
 function renderTripList(){
   // Render from blob immediately for instant display
   _renderTripListFromData(loadTrips());
@@ -1943,7 +2078,7 @@ function toggleWizCourse(){const f=document.getElementById('wizCourseForm');f.st
 function saveWizCourse(){const name=document.getElementById('wizCName').value.trim(),slope=parseInt(document.getElementById('wizCSlope').value)||113;const parse=id=>(document.getElementById(id).value||'').split(',').map(x=>parseInt(x.trim())||4);const fp=parse('wizCFP'),fsi=parse('wizCFSI'),bp=parse('wizCBP'),bsi=parse('wizCBSI');if(!name){alert('Enter a course name.');return;}const allSI=[...fsi,...bsi];const siIssues=validateSI(allSI);if(siIssues.length){if(!confirm('SI validation issues:\n\n'+siIssues.join('\n')+'\n\nSave anyway?'))return;}const holes=[];for(let i=0;i<9;i++)holes.push({par:fp[i]||4,si:fsi[i]||i*2+1});for(let i=0;i<9;i++)holes.push({par:bp[i]||4,si:bsi[i]||i*2+2});CATALOG[name]={slope,holes};saveNewCourse(name);buildCourseFields();document.getElementById('wizCourseForm').style.display='none';alert(name+' added!');}
 document.getElementById('step1Next').addEventListener('click',()=>{_isQuickRoundWizard=false;buildPlayerFields();showStep(2);const _sb=document.getElementById('startBtn');if(_sb)_sb.textContent='Start Trip →';const _pf=document.getElementById('wizPotFields');if(_pf)_pf.style.display='';document.getElementById('wizardScreen').dataset.qr='';});
 document.getElementById('step2Back').addEventListener('click',()=>showStep(1));
-document.getElementById('step2Next').addEventListener('click',()=>{buildCourseFields();showStep(3);});
+document.getElementById('step2Next').addEventListener('click',()=>{if(_isQuickRoundWizard){document.getElementById('startBtn').click();}else{buildCourseFields();showStep(3);}});
 document.getElementById('step3Back').addEventListener('click',()=>showStep(2));
 document.getElementById('step3Next').addEventListener('click',()=>{
   const nP=parseInt(document.getElementById('numPlayers').value);
@@ -1960,7 +2095,22 @@ document.getElementById('step3Next').addEventListener('click',()=>{
   const _pf4=document.getElementById('wizPotFields');if(_pf4)_pf4.style.display=_isQuickRoundWizard?'none':'';
 });
 document.getElementById('step4Back').addEventListener('click',()=>showStep(3));
-document.getElementById('startBtn').addEventListener('click',startWeekend);
+document.getElementById('startBtn').addEventListener('click',function(){
+  if(_isQuickRoundWizard){
+    _gsGames={};
+    const cn=window._qrPendingCourse||(function(){const el=document.getElementById('course0');return el?el.value:'';})();
+    const holes=window._qrNineHole==='front'?'Front 9':window._qrNineHole==='back'?'Back 9':'18 holes';
+    const nP=parseInt((document.getElementById('numPlayers')||{value:'4'}).value)||4;
+    window._qrGamesSubtitle=cn+' · '+holes+' · '+nP+' players';
+    let modal=document.getElementById('qrGamesModal');
+    if(!modal){modal=document.createElement('div');modal.id='qrGamesModal';modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;';const inner=document.createElement('div');inner.className='qrg-inner';modal.appendChild(inner);document.body.appendChild(modal);}
+    modal.style.display='flex';
+    _gsRefresh();
+  } else {
+    startWeekend();
+  }
+});
+
 function wizSetGameOn(rowId,on){const el=document.getElementById(rowId);if(!el)return;el.style.borderLeft=on?'3px solid #1D9E75':'';el.style.paddingLeft=on?'9px':'12px';}
 document.getElementById('wizMpOn').addEventListener('change',function(){document.getElementById('wizMpExtra').style.display=this.checked?'block':'none';wizSetGameOn('wizRowMp',this.checked);});
 document.getElementById('wizVegasOn').addEventListener('change',function(){document.getElementById('wizVegasExtra').style.display=this.checked?'block':'none';wizSetGameOn('wizRowVegas',this.checked);});
@@ -2905,7 +3055,7 @@ function calcPotRankings(){
 }
 function totalHolesPlayed(){return WK.rounds.reduce((a,_,r)=>{if(WK.rounds[r].isE9&&!WK.rounds[r].inStandings)return a;const n=roundHoleCount(r);const off=holeOffset(r);let cnt=0;for(let hi=off;hi<off+n;hi++){if(STATE.scores[r][hi]&&STATE.scores[r][hi].every(s=>s!==null))cnt++;}return a+cnt;},0);}
 function totalHoles(){return WK.rounds.reduce((a,_,r)=>{if(WK.rounds[r].isE9&&!WK.rounds[r].inStandings)return a;return a+roundHoleCount(r);},0);}
-function calcRoundRankings(){const entries=[];WK.rounds.forEach((rd,r)=>{const anyComplete=STATE.scores[r].some(h=>h.every(s=>s!==null));if(!anyComplete)return;WK.players.forEach((p,pi)=>{const roundComplete=STATE.scores[r].every(h=>h[pi]!==null);if(!roundComplete)return;const gross=STATE.scores[r].reduce((a,hole)=>a+(hole[pi]||0),0);const net=Array.from({length:18},(_,hi)=>getNet(pi,hi,r)).reduce((a,n)=>a+(n||0),0);const parTotal=WK.rounds[r].course.holes.reduce((a,h)=>a+h.par,0);entries.push({pi,r,courseName:rd.courseName,gross,net,parTotal,relGross:gross-parTotal,relNet:net-parTotal});});});entries.sort((a,b)=>a.net-b.net);let rank=1;entries.forEach((e,i)=>{if(i>0&&entries[i].net===entries[i-1].net){e.rank=entries[i-1].rank;}else{e.rank=rank;}rank=i+2;});return entries;}
+function calcRoundRankings(){const entries=[];WK.rounds.forEach((rd,r)=>{const off=holeOffset(r),cnt=roundHoleCount(r);const activeHoles=STATE.scores[r].slice(off,off+cnt);const anyComplete=activeHoles.some(h=>h.every(s=>s!==null));if(!anyComplete)return;WK.players.forEach((p,pi)=>{const roundComplete=activeHoles.every(h=>h[pi]!==null);if(!roundComplete)return;const gross=activeHoles.reduce((a,hole)=>a+(hole[pi]||0),0);const net=Array.from({length:cnt},(_,i)=>getNet(pi,off+i,r)).reduce((a,n)=>a+(n||0),0);const parTotal=rd.course.holes.slice(off,off+cnt).reduce((a,h)=>a+h.par,0);entries.push({pi,r,courseName:rd.courseName,gross,net,parTotal,relGross:gross-parTotal,relNet:net-parTotal});});});entries.sort((a,b)=>a.net-b.net);let rank=1;entries.forEach((e,i)=>{if(i>0&&entries[i].net===entries[i-1].net){e.rank=entries[i-1].rank;}else{e.rank=rank;}rank=i+2;});return entries;}
 function toggleRoundRankings(){STATE.roundRankOpen=!STATE.roundRankOpen;renderBoard();}
 function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
   if(_potMethod==='matchplay'&&gameOnAny('mp')){const mpData=calcAllMP().sort((a,b)=>b.total-a.total);html+=`<div class="board-section-label">Match play points - weekend winner</div><div class="section-card" style="margin-bottom:1.25rem">`;mpData.forEach((d,rank)=>{const p=WK.players[d.pi];const pills=d.byRound.map((pts,r)=>`<span class="game-pill${pts>0?' win':''}">${roundLabel(r)}: ${pts}</span>`).join('');html+=`<div class="mp-board-row"><div class="mp-rank">${rank+1}</div><div class="avatar" style="width:32px;height:32px;font-size:12px;background:${p.bg};color:${p.fg}">${p.ini}</div><div style="flex:1"><div class="mp-board-name">${p.name}</div><div class="mp-game-pills">${pills}</div></div><div class="mp-board-pts">${d.total.toFixed(1)}</div></div>`;});html+=`</div>`;}
@@ -3474,6 +3624,74 @@ function launchE9(){
   _showE9Modal();
 }
 let _e9State={step:1,cn:null,nineHole:null,inStandings:false};
+let _gsGames={};
+const _GS_DEFS={'Wolf':{fields:[['$ per point','wolfVal','number','1','0.25']]},'Snake':{fields:[['Starting pot $','snakeBase','number','1','0.25']]},'Skins':{fields:[['$ per skin','skinsVal','number','5','1'],['Format','skinsFmt','select','team',[['team','Team 2v2'],['individual','Individual']]]]},'Razzle Dazzle':{fields:[['$ per match','razzleVal','number','5','1']]},'Match Play':{fields:[['$ per game','gameVal','number','5','1']]},'Vegas':{fields:[['$ per point','vegasVal','number','0.50','0.25']]},'Hammer':{fields:[['$ per hole','hammerVal','number','2','0.25']]},"Two's Club":{fields:[['$ per player','twosAmt','number','25','1']]}};
+const _GS_ORDER=['Wolf','Snake','Skins','Razzle Dazzle','Match Play','Vegas','Hammer',"Two's Club"];
+function _gsAddGame(name){if(!name||_gsGames[name])return;const def=_GS_DEFS[name];if(!def)return;const vals={};def.fields.forEach(function(f){vals[f[1]]=f[3];});_gsGames[name]=vals;_gsRefresh();}
+window._gsAddGame=_gsAddGame;
+function _gsRemove(name){delete _gsGames[name];}
+function _gsRemoveByEl(el){_gsRemove(el.dataset.game);_gsRefresh();}
+window._gsRemoveByEl=_gsRemoveByEl;
+function _gsSetByEl(el){_gsSet(el.dataset.game,el.dataset.field,el.value);}
+window._gsSetByEl=_gsSetByEl;
+function _gsSet(name,field,val){if(_gsGames[name])_gsGames[name][field]=val;}
+function _gsHtml(pill,subtitle){
+  const sel=Object.keys(_gsGames);
+  const avail=_GS_ORDER.filter(function(n){return!sel.includes(n);});
+  const optsDd=avail.map(function(n){return'<option value='+JSON.stringify(n)+'>'+n+'</option>';}).join('');
+  let h='';
+  h+='<div style="padding:16px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill;
+  h+='<p style="font-size:17px;font-weight:500;color:var(--color-text-primary);margin:0">Any games?</p>';
+  h+='<p style="font-size:12px;color:var(--color-text-secondary);margin:3px 0 0">'+subtitle+'</p></div>';
+  h+='<div style="padding:12px 20px 8px">';
+  h+='<div style="position:relative">';
+  h+='<select id="gsGameSel" onchange="window._gsAddGame(this.value);this.selectedIndex=0" style="width:100%;font-size:14px;background:var(--color-background-primary);color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;appearance:none;-webkit-appearance:none;cursor:pointer">';
+  h+='<option value="">+ Add a game</option>'+optsDd+'</select>';
+  h+='<span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--color-text-tertiary);pointer-events:none">&#9662;</span></div>';
+  sel.forEach(function(name){
+    const def=_GS_DEFS[name];const vals=_gsGames[name];
+    const dg=JSON.stringify(name);
+    h+='<div style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px 14px;margin-top:10px">';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+    h+='<span style="font-size:14px;font-weight:500;color:var(--color-text-primary)">'+name+'</span>';
+    h+='<span onclick="window._gsRemoveByEl(this)" data-game='+dg+' style="font-size:12px;color:var(--color-text-tertiary);cursor:pointer">&#x2715; Remove</span>';
+    h+='</div>';
+    def.fields.forEach(function(f){
+      const label=f[0],fid=f[1],type=f[2],defVal=f[3],step=f[4];
+      const cur=(vals[fid]!==undefined)?vals[fid]:defVal;
+      const dn=JSON.stringify(name),dfid=JSON.stringify(fid);
+      h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
+      h+='<span style="font-size:12px;color:var(--color-text-secondary);flex:1">'+label+'</span>';
+      if(type==='select'){
+        const opts=f[4].map(function(o){return'<option value='+JSON.stringify(o[0])+(o[0]===cur?' selected':'')+'>'+o[1]+'</option>';}).join('');
+        h+='<select id="gs_'+fid+'" onchange="window._gsSetByEl(this)" data-game='+dn+' data-field='+dfid+' style="font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:5px 8px">'+opts+'</select>';
+      } else {
+        h+='<input id="gs_'+fid+'" type="number" value="'+cur+'" step="'+(step||'1')+'" onchange="window._gsSetByEl(this)" data-game='+dn+' data-field='+dfid+' style="width:80px;font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:5px 8px">';
+      }
+      h+='</div>';
+    });
+    h+='</div>';
+  });
+  h+='</div>';
+  h+='<div style="padding:10px 20px 12px;text-align:center;font-size:12px;font-weight:500;color:#0F6E56;border-top:0.5px solid var(--color-border-tertiary)">For advanced game configurations, visit Options after starting</div>';
+  return h;
+}
+function _gsApplyToWK(){
+  const g=_gsGames;
+  if(g['Wolf']){WK.wolfOn=true;WK.wolfVal=parseFloat(g['Wolf'].wolfVal)||1;}
+  if(g['Snake']){WK.snakeOn=true;WK.snakeBase=parseFloat(g['Snake'].snakeBase)||1;}
+  if(g['Skins']){WK.skinsOn=true;WK.skinsVal=parseFloat(g['Skins'].skinsVal)||5;WK.skinsFmt=g['Skins'].skinsFmt||'team';WK.skinsGamesPerRound=Array(WK.rounds.length).fill(WK.skinsGamesDefault||3);}
+  if(g['Razzle Dazzle']){WK.razzleOn=true;WK.razzleVal=parseFloat(g['Razzle Dazzle'].razzleVal)||5;}
+  if(g['Match Play']){WK.mpOn=true;WK.gameVal=parseFloat(g['Match Play'].gameVal)||5;}
+  if(g['Vegas']){WK.vegasOn=true;WK.vegasVal=parseFloat(g['Vegas'].vegasVal)||0.5;}
+  if(g['Hammer']){WK.hammerOn=true;WK.hammerVal=parseFloat(g['Hammer'].hammerVal)||2;}
+  if(g["Two's Club"]){WK.twosOn=true;WK.twosAmt=parseFloat(g["Two's Club"].twosAmt)||25;}
+  WK.rounds.forEach(function(rd){if(g['Wolf'])rd.wolfOn=true;if(g['Snake'])rd.snakeOn=true;if(g['Skins'])rd.skinsOn=true;if(g['Razzle Dazzle'])rd.razzleOn=true;if(g['Match Play'])rd.mpOn=true;if(g['Vegas'])rd.vegasOn=true;if(g['Hammer'])rd.hammerOn=true;if(g["Two's Club"])rd.twosOn=true;});
+}
+function _gsApplyToRound(rd){
+  const g=_gsGames;
+  if(g['Wolf'])rd.wolfOn=true;if(g['Snake'])rd.snakeOn=true;if(g['Skins'])rd.skinsOn=true;if(g['Razzle Dazzle'])rd.razzleOn=true;if(g['Match Play'])rd.mpOn=true;if(g['Vegas'])rd.vegasOn=true;if(g['Hammer'])rd.hammerOn=true;if(g["Two's Club"])rd.twosOn=true;
+}
 function _e9TripCourses(){return[...new Set(WK.rounds.map(r=>r.courseName))];}
 function _showE9Modal(){
   let modal=document.getElementById('e9Modal');
@@ -3550,8 +3768,8 @@ function _e9ModalHtml(){
       <div onclick="_e9Advance()" style="padding:13px 20px;text-align:center;font-size:14px;font-weight:500;color:#1D9E75;border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Continue →</div>
       ${cancel}
     </div>`;
-  } else {
-    // Step 3: standings toggle + start
+  } else if(_e9State.step===3){
+    // Step 3: standings toggle
     const cn=_e9State.cn||'';
     const holeLabel=_e9State.nineHole==='front'?' - Front 9':_e9State.nineHole==='back'?' - Back 9':'';
     const tog=_e9State.inStandings;
@@ -3567,15 +3785,23 @@ function _e9ModalHtml(){
         </div>
       </div>
       <div style="padding:12px 20px">
-        <button onclick="addE9Round()" style="width:100%;padding:13px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Start Round →</button>
+        <button onclick="addE9Round()" style="width:100%;padding:13px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue →</button>
       </div>
       ${cancel}
     </div>`;
+  } else {
+    // Step 4: games
+    const cn4=_e9State.cn||'';const hl4=_e9State.nineHole==='front'?' - Front 9':_e9State.nineHole==='back'?' - Back 9':'';
+    const pill4='<div style="display:inline-block;font-size:11px;font-weight:500;color:#185FA5;background:rgba(55,138,221,0.12);border-radius:4px;padding:2px 8px;margin-bottom:8px">&#9889; Emergency Round</div>';
+    const body4=_gsHtml(pill4,cn4+hl4);
+    const cta4='<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="addE9Round()" style="width:100%;padding:13px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Start Round →</button></div><div onclick="document.getElementById(\'e9Modal\').style.display=\'none\'" style="padding:12px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Skip - no games</div>';
+    const back4='<div style="padding:12px 20px;border-bottom:0.5px solid var(--color-border-tertiary)"><span onclick="_e9State.step=3;_showE9Modal()" style="font-size:13px;color:#1D9E75;cursor:pointer">&#8592; Back</span></div>';
+    return`<div style="${card};max-height:90vh;overflow-y:auto">${back4}${body4}${cta4}</div>`;
   }
 }
 function _e9Pick(key,val){_e9State[key]=val;}
 function _e9Next(){_e9State.step=2;_showE9Modal();}
-function _e9Advance(){_e9State.step=3;_showE9Modal();}
+function _e9Advance(){if(_e9State.step===2){_e9State.step=3;}else if(_e9State.step===3){_gsGames={};_e9State.step=4;}else{_e9State.step++;}_showE9Modal();}
 function _e9StartAddCourse(){_e9State.step=1.5;_showE9Modal();}
 function _e9SaveNewCourse(){
   const name=document.getElementById('e9NewName')?.value?.trim();
@@ -3593,6 +3819,12 @@ function _e9SaveNewCourse(){
   _e9Pick('cn',name);
   _e9Next();
 }
+function _gsRefresh(){
+  const em=document.getElementById('e9Modal');
+  if(em&&em.style.display!=='none'&&_e9State.step===4){_showE9Modal();}
+  // Also re-render QR modal if on games step
+  if(_qrS&&_qrS.step===5){_qrRender();}
+}
 function addE9Round(){
   const modal=document.getElementById('e9Modal');
   if(modal)modal.style.display='none';
@@ -3603,6 +3835,7 @@ function addE9Round(){
   const nP=WK.players.length;
   const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];
   const newRound={courseName:cn,course:CATALOG[cn],...(nineHole&&{nineHole}),isE9:_isE9,inStandings,mpOn:false,vegasOn:false,skinsOn:false,snakeOn:false,razzleOn:false,hammerOn:false,hammerSegs:1};
+  _gsApplyToRound(newRound);
   // Insert after last standings round; append E-rounds at end
   let insertAt=WK.rounds.length;
   if(inStandings){
@@ -3629,6 +3862,15 @@ function addE9Round(){
   STATE.pressState.splice(insertAt,0,[]);
   if(!STATE.skinsTeams)STATE.skinsTeams=[];
   STATE.skinsTeams.splice(insertAt,0,Array(1).fill(null).map(()=>JSON.parse(JSON.stringify(rots[0]))));
+  const _gg=_gsGames;
+  if(_gg['Wolf']){WK.wolfOn=true;WK.wolfVal=parseFloat(_gg['Wolf'].wolfVal)||WK.wolfVal||1;}
+  if(_gg['Snake']){WK.snakeOn=true;WK.snakeBase=parseFloat(_gg['Snake'].snakeBase)||WK.snakeBase||1;}
+  if(_gg['Skins']){WK.skinsOn=true;WK.skinsVal=parseFloat(_gg['Skins'].skinsVal)||WK.skinsVal||5;WK.skinsFmt=_gg['Skins'].skinsFmt||WK.skinsFmt||'team';}
+  if(_gg['Razzle Dazzle']){WK.razzleOn=true;WK.razzleVal=parseFloat(_gg['Razzle Dazzle'].razzleVal)||WK.razzleVal||5;}
+  if(_gg['Match Play']){WK.mpOn=true;WK.gameVal=parseFloat(_gg['Match Play'].gameVal)||WK.gameVal||5;}
+  if(_gg['Vegas']){WK.vegasOn=true;WK.vegasVal=parseFloat(_gg['Vegas'].vegasVal)||WK.vegasVal||0.5;}
+  if(_gg['Hammer']){WK.hammerOn=true;WK.hammerVal=parseFloat(_gg['Hammer'].hammerVal)||WK.hammerVal||2;}
+  if(_gg["Two's Club"]){WK.twosOn=true;WK.twosAmt=parseFloat(_gg["Two's Club"].twosAmt)||WK.twosAmt||25;}
   autoSave();
   STATE.currentRound=insertAt;
   STATE.currentHole=holeOffset(insertAt);
