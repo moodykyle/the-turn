@@ -673,7 +673,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v98.3';
+const APP_VERSION='v99';
 
 // ===== THEME =====
 (function(){
@@ -2190,7 +2190,7 @@ function calcMPHU(hi,r,mi){const mpG=mpGamesForRound(r),_th=roundHoleCount(r),gi
 function isHeadsUp(r){return WK.players.length===2||(WK.rounds[r]&&WK.rounds[r].mpFormat==='headsup');}
 function defaultHUTeams(r){const g=mpGamesForRound(r),n=WK.players.length;
 if(n<=2)return Array(g).fill(null).map(()=>[[0],[1]]);
-const rots=[[[0,2],[1,3]],[[0,1],[2,3]],[[0,3],[1,2]]];return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));}
+const rots=[[[0,2],[1,3]],[[0,1],[2,3]],[[0,1],[3,2]]];return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));}
 function defaultVegasTeams(r){const g=vegasSegForRound(r),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));}
 function sanitizeTeams(r){function isValid(teams){if(!teams||!teams.length)return false;if(isHeadsUp(r)){
 const _np=WK.players.length;
@@ -4152,21 +4152,26 @@ function renderMPRound(){
         const mNetClr=pressNetHU>0?'#1D9E75':pressNetHU<0?'#185FA5':'var(--color-text-secondary)';
         // Build clean result string: "Name wins · score" not "Name wins - Name score"
         let mResultStr;
-        if(!finalMsHU)mResultStr='In progress';
-        else if(!finalMsHU.leader)mResultStr='A/S';
-        else{
+        if(!finalMsHU){mResultStr='In progress';}
+        else if(finalMsHU.leader){
           const wn=finalMsHU.leader==='A'?mNameA:mNameB;
-          const wc=finalMsHU.leader==='A'?'#1D9E75':'#185FA5';
-          // Extract just the score notation (strip "Team A/B: " or "Team A/B ") from scoreStr
           const raw=finalMsHU.scoreStr.replace('Team A',mNameA).replace('Team B',mNameB);
           const scoreOnly=raw.replace(wn+' ','').replace(wn+': ','').trim();
-          mResultStr=finalMsHU.closed?`${wn} wins · ${scoreOnly}`:`${wn}: ${scoreOnly}`;
+          // When presses exist, always show net dollar result — never score notation
+          if(pressesHU.length>0){
+            if(pressNetHU>0){mResultStr=`${mNameA} wins · +$${Math.abs(pressNetHU).toFixed(2)}`;}
+            else if(pressNetHU<0){mResultStr=`${mNameB} wins · +$${Math.abs(pressNetHU).toFixed(2)}`;}
+            else{mResultStr='No Blood';}
+          }
+          else if(finalMsHU.closed){mResultStr=`${wn} wins · ${scoreOnly}`;}
+          else{mResultStr=`${wn}: ${scoreOnly}`;}
         }
-        // Collapsed header always shows net result with dollar when there is a winner
-        if(origNetHU!==null&&origNetHU!==0){
-          const wn=pressNetHU>0?mNameA:pressNetHU<0?mNameB:null;
-          if(wn)mResultStr=`${wn} wins · +$${Math.abs(pressNetHU).toFixed(2)}`;
-          else mResultStr='No Blood';
+        else{
+          // Base match A/S — check press net before falling back to A/S
+          if(pressNetHU>0){mResultStr=`${mNameA} wins · +$${Math.abs(pressNetHU).toFixed(2)}`;}
+          else if(pressNetHU<0){mResultStr=`${mNameB} wins · +$${Math.abs(pressNetHU).toFixed(2)}`;}
+          else if(finalMsHU.closed||isRoundComplete(r)){mResultStr='No Blood';}
+          else{mResultStr='A/S';}
         }
         const mResultClr=finalMsHU&&finalMsHU.leader==='A'?'#1D9E75':finalMsHU&&finalMsHU.leader==='B'?'#185FA5':'var(--color-text-secondary)';
         const mResultFinalClr=mResultStr==='No Blood'||mResultStr==='A/S'?'var(--color-text-secondary)':pressNetHU>0?'#1D9E75':pressNetHU<0?'#185FA5':mResultClr;
@@ -4248,8 +4253,8 @@ function renderMPRound(){
             else if(pr.winner==='tie'){pressSummaryHU=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">A/S</span>`;pressNetStrHU='$0.00';}
             else{const wn=pr.winner==='a'?mNameA:mNameB;const wc=pr.winner==='a'?'#1D9E75':'#185FA5';
             const _pScoreWn=pr.winner==='a'?mNameA:mNameB;
-    const _pScoreRaw2=pr.scoreStr?pr.scoreStr.replace(/^A /,mNameA+' ').replace(/^B /,mNameB+' ').replace(/^A: /,mNameA+': ').replace(/^B: /,mNameB+': '):'';
-    const _pScore=_pScoreRaw2||'';
+    const _pScoreRaw2=pr.scoreStr?pr.scoreStr.replace(/^A /,mNameA+' ').replace(/^B /,mNameB+' ').replace(/^A: /,mNameA+': ').replace(/^B: /,mNameB+': '):'';const _pWnPrefix=pr.winner==='a'?mNameA:mNameB;
+    const _pScore=_pScoreRaw2?_pScoreRaw2.replace(_pWnPrefix+' ','').replace(_pWnPrefix+': ',''):''
             pressSummaryHU=`<span style="color:${wc};font-weight:500;font-size:12px">${wn} wins${_pScore?' · '+_pScore:''}</span>`;pressNetStrHU='+$'+pr.sv.toFixed(2);pressNetClrHU=wc;}
             html+=`<div style="margin:0 10px 8px;border:0.5px solid var(--color-border-tertiary);border-left:2px solid #1D9E75;border-radius:var(--border-radius-md);overflow:hidden">`;
             html+=`<div style="background:var(--color-background-secondary);padding:7px 12px;display:flex;align-items:center;cursor:pointer" onclick="STATE.mpExpanded['${pressKeyHU}']=!STATE.mpExpanded['${pressKeyHU}'];renderMPRound()">`;
@@ -5731,7 +5736,7 @@ function renderSettle(){
 
     // Helper: collapsible category row
     const catId=(name)=>`${pi}-${name.replace(/\s/g,'')}`;
-    const subRow=(label,desc,val)=>`<div style="display:grid;grid-template-columns:80px 1fr 64px;align-items:baseline;gap:4px;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:11px;color:var(--color-text-tertiary)">${label}</span><span style="font-size:12px;color:var(--color-text-secondary)">${desc}</span><span style="font-size:12px;text-align:right;font-weight:500;color:${val>=0?'#1D9E75':'#D85A30'}">${fmt(val)}</span></div>`;
+    const subRow=(label,desc,val)=>`<div style="display:grid;grid-template-columns:80px 1fr 64px;align-items:baseline;gap:4px;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:11px;color:var(--color-text-tertiary)">${label}</span><span style="font-size:12px;color:var(--color-text-secondary)">${desc}</span><span style="font-size:12px;text-align:right;font-weight:500;color:${val>0?'#1D9E75':val<0?'#D85A30':'var(--color-text-secondary)'}">${fmt(val)}</span></div>`;
     const staticRow=(name,sum)=>`<div style="margin:6px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden"><div style="background:var(--color-background-secondary);padding:9px 12px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em">${name}</span><span style="font-size:12px;font-weight:500;color:${sum>=0?'#1D9E75':'#D85A30'}">${fmt(sum)}</span></div></div>`;
     const catHdr=(name,sum,extra='')=>{const id=catId(name);return`<div style="margin:6px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden"><div style="background:var(--color-background-secondary);padding:9px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleAuditCat('${id}')"><span style="font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em">${name}${extra?` <span style='font-size:10px;color:var(--color-text-tertiary)'>${extra}</span>`:''}</span><span style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:500;color:${sum>=0?'#1D9E75':'#D85A30'}">${fmt(sum)}</span><span class="audit-cat-chevron" style="font-size:10px;color:#1D9E75">▼</span></span></div><div class="audit-cat-body" id="audit-cat-${id}">`};
 
