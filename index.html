@@ -298,8 +298,8 @@ select.course-select,select.ie-sel,select.inline-edit,select.team-dropdown,selec
 .rr-table td.right{text-align:right;}
 .rr-table tr:last-child td{border-bottom:none;}
 .rr-course-badge{display:inline-block;padding:2px 7px;border-radius:var(--border-radius-md);font-size:10px;font-weight:500;}
-.collapsible-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--color-background-secondary);cursor:pointer;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);user-select:none;}
-.collapsible-hd.open{border-radius:var(--border-radius-md) var(--border-radius-md) 0 0;}
+.collapsible-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--color-background-secondary);cursor:pointer;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);user-select:none;margin-bottom:10px;}
+.collapsible-hd.open{border-radius:var(--border-radius-md) var(--border-radius-md) 0 0;margin-bottom:0;}
 .collapsible-body{border:0.5px solid var(--color-border-tertiary);border-top:none;border-radius:0 0 var(--border-radius-md) var(--border-radius-md);overflow:hidden;margin-bottom:14px;}
 .home{padding:0 0 2rem;}
 .home-hero{padding:2.5rem 1.5rem 2rem;background:linear-gradient(160deg,#0f2419 0%,#1a3a28 100%);position:relative;overflow:hidden;}
@@ -1147,7 +1147,7 @@ async function s2ReadTrip(tripId){
       scRound:0,
       optPanel:'teams',
       teamsRound:0,
-      roundRankOpen:false,
+      roundRankOpen:false,emergencyRankOpen:false,
       moneyTab:'golf',
       scores:newScores,
       mpTeams:t.mp_teams||Array(nR).fill(null).map((_,r)=>defaultTeams(r)),
@@ -1203,7 +1203,7 @@ async function s2LoadTripList(){
         courses:s.courses||[],
         holesPlayed:s.holesPlayed||0,
         totalHoles:s.totalHoles||0,
-        complete:!!s.complete,
+        complete:!!s.complete||(s.totalHoles>0&&(s.holesPlayed||0)>=(s.totalHoles||0)),
         winner:s.winner||''
       };
     });
@@ -1776,6 +1776,7 @@ function _renderTripListFromData(trips){
     return;
   }
 
+  trips.forEach(t=>{if(t.totalHoles>0&&t.holesPlayed>=t.totalHoles)t.complete=true;});
   const inProgressTrips=trips.filter(t=>!t.complete);
   const completedTrips=trips.filter(t=>t.complete);
   function buildTripCard(t,isResume){
@@ -2196,7 +2197,7 @@ function sanitizeTeams(r){function isValid(teams){if(!teams||!teams.length)retur
 const _np=WK.players.length;
 if(_np<=2)return teams.every(game=>{if(!game||!game[0]||!game[1])return false;return game[0].length===1&&game[1].length===1&&game[0][0]!==game[1][0];});
 return teams.every(game=>{if(!game||!game[0]||!game[1])return false;if(game[0].length!==2||game[1].length!==2)return false;const all=[game[0][0],game[0][1],game[1][0],game[1][1]];return new Set(all).size===4;});}return teams.every(game=>{if(!game||!game[0]||!game[1])return false;const all=[game[0][0],game[0][1],game[1][0],game[1][1]];return all.length===4&&new Set(all).size===4;});}if(!isValid(STATE.mpTeams[r]))STATE.mpTeams[r]=isHeadsUp(r)?defaultHUTeams(r):defaultTeams(r);if(!isValid(STATE.vegTeams[r]))STATE.vegTeams[r]=defaultVegasTeams(r);}
-function initState(netOffLow){const nR=WK.rounds.length,nP=WK.players.length;const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];const mkSkTeams=r=>{const g=skinsGamesForRound(r);return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));};STATE={currentRound:0,currentHole:holeOffset(0),netOffLow:netOffLow||false,mpViewRound:0,vegasViewRound:0,skinsViewRound:0,scRound:0,optPanel:'teams',teamsRound:0,roundRankOpen:false,moneyTab:'golf',expenses:[],settledRounds:[],roundSettleData:{},lockedRounds:[],scores:Array(nR).fill(null).map(()=>Array(18).fill(null).map(()=>Array(nP).fill(null))),mpTeams:Array(nR).fill(null).map((_,r)=>isHeadsUp(r)?defaultHUTeams(r):defaultTeams(r)),vegTeams:Array(nR).fill(null).map((_,r)=>defaultVegasTeams(r)),skinsTeams:Array(nR).fill(null).map((_,r)=>mkSkTeams(r)),
+function initState(netOffLow){const nR=WK.rounds.length,nP=WK.players.length;const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];const mkSkTeams=r=>{const g=skinsGamesForRound(r);return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));};STATE={currentRound:0,currentHole:holeOffset(0),netOffLow:netOffLow||false,mpViewRound:0,vegasViewRound:0,skinsViewRound:0,scRound:0,optPanel:'teams',teamsRound:0,roundRankOpen:false,emergencyRankOpen:false,moneyTab:'golf',expenses:[],settledRounds:[],roundSettleData:{},lockedRounds:[],scores:Array(nR).fill(null).map(()=>Array(18).fill(null).map(()=>Array(nP).fill(null))),mpTeams:Array(nR).fill(null).map((_,r)=>isHeadsUp(r)?defaultHUTeams(r):defaultTeams(r)),vegTeams:Array(nR).fill(null).map((_,r)=>defaultVegasTeams(r)),skinsTeams:Array(nR).fill(null).map((_,r)=>mkSkTeams(r)),
     // Snake: per round, per hole holder index (null = no holder)
     snakeHolder:Array(nR).fill(null).map(()=>Array(18).fill(null)),
     snakePot:Array(nR).fill(0),
@@ -3136,8 +3137,10 @@ function calcPotRankings(){
 }
 function totalHolesPlayed(){return WK.rounds.reduce((a,_,r)=>{if(WK.rounds[r].isE9&&!WK.rounds[r].inStandings)return a;const n=roundHoleCount(r);const off=holeOffset(r);let cnt=0;for(let hi=off;hi<off+n;hi++){if(STATE.scores[r][hi]&&STATE.scores[r][hi].every(s=>s!==null))cnt++;}return a+cnt;},0);}
 function totalHoles(){return WK.rounds.reduce((a,_,r)=>{if(WK.rounds[r].isE9&&!WK.rounds[r].inStandings)return a;return a+roundHoleCount(r);},0);}
-function calcRoundRankings(){const entries=[];WK.rounds.forEach((rd,r)=>{const off=holeOffset(r),cnt=roundHoleCount(r);const activeHoles=STATE.scores[r].slice(off,off+cnt);const anyComplete=activeHoles.some(h=>h.every(s=>s!==null));if(!anyComplete)return;WK.players.forEach((p,pi)=>{const roundComplete=activeHoles.every(h=>h[pi]!==null);if(!roundComplete)return;const gross=activeHoles.reduce((a,hole)=>a+(hole[pi]||0),0);const net=Array.from({length:cnt},(_,i)=>getNet(pi,off+i,r)).reduce((a,n)=>a+(n||0),0);const parTotal=rd.course.holes.slice(off,off+cnt).reduce((a,h)=>a+h.par,0);entries.push({pi,r,courseName:rd.courseName,gross,net,parTotal,relGross:gross-parTotal,relNet:net-parTotal});});});entries.sort((a,b)=>a.net-b.net);let rank=1;entries.forEach((e,i)=>{if(i>0&&entries[i].net===entries[i-1].net){e.rank=entries[i-1].rank;}else{e.rank=rank;}rank=i+2;});return entries;}
+function calcRoundRankings(){const entries=[];WK.rounds.forEach((rd,r)=>{if(rd.nineHole)return;if(rd.isE9&&!rd.inStandings)return;const off=holeOffset(r),cnt=roundHoleCount(r);const activeHoles=STATE.scores[r].slice(off,off+cnt);const anyComplete=activeHoles.some(h=>h.every(s=>s!==null));if(!anyComplete)return;WK.players.forEach((p,pi)=>{const roundComplete=activeHoles.every(h=>h[pi]!==null);if(!roundComplete)return;const gross=activeHoles.reduce((a,hole)=>a+(hole[pi]||0),0);const net=Array.from({length:cnt},(_,i)=>getNet(pi,off+i,r)).reduce((a,n)=>a+(n||0),0);const parTotal=rd.course.holes.slice(off,off+cnt).reduce((a,h)=>a+h.par,0);entries.push({pi,r,courseName:rd.courseName,gross,net,parTotal,relGross:gross-parTotal,relNet:net-parTotal});});});entries.sort((a,b)=>a.net-b.net);let rank=1;entries.forEach((e,i)=>{if(i>0&&entries[i].net===entries[i-1].net){e.rank=entries[i-1].rank;}else{e.rank=rank;}rank=i+2;});return entries;}
 function toggleRoundRankings(){STATE.roundRankOpen=!STATE.roundRankOpen;renderBoard();}
+function toggleEmergencyRankings(){STATE.emergencyRankOpen=!STATE.emergencyRankOpen;renderBoard();}
+function calcEmergencyRankings(){const entries=[];WK.rounds.forEach((rd,r)=>{if(!(rd.isE9&&!rd.inStandings))return;const off=holeOffset(r),cnt=roundHoleCount(r);const activeHoles=STATE.scores[r].slice(off,off+cnt);const anyComplete=activeHoles.some(h=>h.every(s=>s!==null));if(!anyComplete)return;WK.players.forEach((p,pi)=>{const roundComplete=activeHoles.every(h=>h[pi]!==null);if(!roundComplete)return;const gross=activeHoles.reduce((a,hole)=>a+(hole[pi]||0),0);const net=Array.from({length:cnt},(_,i)=>getNet(pi,off+i,r)).reduce((a,n)=>a+(n||0),0);const parTotal=rd.course.holes.slice(off,off+cnt).reduce((a,h)=>a+h.par,0);entries.push({pi,r,courseName:rd.courseName,gross,net,parTotal,relGross:gross-parTotal,relNet:net-parTotal});});});entries.sort((a,b)=>a.net-b.net);let rank=1;entries.forEach((e,i)=>{if(i>0&&entries[i].net===entries[i-1].net){e.rank=entries[i-1].rank;}else{e.rank=rank;}rank=i+2;});return entries;}
 function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
   if(_potMethod==='matchplay'&&gameOnAny('mp')){const mpData=calcAllMP().sort((a,b)=>b.total-a.total);html+=`<div class="board-section-label">Match play points - weekend winner</div><div class="section-card" style="margin-bottom:1.25rem">`;mpData.forEach((d,rank)=>{const p=WK.players[d.pi];const pills=d.byRound.map((pts,r)=>`<span class="game-pill${pts>0?' win':''}">${roundLabel(r)}: ${pts}</span>`).join('');html+=`<div class="mp-board-row"><div class="mp-rank">${rank+1}</div><div class="avatar" style="width:32px;height:32px;font-size:12px;background:${p.bg};color:${p.fg}">${p.ini}</div><div style="flex:1"><div class="mp-board-name">${p.name}</div><div class="mp-game-pills">${pills}</div></div><div class="mp-board-pts">${d.total.toFixed(1)}</div></div>`;});html+=`</div>`;}
   html+=`<div class="board-section-label">${_potMethod==='matchplay'?'Stroke play - net':'Net stroke play - weekend winner'}</div><div class="section-card" style="margin-bottom:1.25rem">`;
@@ -3198,11 +3201,11 @@ function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
   if(prefix.length>2){const trimmed=prefix.trimEnd();const lastSpace=trimmed.lastIndexOf(' ');prefix=lastSpace>0?trimmed.slice(0,lastSpace+1):trimmed+' ';}else{prefix='';}
   // Strip prefix from names that start with it, leave others as-is
   const displayName2=prefix.length>0&&e.courseName.startsWith(prefix)?e.courseName.slice(prefix.length):e.courseName;
-  // If duplicate course name in trip, append occurrence number
+  // If duplicate course name in trip: regular round = plain name, E9 round = name + (E9)
   const sameNameRounds=WK.rounds.filter(r=>r.courseName===e.courseName);
-  if(sameNameRounds.length>1){const occ=WK.rounds.slice(0,e.r+1).filter(r=>r.courseName===e.courseName).length;return displayName2+' ('+occ+')';}
+  if(sameNameRounds.length>1){const rd=WK.rounds[e.r];return displayName2+(rd.isE9?' (E9)':'');}
   return displayName2||e.courseName;
-})();html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${displayName(e.pi)}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}}document.getElementById('boardContent').innerHTML=html;}
+})();html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${displayName(e.pi)}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}};const eEntries=calcEmergencyRankings();if(eEntries.length>0){const eOpen=STATE.emergencyRankOpen;html+=`<div class="collapsible-hd${eOpen?' open':''}" onclick="toggleEmergencyRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Emergency rounds</span><span style="font-size:12px;color:#1D9E75">${eOpen?'▲':'▼'}</span></div>`;if(eOpen){html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;eEntries.forEach(e=>{const p=WK.players[e.pi];const ci=WK.rounds.findIndex(rd=>rd.courseName===e.courseName);const cbg=COURSE_COLORS[ci%COURSE_COLORS.length];const cfg=COURSE_FG[ci%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const erd=WK.rounds[e.r];const allNames=WK.rounds.map(rd=>rd.courseName);let ePrefix='';for(let i=0;i<allNames.length;i++){for(let j=i+1;j<allNames.length;j++){let k=0;while(k<allNames[i].length&&k<allNames[j].length&&allNames[i][k]===allNames[j][k])k++;const cp=allNames[i].slice(0,k);if(cp.length>ePrefix.length)ePrefix=cp;}}if(ePrefix.length>2){const tr=ePrefix.trimEnd();const ls=tr.lastIndexOf(' ');ePrefix=ls>0?tr.slice(0,ls+1):tr+' ';}else{ePrefix='';}const eName=ePrefix.length>0&&e.courseName.startsWith(ePrefix)?e.courseName.slice(ePrefix.length):e.courseName;const holeLabel=erd.nineHole==='front'?'Front 9':erd.nineHole==='back'?'Back 9':'9 holes';const badgeLabel=eName+(erd.nineHole?' - '+holeLabel:'');html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${displayName(e.pi)}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}}document.getElementById('boardContent').innerHTML=html;}
 function pOpts(sel){return WK.players.map((p,i)=>`<option value="${i}"${i===sel?' selected':''}>${displayName(i)}</option>`).join('');}
 function setWolfOrder(r,pos,newPi){
   if(!STATE.wolfOrder)STATE.wolfOrder=WK.rounds.map(()=>[0,1,2,3]);
