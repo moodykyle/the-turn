@@ -314,7 +314,7 @@ select.course-select,select.ie-sel,select.inline-edit,select.team-dropdown,selec
 .home-theme-btn{background:rgba(255,255,255,0.12);border:0.5px solid rgba(255,255,255,0.25);border-radius:20px;cursor:pointer;padding:5px 11px;color:rgba(255,255,255,0.85);font-size:12px;font-weight:500;line-height:1;flex-shrink:0;display:flex;align-items:center;gap:5px;letter-spacing:0.01em;}
 .home-theme-btn:active{background:rgba(255,255,255,0.2);}
 .home-actions{padding:1.25rem 1rem 0.5rem;}
-.home-new-btn{width:100%;padding:15px;background:#1D9E75;color:#ffffff;border:none;border-radius:var(--border-radius-md);font-size:16px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:0.01em;}
+.home-new-btn{width:100%;padding:15px;background:#1D9E75;color:#ffffff;border:none;border-radius:var(--border-radius-md);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;text-transform:uppercase;letter-spacing:0.1em;}
 .home-new-btn:active{background:#158a64;}
 .home-resume-card{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--color-background-primary);border:0.5px solid #1D9E75;border-radius:var(--border-radius-md);cursor:pointer;margin-top:10px;}
 .home-resume-card:active{opacity:0.8;}
@@ -326,7 +326,7 @@ select.course-select,select.ie-sel,select.inline-edit,select.team-dropdown,selec
 .home-trips-section{padding:0 1rem;}
 .home-trips-label{font-size:11px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;}
 .trip-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:14px;margin-bottom:10px;cursor:pointer;background:var(--color-background-primary);}
-@media(prefers-color-scheme:light){.trip-card{box-shadow:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);}}
+@media(prefers-color-scheme:light){.trip-card{box-shadow:0 2px 8px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.05);}}
 .trip-card-progress{height:3px;background:var(--color-border-tertiary);border-radius:2px;margin-bottom:10px;overflow:hidden;}
 .trip-card-progress-fill{height:100%;background:#1D9E75;border-radius:2px;}
 .trip-card-name{font-size:16px;font-weight:600;color:var(--color-text-primary);margin-bottom:3px;}
@@ -433,16 +433,14 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
               <div class="home-wm-rule"></div>
             </div>
           </div>
-          
+          <button onclick="toggleTheme()" id="heroThemeBtn" title="Toggle theme" style="background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.15);border-radius:8px;padding:6px 9px;cursor:pointer;font-size:16px;line-height:1;flex-shrink:0"></button>
         </div>
         <div class="home-tagline">Track the weekend. Skip the bro math.</div>
       </div>
       <div class="home-actions">
-        <button class="home-new-btn" onclick="startNewWeekend()">
-          <span style="font-size:18px">+</span> New Trip
-        </button>
-        <button class="home-new-btn" onclick="startQuickRound()" style="margin-top:8px">⚡ Quick Round</button>
-        <button onclick="showHowToPlay()" style="width:100%;padding:11px;background:transparent;color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:14px;cursor:pointer;margin-top:8px;letter-spacing:0.01em">How It Works</button>
+        <button class="home-new-btn" onclick="startNewWeekend()">New Trip</button>
+        <button class="home-new-btn" onclick="startQuickRound()" style="margin-top:8px;background:rgba(29,158,117,0.12);color:#1D9E75;border:1px solid rgba(29,158,117,0.3);">Quick Round</button>
+        <button onclick="showHowToPlay()" style="width:100%;padding:11px;background:transparent;color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:12px;font-weight:500;cursor:pointer;margin-top:8px;text-transform:uppercase;letter-spacing:0.08em">How It Works</button>
 
       </div>
       <div class="home-trips-section" style="margin-top:0.25rem">
@@ -696,6 +694,8 @@ function updateThemeUI(){
     else if(state==='light'){icon.textContent='☀️';label.textContent='Light';}
     else{icon.textContent='🌓';label.textContent='Auto';}
   }
+  const heroBtn=document.getElementById('heroThemeBtn');
+  if(heroBtn){heroBtn.textContent=state==='dark'?'🌙':state==='light'?'☀️':'🌓';}
   // Options panel toggle — re-render if open
   const optPanel=document.getElementById('opt-panel-weekend');
   if(optPanel&&optPanel.classList.contains('active'))renderWeekendPanel();
@@ -1769,6 +1769,8 @@ function renderTripList(){
 }
 
 function _renderTripListFromData(trips){
+  const _hb=document.getElementById('heroThemeBtn');
+  if(_hb){const _ts=getThemeState();_hb.textContent=_ts==='dark'?'🌙':_ts==='light'?'☀️':'🌓';}
   const el=document.getElementById('tripList');
 
   if(trips.length===0){
