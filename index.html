@@ -246,6 +246,9 @@ body.force-light .sc-grid .total-col{background:#F0EFEB;}
 body.force-light .adj{background:#EEECEA;border-color:#CCCAC3;}
 body.force-light .section-card{box-shadow:0 2px 8px rgba(0,0,0,0.09),0 1px 3px rgba(0,0,0,0.06);border-color:#DDDBD4;background:#FAFAF8;}
 body.force-light .trip-card{box-shadow:0 2px 8px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.05);}
+body.force-light .home-new-btn{box-shadow:0 2px 8px rgba(0,0,0,0.1),0 1px 3px rgba(0,0,0,0.06);}
+body.force-light .home-hiw-btn{box-shadow:0 1px 4px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04);}
+body.force-light .accordion-item{box-shadow:0 2px 8px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.05);border-color:#DDDBD4 !important;}
 body.force-light .game-box,body.force-light .calc-box{box-shadow:0 2px 8px rgba(0,0,0,0.09),0 1px 3px rgba(0,0,0,0.06);border-color:#DDDBD4;background:#FAFAF8;}
 body.force-light #snakeEntryWrap>div{box-shadow:0 2px 8px rgba(0,0,0,0.09),0 1px 3px rgba(0,0,0,0.06);border-color:#DDDBD4 !important;background:#FAFAF8 !important;}
 body.force-light .player-row{border-bottom-color:#DDDBD4;}
@@ -456,7 +459,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
       <div class="home-actions">
         <button class="home-new-btn" onclick="startNewWeekend()">New Trip</button>
         <button class="home-new-btn" onclick="startQuickRound()" style="margin-top:8px;background:rgba(29,158,117,0.12);color:#1D9E75;border:1px solid rgba(29,158,117,0.3);">Quick Round</button>
-        <button onclick="showHowToPlay()" style="width:100%;padding:11px;background:transparent;color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:12px;font-weight:500;cursor:pointer;margin-top:8px;text-transform:uppercase;letter-spacing:0.08em">How It Works</button>
+        <button onclick="showHowToPlay()" class="home-hiw-btn" style="width:100%;padding:11px;background:transparent;color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:12px;font-weight:500;cursor:pointer;margin-top:8px;text-transform:uppercase;letter-spacing:0.08em">How It Works</button>
 
       </div>
       <div class="home-trips-section" style="margin-top:0.25rem">
@@ -4051,7 +4054,7 @@ function showHowToPlay(){
     {id:'htp-version',title:'Version',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Version <strong>${APP_VERSION}</strong></p>`},
   ];
   const accordionHtml=sections.map(s=>`
-    <div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:8px;overflow:hidden;background:var(--color-background-primary)">
+    <div class="accordion-item" style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:8px;overflow:hidden;background:var(--color-background-primary)">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(){const b=document.getElementById('${s.id}-mb');const c=document.getElementById('${s.id}-mc');const open=b.style.display==='none';b.style.display=open?'block':'none';c.textContent=open?'▲':'▼';})()">
         <span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">${s.title}</span>
         <span id="${s.id}-mc" style="font-size:11px;color:#1D9E75">▼</span>
