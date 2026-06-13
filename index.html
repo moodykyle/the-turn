@@ -944,7 +944,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v103.6';
+const APP_VERSION='v103.7';
 
 // ===== THEME =====
 (function(){
@@ -1505,8 +1505,9 @@ function sbGetStoredSession(){
     if (!raw) return null;
     const s = JSON.parse(raw);
     // Check expiry (expires_at is unix timestamp in seconds)
+    // Do NOT delete the session here — the refresh token is still valid
+    // and sbInit() will use it to get a new access token silently.
     if (s.expires_at && Date.now()/1000 > s.expires_at - 60) {
-      localStorage.removeItem('sb_session');
       return null;
     }
     return s;
