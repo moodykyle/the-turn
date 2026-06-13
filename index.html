@@ -101,39 +101,6 @@ body{background:#F5F4F1;color:#111;font-family:-apple-system,BlinkMacSystemFont,
   .view{padding:0.4rem;}
 }
 
-.login-screen{position:fixed;inset:0;z-index:9998;background:linear-gradient(160deg,#0f2419 0%,#1a3a28 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
-.login-card{background:var(--color-background-primary);border-radius:16px;padding:32px 24px;width:100%;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.3);}
-.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
-.login-wordmark{display:flex;flex-direction:column;line-height:1;}
-.login-wm-the{font-size:12px;font-weight:400;color:var(--color-text-secondary);letter-spacing:0.12em;text-transform:uppercase;}
-.login-wm-turn{font-size:26px;font-weight:700;color:var(--color-text-primary);letter-spacing:0.04em;}
-.login-title{font-size:18px;font-weight:500;color:var(--color-text-primary);margin-bottom:6px;}
-.login-sub{font-size:13px;color:var(--color-text-secondary);margin-bottom:24px;line-height:1.5;}
-.login-input{width:100%;box-sizing:border-box;padding:12px 14px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:15px;outline:none;margin-bottom:12px;}
-.login-input:focus{border-color:#1D9E75;}
-.login-btn{width:100%;padding:13px;border-radius:var(--border-radius-md);border:none;background:#1D9E75;color:#fff;font-size:15px;font-weight:500;cursor:pointer;letter-spacing:0.02em;}
-.login-btn:disabled{opacity:0.5;cursor:not-allowed;}
-.login-confirm{text-align:center;padding:8px 0;}
-.login-confirm-icon{font-size:40px;margin-bottom:12px;}
-.login-confirm-title{font-size:17px;font-weight:500;color:var(--color-text-primary);margin-bottom:8px;}
-.login-confirm-sub{font-size:13px;color:var(--color-text-secondary);line-height:1.6;}
-.login-resend{margin-top:16px;font-size:12px;color:var(--color-text-tertiary);text-align:center;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
-.login-error{font-size:12px;color:#e53e3e;margin-bottom:10px;text-align:center;}
-.prof-signed{font-size:11px;color:var(--color-text-tertiary);background:var(--color-background-secondary);border-radius:6px;padding:7px 10px;margin-bottom:16px;}
-.prof-signed strong{color:var(--color-text-secondary);font-weight:500;}
-.prof-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:5px;display:block;margin-top:2px;}
-.prof-label .req{color:#1D9E75;}
-.prof-label .opt{color:var(--color-text-tertiary);font-weight:400;}
-.prof-input{width:100%;box-sizing:border-box;padding:10px 12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:14px;outline:none;margin-bottom:14px;}
-.prof-input:focus{border-color:#1D9E75;}
-.edit-prof-overlay{position:fixed;inset:0;z-index:9997;background:rgba(0,0,0,0.45);display:none;align-items:flex-end;justify-content:center;}
-.edit-prof-sheet{background:var(--color-background-primary);border-radius:16px 16px 0 0;width:100%;max-width:480px;padding:0 0 24px;animation:sheetUp 0.25s ease;}
-@keyframes sheetUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
-.edit-prof-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 14px;border-bottom:0.5px solid var(--color-border-tertiary);}
-.edit-prof-title{font-size:16px;font-weight:500;color:var(--color-text-primary);}
-.edit-prof-body{padding:18px;}
-.edit-prof-av{width:52px;height:52px;border-radius:50%;background:var(--color-background-info);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:500;color:var(--color-text-info);margin:0 auto 6px;}
-.edit-prof-email{font-size:11px;color:var(--color-text-tertiary);text-align:center;margin-bottom:18px;}
 .header{padding:0.75rem 1rem 0.5rem;border-bottom:0.5px solid var(--color-border-tertiary);}
 .header-inner{display:flex;align-items:center;gap:8px;}
 .header-live-dot{width:8px;height:8px;border-radius:50%;background:#1D9E75;flex-shrink:0;}
@@ -469,93 +436,6 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
   </style>
 
   <!-- HOME -->
-  <!-- LOGIN SCREEN -->
-  <div id="loginScreen" class="login-screen" style="display:none">
-    <div class="login-card">
-      <div class="login-logo">
-        <svg width="32" height="50" viewBox="0 0 46 72" xmlns="http://www.w3.org/2000/svg">
-          <ellipse cx="17" cy="66" rx="16" ry="6" fill="#1D9E75" opacity="0.3"/>
-          <line x1="17" y1="66" x2="17" y2="5" stroke="#1D9E75" stroke-width="3" stroke-linecap="round"/>
-          <path d="M17 5 L46 19 L17 33 Z" fill="#1D9E75"/>
-        </svg>
-        <div class="login-wordmark">
-          <span class="login-wm-the">The</span>
-          <span class="login-wm-turn">TURN</span>
-        </div>
-      </div>
-      <div id="loginForm">
-        <div class="login-title">Sign In</div>
-        <div class="login-sub">Enter your email and we'll send you a magic link to sign in instantly - no password needed.</div>
-        <div id="loginError" class="login-error" style="display:none"></div>
-        <input id="loginEmail" class="login-input" type="email" placeholder="your@email.com" autocomplete="email" autocapitalize="none"/>
-        <button id="loginBtn" class="login-btn" onclick="window.sbSendMagicLink()">Send Magic Link</button>
-      </div>
-      <div id="loginConfirm" class="login-confirm" style="display:none">
-        <div class="login-confirm-icon">&#x2709;&#xFE0F;</div>
-        <div class="login-confirm-title">Check your email</div>
-        <div class="login-confirm-sub">We sent a magic link to <strong id="loginConfirmEmail"></strong>. Tap the link in the email to sign in.</div>
-        <div class="login-resend" onclick="window.sbShowLoginForm()">Use a different email</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- FIRST-LOGIN PROFILE CAPTURE -->
-  <div id="profileScreen" class="login-screen" style="display:none">
-    <div class="login-card">
-      <div class="login-logo">
-        <svg width="32" height="50" viewBox="0 0 46 72" xmlns="http://www.w3.org/2000/svg">
-          <ellipse cx="17" cy="66" rx="16" ry="6" fill="#1D9E75" opacity="0.3"/>
-          <line x1="17" y1="66" x2="17" y2="5" stroke="#1D9E75" stroke-width="3" stroke-linecap="round"/>
-          <path d="M17 5 L46 19 L17 33 Z" fill="#1D9E75"/>
-        </svg>
-        <div class="login-wordmark">
-          <span class="login-wm-the">The</span>
-          <span class="login-wm-turn">TURN</span>
-        </div>
-      </div>
-      <div class="login-title">Welcome</div>
-      <div class="login-sub">Tell us a bit about yourself. You can change this anytime.</div>
-      <div id="profError" class="login-error" style="display:none"></div>
-      <div class="prof-signed">Signed in as <strong id="profSignedEmail"></strong></div>
-      <label class="prof-label">Name <span class="req">*</span></label>
-      <input id="profName" class="prof-input" type="text" placeholder="Kyle Moody" autocapitalize="words"/>
-      <label class="prof-label">Phone <span class="opt">(optional)</span></label>
-      <input id="profPhone" class="prof-input" type="tel" placeholder="(555) 123-4567"/>
-      <label class="prof-label">Venmo <span class="opt">(optional)</span></label>
-      <input id="profVenmo" class="prof-input" type="text" placeholder="@kyle-moody" autocapitalize="none"/>
-      <label class="prof-label">Handicap Index <span class="req">*</span></label>
-      <input id="profHcp" class="prof-input" type="text" inputmode="decimal" placeholder="e.g. 9.3 or +2.4"/>
-      <button id="profBtn" class="login-btn" onclick="window.sbSaveProfile()">Continue</button>
-    </div>
-  </div>
-
-  <!-- EDIT PROFILE SHEET -->
-  <div id="editProfOverlay" class="edit-prof-overlay">
-    <div class="edit-prof-sheet">
-      <div class="edit-prof-head">
-        <span class="edit-prof-title">Edit Profile</span>
-        <i class="ti ti-x" style="font-size:20px;color:var(--color-text-secondary);cursor:pointer;padding:4px;margin:-4px" onclick="window.sbCloseEditProfile()" aria-label="Close"></i>
-      </div>
-      <div class="edit-prof-body">
-        <div id="editProfAv" class="edit-prof-av"></div>
-        <div id="editProfEmail" class="edit-prof-email"></div>
-        <div id="editProfError" class="login-error" style="display:none"></div>
-        <label class="prof-label">Name <span class="req">*</span></label>
-        <input id="editProfName" class="prof-input" type="text" autocapitalize="words"/>
-        <label class="prof-label">Phone <span class="opt">(optional)</span></label>
-        <input id="editProfPhone" class="prof-input" type="tel" placeholder="(555) 123-4567"/>
-        <label class="prof-label">Venmo <span class="opt">(optional)</span></label>
-        <input id="editProfVenmo" class="prof-input" type="text" placeholder="@kyle-moody" autocapitalize="none"/>
-        <label class="prof-label">Handicap Index <span class="req">*</span></label>
-        <input id="editProfHcp" class="prof-input" type="text" inputmode="decimal" placeholder="e.g. 9.3 or +2.4"/>
-        <div style="display:flex;gap:10px;margin-top:2px;">
-          <button class="login-btn" style="flex:1;background:transparent;color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);" onclick="window.sbCloseEditProfile()">Cancel</button>
-          <button id="editProfBtn" class="login-btn" style="flex:1;" onclick="window.sbSaveEditProfile()">Save Changes</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div id="homeScreen">
     <div class="home">
       <div class="home-hero">
@@ -572,16 +452,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
               <div class="home-wm-rule"></div>
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
           <button onclick="toggleTheme()" id="heroThemeBtn" title="Toggle theme" style="background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.15);border-radius:8px;padding:6px 9px;cursor:pointer;font-size:16px;line-height:1;flex-shrink:0"></button>
-          <div id="homeUserAvatar" onclick="window.sbShowUserMenu()" title="Account" style="display:none;width:32px;height:32px;border-radius:50%;background:rgba(29,158,117,0.2);border:1px solid rgba(29,158,117,0.4);align-items:center;justify-content:center;cursor:pointer;font-size:11px;font-weight:500;color:#1D9E75;flex-shrink:0;user-select:none;"></div>
-        </div>
-        <!-- User menu -->
-        <div id="userMenu" style="display:none;position:absolute;top:60px;right:16px;z-index:500;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:4px 0;min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,0.15);">
-          <div id="userMenuEmail" style="padding:10px 14px 8px;font-size:12px;color:var(--color-text-tertiary);border-bottom:0.5px solid var(--color-border-tertiary);"></div>
-          <div onclick="window.sbOpenEditProfile()" style="padding:10px 14px;font-size:14px;color:var(--color-text-primary);cursor:pointer;border-bottom:0.5px solid var(--color-border-tertiary);">Edit Profile</div>
-          <div onclick="window.sbSignOut()" style="padding:10px 14px;font-size:14px;color:var(--color-text-primary);cursor:pointer;">Sign Out</div>
-        </div>
         </div>
         <div class="home-tagline">Track the weekend. Skip the bro math.</div>
       </div>
@@ -819,7 +690,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v101.3';
+const APP_VERSION='v100.2';
 
 // ===== THEME =====
 (function(){
@@ -1363,359 +1234,6 @@ const SB_URL='https://xexfyvrpimzxdozxmpof.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhleGZ5dnJwaW16eGRvenhtcG9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4ODM4ODcsImV4cCI6MjA4OTQ1OTg4N30.mc5jdnupp7T7sTeY9sZUIj0UWsAmhqukblSV42sS78s';
 const SB_ROW='shaker-cup';
 
-// ── Supabase Auth ──────────────────────────────────────────────────────────
-// Session stored in localStorage key 'sb_session'
-const SB_AUTH_URL = SB_URL + '/auth/v1';
-let _sbSession = null;
-
-function sbGetStoredSession(){
-  try {
-    const raw = localStorage.getItem('sb_session');
-    if (!raw) return null;
-    const s = JSON.parse(raw);
-    // Check expiry (expires_at is unix timestamp in seconds)
-    if (s.expires_at && Date.now()/1000 > s.expires_at - 60) {
-      localStorage.removeItem('sb_session');
-      return null;
-    }
-    return s;
-  } catch(e) { return null; }
-}
-
-function sbSaveSession(session){
-  _sbSession = session;
-  if (session) localStorage.setItem('sb_session', JSON.stringify(session));
-  else localStorage.removeItem('sb_session');
-}
-
-function sbGetAuthHeaders(){
-  const token = _sbSession?.access_token || SB_KEY;
-  return { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token };
-}
-
-async function sbSendMagicLink(){
-  const email = document.getElementById('loginEmail').value.trim();
-  const errEl = document.getElementById('loginError');
-  errEl.style.display = 'none';
-  if (!email || !email.includes('@')) {
-    errEl.textContent = 'Please enter a valid email address.';
-    errEl.style.display = 'block';
-    return;
-  }
-  const btn = document.getElementById('loginBtn');
-  btn.disabled = true;
-  btn.textContent = 'Sending...';
-  try {
-    const r = await fetch(SB_AUTH_URL + '/otp', {
-      method: 'POST',
-      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, create_user: true })
-    });
-    if (!r.ok) {
-      const err = await r.json().catch(() => ({}));
-      throw new Error(err.error_description || err.msg || 'Failed to send magic link.');
-    }
-    // Show confirmation state
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('loginConfirmEmail').textContent = email;
-    document.getElementById('loginConfirm').style.display = 'block';
-  } catch(e) {
-    errEl.textContent = e.message || 'Something went wrong. Please try again.';
-    errEl.style.display = 'block';
-    btn.disabled = false;
-    btn.textContent = 'Send Magic Link';
-  }
-}
-
-function sbShowLoginForm(){
-  document.getElementById('loginConfirm').style.display = 'none';
-  document.getElementById('loginForm').style.display = 'block';
-  const btn = document.getElementById('loginBtn');
-  btn.disabled = false;
-  btn.textContent = 'Send Magic Link';
-  document.getElementById('loginEmail').value = '';
-  document.getElementById('loginError').style.display = 'none';
-}
-
-function sbInitialsFrom(name, email){
-  // Derive two-letter initials: first initial of first + last word of name.
-  if (name && name.trim()) {
-    const parts = name.trim().split(/\s+/).filter(Boolean);
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
-    }
-    if (parts.length === 1) {
-      return parts[0].substring(0,2).toUpperCase();
-    }
-  }
-  return (email || '').split('@')[0].substring(0,2).toUpperCase();
-}
-
-function sbUpdateAvatar(){
-  const user = sbCurrentUser();
-  const avatarEl = document.getElementById('homeUserAvatar');
-  if (!avatarEl) return;
-  if (!user) { avatarEl.style.display = 'none'; return; }
-  const email = user.email || '';
-  const meta = user.user_metadata || {};
-  avatarEl.textContent = sbInitialsFrom(meta.full_name, email);
-  avatarEl.style.display = 'flex';
-  const menuEmail = document.getElementById('userMenuEmail');
-  if (menuEmail) menuEmail.textContent = email;
-}
-
-function sbNeedsProfile(){
-  const user = sbCurrentUser();
-  if (!user) return false;
-  const meta = user.user_metadata || {};
-  return !meta.full_name || !meta.full_name.trim();
-}
-
-function sbShowProfileCapture(){
-  const user = sbCurrentUser();
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('homeScreen').style.display = 'none';
-  document.getElementById('wizardScreen').style.display = 'none';
-  document.getElementById('mainScreen').style.display = 'none';
-  const em = document.getElementById('profSignedEmail');
-  if (em && user) em.textContent = user.email || '';
-  document.getElementById('profError').style.display = 'none';
-  document.getElementById('profileScreen').style.display = 'flex';
-}
-
-async function sbUpdateUser(metaPatch){
-  // PUT user_metadata to Supabase Auth. Merges patch into existing metadata.
-  const token = _sbSession?.access_token;
-  if (!token) throw new Error('Not signed in.');
-  const existing = (_sbSession.user && _sbSession.user.user_metadata) || {};
-  const merged = { ...existing, ...metaPatch };
-  const r = await fetch(SB_AUTH_URL + '/user', {
-    method: 'PUT',
-    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ data: merged })
-  });
-  if (!r.ok) {
-    const err = await r.json().catch(()=>({}));
-    throw new Error(err.msg || err.error_description || 'Could not save profile.');
-  }
-  const updatedUser = await r.json();
-  // Persist updated user back into session
-  _sbSession.user = updatedUser;
-  sbSaveSession(_sbSession);
-  return updatedUser;
-}
-
-// Handicap index validation/normalization.
-// Rules: literal decimal (9 -> 9.0, 23 -> 23.0, never 2.3). Max 54.0 (USGA), clamps down.
-// Plus handicaps entered as "+2.4" stored as negative -2.4 (USGA convention), displayed "+2.4".
-// Returns { ok:true, value:Number, display:String } or { ok:false, error:String }.
-const HCP_MAX = 54.0;   // USGA max index
-const HCP_MIN = -9.0;   // plus-handicap floor (stored negative)
-function sbParseHcp(raw){
-  if (raw == null) return { ok:false, error:'Please enter your handicap index.' };
-  let s = String(raw).trim();
-  if (!s) return { ok:false, error:'Please enter your handicap index.' };
-  let isPlus = false;
-  if (s[0] === '+') { isPlus = true; s = s.slice(1).trim(); }
-  if (!/^[0-9]+(\.[0-9]+)?$/.test(s)) return { ok:false, error:'Enter a number like 9.3, or a plus handicap like +2.4.' };
-  let n = parseFloat(s);
-  if (isNaN(n)) return { ok:false, error:'Enter a number like 9.3, or a plus handicap like +2.4.' };
-  // literal interpretation: integer stays as-is (9 -> 9.0, 23 -> 23.0)
-  n = Math.round(n * 10) / 10; // normalize to one decimal
-  if (isPlus) n = -n;          // plus handicap stored negative
-  // clamp
-  if (n > HCP_MAX) n = HCP_MAX;
-  if (n < HCP_MIN) n = HCP_MIN;
-  return { ok:true, value:n, display: sbHcpDisplay(n) };
-}
-function sbHcpDisplay(n){
-  if (n == null || isNaN(n)) return '';
-  if (n < 0) return '+' + (Math.abs(n)).toFixed(1);
-  return n.toFixed(1);
-}
-
-window.sbSaveProfile = async function(){
-  const name = document.getElementById('profName').value.trim();
-  const phone = document.getElementById('profPhone').value.trim();
-  const venmo = document.getElementById('profVenmo').value.trim();
-  const hcpRaw = document.getElementById('profHcp').value;
-  const errEl = document.getElementById('profError');
-  errEl.style.display = 'none';
-  if (!name) {
-    errEl.textContent = 'Please enter your name.';
-    errEl.style.display = 'block';
-    return;
-  }
-  const hcpParsed = sbParseHcp(hcpRaw);
-  if (!hcpParsed.ok) {
-    errEl.textContent = hcpParsed.error;
-    errEl.style.display = 'block';
-    return;
-  }
-  // reflect normalized value back so user sees what was stored
-  document.getElementById('profHcp').value = hcpParsed.display;
-  const btn = document.getElementById('profBtn');
-  btn.disabled = true; btn.textContent = 'Saving...';
-  try {
-    await sbUpdateUser({ full_name: name, phone, venmo, hcp: hcpParsed.value });
-    document.getElementById('profileScreen').style.display = 'none';
-    showHome();
-    sbUpdateAvatar();
-  } catch(e) {
-    errEl.textContent = e.message || 'Something went wrong.';
-    errEl.style.display = 'block';
-    btn.disabled = false; btn.textContent = 'Continue';
-  }
-};
-
-window.sbOpenEditProfile = function(){
-  const menu = document.getElementById('userMenu');
-  if (menu) menu.style.display = 'none';
-  const user = sbCurrentUser();
-  if (!user) return;
-  const meta = user.user_metadata || {};
-  document.getElementById('editProfAv').textContent = sbInitialsFrom(meta.full_name, user.email);
-  document.getElementById('editProfEmail').textContent = user.email || '';
-  document.getElementById('editProfName').value = meta.full_name || '';
-  document.getElementById('editProfPhone').value = meta.phone || '';
-  document.getElementById('editProfVenmo').value = meta.venmo || '';
-  document.getElementById('editProfHcp').value = (meta.hcp != null && meta.hcp !== '') ? sbHcpDisplay(meta.hcp) : '';
-  document.getElementById('editProfError').style.display = 'none';
-  document.getElementById('editProfOverlay').style.display = 'flex';
-};
-
-window.sbCloseEditProfile = function(){
-  document.getElementById('editProfOverlay').style.display = 'none';
-};
-
-window.sbSaveEditProfile = async function(){
-  const name = document.getElementById('editProfName').value.trim();
-  const phone = document.getElementById('editProfPhone').value.trim();
-  const venmo = document.getElementById('editProfVenmo').value.trim();
-  const hcpRaw = document.getElementById('editProfHcp').value;
-  const errEl = document.getElementById('editProfError');
-  errEl.style.display = 'none';
-  if (!name) {
-    errEl.textContent = 'Please enter your name.';
-    errEl.style.display = 'block';
-    return;
-  }
-  const hcpParsed = sbParseHcp(hcpRaw);
-  if (!hcpParsed.ok) {
-    errEl.textContent = hcpParsed.error;
-    errEl.style.display = 'block';
-    return;
-  }
-  document.getElementById('editProfHcp').value = hcpParsed.display;
-  const btn = document.getElementById('editProfBtn');
-  btn.disabled = true; btn.textContent = 'Saving...';
-  try {
-    await sbUpdateUser({ full_name: name, phone, venmo, hcp: hcpParsed.value });
-    document.getElementById('editProfOverlay').style.display = 'none';
-    sbUpdateAvatar();
-    btn.disabled = false; btn.textContent = 'Save Changes';
-  } catch(e) {
-    errEl.textContent = e.message || 'Something went wrong.';
-    errEl.style.display = 'block';
-    btn.disabled = false; btn.textContent = 'Save Changes';
-  }
-};
-
-function sbShowLogin(){
-  document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('homeScreen').style.display = 'none';
-  document.getElementById('wizardScreen').style.display = 'none';
-  document.getElementById('mainScreen').style.display = 'none';
-  sbShowLoginForm();
-}
-
-function sbHideLogin(){
-  document.getElementById('loginScreen').style.display = 'none';
-}
-
-async function sbHandleCallback(){
-  // Parse tokens from URL hash after magic link tap
-  const hash = window.location.hash;
-  if (!hash || !hash.includes('access_token')) return false;
-  const params = new URLSearchParams(hash.substring(1));
-  const access_token = params.get('access_token');
-  const refresh_token = params.get('refresh_token');
-  const expires_at = params.get('expires_at');
-  const token_type = params.get('token_type');
-  if (!access_token) return false;
-  // Fetch user info
-  try {
-    const r = await fetch(SB_AUTH_URL + '/user', {
-      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + access_token }
-    });
-    if (!r.ok) return false;
-    const user = await r.json();
-    const session = { access_token, refresh_token, expires_at: parseInt(expires_at||'0'), token_type, user };
-    sbSaveSession(session);
-    // Clean URL
-    history.replaceState(null, '', window.location.pathname);
-    return true;
-  } catch(e) { return false; }
-}
-
-async function sbRefreshSession(refreshToken){
-  try {
-    const r = await fetch(SB_AUTH_URL + '/token?grant_type=refresh_token', {
-      method: 'POST',
-      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken })
-    });
-    if (!r.ok) return false;
-    const data = await r.json();
-    if (!data.access_token) return false;
-    sbSaveSession({ ...data, user: data.user });
-    return true;
-  } catch(e) { return false; }
-}
-
-async function sbInit(){
-  // 1. Check for magic link callback in URL
-  const fromCallback = await sbHandleCallback();
-  if (fromCallback) return true;
-  // 2. Check stored session (valid access token)
-  const stored = sbGetStoredSession();
-  if (stored) {
-    _sbSession = stored;
-    return true;
-  }
-  // 3. Try refresh token if access token expired
-  try {
-    const raw = localStorage.getItem('sb_session');
-    if (raw) {
-      const s = JSON.parse(raw);
-      if (s.refresh_token) {
-        const refreshed = await sbRefreshSession(s.refresh_token);
-        if (refreshed) return true;
-      }
-    }
-  } catch(e) {}
-  // 4. No session
-  return false;
-}
-
-async function sbSignOut(){
-  try {
-    if (_sbSession?.access_token) {
-      await fetch(SB_AUTH_URL + '/logout', {
-        method: 'POST',
-        headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + _sbSession.access_token }
-      });
-    }
-  } catch(e) {}
-  sbSaveSession(null);
-  sbShowLogin();
-}
-
-function sbCurrentUser(){
-  return _sbSession?.user || null;
-}
-// ── End Supabase Auth ───────────────────────────────────────────────────────
-
 async function sbFetch(){
   try{
     const r=await fetch(SB_URL+'/rest/v1/app_state?id=eq.'+SB_ROW+'&select=data',{
@@ -1953,32 +1471,7 @@ function loadTrips(){return loadTripsLocal();}
 function saveTrips(trips){try{localStorage.setItem(LS_TRIPS,JSON.stringify(trips));}catch(e){}scheduleSbSave();}
 function autoSave(){if(!WK||!STATE||isReadOnly)return;s2MarkDirty(['trip','players','expenses']);const trips=loadTrips();const holesPlayed=totalHolesPlayed(),totalH=totalHoles(),complete=holesPlayed>=totalH;const potData=calcPotRankings();const winner=potData[0]?WK.players[potData[0].pi]?.name:'';const snapshot={id:WK._id||(WK._id=Date.now()+''),name:WK.name,is_quick_round:!!WK.isQuickRound,date:WK.date,playerNames:WK.players.map((p,i)=>displayName(i)),playerInis:WK.players.map(p=>p.ini),playerColors:WK.players.map(p=>({bg:p.bg,fg:p.fg})),courses:WK.rounds.map(r=>r.courseName),holesPlayed,totalHoles:totalH,complete,winner,savedAt:new Date().toISOString()};const idx=trips.findIndex(t=>t.id===snapshot.id);if(idx>=0)trips[idx]=snapshot;else trips.unshift(snapshot);saveTrips(trips);showSaveToast();}
 function showSaveToast(){const el=document.getElementById('saveIndicator');el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1500);}
-function showHome(){
-  document.getElementById('homeScreen').style.display='block';
-  document.getElementById('wizardScreen').style.display='none';
-  document.getElementById('mainScreen').style.display='none';
-  document.getElementById('loginScreen').style.display='none';
-  // Update user avatar
-  sbUpdateAvatar();
-  renderTripList();
-  renderLibrarySection();
-}
-
-window.sbShowUserMenu = function(){
-  const menu = document.getElementById('userMenu');
-  if (!menu) return;
-  const open = menu.style.display !== 'none';
-  menu.style.display = open ? 'none' : 'block';
-};
-
-// Close user menu on outside tap
-document.addEventListener('click', function(e){
-  const menu = document.getElementById('userMenu');
-  const avatar = document.getElementById('homeUserAvatar');
-  if (menu && avatar && !menu.contains(e.target) && !avatar.contains(e.target)) {
-    menu.style.display = 'none';
-  }
-});
+function showHome(){document.getElementById('homeScreen').style.display='block';document.getElementById('wizardScreen').style.display='none';document.getElementById('mainScreen').style.display='none';renderTripList();renderLibrarySection();}
 
 function renderLibrarySection(){
   const el=document.getElementById('librarySection');
@@ -6423,35 +5916,17 @@ function dismissSplash(){
 }
 loadLib(); // sync cache load first so library is available immediately
 const _splashStart=Date.now();
-updateThemeUI();
-// Auth gate - check session before showing app
-sbInit().then(authed => {
-  if (!authed) {
-    // No session - show login, dismiss splash
+Promise.all([loadCourses(),loadLibrary()]).then(()=>{
+  syncOnLoad().then(()=>{
+    renderTripList();
+    renderLibrarySection();
     const elapsed=Date.now()-_splashStart;
     const remain=Math.max(0,2800-elapsed);
-    setTimeout(()=>{ dismissSplash(); sbShowLogin(); }, remain);
-    return;
-  }
-  // Session exists - proceed to app
-  Promise.all([loadCourses(),loadLibrary()]).then(()=>{
-    syncOnLoad().then(()=>{
-      renderTripList();
-      renderLibrarySection();
-      const elapsed=Date.now()-_splashStart;
-      const remain=Math.max(0,2800-elapsed);
-      setTimeout(()=>{
-        dismissSplash();
-        if (sbNeedsProfile()) {
-          sbShowProfileCapture();
-        } else {
-          showHome();
-          sbUpdateAvatar();
-        }
-      }, remain);
-    });
+    setTimeout(dismissSplash,remain);
   });
 });
+updateThemeUI();
+showHome();
 
 function showRoundDetails(){
   const r=STATE.currentRound;
