@@ -942,7 +942,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v103.1';
+const APP_VERSION='v103.2';
 
 // ===== THEME =====
 (function(){
@@ -1538,7 +1538,7 @@ async function sbSendMagicLink(){
     const r = await fetch(SB_AUTH_URL + '/otp', {
       method: 'POST',
       headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, create_user: true, options: { emailRedirectTo: window.location.origin + window.location.pathname, flowType: 'implicit' } })
+      body: JSON.stringify({ email, create_user: true, options: { email_redirect_to: window.location.href.split('#')[0] } })
     });
     if (!r.ok) {
       const err = await r.json().catch(() => ({}));
