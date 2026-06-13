@@ -535,15 +535,17 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
       </div>
       <div id="loginForm">
         <div class="login-title">Sign In</div>
-        <div class="login-sub">Enter your email and we'll send you a magic link to sign in instantly - no password needed.</div>
+        <div class="login-sub">Enter your email and we'll send you a 6-digit sign-in code. No password needed.</div>
         <div id="loginError" class="login-error" style="display:none"></div>
         <input id="loginEmail" class="login-input" type="email" placeholder="your@email.com" autocomplete="email" autocapitalize="none"/>
-        <button id="loginBtn" class="login-btn" onclick="window.sbSendMagicLink()">Send Magic Link</button>
+        <button id="loginBtn" class="login-btn" onclick="window.sbSendMagicLink()">Send Code</button>
       </div>
       <div id="loginConfirm" class="login-confirm" style="display:none">
-        <div class="login-confirm-icon">&#x2709;&#xFE0F;</div>
         <div class="login-confirm-title">Check your email</div>
-        <div class="login-confirm-sub">We sent a magic link to <strong id="loginConfirmEmail"></strong>. Tap the link in the email to sign in.</div>
+        <div class="login-confirm-sub">We sent a 6-digit code to <strong id="loginConfirmEmail"></strong>. Enter it below.</div>
+        <div id="loginCodeError" class="login-error" style="display:none"></div>
+        <input id="loginCode" class="login-input" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000" autocomplete="one-time-code" style="text-align:center;font-size:28px;letter-spacing:0.4em;padding:14px 10px"/>
+        <button id="loginCodeBtn" class="login-btn" onclick="window.sbVerifyOTP()">Verify Code</button>
         <div class="login-resend" onclick="window.sbShowLoginForm()">Use a different email</div>
       </div>
     </div>
@@ -942,7 +944,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v103.3';
+const APP_VERSION='v103.4';
 
 // ===== THEME =====
 (function(){
@@ -1538,7 +1540,7 @@ async function sbSendMagicLink(){
     const r = await fetch(SB_AUTH_URL + '/otp', {
       method: 'POST',
       headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, create_user: true, email_redirect_to: window.location.href.split('#')[0] })
+      body: JSON.stringify({ email, create_user: true })
     });
     if (!r.ok) {
       const err = await r.json().catch(() => ({}));
@@ -1555,6 +1557,36 @@ async function sbSendMagicLink(){
     btn.textContent = 'Send Magic Link';
   }
 }
+
+window.sbVerifyOTP = async function(){
+  const code = (document.getElementById('loginCode')?.value||'').trim();
+  const email = document.getElementById('loginConfirmEmail')?.textContent||'';
+  const errEl = document.getElementById('loginCodeError');
+  const btn = document.getElementById('loginCodeBtn');
+  if(errEl) errEl.style.display='none';
+  if(!/^\d{6}$/.test(code)){
+    if(errEl){errEl.textContent='Please enter the 6-digit code from your email.';errEl.style.display='block';}
+    return;
+  }
+  if(btn){btn.disabled=true;btn.textContent='Verifying...';}
+  try{
+    const r=await fetch(SB_AUTH_URL+'/verify',{
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({type:'email',token:code,email:email})
+    });
+    if(!r.ok){
+      const err=await r.json().catch(()=>({}));
+      throw new Error(err.msg||err.error_description||'Invalid or expired code. Please try again.');
+    }
+    const session=await r.json();
+    sbSaveSession(session);
+    await sbInit();
+  }catch(e){
+    if(errEl){errEl.textContent=e.message||'Something went wrong. Please try again.';errEl.style.display='block';}
+    if(btn){btn.disabled=false;btn.textContent='Verify Code';}
+  }
+};
 
 function sbShowLoginForm(){
   document.getElementById('loginConfirm').style.display = 'none';
