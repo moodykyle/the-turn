@@ -944,7 +944,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v103.7';
+const APP_VERSION='v103.8';
 
 // ===== THEME =====
 (function(){
@@ -1505,7 +1505,7 @@ function sbGetStoredSession(){
     if (!raw) return null;
     const s = JSON.parse(raw);
     // Check expiry (expires_at is unix timestamp in seconds)
-    // Do NOT delete the session here — the refresh token is still valid
+    // Do NOT delete the session here. The refresh token is still valid
     // and sbInit() will use it to get a new access token silently.
     if (s.expires_at && Date.now()/1000 > s.expires_at - 60) {
       return null;
@@ -1559,6 +1559,16 @@ async function sbSendMagicLink(){
   }
 }
 
+// Shared post-auth routing - used by both the boot sequence and OTP verify.
+// Decides where an authenticated user lands: profile capture, group picker, or home.
+function sbRouteAfterAuth(){
+  if (sbNeedsProfile()) {
+    sbShowProfileCapture();
+  } else {
+    sbCheckAndSetGroup().then(()=>{ showHome(); });
+  }
+}
+
 window.sbVerifyOTP = async function(){
   const code = (document.getElementById('loginCode')?.value||'').trim();
   const email = document.getElementById('loginConfirmEmail')?.textContent||'';
@@ -1583,6 +1593,13 @@ window.sbVerifyOTP = async function(){
     const session=await r.json();
     sbSaveSession(session);
     await sbInit();
+    // Drive the same post-login flow the boot sequence runs, since there is
+    // no page reload after OTP verify to trigger it. Without this the user
+    // verifies successfully and gets stuck on the login card.
+    await Promise.all([loadCourses(),loadLibrary()]);
+    await syncOnLoad();
+    renderGroupList();
+    sbRouteAfterAuth();
   }catch(e){
     if(errEl){errEl.textContent=e.message||'Something went wrong. Please try again.';errEl.style.display='block';}
   }finally{
@@ -7261,11 +7278,7 @@ sbInit().then(authed => {
       const remain=Math.max(0,2800-elapsed);
       setTimeout(()=>{
         dismissSplash();
-        if (sbNeedsProfile()) {
-          sbShowProfileCapture();
-        } else {
-          sbCheckAndSetGroup().then(()=>{ showHome(); });
-        }
+        sbRouteAfterAuth();
       }, remain);
     });
   });
