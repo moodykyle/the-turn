@@ -944,7 +944,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v103.8';
+const APP_VERSION='v103.9';
 
 // ===== THEME =====
 (function(){
@@ -1545,7 +1545,7 @@ async function sbSendMagicLink(){
     });
     if (!r.ok) {
       const err = await r.json().catch(() => ({}));
-      throw new Error(err.error_description || err.msg || 'Failed to send magic link.');
+      throw new Error(err.error_description || err.msg || 'Failed to send code.');
     }
     // Show confirmation state
     document.getElementById('loginForm').style.display = 'none';
@@ -1555,7 +1555,7 @@ async function sbSendMagicLink(){
     errEl.textContent = e.message || 'Something went wrong. Please try again.';
     errEl.style.display = 'block';
     btn.disabled = false;
-    btn.textContent = 'Send Magic Link';
+    btn.textContent = 'Send Code';
   }
 }
 
@@ -1612,7 +1612,7 @@ function sbShowLoginForm(){
   document.getElementById('loginForm').style.display = 'block';
   const btn = document.getElementById('loginBtn');
   btn.disabled = false;
-  btn.textContent = 'Send Magic Link';
+  btn.textContent = 'Send Code';
   document.getElementById('loginEmail').value = '';
   document.getElementById('loginError').style.display = 'none';
 }
