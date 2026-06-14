@@ -944,7 +944,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v103.9';
+const APP_VERSION='v103.10';
 
 // ===== THEME =====
 (function(){
@@ -5167,7 +5167,7 @@ function _gsApplyToWK(){
   const g=_gsGames;
   if(g['Wolf']){WK.wolfOn=true;WK.wolfVal=parseFloat(g['Wolf'].wolfVal)||1;}
   if(g['Snake']){WK.snakeOn=true;WK.snakeBase=parseFloat(g['Snake'].snakeBase)||1;}
-  if(g['Skins']){WK.skinsOn=true;WK.skinsVal=parseFloat(g['Skins'].skinsVal)||5;WK.skinsFmt=g['Skins'].skinsFmt||'team';WK.skinsGamesPerRound=Array(WK.rounds.length).fill(WK.skinsGamesDefault||3);}
+  if(g['Skins']){WK.skinsOn=true;WK.skinsVal=parseFloat(g['Skins'].skinsVal)||5;WK.skinsFmt=g['Skins'].skinsFmt||(WK.players.length<4?'individual':'team');WK.skinsGamesDefault=WK.players.length<4?1:WK.skinsGamesDefault||3;WK.skinsGamesPerRound=Array(WK.rounds.length).fill(WK.skinsGamesDefault);}
   if(g['Razzle Dazzle']){WK.razzleOn=true;WK.razzleVal=parseFloat(g['Razzle Dazzle'].razzleVal)||5;}
   if(g['Match Play']){WK.mpOn=true;WK.gameVal=parseFloat(g['Match Play'].gameVal)||5;}
   if(g['Vegas']){WK.vegasOn=true;WK.vegasVal=parseFloat(g['Vegas'].vegasVal)||0.5;}
@@ -5354,7 +5354,7 @@ function addE9Round(){
   const _gg=_gsGames;
   if(_gg['Wolf']){WK.wolfOn=true;WK.wolfVal=parseFloat(_gg['Wolf'].wolfVal)||WK.wolfVal||1;}
   if(_gg['Snake']){WK.snakeOn=true;WK.snakeBase=parseFloat(_gg['Snake'].snakeBase)||WK.snakeBase||1;}
-  if(_gg['Skins']){WK.skinsOn=true;WK.skinsVal=parseFloat(_gg['Skins'].skinsVal)||WK.skinsVal||5;WK.skinsFmt=_gg['Skins'].skinsFmt||WK.skinsFmt||'team';}
+  if(_gg['Skins']){WK.skinsOn=true;WK.skinsVal=parseFloat(_gg['Skins'].skinsVal)||WK.skinsVal||5;WK.skinsFmt=_gg['Skins'].skinsFmt||WK.skinsFmt||(WK.players.length<4?'individual':'team');}
   if(_gg['Razzle Dazzle']){WK.razzleOn=true;WK.razzleVal=parseFloat(_gg['Razzle Dazzle'].razzleVal)||WK.razzleVal||5;}
   if(_gg['Match Play']){WK.mpOn=true;WK.gameVal=parseFloat(_gg['Match Play'].gameVal)||WK.gameVal||5;}
   if(_gg['Vegas']){WK.vegasOn=true;WK.vegasVal=parseFloat(_gg['Vegas'].vegasVal)||WK.vegasVal||0.5;}
@@ -6485,7 +6485,7 @@ function renderSkinsRound(){
         if(pending){winTxt=`<span style="color:var(--color-text-secondary)">-</span>`;midTxt='-';}
         else if(tied){midTxt=`<span style="color:#BA7517;font-size:12px;font-weight:500">${carry} skin${carry!==1?'s':''}</span>`;winTxt=`<span style="color:#BA7517;font-size:12px;font-weight:500;white-space:nowrap">Carried Over</span>`;}
         else if(skinsWon){
-          if(isIndiv){const pi=winner;playerTally[pi]=(playerTally[pi]||0)+skinsWon;winColor=PLAYER_COLORS[pi%PLAYER_COLORS.length];midTxt=`<span style="color:${winColor};font-weight:500;font-size:12px">${skinsWon} skin${skinsWon!==1?'s':''}</span>`;winTxt=displayName(pi);}
+          if(isIndiv){const pi=winner;playerTally[pi]=(playerTally[pi]||0)+skinsWon;winColor=PLAYER_COLORS[pi%PLAYER_COLORS.length];midTxt=`<span style="color:${winColor};font-weight:500;font-size:12px">${skinsWon} skin${skinsWon!==1?'s':''}</span>`;winTxt=`<span style="font-size:12px;font-weight:700;color:${winColor}">${displayName(pi)}</span>`;}
           else{const teamColor=winner==='a'?colorA:colorB;if(winner==='a')skinsA2+=skinsWon;else skinsB2+=skinsWon;midTxt=`<span style="color:${teamColor};font-weight:500;font-size:12px">${skinsWon} skin${skinsWon!==1?'s':''}</span>`;winColor=teamColor;winTxt=`<span style="font-size:12px;font-weight:700;color:${teamColor}">${winner==='a'?'A':'B'}</span>`;}
         } else {midTxt='-';}
         const bA2=!isIndiv&&teams?teams[0].map(pi=>skinNet(pi,h,r)).filter(x=>x!==null):[];
