@@ -944,7 +944,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v103.10';
+const APP_VERSION='v103.13';
 
 // ===== THEME =====
 (function(){
@@ -3089,12 +3089,15 @@ function _qrLaunchRound(){
   if(n<4)WK.skinsFmt='individual';
   WK.rounds.forEach(function(rd){if(n<4)rd.skinsOn=rd.skinsOn&&true;});
 
+  // Stamp group_id directly onto WK before first save - do not rely on autoSave side effect
+  if(window._pendingGroupId){WK._groupId=window._pendingGroupId;window._pendingGroupId=null;}
   isReadOnly=false;viewingTripId=null;_isQuickRoundWizard=false;
   window._qrNineHole=nineHole;
   window._qrWasQR=true;
   initState(_qrS.netOffLow||false);
   launchMainApp();
   autoSave();
+  s2WriteActive();
 }
 
 function startQuickRound(){
@@ -3540,7 +3543,7 @@ function startWeekend(){const nP=parseInt(document.getElementById('numPlayers').
   const razzleOn=document.getElementById('wizRazzleOn').checked;
   const wolfOn=WK.wolfOn;WK.rounds.forEach(rd=>{rd.mpOn=mpOn;rd.vegasOn=vegasOn;rd.skinsOn=skinsOn;rd.snakeOn=snakeOn;rd.razzleOn=razzleOn;rd.wolfOn=wolfOn;});
   if(players.length<4&&skinsOn)WK.skinsFmt='individual';
-  initState(netOffLow);launchMainApp();autoSave();}
+  initState(netOffLow);launchMainApp();autoSave();s2WriteActive();}
 
 // Resolve in-game display names for a roster array: last name by default, first initial + last on conflict
 function resolveDisplayNames(players){
@@ -5102,7 +5105,7 @@ let _e9State={step:1,cn:null,nineHole:null,inStandings:false};
 let _gsGames={};
 const _GS_DEFS={'Wolf':{fields:[['$ per point','wolfVal','number','1','0.25']]},'Snake':{fields:[['Starting pot $','snakeBase','number','1','0.25']]},'Skins':{fields:[['$ per skin','skinsVal','number','5','1'],['Format','skinsFmt','select','team',[['team','Team 2v2'],['individual','Individual']]]]},'Razzle Dazzle':{fields:[['$ per match','razzleVal','number','5','1']]},'Match Play':{fields:[['$ per game','gameVal','number','5','1']]},'Vegas':{fields:[['$ per point','vegasVal','number','0.50','0.25']]},'Hammer':{fields:[['$ per hole','hammerVal','number','2','0.25']]},"Two's Club":{fields:[['$ per player','twosAmt','number','25','1']]}};
 const _GS_ORDER=['Wolf','Snake','Skins','Razzle Dazzle','Match Play','Vegas','Hammer',"Two's Club"];
-function _gsAddGame(name){if(!name||_gsGames[name])return;const def=_GS_DEFS[name];if(!def)return;const vals={};def.fields.forEach(function(f){vals[f[1]]=f[3];});_gsGames[name]=vals;_gsRefresh();}
+function _gsAddGame(name){if(!name||_gsGames[name])return;const def=_GS_DEFS[name];if(!def)return;const vals={};def.fields.forEach(function(f){vals[f[1]]=f[3];});_gsGames[name]=vals;if(name==='Skins'){const nP=(typeof _qrS!=='undefined'&&_qrS.n)?_qrS.n:(WK&&WK.players?WK.players.length:4);if(nP<4)_gsGames['Skins'].skinsFmt='individual';}_gsRefresh();}
 window.isHeadsUp=isHeadsUp;
 window.defaultTeams=defaultTeams;
 window.defaultHUTeams=defaultHUTeams;
