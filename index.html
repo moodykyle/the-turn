@@ -841,7 +841,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v104.10';
+const APP_VERSION='v104.11';
 
 // ===== THEME =====
 (function(){
@@ -2164,7 +2164,7 @@ async function renameCourse(oldName,newName){newName=newName.trim();if(!newName|
 function loadTripsLocal(){try{const d=localStorage.getItem(LS_TRIPS);return d?JSON.parse(d):[];}catch(e){return[];}}
 function loadTrips(){return loadTripsLocal();}
 function saveTrips(trips){try{localStorage.setItem(LS_TRIPS,JSON.stringify(trips));}catch(e){}scheduleSbSave();}
-function autoSave(){if(!WK||!STATE||isReadOnly)return;s2MarkDirty(['trip','players','expenses']);const trips=loadTrips();const holesPlayed=totalHolesPlayed(),totalH=totalHoles(),complete=holesPlayed>=totalH;const potData=calcPotRankings();const winner=potData[0]?WK.players[potData[0].pi]?.name:'';if(!WK._groupId&&window._pendingGroupId){WK._groupId=window._pendingGroupId;window._pendingGroupId=null;}const snapshot={id:WK._id||(WK._id=Date.now()+''),name:WK.name,is_quick_round:!!WK.isQuickRound,group_id:WK._groupId||null,date:WK.date,playerNames:WK.players.map((p,i)=>displayName(i)),playerInis:WK.players.map(p=>p.ini),playerColors:WK.players.map(p=>({bg:p.bg,fg:p.fg})),courses:WK.rounds.map(r=>r.courseName),holesPlayed,totalHoles:totalH,complete,winner,savedAt:new Date().toISOString()};const idx=trips.findIndex(t=>t.id===snapshot.id);if(idx>=0)trips[idx]=snapshot;else trips.unshift(snapshot);saveTrips(trips);showSaveToast();}
+function autoSave(){if(!WK||!STATE||isReadOnly)return;s2MarkDirty(['trip','players','expenses']);const trips=loadTrips();const holesPlayed=totalHolesPlayed(),totalH=totalHoles(),complete=holesPlayed>=totalH;const potData=calcPotRankings();const winner=potData[0]?WK.players[potData[0].pi]?.name:'';const snapshot={id:WK._id||(WK._id=Date.now()+''),name:WK.name,is_quick_round:!!WK.isQuickRound,group_id:WK._groupId||null,date:WK.date,playerNames:WK.players.map((p,i)=>displayName(i)),playerInis:WK.players.map(p=>p.ini),playerColors:WK.players.map(p=>({bg:p.bg,fg:p.fg})),courses:WK.rounds.map(r=>r.courseName),holesPlayed,totalHoles:totalH,complete,winner,savedAt:new Date().toISOString()};const idx=trips.findIndex(t=>t.id===snapshot.id);if(idx>=0)trips[idx]=snapshot;else trips.unshift(snapshot);saveTrips(trips);showSaveToast();}
 function showSaveToast(){const el=document.getElementById('saveIndicator');el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1500);}
 function showHome(){
   document.getElementById('homeScreen').style.display='block';
@@ -2738,7 +2738,7 @@ function _qrStepHtml(){
       +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">How many players?</div></div>'
       +rows
       +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
-      +'<div onclick="window._qrClose()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Cancel</div>'
+      +'<div onclick="window._qrCancel()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Cancel</div>'
       +'</div>';
   }
 
@@ -2797,7 +2797,7 @@ function _qrStepHtml(){
         +rows
         +'<div style="padding:10px 20px;border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:12px"><div style="font-size:12px;color:var(--color-text-secondary)">'+countLabel+'</div></div>'
         +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
-        +'<div onclick="window._qrClose()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Cancel</div>'
+        +'<div onclick="window._qrCancel()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Cancel</div>'
         +'</div>';
     } else {
       const _me=sbCurrentUser();
@@ -2836,7 +2836,7 @@ function _qrStepHtml(){
         +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">Players</div><div style="font-size:12px;color:var(--color-text-secondary);margin-top:3px">'+subTitle+'</div></div>'
         +rows
         +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue →</button></div>'
-        +'<div onclick="window._qrClose()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Cancel</div>'
+        +'<div onclick="window._qrCancel()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Cancel</div>'
         +'</div>';
     }
   }
@@ -2893,6 +2893,7 @@ window._qrToggleGame=function(i){
   _qrRender();
 };
 window._qrClose=function(){const m=document.getElementById('qrModal');if(m)m.style.display='none';};
+window._qrCancel=function(){window._pendingGroupId=null;window._qrClose();};
 window._qrSetHoles=function(el){_qrS.holes=el.dataset.val;_qrRender();};
 window._qrSetN=function(el){_qrS.n=parseInt(el.dataset.val);_qrRender();};
 window._qrSet=function(key,val){_qrS[key]=val;_qrRender();};
