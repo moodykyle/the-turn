@@ -841,7 +841,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v104.8';
+const APP_VERSION='v104.9';
 
 // ===== THEME =====
 (function(){
@@ -1811,8 +1811,8 @@ window.fmtPhoneVal = function(raw){
 
 // ── Groups ──────────────────────────────────────────────────────────────────────────
 
-// Safe alphabet for join codes - no 0/O/1/I/L (visually ambiguous chars removed)
-const SAFE_ALPHA='ACDEFGHJKMNPQRTVWXY23456789';
+// Join code alphabet: full A-Z + 0-9, auto-uppercased on input
+const SAFE_ALPHA='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
 function sbGenerateJoinCode(){let code='';for(let i=0;i<6;i++)code+=SAFE_ALPHA[Math.floor(Math.random()*SAFE_ALPHA.length)];return code;}
 
@@ -2556,7 +2556,7 @@ window.openGroupSettings = function(gid){
     html+=`<div class="hm-code-card"><div><div class="hm-code-k">Join Code</div><div class="hm-code-v">${g.join_code||'------'}</div></div><button class="hm-code-copy" onclick="window._copyGroupCode('${g.join_code||''}')">Copy</button></div>`;
     html+=`<div class="hm-code-hint">Share this code so others can join.</div>`;
     html+=`<button class="hm-sheet-btn" onclick="window._renameGroupPrompt('${gid}')">Rename Group</button>`;
-    html+=`<button class="hm-sheet-btn" onclick="window._resetJoinCode('${gid}')">Reset Join Code</button>`;
+    html+=`<button class="hm-sheet-btn" onclick="window._customizeJoinCode('${gid}')">Customize Join Code</button>`;
     html+=`<button class="hm-sheet-btn danger" onclick="window._deleteGroup('${gid}','${(g.name||'').replace(/'/g,"\'")}')">Delete Group</button>`;
   } else {
     const admin=(g._members||[]).find(m=>m.role==='admin');
@@ -2582,18 +2582,29 @@ window._renameGroupPrompt = async function(gid){
   }catch(e){alert('Rename failed.');}
 };
 
-window._resetJoinCode = async function(gid){
-  if(!confirm('Reset join code? The old code will stop working immediately.'))return;
-  const newCode=sbGenerateJoinCode();
+window._customizeJoinCode = async function(gid){
+  const g=_groupCache[gid];
+  const current=g?g.join_code:'';
+  const raw=prompt('Enter a custom join code (4-10 characters, letters and numbers):',current);
+  if(!raw)return;
+  const code=raw.trim().toUpperCase();
+  if(code.length<4||code.length>10){alert('Join code must be between 4 and 10 characters.');return;}
+  if(!/^[A-Z0-9]+$/.test(code)){alert('Join code can only contain letters and numbers.');return;}
   try{
     const tok=_sbSession?.access_token||SB_KEY;
+    // Check uniqueness
+    const check=await fetch(SB_URL+'/rest/v1/groups?join_code=eq.'+encodeURIComponent(code)+'&select=group_id',{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Accept':'application/json'}
+    });
+    const existing=await check.json();
+    if(existing.length>0&&existing[0].group_id!==gid){alert(code+' is already taken. Please choose a different code.');return;}
     const r=await fetch(SB_URL+'/rest/v1/groups?group_id=eq.'+encodeURIComponent(gid),{
       method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-      body:JSON.stringify({join_code:newCode})
+      body:JSON.stringify({join_code:code})
     });
-    if(r.ok||r.status===204){if(_groupCache[gid])_groupCache[gid].join_code=newCode;renderGroupList();window.openGroupSettings(gid);renderGroupPage(gid);}
-    else{alert('Reset failed. Please try again.');}
-  }catch(e){alert('Reset failed.');}
+    if(r.ok||r.status===204){if(_groupCache[gid])_groupCache[gid].join_code=code;renderGroupList();window.openGroupSettings(gid);renderGroupPage(gid);}
+    else{alert('Update failed. Please try again.');}
+  }catch(e){alert('Update failed.');}
 };
 
 window._deleteGroup = async function(gid,name){
