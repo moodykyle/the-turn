@@ -437,6 +437,11 @@ body.force-dark .home-elev{box-shadow:0 3px 10px rgba(0,0,0,0.55),0 1px 2px rgba
 .hm-sheet-btn{width:100%;border-radius:var(--border-radius-md);padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:9px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);}
 .hm-sheet-btn.danger{background:#FCEBEA;color:#B42318;border-color:#F4C7C2;margin-top:16px;}
 body.force-dark .hm-sheet-btn.danger{background:rgba(180,35,24,0.16);color:#FCA5A5;border-color:rgba(180,35,24,0.4);}
+.hm-sheet-btn.primary{background:#1D9E75;color:#fff;border-color:#1D9E75;}
+.grp-in{width:100%;box-sizing:border-box;font-size:15px;padding:10px 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-family:inherit;margin:0;}
+.grp-in:focus{outline:none;border-color:#1D9E75;}
+.grp-in.code{text-transform:uppercase;letter-spacing:3px;font-family:var(--font-mono,monospace);font-weight:600;}
+.grp-err{display:flex;align-items:flex-start;gap:7px;font-size:12px;background:#FAEEDA;border:0.5px solid #EFB880;border-radius:var(--border-radius-md);padding:9px 11px;margin:12px 0 0;color:#633806;line-height:1.4;}
 .hm-ccpa-hint{font-size:11px;color:var(--color-text-tertiary);margin-top:8px;line-height:1.5;}
 .save-indicator{position:fixed;bottom:1rem;right:1rem;background:var(--color-text-primary);color:var(--color-background-primary);font-size:11px;padding:6px 12px;border-radius:var(--border-radius-md);opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:100;}
 .save-indicator.show{opacity:1;}
@@ -841,7 +846,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v104.11';
+const APP_VERSION='v105';
 
 // ===== THEME =====
 (function(){
@@ -2568,60 +2573,91 @@ window.openGroupSettings = function(gid){
   document.getElementById('hmMemberSheetOverlay').style.display='flex';
 };
 
-window._renameGroupPrompt = async function(gid){
-  const g=_groupCache[gid];
-  const name=prompt('New group name:',g?g.name:'');
-  if(!name||!name.trim())return;
-  try{
-    const tok=_sbSession?.access_token||SB_KEY;
-    const r=await fetch(SB_URL+'/rest/v1/groups?group_id=eq.'+encodeURIComponent(gid),{
-      method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-      body:JSON.stringify({name:name.trim()})
-    });
-    if(r.ok||r.status===204){if(_groupCache[gid])_groupCache[gid].name=name.trim();renderGroupList();window.openGroupSettings(gid);renderGroupPage(gid);}
-    else{alert('Rename failed. Please try again.');}
-  }catch(e){alert('Rename failed.');}
-};
 
-window._customizeJoinCode = async function(gid){
-  const g=_groupCache[gid];
-  const current=g?g.join_code:'';
-  const raw=prompt('Enter a custom join code (4-10 characters, letters and numbers):',current);
-  if(!raw)return;
-  const code=raw.trim().toUpperCase();
-  if(code.length<4||code.length>10){alert('Join code must be between 4 and 10 characters.');return;}
-  if(!/^[A-Z0-9]+$/.test(code)){alert('Join code can only contain letters and numbers.');return;}
+
+
+
+window._grpHeader=function(title,gid){
+  return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'+
+    '<div style="font-size:16px;font-weight:600;color:var(--color-text-primary)">'+title+'</div>'+
+    '<button style="width:28px;height:28px;border-radius:50%;background:var(--color-background-secondary);color:var(--color-text-secondary);border:none;font-size:14px;cursor:pointer" onclick="window.openGroupSettings(\''+gid+'\')">&#10005;</button></div>';
+};
+window._grpShowErr=function(msg){
+  var e=document.getElementById('grpDialogErr');
+  if(e){e.innerHTML='<i class="ti ti-alert-triangle" aria-hidden="true"></i><span>'+msg+'</span>';e.style.display='flex';}
+};
+window._renameGroupPrompt=function(gid){
+  var g=_groupCache[gid];var cur=g?(g.name||''):'';
+  var html=window._grpHeader('Rename Group',gid);
+  html+='<label style="display:block;font-size:13px;color:var(--color-text-secondary);margin:0 0 6px">Group name</label>';
+  html+='<input id="grpRenameInput" class="grp-in" value="'+cur.replace(/"/g,'&quot;')+'" />';
+  html+='<div id="grpDialogErr" class="grp-err" style="display:none"></div>';
+  html+='<button class="hm-sheet-btn primary" onclick="window._renameGroupSubmit(\''+gid+'\')">Save</button>';
+  html+='<button class="hm-sheet-btn" onclick="window.openGroupSettings(\''+gid+'\')">Cancel</button>';
+  document.getElementById('hmMemberSheetBody').innerHTML=html;
+  document.getElementById('hmMemberSheetOverlay').style.display='flex';
+  var inp=document.getElementById('grpRenameInput');if(inp)inp.focus();
+};
+window._renameGroupSubmit=async function(gid){
+  var inp=document.getElementById('grpRenameInput');var name=inp?inp.value.trim():'';
+  if(!name){window._grpShowErr('Enter a group name.');return;}
   try{
-    const tok=_sbSession?.access_token||SB_KEY;
-    // Check uniqueness
-    const check=await fetch(SB_URL+'/rest/v1/groups?join_code=eq.'+encodeURIComponent(code)+'&select=group_id',{
-      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Accept':'application/json'}
-    });
-    const existing=await check.json();
-    if(existing.length>0&&existing[0].group_id!==gid){alert(code+' is already taken. Please choose a different code.');return;}
-    const r=await fetch(SB_URL+'/rest/v1/groups?group_id=eq.'+encodeURIComponent(gid),{
-      method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-      body:JSON.stringify({join_code:code})
-    });
+    var tok=_sbSession?.access_token||SB_KEY;
+    var r=await fetch(SB_URL+'/rest/v1/groups?group_id=eq.'+encodeURIComponent(gid),{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({name:name})});
+    if(r.ok||r.status===204){if(_groupCache[gid])_groupCache[gid].name=name;renderGroupList();window.openGroupSettings(gid);renderGroupPage(gid);}
+    else{window._grpShowErr('Could not rename the group. Please try again.');}
+  }catch(e){window._grpShowErr('Could not rename the group. Please try again.');}
+};
+window._customizeJoinCode=function(gid){
+  var g=_groupCache[gid];var cur=g?(g.join_code||''):'';
+  var html=window._grpHeader('Customize Join Code',gid);
+  html+='<label style="display:block;font-size:13px;color:var(--color-text-secondary);margin:0 0 6px">Join code</label>';
+  html+='<input id="grpCodeInput" class="grp-in code" value="'+cur+'" maxlength="10" oninput="this.value=this.value.toUpperCase()" />';
+  html+='<div style="font-size:11px;color:var(--color-text-tertiary);margin:7px 2px 0">4 to 10 characters, letters and numbers. Capitalized automatically.</div>';
+  html+='<div id="grpDialogErr" class="grp-err" style="display:none"></div>';
+  html+='<button class="hm-sheet-btn primary" onclick="window._customizeJoinCodeSubmit(\''+gid+'\')">Save</button>';
+  html+='<button class="hm-sheet-btn" onclick="window.openGroupSettings(\''+gid+'\')">Cancel</button>';
+  document.getElementById('hmMemberSheetBody').innerHTML=html;
+  document.getElementById('hmMemberSheetOverlay').style.display='flex';
+  var inp=document.getElementById('grpCodeInput');if(inp)inp.focus();
+};
+window._customizeJoinCodeSubmit=async function(gid){
+  var inp=document.getElementById('grpCodeInput');var code=(inp?inp.value:'').trim().toUpperCase();
+  if(code.length<4||code.length>10){window._grpShowErr('Join code must be 4 to 10 characters.');return;}
+  if(!/^[A-Z0-9]+$/.test(code)){window._grpShowErr('Join code can only contain letters and numbers.');return;}
+  try{
+    var tok=_sbSession?.access_token||SB_KEY;
+    var check=await fetch(SB_URL+'/rest/v1/groups?join_code=eq.'+encodeURIComponent(code)+'&select=group_id',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Accept':'application/json'}});
+    var existing=await check.json();
+    if(existing.length>0&&existing[0].group_id!==gid){window._grpShowErr(code+' is already taken. Pick a different code.');return;}
+    var r=await fetch(SB_URL+'/rest/v1/groups?group_id=eq.'+encodeURIComponent(gid),{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({join_code:code})});
     if(r.ok||r.status===204){if(_groupCache[gid])_groupCache[gid].join_code=code;renderGroupList();window.openGroupSettings(gid);renderGroupPage(gid);}
-    else{alert('Update failed. Please try again.');}
-  }catch(e){alert('Update failed.');}
+    else{window._grpShowErr('Could not update the join code. Please try again.');}
+  }catch(e){window._grpShowErr('Could not update the join code. Please try again.');}
 };
-
-window._deleteGroup = async function(gid,name){
-  if(!confirm('Delete '+name+'? This removes the group and all its data. Trips are not deleted.'))return;
+window._deleteGroup=function(gid,name){
+  var g=_groupCache[gid];var gname=name||(g?(g.name||'this group'):'this group');
+  var tripCount=loadTrips().filter(function(t){return t.group_id===gid;}).length;
+  var html=window._grpHeader('Delete '+gname+'?',gid);
+  if(tripCount>0){
+    html+='<div style="font-size:13px;color:var(--color-text-secondary);line-height:1.55;margin:0 0 4px">Group is in use. Please remove its trips and rounds before deleting the group.</div>';
+    html+='<button class="hm-sheet-btn" onclick="window.openGroupSettings(\''+gid+'\')">Close</button>';
+  }else{
+    html+='<div style="font-size:13px;color:var(--color-text-secondary);line-height:1.55;margin:0 0 4px">This deletes the group and removes all its members. This cannot be undone.</div>';
+    html+='<div id="grpDialogErr" class="grp-err" style="display:none"></div>';
+    html+='<button class="hm-sheet-btn danger" onclick="window._deleteGroupConfirm(\''+gid+'\')">Delete Group</button>';
+    html+='<button class="hm-sheet-btn" onclick="window.openGroupSettings(\''+gid+'\')">Cancel</button>';
+  }
+  document.getElementById('hmMemberSheetBody').innerHTML=html;
+  document.getElementById('hmMemberSheetOverlay').style.display='flex';
+};
+window._deleteGroupConfirm=async function(gid){
   try{
-    const tok=_sbSession?.access_token||SB_KEY;
-    const r=await fetch(SB_URL+'/rest/v1/groups?group_id=eq.'+encodeURIComponent(gid),{
-      method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok}
-    });
-    if(r.ok||r.status===204){
-      delete _groupCache[gid];
-      sbSetActiveGroup(null);
-      window.closeHmMemberSheet();
-      renderGroupList();
-    } else {alert('Delete failed. Please try again.');}
-  }catch(e){alert('Delete failed.');}
+    var tok=_sbSession?.access_token||SB_KEY;
+    var r=await fetch(SB_URL+'/rest/v1/groups?group_id=eq.'+encodeURIComponent(gid),{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok}});
+    if(r.ok||r.status===204){delete _groupCache[gid];sbSetActiveGroup(null);window.closeHmMemberSheet();renderGroupList();}
+    else{window._grpShowErr('Could not delete the group. It may still have trips or rounds attached.');}
+  }catch(e){window._grpShowErr('Could not delete the group. It may still have trips or rounds attached.');}
 };
 
 window._leaveGroup = async function(gid,name){
