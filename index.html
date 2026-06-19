@@ -1125,10 +1125,10 @@ body.force-light{
       <button class="tab-btn" id="tabbtn-games" onclick="setView('games')">
         <!-- crossed clubs custom SVG -->
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <line x1="5" y1="19" x2="14" y2="7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-          <circle cx="15.5" cy="5.5" r="1.8" stroke="currentColor" stroke-width="1.5"/>
-          <line x1="19" y1="19" x2="10" y2="7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-          <circle cx="8.5" cy="5.5" r="1.8" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="5" y1="5" x2="14" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="15.5" cy="18.5" r="1.8" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="19" y1="5" x2="10" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="8.5" cy="18.5" r="1.8" stroke="currentColor" stroke-width="1.5"/>
         </svg>
         Games
       </button>
@@ -1253,7 +1253,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v106';
+const APP_VERSION='v106.1';
 
 // ===== THEME =====
 (function(){
@@ -2785,6 +2785,10 @@ async function renderHomeDashboard(){
           else if(!local[li].group_id&&t.group_id){local[li].group_id=t.group_id;changed=true;}
         });
       });
+      // Prune local trips that no longer exist in Supabase (deleted or never written)
+      const allSbIds=new Set();results.forEach(function(sbTrips){if(sbTrips)sbTrips.forEach(function(t){allSbIds.add(t.id);});});
+      const pruned=local.filter(function(t){return allSbIds.has(t.id);});
+      if(pruned.length<local.length){changed=true;local.splice(0,local.length,...pruned);}
       if(changed){saveTrips(local);renderHomeDashboard();}
     });
   }
