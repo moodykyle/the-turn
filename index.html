@@ -1054,7 +1054,7 @@ body.force-light{
   <!-- HOME GROUP PAGE SCREEN -->
   <div id="homeGroupScreen" style="display:none;padding-bottom:3rem">
     <div class="hm-gp-head">
-      <button class="hm-gp-back" onclick="window.closeGroupPage()">&#8249; Home</button>
+      <button class="hm-gp-back" onclick="window.closeGroupPage()" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg></button>
       <div class="hm-gp-title" id="gpTitle"></div>
       <div class="hm-gear" id="gpGear"></div>
     </div>
@@ -1253,7 +1253,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v106.1';
+const APP_VERSION='v106.3';
 
 // ===== THEME =====
 (function(){
@@ -2642,7 +2642,7 @@ function _buildHomeTripCard(t){
   </div>`;
 }
 
-function _buildTripSections(trips,sectionKey,startOpen){
+function _buildTripSections(trips,sectionKey,startOpen,gid){
   const regular=trips.filter(t=>!t.is_quick_round);
   const quick=trips.filter(t=>!!t.is_quick_round);
   if(!regular.length&&!quick.length){
@@ -2711,11 +2711,7 @@ async function renderHomeDashboard(){
   const _grpRound=groups.length===0
     ?'window.sbShowCreateGroup()'
     :'window._hmShowGrpRoundSheet()';
-  const _newTrip=groups.length===0
-    ?'window.sbShowCreateGroup()'
-    :groups.length===1
-      ?'window._pendingGroupId=\''+groups[0].group_id+'\';startNewWeekend()'
-      :'window._hmLaunchNewTrip()';
+  const _newTrip='window._hmShowNewTripSheet()';
   html+='<div class="home-dash-sec">'
     +'<div class="home-dash-sec-label">Start Something</div>'
     +'<div class="home-start-grid">'
@@ -2733,7 +2729,7 @@ async function renderHomeDashboard(){
     +'<button class="home-newtrip home-elev" onclick="'+_newTrip+'">'
     +'<div class="home-newtrip-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" width="20" height="20"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/><path d="M11 13l1.5 1.5L15 12" stroke-width="2.2"/></svg></div>'
     +'<div><div class="home-newtrip-title">New Trip</div><div class="home-newtrip-desc">Plan a weekend. Multiple rounds, full setup.</div></div>'
-    +'<div class="home-newtrip-chev">&#8250;</div>'
+    
     +'</button>'
     +'<div class="home-sec-links">'
     +'<button onclick="window.sbShowCreateGroup()">Create Group</button><span class="dot">&#183;</span>'
@@ -2932,21 +2928,45 @@ window._hmShowAllInProgress=function(){
 };
 window._hmLaunchGroupRound=window._hmShowGrpRoundSheet;
 window._hmPickGroupRound=function(gid){window._hmCloseGrpSheet();window.startGroupQuickRound(gid);};
-window._hmLaunchNewTrip=async function(){
+window._hmShowNewTripSheet=async function(){
   const groups=await sbGetUserGroups();
   if(!groups.length){window.sbShowCreateGroup();return;}
-  if(groups.length===1){window._pendingGroupId=groups[0].group_id;startNewWeekend();return;}
-  const body=document.getElementById('groupPickerList');if(!body)return;
-  body.innerHTML='<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px">Plan a new trip for which group?</div>'
-    +groups.map(function(g){return'<button class="login-btn" style="margin-bottom:10px" onclick="window._hmPickNewTrip(\''+g.group_id+'\')">'+g.name+'</button>';}).join('');
-  ['homeScreen','groupSetupScreen','groupCreateScreen','groupJoinScreen'].forEach(function(id){const el=document.getElementById(id);if(el)el.style.display='none';});
-  const s=document.getElementById('groupPickerScreen');if(s)s.style.display='flex';
+  const sheet=document.getElementById('grpRoundSheet');
+  const body=document.getElementById('grpRoundSheetBody');
+  if(!sheet||!body)return;
+  if(groups.length===1){
+    const g=groups[0];
+    const members=g._members||[];
+    const avsHtml=members.slice(0,5).map(function(m,i){
+      const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
+      const ini=(m.display_name||'??').split(' ').map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
+      return'<div class="avatar" style="width:32px;height:32px;font-size:11px;background:'+c.bg+';color:'+c.fg+'">'+ini+'</div>';
+    }).join('');
+    body.innerHTML='<div class="grp-sheet-title">New Trip</div>'
+      +'<div class="grp-sheet-sub">This trip will be saved to <strong>'+g.name+'</strong>.</div>'
+      +(avsHtml?'<div class="grp-sheet-avs">'+avsHtml+'</div>':'')
+      +'<button class="grp-sheet-start" onclick="window._hmCloseGrpSheet();window._pendingGroupId=\''+g.group_id+'\';startNewWeekend()">Start Setup</button>';
+  } else {
+    const grpRows=groups.map(function(g){
+      const members=g._members||[];
+      const avsHtml=members.slice(0,4).map(function(m,i){
+        const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
+        const ini=(m.display_name||'??').split(' ').map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
+        return'<div class="avatar" style="width:28px;height:28px;font-size:10px;background:'+c.bg+';color:'+c.fg+'">'+ini+'</div>';
+      }).join('');
+      return'<div class="grp-sheet-grp-row" onclick="window._hmCloseGrpSheet();window._pendingGroupId=\''+g.group_id+'\';startNewWeekend()">'
+        +(avsHtml?'<div style="display:flex;gap:2px">'+avsHtml+'</div>':'')
+        +'<span class="grp-sheet-grp-name">'+g.name+'</span>'
+        +'<span style="color:var(--color-text-tertiary);font-size:14px">&#8250;</span>'
+        +'</div>';
+    }).join('');
+    body.innerHTML='<div class="grp-sheet-title">New Trip</div>'
+      +'<div class="grp-sheet-sub">Which group should this trip belong to?</div>'
+      +grpRows;
+  }
+  sheet.style.display='flex';
 };
-window._hmPickNewTrip=function(gid){
-  const s=document.getElementById('groupPickerScreen');if(s)s.style.display='none';
-  document.getElementById('homeScreen').style.display='block';
-  window._pendingGroupId=gid;startNewWeekend();
-};
+window._hmLaunchNewTrip=window._hmShowNewTripSheet;
 
 // ── GROUP PAGE ──────────────────────────────────────────────────────────────
 
@@ -2995,7 +3015,7 @@ async function renderGroupPage(gid){
 
   const trips=loadTrips().filter(t=>t.group_id===gid);
   trips.forEach(t=>{if(t.totalHoles>0&&t.holesPlayed>=t.totalHoles)t.complete=true;});
-  const tripCards=_buildTripSections(trips,gid+'_page',false);
+  const tripCards=_buildTripSections(trips,gid+'_page',false,gid);
 
   const memberRows=members.map((m,i)=>{
     const ini=(m.display_name||'??').split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
@@ -3011,14 +3031,7 @@ async function renderGroupPage(gid){
     </div>`;
   }).join('');
 
-  let codeHtml='';
-  if(isAdmin){
-    codeHtml=`<div class="hm-code-card">
-      <div><div class="hm-code-k">Join Code</div><div class="hm-code-v">${g.join_code||'------'}</div></div>
-      <button class="hm-code-copy" onclick="window._copyGroupCode('${g.join_code||''}',this)">Copy</button>
-    </div>
-    <div class="hm-code-hint">Share this code so others can join ${g.name}.</div>`;
-  }
+  const codeHtml='';
 
   body.innerHTML=codeHtml
     +`<div class="hm-sec-label">Members (${members.length})</div>`
@@ -3102,16 +3115,16 @@ window.openGroupSettings = function(gid){
   if(!g)return;
   const isAdmin=g.role==='admin';
   let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><div style="font-size:16px;font-weight:600;color:var(--color-text-primary)">${g.name}</div><button style="width:28px;height:28px;border-radius:50%;background:var(--color-background-secondary);color:var(--color-text-secondary);border:none;font-size:14px;cursor:pointer" onclick="window.closeHmMemberSheet()">&#10005;</button></div>`;
+  // Join code visible to all members
+  html+=`<div class="hm-code-card"><div><div class="hm-code-k">Join Code</div><div class="hm-code-v">${g.join_code||'------'}</div></div><button class="hm-code-copy" onclick="window._copyGroupCode('${g.join_code||''}',this)">Copy</button></div>`;
+  html+=`<div class="hm-code-hint">Share this code so others can join ${g.name}.</div>`;
   if(isAdmin){
-    html+=`<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:14px;line-height:1.5">You are an admin of this group.</div>`;
-    html+=`<div class="hm-code-card"><div><div class="hm-code-k">Join Code</div><div class="hm-code-v">${g.join_code||'------'}</div></div><button class="hm-code-copy" onclick="window._copyGroupCode('${g.join_code||''}',this)">Copy</button></div>`;
-    html+=`<div class="hm-code-hint">Share this code so others can join.</div>`;
     html+=`<button class="hm-sheet-btn" onclick="window._renameGroupPrompt('${gid}')">Rename Group</button>`;
     html+=`<button class="hm-sheet-btn" onclick="window._customizeJoinCode('${gid}')">Customize Join Code</button>`;
     html+=`<button class="hm-sheet-btn danger" onclick="window._deleteGroup('${gid}','${(g.name||'').replace(/'/g,"\'")}')">Delete Group</button>`;
   } else {
     const admin=(g._members||[]).find(m=>m.role==='admin');
-    html+=`<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:14px;line-height:1.5">You are a member of this group.${admin?' '+admin.display_name+' is the admin.':''}</div>`;
+    html+=`<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:8px;line-height:1.5">${admin?admin.display_name+' is the admin.':''}</div>`;
     html+=`<button class="hm-sheet-btn danger" onclick="window._leaveGroup('${gid}','${(g.name||'').replace(/'/g,"\'")}')">Leave Group</button>`;
   }
   document.getElementById('hmMemberSheetBody').innerHTML=html;
@@ -3679,7 +3692,7 @@ function _renderTripListFromData(trips){
       <div class="trip-card-progress"><div class="trip-card-progress-fill" style="width:${t.complete?100:pct}%"></div></div>
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div class="trip-card-players">${playerAvis}</div>
-        <div style="display:flex;align-items:center;gap:8px">${winnerLine}${(!t.group_id||(_groupCache[t.group_id]||_activeGroup)?.role==='admin')?`<button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();deleteTrip('${t.id}',this)">Delete</button>`:''}</div>
+        <div style="display:flex;align-items:center;gap:8px">${winnerLine}${(!t.group_id||(_groupCache[t.group_id]||_activeGroup)?.role==='admin')?`<button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();deleteTrip('${t.id}',this,'${gid||""}')">Delete</button>`:''}</div>
       </div>
     </div>`;
   }
@@ -3780,7 +3793,7 @@ async function s2DeleteTrip(id){
   await del('rounds','trip_id=eq.'+enc);
   await del('trips','trip_id=eq.'+enc);
 }
-async function deleteTrip(id,btn){
+async function deleteTrip(id,btn,gid){
   if(!confirm('Delete this trip? This cannot be undone.'))return;
   const card=btn?.closest('.trip-card,.home-resume-card');
   if(card){card.style.opacity='0.3';card.style.pointerEvents='none';}
@@ -3794,7 +3807,7 @@ async function deleteTrip(id,btn){
   // Remove from localStorage and reconcile
   const trips=loadTrips().filter(t=>t.id!==id);
   saveTrips(trips);
-  renderGroupList();
+  if(gid){renderGroupPage(gid);}else{renderGroupList();}
 }
 function goHome(){document.getElementById('mainTabBar')?.classList.remove('visible');const _ar=document.getElementById('scoreActionRow');if(_ar)_ar.className='';if(!isReadOnly&&WK){autoSave();}showHome();}
 function getSegments(count,totalHoles){const th=totalHoles||18;const s=Math.floor(th/count);return Array.from({length:count},(_,i)=>({start:i*s,end:i===count-1?th:(i+1)*s,label:'Game '+(i+1)}));}
