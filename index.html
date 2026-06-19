@@ -476,7 +476,7 @@ body.force-dark .home-elev{box-shadow:0 3px 10px rgba(0,0,0,0.55),0 1px 2px rgba
 /* ── group page screen ── */
 .hm-gp-head{display:flex;align-items:center;gap:10px;padding:1rem 1rem 0.7rem;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);position:sticky;top:0;z-index:10;}
 .hm-gp-back{background:none;border:none;color:#1D9E75;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;padding:4px 2px;}
-.hm-gp-title{font-size:17px;font-weight:600;color:var(--color-text-primary);flex:1;display:flex;align-items:center;gap:8px;}
+.hm-gp-title{font-size:17px;font-weight:600;color:var(--color-text-primary);position:absolute;left:0;right:0;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;pointer-events:none;}
 .hm-gp-body{padding:1rem;padding-bottom:3rem;}
 .hm-code-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px 14px;margin-bottom:6px;}
 .hm-code-k{font-size:10px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;margin-bottom:3px;}
@@ -1054,7 +1054,7 @@ body.force-light{
   <!-- HOME GROUP PAGE SCREEN -->
   <div id="homeGroupScreen" style="display:none;padding-bottom:3rem">
     <div class="hm-gp-head">
-      <button class="hm-gp-back" onclick="window.closeGroupPage()" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg></button>
+      <button class="hm-gp-back" onclick="window.closeGroupPage()" aria-label="Home"><i class="ti ti-home" style="font-size:22px"></i></button>
       <div class="hm-gp-title" id="gpTitle"></div>
       <div class="hm-gear" id="gpGear"></div>
     </div>
@@ -1253,7 +1253,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v106.3';
+const APP_VERSION='v106.4';
 
 // ===== THEME =====
 (function(){
