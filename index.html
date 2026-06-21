@@ -1255,7 +1255,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v106.6.53';
+const APP_VERSION='v106.6.54';
 
 // ===== THEME =====
 (function(){
@@ -1303,6 +1303,10 @@ function toggleTheme(){
   if(document.getElementById('opt-panel-info')&&document.getElementById('opt-panel-info').innerHTML)renderInfoPanel();
 }
 const LS_TRIPS='theturn_trips',LS_LIB='theturn_library',LS_COURSES='theturn_courses';
+// One-time remote cache reset: on next load, clears cached trips/courses (and any other
+// local junk) on EVERY device while preserving the login session. Bump RESET_TOKEN to
+// trigger a fresh clear for all users (e.g. after a server-side data wipe).
+(function(){try{var RESET_TOKEN='2026-06-wipe';if(localStorage.getItem('theturn_reset')!==RESET_TOKEN){var _s=localStorage.getItem('sb_session');localStorage.clear();if(_s)localStorage.setItem('sb_session',_s);localStorage.setItem('theturn_reset',RESET_TOKEN);}}catch(e){}})();
 const ECATS=[{id:'lodging',e:'🏠',l:'Lodging'},{id:'food',e:'🍔',l:'Food'},{id:'drinks',e:'🍺',l:'Drinks'},{id:'golf',e:'⛳',l:'Golf & Side Bets'},{id:'misc',e:'📦',l:'Misc'}];
 
 // ===== STEP 2: PARALLEL SCHEMA LAYER =====
