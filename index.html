@@ -201,7 +201,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(52%) sepia(9
 .player-info{flex:1;min-width:0;}
 .player-name{font-size:14px;font-weight:500;color:var(--color-text-primary);}
 .stroke-tag{font-size:11px;font-weight:500;}
-.stroke-yes{color:#1D9E75;}.stroke-no{color:var(--color-text-tertiary);}
+.stroke-yes{color:#1D9E75;}.stroke-no{color:var(--color-text-tertiary);}.stroke-give{color:#D85A30;}
 .score-wrap{display:flex;align-items:center;gap:5px;}
 .adj{width:36px;height:36px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--color-text-primary);user-select:none;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
 .score-block{display:flex;flex-direction:column;align-items:center;width:38px;}
@@ -270,7 +270,7 @@ body.force-light .sc-grid .total-col{background:#F0EFEB;}
 .sc-cell.bogey{border:1.5px solid #D85A30;color:#D85A30;}
 .sc-cell.double{border:2px solid #993C1D;color:#993C1D;}
 .sc-cell.par{color:var(--color-text-secondary);}
-.dot-row{height:6px;display:flex;align-items:center;justify-content:center;}.stroke-dot{width:3px;height:3px;border-radius:50%;background:#1D9E75;display:inline-block;margin:0 1.5px;}
+.dot-row{height:6px;display:flex;align-items:center;justify-content:center;}.stroke-dot{width:3px;height:3px;border-radius:50%;background:#1D9E75;display:inline-block;margin:0 1.5px;}.stroke-dot-give{background:#D85A30;}
 .view{padding:1rem;}
 .view-title{font-size:16px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;}
 .view-sub{font-size:12px;color:var(--color-text-secondary);margin-bottom:0.75rem;}
@@ -1264,7 +1264,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v106.7.8';
+const APP_VERSION='v106.7.11';
 
 // ===== THEME =====
 (function(){
@@ -2073,6 +2073,11 @@ function sbHcpDisplay(n){
   if (n < 0) return '+' + (Math.abs(n)).toFixed(1);
   return n.toFixed(1);
 }
+// Parse a handicap entry box to a signed Number (plus handicap '+2.4' -> -2.4).
+// Returns fallback when the field is empty or invalid. Mirrors sbParseHcp.
+function idxFromInput(raw,fallback){var p=sbParseHcp(raw);return p.ok?p.value:fallback;}
+// Integer course-handicap display: plus handicap shows +N (gives), else plain N.
+function chDisplay(n){if(n==null||isNaN(n))return '';return n<0?'+'+Math.abs(n):''+n;}
 
 window.sbSaveProfile = async function(){
   const name = document.getElementById('profName').value.trim();
@@ -3478,7 +3483,7 @@ function _qrStepHtml(){
           +'</div>'
           +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
           +'<span style="font-size:11px;color:var(--color-text-secondary)">Hdcp</span>'
-          +'<input id="qridx'+i+'" type="number" step="0.1" min="0" max="54" value="'+hVal+'" style="width:56px;padding:7px 6px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary)" placeholder=""/>'
+          +'<input id="qridx'+i+'" type="text" inputmode="decimal" value="'+(hVal===''?'':sbHcpDisplay(Number(hVal)))+'" style="width:56px;padding:7px 6px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary)" placeholder=""/>'
           +'</div></div>';
       }).join('');
       const subTitle=_qrS.n===1?'Your round.':'You are Player 1. Add your playing partners below.';
@@ -3623,7 +3628,7 @@ window._qrBack=function(){
       _qrS.players.forEach(function(p,i){
         const fe=document.getElementById('qrfirst'+i);if(fe)fe.value=p.first||'';
         const le=document.getElementById('qrlast'+i);if(le)le.value=p.last||'';
-        const ie=document.getElementById('qridx'+i);if(ie)ie.value=p.idx||'';
+        const ie=document.getElementById('qridx'+i);if(ie)ie.value=(p.idx!=null&&p.idx!=='')?sbHcpDisplay(p.idx):'';
         const av=document.getElementById('pavi'+i);if(av&&p.first)av.textContent=p.first.substring(0,2).toUpperCase();
       });
     }
@@ -3655,7 +3660,7 @@ window._qrNext=function(){
       if(!_qrS.selectedMembers||_qrS.selectedMembers.length<2){alert('Please select at least 2 players.');return;}
       _qrS.n=_qrS.selectedMembers.length;
     } else {
-      const pl=[];for(let i=0;i<_qrS.n;i++){pl.push({first:(document.getElementById('qrfirst'+i)?.value||'').trim()||('Player '+(i+1)),last:(document.getElementById('qrlast'+i)?.value||'').trim(),idx:parseFloat(document.getElementById('qridx'+i)?.value||10)||10});}
+      const pl=[];for(let i=0;i<_qrS.n;i++){pl.push({first:(document.getElementById('qrfirst'+i)?.value||'').trim()||('Player '+(i+1)),last:(document.getElementById('qrlast'+i)?.value||'').trim(),idx:idxFromInput(document.getElementById('qridx'+i)?.value||'',10)});}
       _qrS.players=pl;
     }
     _gsGames={};
@@ -5050,7 +5055,7 @@ function holeOffset(r){return WK.rounds[r]&&WK.rounds[r].nineHole==='back'?9:0;}
 function roundHoleCount(r){return holesForRound(r).length;}
 function lowCH(r){return Math.min(...WK.players.map((_,pi)=>{let ch=courseHdcp(pi,r);if(WK.rounds[r]&&WK.rounds[r].nineHole)ch=Math.round(ch/2);return ch;}));}
 function effHdcp(pi,r){let ch=courseHdcp(pi,r);if(WK.rounds[r]&&WK.rounds[r].nineHole)ch=Math.round(ch/2);return STATE.netOffLow?Math.max(0,ch-lowCH(r)):ch;}
-function strokes(pi,hi,r){const h=effHdcp(pi,r);const nineHole=WK.rounds[r]&&WK.rounds[r].nineHole;if(nineHole){const activeHoles=holesForRound(r);const offset=holeOffset(r);const localHi=hi-offset;if(localHi<0||localHi>=activeHoles.length)return 0;const thisSI=activeHoles[localHi].si;const rank=activeHoles.filter(ah=>ah.si<=thisSI).length;return Math.floor(h/9)+(h%9>=rank?1:0);}const si=WK.rounds[r].course.holes[hi]?.si||hi+1;return Math.floor(h/18)+(h%18>=si?1:0);}
+function strokes(pi,hi,r){const h=effHdcp(pi,r);const nineHole=WK.rounds[r]&&WK.rounds[r].nineHole;if(nineHole){const activeHoles=holesForRound(r);const offset=holeOffset(r);const localHi=hi-offset;if(localHi<0||localHi>=activeHoles.length)return 0;const thisSI=activeHoles[localHi].si;const rank=activeHoles.filter(ah=>ah.si<=thisSI).length;if(h<0){const a=-h;return -(Math.floor(a/9)+(rank>=10-(a%9)?1:0));}return Math.floor(h/9)+(h%9>=rank?1:0);}const si=WK.rounds[r].course.holes[hi]?.si||hi+1;if(h<0){const a=-h;return -(Math.floor(a/18)+(si>=19-(a%18)?1:0));}return Math.floor(h/18)+(h%18>=si?1:0);}
 function getNet(pi,hi,r){const g=STATE.scores[r][hi][pi];return g===null?null:g-strokes(pi,hi,r);}
 function scoreClass(g,par){const d=g-par;if(d<=-2)return'eagle';if(d===-1)return'birdie';if(d===0)return'par';if(d===1)return'bogey';return'double';}
 function bestBird(team,hi,r){const par=WK.rounds[r].course.holes[hi]?.par||4;let b=0;team.forEach(pi=>{const n=getNet(pi,hi,r);if(n===null)return;const d=par-n;if(d>=2)b=Math.max(b,2);else if(d===1)b=Math.max(b,1);});return b;}
@@ -5132,7 +5137,7 @@ function renderScorecard(){
   const hole=WK.rounds[r].course.holes[hi]||{par:4,si:hi+1};
   // Determine current snake holder (last set on or before this hole)
   const snakeHolder=currentSnakeHolder(r,hi);
-  const wolfActive=gameOn('wolf',r)&&WK.players.length>=4;const displayOrder=wolfActive?wolfTeeOrder(hi,r):WK.players.map((_,idx)=>idx);document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=strokes(i,hi,r),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}</span>`:`<span class="stroke-tag stroke-no">no stroke</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&snakeHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const roStyle=(isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'';const wolfPiHere=wolfActive?wolfForHole(hi,r):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';return topDivider+`<div class="${rowCls}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}"><button class="adj" onclick="adjScore(${i},-1)">−</button><div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div><button class="adj" onclick="adjScore(${i},1)">+</button></div></div>`+bottomDivider;}).join('');
+  const wolfActive=gameOn('wolf',r)&&WK.players.length>=4;const displayOrder=wolfActive?wolfTeeOrder(hi,r):WK.players.map((_,idx)=>idx);document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=strokes(i,hi,r),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}</span>`:`<span class="stroke-tag stroke-no">no stroke</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&snakeHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const roStyle=(isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'';const wolfPiHere=wolfActive?wolfForHole(hi,r):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';return topDivider+`<div class="${rowCls}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}"><button class="adj" onclick="adjScore(${i},-1)">−</button><div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div><button class="adj" onclick="adjScore(${i},1)">+</button></div></div>`+bottomDivider;}).join('');
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
   try{renderRazzleBox();}catch(re){console.error('renderRazzleBox error:',re);const w=document.getElementById('razzleBoxWrap');if(w)w.innerHTML='';}
@@ -5898,7 +5903,7 @@ function renderSCGrid(){
     const cells=activeHoles.map((hole,i)=>{
       const hi=i+off;
       const g=STATE.scores[r][hi][pi],st=strokes(pi,hi,r);
-      const dot=st>=2?`<div class="dot-row"><span class="stroke-dot"></span><span class="stroke-dot"></span></div>`:st===1?`<div class="dot-row"><span class="stroke-dot"></span></div>`:`<div class="dot-row"></div>`;
+      const dot=st>=2?`<div class="dot-row"><span class="stroke-dot"></span><span class="stroke-dot"></span></div>`:st===1?`<div class="dot-row"><span class="stroke-dot"></span></div>`:st<=-1?('<div class="dot-row">'+'<span class="stroke-dot stroke-dot-give"></span>'.repeat(Math.min(-st,2))+'</div>'):`<div class="dot-row"></div>`;
       const snakeSet=gameOn('snake',r)&&STATE.snakeHolder&&STATE.snakeHolder[r]&&STATE.snakeHolder[r][hi]===pi;
       const snakeStyle=snakeSet?'border-top:2px solid #f59e0b;':'';
       if(g===null)return`<td><div style="display:flex;flex-direction:column;align-items:center;${snakeStyle}">${dot}<div class="sc-cell"></div></div></td>`;
@@ -6001,7 +6006,7 @@ function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
         // Count strokes received in this round
         let rdStrokes=0;
         if(rd.complete&&(!WK.rounds[rd.r]?.isE9||WK.rounds[rd.r]?.inStandings)){const _off_b=holeOffset(rd.r),_n_b=roundHoleCount(rd.r);for(let hi=_off_b;hi<_off_b+_n_b;hi++)rdStrokes+=strokes(p.i,hi,rd.r);}
-        const strokesStr=rd.complete?(rdStrokes>0?rdStrokes+' stroke'+(rdStrokes!==1?'s':''):'no strokes'):'';
+        const strokesStr=rd.complete?(rdStrokes>0?rdStrokes+' stroke'+(rdStrokes!==1?'s':''):rdStrokes<0?'gives '+(-rdStrokes)+' stroke'+(rdStrokes!==-1?'s':''):'no strokes'):'';
         html+=`<div style="display:grid;grid-template-columns:auto 1fr auto auto auto;align-items:center;gap:6px;padding:6px 12px 6px 56px;border-bottom:0.5px solid var(--color-border-tertiary)">
           <span style="font-size:11px;color:var(--color-text-tertiary);white-space:nowrap">${roundLabel(rd.r)}</span>
           <span style="font-size:11px;color:var(--color-text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cn}</span>
@@ -6388,12 +6393,12 @@ function renderWolfRound(){
 
 function renderTeamsPanel(){/* Stage 3: Game Setup tab eliminated. Scoring config + Weekend bet moved into renderWeekendPanel(). Per-game setup is migrating into the Games tab. This stub remains so any stray legacy caller does not throw. */}
 function setDropSkins(gameIdx,slot,pIdx,roundIdx){if(isReadOnly)return;if(!STATE.skinsTeams)return;const teams=STATE.skinsTeams[roundIdx][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();}
-function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span>Active players</span></div>`;WK.players.forEach((p,i)=>{const eff=effHdcp(i,r);html+=`<div class="setup-row"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><input class="inline-edit" value="${p.name}" style="flex:1;min-width:60px" onchange="WK.players[${i}].name=this.value;WK.players[${i}].ini=this.value.substring(0,2).toUpperCase();renderPlayersPanel();renderScorecard();renderBanner();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin:0 3px">idx</span><input class="ie-num" type="number" step="0.1" value="${p.idx}" style="width:70px" onchange="WK.players[${i}].idx=parseFloat(this.value)||0;renderPlayersPanel();renderScorecard();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px;white-space:nowrap">→ ${eff}</span>${WK.players.length>2?`<button class="btn-danger" onclick="removePlayer(${i})">✕</button>`:''}</div>`;});if(WK.players.length<12){html+=`<div style="border-top:0.5px solid var(--color-border-tertiary)"><div id="addPlayerRow" style="display:none;padding:10px 12px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><input class="text-input" id="apFirst" placeholder="First" style="flex:2;font-size:13px;padding:6px 8px"/><input class="text-input" id="apLast" placeholder="Last" style="flex:2;font-size:13px;padding:6px 8px"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0">Hdcp</span><input class="ie-num" id="apIdx" type="number" step="0.1" placeholder="10" style="width:58px;flex-shrink:0"/></div><div style="display:flex;gap:8px"><button class="btn-primary" style="font-size:12px;padding:5px 12px" onclick="confirmAddPlayer()">Save</button><button class="btn-secondary" style="font-size:12px;padding:5px 12px" onclick="toggleAddPlayerRow()">Cancel</button></div></div><button class="btn-sm" id="addPlayerToggleBtn" onclick="toggleAddPlayerRow()" style="margin:8px 12px">+ Add player</button></div>`;}html+=`</div>`;
+function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span>Active players</span></div>`;WK.players.forEach((p,i)=>{const eff=effHdcp(i,r);html+=`<div class="setup-row"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><input class="inline-edit" value="${p.name}" style="flex:1;min-width:60px" onchange="WK.players[${i}].name=this.value;WK.players[${i}].ini=this.value.substring(0,2).toUpperCase();renderPlayersPanel();renderScorecard();renderBanner();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin:0 3px">idx</span><input class="ie-num" type="text" inputmode="decimal" value="${sbHcpDisplay(p.idx)}" style="width:70px" onchange="WK.players[${i}].idx=idxFromInput(this.value,0);renderPlayersPanel();renderScorecard();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px;white-space:nowrap">→ ${chDisplay(eff)}</span>${WK.players.length>2?`<button class="btn-danger" onclick="removePlayer(${i})">✕</button>`:''}</div>`;});if(WK.players.length<12){html+=`<div style="border-top:0.5px solid var(--color-border-tertiary)"><div id="addPlayerRow" style="display:none;padding:10px 12px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><input class="text-input" id="apFirst" placeholder="First" style="flex:2;font-size:13px;padding:6px 8px"/><input class="text-input" id="apLast" placeholder="Last" style="flex:2;font-size:13px;padding:6px 8px"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0">Hdcp</span><input class="ie-num" id="apIdx" type="text" inputmode="decimal" placeholder="10" style="width:58px;flex-shrink:0"/></div><div style="display:flex;gap:8px"><button class="btn-primary" style="font-size:12px;padding:5px 12px" onclick="confirmAddPlayer()">Save</button><button class="btn-secondary" style="font-size:12px;padding:5px 12px" onclick="toggleAddPlayerRow()">Cancel</button></div></div><button class="btn-sm" id="addPlayerToggleBtn" onclick="toggleAddPlayerRow()" style="margin:8px 12px">+ Add player</button></div>`;}html+=`</div>`;
     document.getElementById('opt-panel-players').innerHTML=html;
 }
 function toggleEditPanel(eid,btnId){const panel=document.getElementById(eid);const btn=document.getElementById(btnId);const display=document.getElementById(eid+'_display');if(!panel)return;const isOpen=panel.style.display!=='none';panel.style.display=isOpen?'none':'block';if(display)display.style.display=isOpen?'flex':'none';if(btn)btn.style.display=isOpen?'inline-block':'none';if(isOpen){const mc=eid.match(/^ce_(.+)$/);if(mc){const cname=mc[1].replace(/_/g,' ');if(CATALOG[cname])saveCourse(cname);}renderPlayersPanel();}}
 function toggleAddPlayerRow(){const row=document.getElementById('addPlayerRow');const btn=document.getElementById('addPlayerToggleBtn');if(!row)return;const opening=row.style.display==='none';row.style.display=opening?'block':'none';if(btn)btn.style.display=opening?'none':'inline-block';if(opening)setTimeout(function(){var el=document.getElementById('apFirst');if(el)el.focus();},50);}
-function confirmAddPlayer(){var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=parseFloat(document.getElementById('apIdx')?document.getElementById('apIdx').value:10)||10;if(!first){alert('Enter a first name.');return;}if(WK.players.length>=12)return;var c=pickColor();var newP={name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};var allPlayers=WK.players.concat([newP]);resolveDisplayNames(allPlayers);WK.players.push(newP);WK.rounds.forEach(function(_,r){STATE.scores[r].forEach(function(h){h.push(null);});sanitizeTeams(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();if(typeof renderGamesTab==='function'&&document.getElementById('view-games')&&document.getElementById('view-games').style.display!=='none')renderGamesTab();autoSave();}
+function confirmAddPlayer(){var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=idxFromInput(document.getElementById('apIdx')?document.getElementById('apIdx').value:'',10);if(!first){alert('Enter a first name.');return;}if(WK.players.length>=12)return;var c=pickColor();var newP={name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};var allPlayers=WK.players.concat([newP]);resolveDisplayNames(allPlayers);WK.players.push(newP);WK.rounds.forEach(function(_,r){STATE.scores[r].forEach(function(h){h.push(null);});sanitizeTeams(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();if(typeof renderGamesTab==='function'&&document.getElementById('view-games')&&document.getElementById('view-games').style.display!=='none')renderGamesTab();autoSave();}
 function addPlayer(){if(WK.players.length>=12)return;const c=pickColor(),i=WK.players.length;WK.players.push({name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));sanitizeTeams(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();}
 function removePlayer(idx){if(WK.players.length<=2){alert('Need at least 2 players.');return;}WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=fixTeams(STATE.mpTeams);STATE.vegTeams=fixTeams(STATE.vegTeams);if(STATE.skinsTeams)STATE.skinsTeams=fixTeams(STATE.skinsTeams);if(STATE.hammerTeams)STATE.hammerTeams=fixTeams(STATE.hammerTeams);if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';WK.rounds.forEach((_,r)=>sanitizeTeams(r));renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
 function renderWeekendPanel(){
@@ -9476,9 +9481,9 @@ function showRoundDetails(){
     const ch=courseHdcp(pi,r);
     const eff=effHdcp(pi,r);
     // Find stroke holes (1-indexed for display) — uses effHdcp (net-off-low adjusted)
-    const strokeHoles=[];
-    const _off_sh=holeOffset(r),_n_sh=roundHoleCount(r);for(let hi=_off_sh;hi<_off_sh+_n_sh;hi++){if(strokes(pi,hi,r)>0)strokeHoles.push(hi+1);}
-    return{name:displayName(pi),bg:p.bg,fg:p.fg,ini:p.ini,idx,wkndIdx,ch,eff,strokeHoles};
+    const strokeHoles=[];const giveHoles=[];
+    const _off_sh=holeOffset(r),_n_sh=roundHoleCount(r);for(let hi=_off_sh;hi<_off_sh+_n_sh;hi++){const _sh=strokes(pi,hi,r);if(_sh>0)strokeHoles.push(hi+1);else if(_sh<0)giveHoles.push(hi+1);}
+    return{name:displayName(pi),bg:p.bg,fg:p.fg,ini:p.ini,idx:sbHcpDisplay(idx),wkndIdx:sbHcpDisplay(wkndIdx),ch:chDisplay(ch),eff:chDisplay(eff),strokeHoles,giveHoles};
   });
   const netOffLowActive=STATE.netOffLow;
   const lowMan=netOffLowActive?WK.players.reduce((a,_,pi)=>effHdcp(pi,r)<effHdcp(a,r)?pi:a,0):null;
@@ -9494,13 +9499,13 @@ function showRoundDetails(){
           <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">${(()=>{
             const _teeName=course.defaultTee&&course.defaultTee.teeName;
             const _yds=course.holes&&course.holes.length?course.holes.reduce((a,h)=>a+(h.yardage||0),0):0;
-            const _parts=[];
-            if(_teeName)_parts.push(_teeName+' tees');
-            if(_yds)_parts.push(_yds.toLocaleString()+' yds');
-            _parts.push('Par '+parTotal);
-            _parts.push('Slope '+course.slope);
-            if(ratingVal!=null)_parts.push('Rating '+ratingVal);
-            return _parts.join(' &nbsp;·&nbsp; ');
+            const _top=[];
+            if(_teeName)_top.push(_teeName+' tees');
+            if(_yds)_top.push(_yds.toLocaleString()+' yds');
+            _top.push('Par '+parTotal);
+            const _btm=['Slope '+course.slope];
+            if(ratingVal!=null)_btm.push('Rating '+ratingVal);
+            return _top.join(' &nbsp;·&nbsp; ')+'</div><div style="font-size:12px;color:var(--color-text-secondary);margin-top:1px">'+_btm.join(' &nbsp;·&nbsp; ');
           })()}</div>
         </div>
         <button onclick="document.getElementById('roundDetailsModal').remove()" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
@@ -9533,7 +9538,7 @@ function showRoundDetails(){
         <div style="margin-bottom:10px">
           <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap">
             <span style="font-size:12px;font-weight:600;color:var(--color-text-primary);flex-shrink:0">${p.name} (${p.eff}${netOffLowActive&&p.eff!==p.ch?' net, '+p.ch+' ch':''})</span>
-            <span style="font-size:12px;color:var(--color-text-secondary)">${p.strokeHoles.length>0?'H'+p.strokeHoles.join(', H'):'No strokes'}</span>
+            <span style="font-size:12px;color:var(--color-text-secondary)">${p.giveHoles.length>0?'Gives on H'+p.giveHoles.join(', H'):p.strokeHoles.length>0?'H'+p.strokeHoles.join(', H'):'No strokes'}</span>
           </div>
         </div>`).join('')}
       </div>
