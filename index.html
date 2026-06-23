@@ -1264,7 +1264,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v106.7.3';
+const APP_VERSION='v106.7.8';
 
 // ===== THEME =====
 (function(){
@@ -3963,7 +3963,8 @@ function getSegments(count,totalHoles){const th=totalHoles||18;const s=Math.floo
 function segOptionHtml(totalHoles,curVal){const opts=totalHoles===9?[[1,'1 game - 9 holes'],[3,'3 games - 3 holes']]:[[1,'1 game - 18 holes'],[2,'2 games - 9 holes'],[3,'3 games - 6 holes']];return opts.map(([v,l])=>`<option value="${v}"${v===curVal?' selected':''}>${l}</option>`).join('');}
 function segForHole(h,count,totalHoles){return getSegments(count,totalHoles).findIndex(s=>h>=s.start&&h<s.end);}
 function mpGamesForRound(r){return WK.mpGamesPerRound[r]||WK.mpGamesDefault;}
-function pressesOnForRound(r){const rd=WK.rounds[r];return rd.pressesOn!==undefined?rd.pressesOn:!!WK.pressesOn;}
+function _mpPhase(ms){if(!ms)return'ns';if(ms.closed||ms.holesLeft===0)return'done';return'ip';}
+function pressesOnForRound(r){const rd=WK.rounds[r];if(rd.pressesOn!==undefined)return rd.pressesOn;if(WK.pressesOn)return true;return gameOn('mp',r);}
 function autoPressOnForRound(r){const rd=WK.rounds[r];return rd.autoPressOn!==undefined?rd.autoPressOn:!!WK.autoPressOn;}
 function autoPressThresholdForRound(r){const rd=WK.rounds[r];return rd.autoPressThreshold!=null?rd.autoPressThreshold:(WK.autoPressThreshold||2);}
 function pressValForRound(r){const rd=WK.rounds[r];const v=rd.pressVal!=null?rd.pressVal:(WK.pressVal!=null?WK.pressVal:null);return v!=null?v:roundVal('gameVal',r,WK.gameVal);}
@@ -7671,9 +7672,11 @@ function renderMPRound(){
 
     // Build original bet result summary
     let origSummaryHtml;
-    if(!finalMs){origSummaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
+    const _osPh=_mpPhase(finalMs);
+    if(_osPh==='ns'){origSummaryHtml=`<span style="color:var(--color-text-tertiary);font-size:12px">Not started</span>`;}
+    else if(_osPh==='ip'){origSummaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
     else if(!finalMs.leader){origSummaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">Tied - A/S</span>`;}
-    else if(finalMs.closed){const winLtr=finalMs.leader==='A'?(_huRnd?nameA:'A'):(_huRnd?nameB:'B');const winClr=finalMs.leader==='A'?'#1D9E75':'#185FA5';const resultScore=finalMs.scoreStr.replace('Team A',_huRnd?nameA:'A').replace('Team B',_huRnd?nameB:'B').replace(finalMs.scoreStr.split(' ')[0]+' ','');origSummaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winLtr} wins - ${resultScore}</span>`;}else{const ipClr=finalMs.leader==='A'?'#1D9E75':'#185FA5';const ipStr=finalMs.scoreStr.replace('Team A',_huRnd?nameA:'A').replace('Team B',_huRnd?nameB:'B');origSummaryHtml=`<span style="color:${ipClr};font-weight:500;font-size:12px">${ipStr}</span>`;}
+    else{const winLtr=finalMs.leader==='A'?(_huRnd?nameA:'A'):(_huRnd?nameB:'B');const winClr=finalMs.leader==='A'?'#1D9E75':'#185FA5';let resultScore=finalMs.scoreStr.replace('Team A',_huRnd?nameA:'A').replace('Team B',_huRnd?nameB:'B');resultScore=resultScore.replace(winLtr+' ','').replace(winLtr+': ','').trim();origSummaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winLtr} wins · ${resultScore}</span>`;}
 
     // Compute press net for top-level header
     const origVal=roundVal('gameVal',r,WK.gameVal);
@@ -7705,18 +7708,21 @@ function renderMPRound(){
         const pressesHU=getPresses(r,si,mi);
         let pressNetHU=origNetHU||0;
         pressesHU.forEach(p=>{const pr=calcPressResult(r,si,p);if(!pr||pr.winner==='tie')return;pressNetHU+=(pr.winner==='a'?1:-1)*pr.sv;});
+        const anyPressLiveHU=pressesHU.some(p=>{const pr=calcPressResult(r,si,p);return pr&&!pr.closed&&pr.holesLeft>0;});
         const mNetClr=pressNetHU>0?'#1D9E75':pressNetHU<0?'#185FA5':'var(--color-text-secondary)';
         // Build clean result string: "Name wins · score" not "Name wins - Name score"
         let mResultStr;
-        if(!finalMsHU){mResultStr='In progress';}
+        if(!finalMsHU){mResultStr='Not started';}
+        else if(pressesHU.length===0&&_mpPhase(finalMsHU)==='ip'){mResultStr='In progress';}
+        else if(_mpPhase(finalMsHU)!=='done'||anyPressLiveHU){mResultStr='In progress';}
         else if(finalMsHU.leader){
           const wn=finalMsHU.leader==='A'?mNameA:mNameB;
           const raw=finalMsHU.scoreStr.replace('Team A',mNameA).replace('Team B',mNameB);
           const scoreOnly=raw.replace(wn+' ','').replace(wn+': ','').trim();
           // When presses exist, always show net dollar result — never score notation
           if(pressesHU.length>0){
-            if(pressNetHU>0){mResultStr=`${mNameA} wins · +$${Math.abs(pressNetHU).toFixed(2)}`;}
-            else if(pressNetHU<0){mResultStr=`${mNameB} wins · +$${Math.abs(pressNetHU).toFixed(2)}`;}
+            if(pressNetHU>0){mResultStr=`${mNameA} wins · $${Math.abs(pressNetHU).toFixed(2)}`;}
+            else if(pressNetHU<0){mResultStr=`${mNameB} wins · $${Math.abs(pressNetHU).toFixed(2)}`;}
             else{mResultStr='No Blood';}
           }
           else if(finalMsHU.closed){mResultStr=`${wn} wins · ${scoreOnly}`;}
@@ -7724,8 +7730,8 @@ function renderMPRound(){
         }
         else{
           // Base match A/S — check press net before falling back to A/S
-          if(pressNetHU>0){mResultStr=`${mNameA} wins · +$${Math.abs(pressNetHU).toFixed(2)}`;}
-          else if(pressNetHU<0){mResultStr=`${mNameB} wins · +$${Math.abs(pressNetHU).toFixed(2)}`;}
+          if(pressNetHU>0){mResultStr=`${mNameA} wins · $${Math.abs(pressNetHU).toFixed(2)}`;}
+          else if(pressNetHU<0){mResultStr=`${mNameB} wins · $${Math.abs(pressNetHU).toFixed(2)}`;}
           else if(finalMsHU.closed||isRoundComplete(r)){mResultStr='No Blood';}
           else{mResultStr='A/S';}
         }
@@ -7769,12 +7775,13 @@ function renderMPRound(){
           const betKeyHU=mKey+'b0';
           const betExpHU=STATE.mpExpanded[betKeyHU]===true;
           // MATCH row dollar = base match value only (origNetHU)
-          const origNetHUStr=origNetHU!=null&&origNetHU!==0?`+$${Math.abs(origNetHU).toFixed(2)}`:'';
+          const origNetHUStr=(finalMsHU&&_mpPhase(finalMsHU)==='done'&&origNetHU)?`$${Math.abs(origNetHU).toFixed(2)}`:'';
           const origNetHUClr=origNetHU>0?'#1D9E75':origNetHU<0?'#185FA5':'var(--color-text-secondary)';
           // Score-only summary for MATCH collapsible header (no dollar - shown separately)
           // Build from raw finalMsHU, NOT from mResultStr (which may have dollar injected by press block)
-          let mSummary;
-          if(!finalMsHU)mSummary=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;
+          let mSummary;const _smPh=_mpPhase(finalMsHU);
+          if(_smPh==='ns')mSummary=`<span style="color:var(--color-text-tertiary);font-size:12px">Not started</span>`;
+          else if(_smPh==='ip')mSummary=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;
           else if(!finalMsHU.leader)mSummary=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">A/S</span>`;
           else{
             const _smWn=finalMsHU.leader==='A'?mNameA:mNameB;
@@ -7805,13 +7812,14 @@ function renderMPRound(){
             const _psEndH=seg.end+holeOffset(r);
             const pressShortLabel=`PRESS · ${p.startHole+1===_psEndH?'H'+(p.startHole+1):'H'+(p.startHole+1)+'-'+_psEndH}`;
             let pressSummaryHU,pressNetStrHU='',pressNetClrHU='var(--color-text-secondary)';
-            if(!pr){pressSummaryHU=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
-            else if(pr.winner==='tie'){pressSummaryHU=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">A/S</span>`;pressNetStrHU='$0.00';}
-            else{const wn=pr.winner==='a'?mNameA:mNameB;const wc=pr.winner==='a'?'#1D9E75':'#185FA5';
+            if(!pr){pressSummaryHU=`<span style="color:var(--color-text-secondary);font-size:12px">Not started</span>`;}
+            else if(!pr.closed&&pr.holesLeft>0){pressSummaryHU=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
+            else if(pr.winner==='tie'){pressSummaryHU=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">A/S</span>`;}
+            else{const _clHU=pr.closed;const wn=pr.winner==='a'?mNameA:mNameB;const wc=_clHU?(pr.winner==='a'?'#1D9E75':'#185FA5'):'var(--color-text-secondary)';
             const _pScoreWn=pr.winner==='a'?mNameA:mNameB;
     const _pScoreRaw2=pr.scoreStr?pr.scoreStr.replace(/^A /,mNameA+' ').replace(/^B /,mNameB+' ').replace(/^A: /,mNameA+': ').replace(/^B: /,mNameB+': '):'';const _pWnPrefix=pr.winner==='a'?mNameA:mNameB;
     const _pScore=_pScoreRaw2?_pScoreRaw2.replace(_pWnPrefix+' ','').replace(_pWnPrefix+': ',''):''
-            pressSummaryHU=_pScore?`<span style="color:${wc};font-weight:500;font-size:12px">${wn}</span><span style="color:${wc};font-size:11px"> · </span><span style="color:${wc};font-weight:500;font-size:12px">${_pScore}</span>`:`<span style="color:${wc};font-weight:500;font-size:12px">${wn}</span>`;pressNetStrHU='+$'+pr.sv.toFixed(2);pressNetClrHU=wc;}
+            pressSummaryHU=_pScore?`<span style="color:${wc};font-weight:500;font-size:12px">${wn}</span><span style="color:${wc};font-size:11px"> · </span><span style="color:${wc};font-weight:500;font-size:12px">${_pScore}</span>`:`<span style="color:${wc};font-weight:500;font-size:12px">${wn}</span>`;if(_clHU){pressNetStrHU='$'+pr.sv.toFixed(2);pressNetClrHU=wc;}}
             html+=`<div style="margin:0 10px 8px;border:0.5px solid var(--color-border-tertiary);border-left:2px solid #1D9E75;border-radius:var(--border-radius-md);overflow:hidden">`;
             html+=`<div style="background:var(--color-background-secondary);padding:7px 12px;display:flex;align-items:center;cursor:pointer" onclick="STATE.mpExpanded['${pressKeyHU}']=!STATE.mpExpanded['${pressKeyHU}'];_gsRefreshAfterEdit()">`;
             html+=`<div style="width:36px;flex-shrink:0"><span style="font-size:11px;font-weight:600;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap">${pressShortLabel}</span></div>`;
@@ -7837,9 +7845,11 @@ function renderMPRound(){
           });
           // Net card when presses exist
           if(pressesHU.length>0){
+            const _aggDoneHU=_mpPhase(finalMsHU)==='done'&&!anyPressLiveHU;
             const wn=pressNetHU>0?mNameA:mNameB;
-            const gameNetDisplay=pressNetHU===0?'No Blood':`${wn} wins · +$${Math.abs(pressNetHU).toFixed(2)}`;
-            html+=`<div style="margin:0 10px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;background:var(--color-background-secondary);display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Match Result</span><span style="font-weight:600;font-size:12px;color:${mNetClr}">${gameNetDisplay}</span></div>`;
+            const gameNetDisplay=!_aggDoneHU?'In progress':pressNetHU===0?'No Blood':`${wn} wins · $${Math.abs(pressNetHU).toFixed(2)}`;
+            const _aggClrHU=_aggDoneHU?mNetClr:'var(--color-text-secondary)';
+            html+=`<div style="margin:0 10px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;background:var(--color-background-secondary);display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Match Result</span><span style="font-weight:600;font-size:12px;color:${_aggClrHU}">${gameNetDisplay}</span></div>`;
           }
           html+=`<div style="height:8px"></div>`;
         }
@@ -7848,8 +7858,9 @@ function renderMPRound(){
     } else {
     html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
     const _winLblA=_huRnd?nameA:'A',_winLblB=_huRnd?nameB:'B';
-    const netResultLabel2=(()=>{if(origNet===null||!finalMs)return'In progress';if(!finalMs.closed){if(pressNetA>0)return`${_winLblA} wins · +$${Math.abs(pressNetA).toFixed(2)}`;if(pressNetA<0)return`${_winLblB} wins · +$${Math.abs(pressNetA).toFixed(2)}`;return finalMs.scoreStr.replace('Team A',_winLblA).replace('Team B',_winLblB);}if(pressNetA===0)return'No Blood';return pressNetA>0?`${_winLblA} wins · +$${Math.abs(pressNetA).toFixed(2)}`:`${_winLblB} wins · +$${Math.abs(pressNetA).toFixed(2)}`;})();
-    const netResultClr2=pressNetA>0?'#1D9E75':pressNetA<0?'#185FA5':'var(--color-text-secondary)';
+    const anyPressLive=presses.some(p=>{const pr=calcPressResult(r,si,p);return pr&&!pr.closed&&pr.holesLeft>0;});
+    const netResultLabel2=(()=>{if(!finalMs)return'Not started';if(_mpPhase(finalMs)==='ip')return'In progress';if(anyPressLive)return'In progress';if(!finalMs.closed){if(pressNetA>0)return`${_winLblA} wins · $${Math.abs(pressNetA).toFixed(2)}`;if(pressNetA<0)return`${_winLblB} wins · $${Math.abs(pressNetA).toFixed(2)}`;return finalMs.scoreStr.replace('Team A',_winLblA).replace('Team B',_winLblB);}if(pressNetA===0)return'No Blood';return pressNetA>0?`${_winLblA} wins · $${Math.abs(pressNetA).toFixed(2)}`:`${_winLblB} wins · $${Math.abs(pressNetA).toFixed(2)}`;})();
+    const netResultClr2=(_mpPhase(finalMs)==='ip'||anyPressLive)?'var(--color-text-secondary)':(pressNetA>0?'#1D9E75':pressNetA<0?'#185FA5':'var(--color-text-secondary)');
     html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleMPGame('${key}')">`;
     html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">Match ${si+1} · H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
     html+=`<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px">`;
@@ -7909,7 +7920,7 @@ function renderMPRound(){
       // Original bet card - collapsed by default
       const betKey=key+'b0';
       const betExp=STATE.mpExpanded[betKey]===true;
-      const origNetStr=origNet!=null?(origNet>0?`+$${origNet.toFixed(2)}`:origNet<0?`-$${Math.abs(origNet).toFixed(2)}`:'$0.00'):'';
+      const origNetStr=(finalMs&&_mpPhase(finalMs)==='done'&&origNet)?`$${Math.abs(origNet).toFixed(2)}`:'';
       const origNetClr=origNet>0?'#1D9E75':origNet<0?'#185FA5':'var(--color-text-secondary)';
       html+=`<div style="margin:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden">`;
       html+=`<div style="background:var(--color-background-secondary);padding:7px 12px;display:flex;align-items:center;cursor:pointer;gap:0" onclick="STATE.mpExpanded['${betKey}']=!STATE.mpExpanded['${betKey}'];_gsRefreshAfterEdit()">`;
@@ -7931,9 +7942,10 @@ function renderMPRound(){
         const pressExp=STATE.mpExpanded[pressKey]===true;
         const pressLabel=(p.auto?'Auto-press':'Press '+(pi+1))+' · '+(p.startHole+1===seg.end?'H'+(p.startHole+1):'H'+(p.startHole+1)+'-'+seg.end)+' · $'+p.val.toFixed(2);
         let pressSummary,pressNetStr='',pressNetClr='var(--color-text-secondary)';
-        if(!pr){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
-        else if(pr.winner==='tie'){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">A/S</span>`;pressNetStr='$0.00';}
-        else{const wLtr=pr.winner==='a'?'A':'B';const wclr=pr.winner==='a'?'#1D9E75':'#185FA5';pressSummary=`<span style="color:${wclr};font-weight:500;font-size:12px">${wLtr} wins</span>`;const pnetv=pr.winner==='a'?pr.sv:-pr.sv;pressNetStr=(pnetv>0?'+':'')+'$'+Math.abs(pnetv).toFixed(2);pressNetClr=pnetv>0?'#1D9E75':pnetv<0?'#185FA5':'var(--color-text-secondary)';}
+        if(!pr){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px">Not started</span>`;}
+        else if(!pr.closed&&pr.holesLeft>0){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
+        else if(pr.winner==='tie'){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">A/S</span>`;}
+        else{const wLtr=pr.winner==='a'?'A':'B';const wclr=pr.winner==='a'?'#1D9E75':'#185FA5';const _prSc=(pr.scoreStr||'').replace(/^[AB][ :]/,'').trim();pressSummary=`<span style="color:${wclr};font-weight:500;font-size:12px">${wLtr} wins${_prSc?' · '+_prSc:''}</span>`;const pnetv=pr.winner==='a'?pr.sv:-pr.sv;pressNetStr='$'+Math.abs(pnetv).toFixed(2);pressNetClr=pnetv>0?'#1D9E75':pnetv<0?'#185FA5':'var(--color-text-secondary)';}
         const pressWinName=pr?(pr.winner==='a'?nameA:pr.winner==='b'?nameB:''):'';
         html+=`<div style="margin:0 10px 8px;border:0.5px solid var(--color-border-tertiary);border-left:2px solid #1D9E75;border-radius:var(--border-radius-md);overflow:hidden">`;
         const pressShortLabel=`PRESS · ${p.startHole+1===seg.end?'H'+(p.startHole+1):'H'+(p.startHole+1)+'-'+seg.end}`;
@@ -7952,8 +7964,10 @@ function renderMPRound(){
 
       // Net card - always visible when presses exist
       if(presses.length>0){
-        const gameNetDisplay=pressNetA===0?'No Blood':pressNetA>0?`${_winLblA} wins · +$${Math.abs(pressNetA).toFixed(2)}`:`${_winLblB} wins · +$${Math.abs(pressNetA).toFixed(2)}`;
-        html+=`<div style="margin:0 10px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;background:var(--color-background-secondary);display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Match Result</span><span style="font-weight:600;font-size:12px;color:${netClr}">${gameNetDisplay}</span></div>`;
+        const _aggDone=_mpPhase(finalMs)==='done'&&!anyPressLive;
+        const gameNetDisplay=!_aggDone?'In progress':pressNetA===0?'No Blood':pressNetA>0?`${_winLblA} wins · $${Math.abs(pressNetA).toFixed(2)}`:`${_winLblB} wins · $${Math.abs(pressNetA).toFixed(2)}`;
+        const _aggClr=_aggDone?netClr:'var(--color-text-secondary)';
+        html+=`<div style="margin:0 10px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;background:var(--color-background-secondary);display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Match Result</span><span style="font-weight:600;font-size:12px;color:${_aggClr}">${gameNetDisplay}</span></div>`;
       }
     }
     html+=`</div>`;
