@@ -533,11 +533,11 @@ body.force-dark .hm-sheet-btn.danger{background:rgba(180,35,24,0.16);color:#FCA5
 .save-indicator{position:fixed;bottom:1rem;right:1rem;background:var(--color-text-primary);color:var(--color-background-primary);font-size:11px;padding:6px 12px;border-radius:var(--border-radius-md);opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:100;}
 .save-indicator.show{opacity:1;}
 /* Money sub-tabs */
-.money-sub-nav{display:flex;gap:0;margin-bottom:1rem;}
-.money-sub-btn{flex:1;padding:7px 4px;font-size:11px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;text-align:center;}
-.money-sub-btn:first-child{border-radius:var(--border-radius-md) 0 0 var(--border-radius-md);}
-.money-sub-btn:last-child{border-radius:0 var(--border-radius-md) var(--border-radius-md) 0;}
-.money-sub-btn.active{background:#1D9E75!important;color:#ffffff!important;border-color:#1D9E75!important;}
+.money-sub-nav{display:flex;gap:3px;margin-bottom:1rem;background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary);border-radius:11px;padding:3px;position:relative;}
+.money-sub-btn{flex:1;padding:9px 4px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--color-text-secondary);cursor:pointer;text-align:center;border-radius:8px;position:relative;z-index:1;-webkit-tap-highlight-color:transparent;}
+
+
+.money-sub-btn.active{color:#ffffff!important;}.money-sub-pill{position:absolute;background:#1D9E75;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:left 0.25s ease,width 0.25s ease;z-index:0;}#view-money{padding-top:0.5rem;}
 .money-sub-panel{display:none;}
 .money-sub-panel.active{display:block;}
 /* Skins */
@@ -851,8 +851,28 @@ body.force-light{
 .hdr-gear:active{background:var(--color-background-secondary);}
 
 /* ── Contextual round chip slot ── */
-#ctxRdSel{padding:0.75rem 1rem 0;display:none;gap:0;}
+#ctxRdSel{padding:0.5rem 1.25rem 0;display:none;gap:0;}
 #ctxRdSel.visible{display:flex;flex-direction:row;}
+.rd-picker-bar{flex:1;display:flex;align-items:center;padding:9px 13px;background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary);border-radius:13px;margin-bottom:0.5rem;cursor:pointer;}
+.rd-picker-badge{font-size:12px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:#1D9E75;background:rgba(29,158,117,0.16);border-radius:7px;padding:4px 8px;flex:0 0 auto;}
+.rd-picker-name{font-size:15px;font-weight:600;margin-left:11px;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rd-picker-chev{color:#1D9E75;font-size:11px;flex:0 0 auto;}
+.rd-picker-gap{flex:1;}
+.rd-picker-i{display:inline-flex;align-items:center;justify-content:center;color:var(--color-text-secondary);margin-left:8px;padding:2px;cursor:pointer;flex:0 0 auto;}
+.rd-picker-i .ti{font-size:18px;}
+.rdsheet-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;flex-direction:column;justify-content:flex-end;}
+.rdsheet{background:var(--color-background-page);border-top:1px solid var(--color-border-tertiary);border-radius:18px 18px 0 0;padding:8px 0 calc(16px + env(safe-area-inset-bottom,0));max-height:80vh;overflow-y:auto;}
+.rdsheet-grab{width:38px;height:4px;border-radius:2px;background:var(--color-text-tertiary);margin:8px auto 6px;}
+.rdsheet-hd{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary);padding:6px 18px 10px;}
+.rdsheet-row{display:flex;align-items:center;gap:12px;padding:13px 18px;border-top:0.5px solid var(--color-border-tertiary);cursor:pointer;}
+.rdsheet-row.cur{background:rgba(29,158,117,0.16);}
+.rdsheet-rd{font-size:12px;font-weight:800;width:44px;flex:0 0 auto;color:var(--color-text-primary);}
+.rdsheet-row.cur .rdsheet-rd{color:#1D9E75;}
+.rdsheet-meta{flex:1;min-width:0;}
+.rdsheet-nm{font-size:14px;font-weight:600;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rdsheet-st{font-size:11.5px;color:var(--color-text-secondary);margin-top:2px;}
+.rdsheet-st.live{color:#1D9E75;font-weight:600;}
+.rdsheet-st.done::before{content:"\2713 ";color:#1D9E75;}
 
 /* ── Main screen bottom padding (clear tab bar) ── */
 #mainScreen .view,
@@ -1211,9 +1231,10 @@ body.force-light{
     <div id="view-board" style="display:none" class="view"><div id="boardContent"></div></div>
     <div id="view-money" style="display:none" class="view">
       <div class="money-sub-nav">
-        <button class="money-sub-btn active" id="msub-golf" onclick="setMoneyTab('golf')">⛳ Golf $$</button>
-        <button class="money-sub-btn" id="msub-expenses" onclick="setMoneyTab('expenses')">🧾 Expenses</button>
-        <button class="money-sub-btn" id="msub-settle" onclick="setMoneyTab('settle')">📋 Full Audit</button>
+        <div class="money-sub-pill" id="moneyPill"></div>
+        <button class="money-sub-btn active" id="msub-golf" onclick="setMoneyTab('golf')">Bets</button>
+        <button class="money-sub-btn" id="msub-expenses" onclick="setMoneyTab('expenses')">Expenses</button>
+        <button class="money-sub-btn" id="msub-settle" onclick="setMoneyTab('settle')">Recap</button>
       </div>
       <div class="money-sub-panel active" id="mpanel-golf"><div id="moneyContent"></div></div>
       <div class="money-sub-panel" id="mpanel-expenses"><div id="expensesContent"></div></div>
@@ -1280,7 +1301,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v106.7.13';
+const APP_VERSION='v106.7.17';
 
 // ===== THEME =====
 (function(){
@@ -4909,9 +4930,9 @@ function _renderCtxRdSel(v){
   if(!showChip){slot.innerHTML='';return;}
   // Render into the shared slot, routing switch fn based on view
   if(v==='scores'||v==='entry'){
-    renderRdSel('ctxRdSel',STATE.currentRound,'switchEntryRound');
+    renderRdPicker('ctxRdSel',STATE.currentRound,'switchEntryRound');
   } else {
-    renderRdSel('ctxRdSel',STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound,'switchGamesRound');
+    renderRdPicker('ctxRdSel',STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound,'switchGamesRound');
   }
 }
 function _updateTabBar(v){
@@ -4960,7 +4981,7 @@ function setView(v){
   if(v==='card'){renderRdSel('cardRdSel',STATE.scRound,'switchCardRound');renderSCGrid();setTimeout(fitScorecardToScreen,50);}
   if(v==='games'){STATE.gamesSetupOpen={};renderGamesTab();}
   if(v==='board')renderBoard();
-  if(v==='money')setMoneyTab('golf');
+  if(v==='money')setMoneyTab('settle');
   if(v==='setup')renderOptions();
 }
 function updateTabDimming(){
@@ -5064,8 +5085,37 @@ function toggleInfoSection(id){
 }
 function courseDisp(cn){const c=CATALOG[cn];return (c&&c.displayName)?c.displayName:cn;}
 function rdLabel(i){const rd=WK.rounds[i];if(rd.isE9&&!rd.inStandings)return courseDisp(rd.courseName);const cn=rd.courseName,dn=courseDisp(cn),nonE9=WK.rounds.filter(r=>!r.isE9&&r.courseName===cn).length;if(nonE9>1){let o=0;for(let j=0;j<=i;j++)if(!WK.rounds[j].isE9&&WK.rounds[j].courseName===cn)o++;return dn+' ('+o+')';}return dn;}
+function renderRdPicker(cid,cur,fn){
+  const el=document.getElementById(cid);if(!el)return;
+  const lkd=(STATE.lockedRounds||[]).includes(cur);
+  const badge=roundLabel(cur);
+  const nm=rdLabel(cur)+(lkd?' 🔒':'');
+  el.innerHTML='<div class="rd-picker-bar" onclick="openRoundSheet(\''+fn+'\','+cur+')">'  
+    +'<span class="rd-picker-badge">'+badge+'</span>'
+    +'<span class="rd-picker-name">'+nm+'</span>'
+    +'<span class="rd-picker-i" onclick="event.stopPropagation();showRoundDetails()"><i class="ti ti-info-circle"></i></span>'
+    +'<span class="rd-picker-gap"></span>'
+    +'<span class="rd-picker-chev">▼</span>'
+    +'</div>';
+}
+function openRoundSheet(fnName,cur){
+  closeRoundSheet();
+  const rows=WK.rounds.map((rd,i)=>{
+    const done=isRoundComplete(i),isCur=i===cur,lkd=(STATE.lockedRounds||[]).includes(i);
+    const st=done?'<div class="rdsheet-st done">Final</div>':(isCur?'<div class="rdsheet-st live">In progress</div>':'<div class="rdsheet-st">Not started</div>');
+    return '<div class="rdsheet-row'+(isCur?' cur':'')+'" onclick="'+fnName+'('+i+');closeRoundSheet()">'
+      +'<span class="rdsheet-rd">'+roundLabel(i)+'</span>'
+      +'<div class="rdsheet-meta"><div class="rdsheet-nm">'+rdLabel(i)+(lkd?' 🔒':'')+'</div>'+st+'</div></div>';
+  }).join('');
+  const wrap=document.createElement('div');
+  wrap.id='roundSheet';wrap.className='rdsheet-backdrop';
+  wrap.onclick=function(e){if(e.target===wrap)closeRoundSheet();};
+  wrap.innerHTML='<div class="rdsheet"><div class="rdsheet-grab"></div><div class="rdsheet-hd">Select round</div>'+rows+'</div>';
+  document.body.appendChild(wrap);
+}
+function closeRoundSheet(){const s=document.getElementById('roundSheet');if(s)s.remove();}
 function renderRdSel(cid,cur,fn){const el=document.getElementById(cid);if(!el)return;const isEntry=cid==='entryRdSel'||cid==='ctxRdSel';el.innerHTML=WK.rounds.map((rd,i)=>{const done=isRoundComplete(i);const lkd=(STATE.lockedRounds||[]).includes(i);const detailsLink=isEntry&&i===cur?`<div onclick="event.stopPropagation();showRoundDetails()" style="position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,0.5);color:rgba(255,255,255,0.8);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1">i</div>`:'';return`<div class="rd-btn${i===cur?' active':''}${done?' done':''}" onclick="${fn}(${i})">${roundLabel(i)}${lkd?' 🔒':''}<br><span style="font-size:9px;opacity:0.75">${rdLabel(i)}</span>${detailsLink}</div>`;}).join('');}
-function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=holeOffset(r);STATE.razzleToastOk=false;if(!STATE.razzleHWM)STATE.razzleHWM={};const _roundComplete=isRoundComplete(r);const _maxH=holeOffset(r)+roundHoleCount(r)-1;if(STATE.razzleHWM[r]===undefined)STATE.razzleHWM[r]=_roundComplete?_maxH:-1;renderRdSel('entryRdSel',r,'switchEntryRound');renderRdSel('ctxRdSel',r,'switchEntryRound');STATE.scRound=r;updateHoleUI();if(_scViewMode==='card')renderSCGrid();}
+function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=holeOffset(r);STATE.razzleToastOk=false;if(!STATE.razzleHWM)STATE.razzleHWM={};const _roundComplete=isRoundComplete(r);const _maxH=holeOffset(r)+roundHoleCount(r)-1;if(STATE.razzleHWM[r]===undefined)STATE.razzleHWM[r]=_roundComplete?_maxH:-1;renderRdSel('entryRdSel',r,'switchEntryRound');renderRdPicker('ctxRdSel',r,'switchEntryRound');STATE.scRound=r;updateHoleUI();if(_scViewMode==='card')renderSCGrid();}
 function switchCardRound(r){STATE.scRound=r;renderRdSel('cardRdSel',r,'switchCardRound');renderSCGrid();}
 function switchGamesRound(r){STATE.gamesViewRound=r;renderGamesTab();}
 function switchGamesGame(g){STATE.gamesViewGame=g;renderGamesTab();}
@@ -7660,7 +7710,7 @@ function renderGamesTab(){
   if(!WK)return;
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
   STATE.gamesViewRound=r;
-  renderRdSel('ctxRdSel',r,'switchGamesRound');
+  renderRdPicker('ctxRdSel',r,'switchGamesRound');
   const activeGames=GAME_DEFS.filter(def=>_gsIsOn(def,r));
   const gameSel=document.getElementById('gamesGameSel');
   if(activeGames.length===0){
@@ -8732,12 +8782,25 @@ function renderSkinsRound(){
 }
 
 // ===== MONEY SUB-TABS =====
+function _moneyPillTo(t){
+  const pill=document.getElementById('moneyPill');
+  const btn=document.getElementById('msub-'+t);
+  if(!pill||!btn||!btn.offsetWidth)return;
+  const first=!pill.style.left;
+  if(first)pill.style.transition='none';
+  pill.style.left=btn.offsetLeft+'px';
+  pill.style.top=btn.offsetTop+'px';
+  pill.style.width=btn.offsetWidth+'px';
+  pill.style.height=btn.offsetHeight+'px';
+  if(first){void pill.offsetWidth;pill.style.transition='';}
+}
 function setMoneyTab(t){
   STATE.moneyTab=t;
   ['golf','expenses','settle'].forEach(x=>{
     document.getElementById('msub-'+x)?.classList.toggle('active',x===t);
     document.getElementById('mpanel-'+x)?.classList.toggle('active',x===t);
   });
+  _moneyPillTo(t);
   if(t==='golf')renderMoney();
   else if(t==='expenses')renderExpenses();
   else if(t==='settle')renderSettle();
