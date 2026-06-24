@@ -330,7 +330,7 @@ body.force-light .rd-sel{background:#FAFAF8;border-radius:10px;margin:0.5rem 1re
 .hole-row{display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px;}.hole-row>span:nth-child(1){width:36px;flex-shrink:0;color:var(--color-text-secondary);}.hole-row>span:nth-child(2){flex:1;text-align:center;color:var(--color-text-secondary);}.hole-row>span:nth-child(3){flex:1.2;flex-shrink:0;text-align:right;font-weight:500;}
 .hole-row:last-child{border-bottom:none;}
 .seg-total{display:flex;justify-content:space-between;padding:8px 12px;font-size:13px;font-weight:500;background:var(--color-background-secondary);}
-.board-section-label{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;}
+.board-section-label{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;}#opt-menu-title{display:flex;align-items:center;min-height:40px;}#boardContent>.board-section-label:first-child{display:flex;align-items:center;min-height:40px;}
 .mp-board-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary);}
 .mp-board-row:last-child{border-bottom:none;}
 .mp-rank{font-size:13px;color:var(--color-text-secondary);width:16px;flex-shrink:0;}
@@ -537,7 +537,7 @@ body.force-dark .hm-sheet-btn.danger{background:rgba(180,35,24,0.16);color:#FCA5
 .money-sub-btn{flex:1;padding:9px 4px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--color-text-secondary);cursor:pointer;text-align:center;border-radius:8px;position:relative;z-index:1;-webkit-tap-highlight-color:transparent;}
 
 
-.money-sub-btn.active{color:#ffffff!important;}.money-sub-pill{position:absolute;background:#1D9E75;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:left 0.25s ease,width 0.25s ease;z-index:0;}#view-money{padding-top:0.5rem;}
+.money-sub-btn.active{color:#ffffff!important;}.money-sub-pill{position:absolute;background:#1D9E75;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:left 0.25s ease,width 0.25s ease;z-index:0;}#view-money{padding-top:0.5rem;}#view-board{padding-top:0.5rem;}#view-setup{padding-top:0.5rem;}
 .money-sub-panel{display:none;}
 .money-sub-panel.active{display:block;}
 /* Skins */
@@ -853,7 +853,7 @@ body.force-light{
 /* ── Contextual round chip slot ── */
 #ctxRdSel{padding:0.5rem 1.25rem 0;display:none;gap:0;}
 #ctxRdSel.visible{display:flex;flex-direction:row;}
-.rd-picker-bar{flex:1;display:flex;align-items:center;padding:9px 13px;background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary);border-radius:13px;margin-bottom:0.5rem;cursor:pointer;}
+.rd-picker-bar{flex:1;display:flex;align-items:center;padding:9px 13px;background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary);border-radius:13px;margin-bottom:0;cursor:pointer;}
 .rd-picker-badge{font-size:12px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:#1D9E75;background:rgba(29,158,117,0.16);border-radius:7px;padding:4px 8px;flex:0 0 auto;}
 .rd-picker-name{font-size:15px;font-weight:600;margin-left:11px;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .rd-picker-chev{color:#1D9E75;font-size:11px;flex:0 0 auto;}
@@ -1242,7 +1242,7 @@ body.force-light{
     </div>
     <div id="view-setup" style="display:none" class="view">
       <div class="opt-back" id="opt-back" style="display:none" onclick="setOptPanel('menu')"><i class="ti ti-chevron-left"></i><span id="opt-back-title"></span></div>
-      <div class="view-title" id="opt-menu-title">Settings</div>
+      <div class="board-section-label" id="opt-menu-title">Settings</div>
       <div id="opt-panel-menu" class="opt-panel"></div>
       <div id="opt-panel-players" class="opt-panel"></div>
       <div id="opt-panel-weekend" class="opt-panel"></div>
@@ -1301,7 +1301,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v106.7.17';
+const APP_VERSION='v106.7.20';
 
 // ===== THEME =====
 (function(){
