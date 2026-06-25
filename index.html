@@ -1301,7 +1301,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v107';
+const APP_VERSION='v107.0.1';
 
 // ===== THEME =====
 (function(){
@@ -8258,6 +8258,25 @@ function settleRound(r){
   vegR.net.forEach((v,i)=>snapNet[i]+=v);
   if(skR)skR.net.forEach((v,i)=>snapNet[i]+=v);
   if(rzR)rzR.forEach((v,i)=>snapNet[i]+=v);
+  if(gameOn('hammer',r)){
+    const _hSegs=hammerSegsForRound(r);
+    for(let _hsi=0;_hsi<_hSegs;_hsi++){
+      const _hr=calcHammerSegResult(r,_hsi);if(!_hr)continue;
+      const _hTm=STATE.hammerTeams?.[r]?.[_hsi];if(!_hTm)continue;
+      const _hPay=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');
+      const _hA=_hTm[0],_hB=_hTm[1];
+      // net from A's perspective; B gets the negative
+      const _hNet=_hr.netA-_hr.netB;
+      const _hPer=settleVal(Math.abs(_hNet),2,_hPay);
+      if(_hNet>0){
+        _hA.forEach(pi=>snapNet[pi]+=_hPer);
+        _hB.forEach(pi=>snapNet[pi]-=_hPer);
+      } else if(_hNet<0){
+        _hB.forEach(pi=>snapNet[pi]+=_hPer);
+        _hA.forEach(pi=>snapNet[pi]-=_hPer);
+      }
+    }
+  }
   if(gameOn('snake',r)&&STATE.snakeHolder&&STATE.snakeHolder[r]){let _sfh=null;for(let _h=17;_h>=0;_h--){if(STATE.snakeHolder[r][_h]!==null){_sfh=STATE.snakeHolder[r][_h];break;}}if(_sfh!==null){const _sp=calcSnakePot(r);if(_sp>0){if(WK.snakePayout==='split'){WK.players.forEach((_,i)=>{snapNet[i]+=i===_sfh?-_sp*(WK.players.length-1):_sp;});}else{const _ot=WK.players.length-1;WK.players.forEach((_,i)=>{snapNet[i]+=i===_sfh?-_sp:_sp/_ot;})}}}}
   const snapVals={gameVal:roundVal('gameVal',r,WK.gameVal),vegasVal:roundVal('vegasVal',r,WK.vegasVal),skinsVal:roundVal('skinsVal',r,WK.skinsVal||5),snakeBase:roundVal('snakeBase',r,WK.snakeBase||1),razzleVal:roundVal('razzleVal',r,WK.razzleVal||5)};
   STATE.roundSettleData[r]={settledAt:new Date().toISOString(),scoreHash,snapNet,snapVals};
