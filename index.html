@@ -598,9 +598,11 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
 }
 .game-pill.add-pill{
   flex:0 0 auto;min-width:0;
-  color:#1D9E75;border-color:#1D9E75;
-  padding:7px 12px;
+  background:#1D9E75;color:#E1F5EE;border-color:#1D9E75;
+  padding:7px 14px;font-weight:600;
+  -webkit-tap-highlight-color:transparent;
 }
+.game-pill.add-pill:active{background:#0F6E56;}
 
 .gs-setup-toggle{
   width:100%;
@@ -1301,7 +1303,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v107.0.1';
+const APP_VERSION='v107.0.15';
 
 // ===== THEME =====
 (function(){
@@ -1806,11 +1808,24 @@ async function s2ReadTrip(tripId){
         newScores[rIdx][hi][pi]=s.strokes;
     });
 
-    // Reconstruct STATE
-    const _initHole=newWK&&newWK.rounds&&newWK.rounds[0]&&newWK.rounds[0].nineHole==='back'?9:0;
+    // Reconstruct STATE — resume at first unplayed hole of first incomplete round,
+    // or flag standings if all rounds complete
+    const _resumePos=(()=>{
+      for(let _ri=0;_ri<newWK.rounds.length;_ri++){
+        const _off=newWK.rounds[_ri]?.nineHole==='back'?9:0;
+        const _n=newWK.rounds[_ri]?.nineHole?9:18;
+        for(let _hi=_off;_hi<_off+_n;_hi++){
+          const _row=newScores[_ri]&&newScores[_ri][_hi];
+          const _complete=_row&&_row.length>0&&_row.every(s=>s!==null);
+          if(!_complete)return{r:_ri,h:_hi,allDone:false};
+        }
+      }
+      return{r:0,h:0,allDone:true};
+    })();
     const newSTATE={
-      currentRound:0,
-      currentHole:_initHole,
+      currentRound:_resumePos.r,
+      currentHole:_resumePos.h,
+      _resumeAllDone:_resumePos.allDone||false,
       netOffLow:!!t.net_off_low,
       mpViewRound:0,
       vegasViewRound:0,
@@ -3395,7 +3410,7 @@ async function removeCourseFromPanel(name){
 async function homeRemoveCourse(name){if(!confirm('Remove '+name+' from catalog?'))return;delete CATALOG[name];try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}try{await fetch(SB_URL+'/rest/v1/courses?name=eq.'+encodeURIComponent(name),{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});}catch(e){}renderLibrarySection();}
 function startNewWeekend(){
   WK=null;STATE=null;isReadOnly=false;viewingTripId=null;
-  _twS={step:1,name:'',date:'',region:'',numRounds:2,selectedMembers:[],hdcpPct:80,netOffLow:false,courses:[],tees:[],games:{},buyIn:50,potMethod:'netstroke'};
+  _twS={step:1,name:'',date:'',region:'',numRounds:4,selectedMembers:[],hdcpPct:80,netOffLow:false,courses:[],tees:[],games:{},buyIn:50,potMethod:'netstroke'};
   const ws=document.getElementById('wizardScreen');
   ws.style.display='flex';
   _twRender();
@@ -3968,7 +3983,7 @@ function viewTrip(id){
       }
     });
   });
-  launchMainApp();s2ValidateOnLoad();
+  const _allDone=STATE._resumeAllDone;delete STATE._resumeAllDone;launchMainApp();if(_allDone)setView('board');s2ValidateOnLoad();
   });}
 function resumeTrip(){if(!viewingTripId)return;isReadOnly=false;viewingTripId=null;updateHoleUI();setMoneyTab(STATE.moneyTab||'golf');renderOptPanel(STATE.optPanel||'weekend');}
 function nameToIni(n){
@@ -4145,7 +4160,7 @@ function buildCourseFields(){const nR=parseInt(document.getElementById('numRound
 // ── Trip Wizard Modal (_tw) ─────────────────────────────────────────────────
 // _twS: wizard state object
 // step 1=Trip setup, 2=Players, 3=Handicap, 4=Courses, 5=Money & games
-let _twS={step:1,name:'',date:'',region:'',numRounds:2,selectedMembers:[],hdcpPct:80,netOffLow:false,courses:[],tees:[],games:{},buyIn:50,potMethod:'netstroke'};
+let _twS={step:1,name:'',date:'',region:'',numRounds:4,selectedMembers:[],hdcpPct:80,netOffLow:false,courses:[],tees:[],games:{},buyIn:50,potMethod:'netstroke'};
 const _TW_TOTAL_STEPS=5;
 
 function _twRender(){
@@ -4993,7 +5008,7 @@ function setView(v){
   if(v==='card'){renderRdSel('cardRdSel',STATE.scRound,'switchCardRound');renderSCGrid();setTimeout(fitScorecardToScreen,50);}
   if(v==='games'){STATE.gamesSetupOpen={};renderGamesTab();}
   if(v==='board')renderBoard();
-  if(v==='money')setMoneyTab('settle');
+  if(v==='money'){const _validMt=['golf','expenses','settle'];setMoneyTab(_validMt.includes(STATE.moneyTab)?STATE.moneyTab:'settle');}
   if(v==='setup')renderOptions();
 }
 function updateTabDimming(){
@@ -5114,7 +5129,8 @@ function openRoundSheet(fnName,cur){
   closeRoundSheet();
   const rows=WK.rounds.map((rd,i)=>{
     const done=isRoundComplete(i),isCur=i===cur,lkd=(STATE.lockedRounds||[]).includes(i);
-    const st=done?'<div class="rdsheet-st done">Final</div>':(isCur?'<div class="rdsheet-st live">In progress</div>':'<div class="rdsheet-st">Not started</div>');
+    const _rdHasScores=STATE.scores[i]&&STATE.scores[i].some(h=>h&&h.some(s=>s!==null));
+    const st=done?'<div class="rdsheet-st done">Final</div>':(_rdHasScores?'<div class="rdsheet-st live">In progress</div>':'<div class="rdsheet-st">Not started</div>');
     return '<div class="rdsheet-row'+(isCur?' cur':'')+'" onclick="'+fnName+'('+i+');closeRoundSheet()">'
       +'<span class="rdsheet-rd">'+roundLabel(i)+'</span>'
       +'<div class="rdsheet-meta"><div class="rdsheet-nm">'+rdLabel(i)+(lkd?' 🔒':'')+'</div>'+st+'</div></div>';
@@ -7555,6 +7571,34 @@ window._gsAddGame=function(gameId){
   autoSave();s2WriteActive();
   updateTabDimming();
   renderGamesTab();
+  window._gsOpenSetupModal(gameId);
+};
+window._gsOpenSetupModal=function(gameId){
+  const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
+  const def=GAME_DEFS.find(d=>d.id===gameId);
+  if(!def)return;
+  const existing=document.getElementById('gsSetupModal');if(existing)existing.remove();
+  const body=_gsSetupBody(def,r);
+  const modal=document.createElement('div');
+  modal.id='gsSetupModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9990;display:flex;align-items:flex-end;justify-content:center';
+  modal.onclick=function(e){if(e.target===modal)window._gsCloseSetupModal();};
+  modal.innerHTML='<div style="background:var(--color-background-primary);border-radius:var(--border-radius-lg) var(--border-radius-lg) 0 0;width:100%;max-width:480px;max-height:85vh;overflow-y:auto">'
+    +'<div style="padding:14px 16px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between">'
+    +'<div style="font-size:16px;font-weight:500;color:var(--color-text-primary)">'+def.label+' Setup</div>'
+    +'<button onclick="window._gsCloseSetupModal()" style="background:none;border:none;font-size:20px;color:var(--color-text-tertiary);cursor:pointer;padding:0 4px;line-height:1">&#x2715;</button>'
+    +'</div>'
+    +'<div class="gs-setup-body" style="border-radius:0">'+body+'</div>'
+    +'<div style="padding:12px 16px 28px">'
+    +'<button onclick="window._gsCloseSetupModal()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Done</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(modal);
+};
+window._gsCloseSetupModal=function(){
+  const m=document.getElementById('gsSetupModal');
+  if(m)m.remove();
+  renderGamesContent();
 };
 window._gsRemoveGame=function(gameId){
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
@@ -7747,11 +7791,110 @@ function renderGamesContent(){
   else if(g==='skins')renderSkinsRound();
   else if(g==='razzle')renderRazzleRound();
   else if(g==='wolf')renderWolfRound();
-  // Snake and Two's Club have no dedicated results card (Snake's status
-  // shows inline on the scorecard; Two's Club is a Money-tab line item) -
-  // for those two, gamesContent is built fresh here rather than appended to.
-  if(g==='snake'||g==='twos'){
-    document.getElementById('gamesContent').innerHTML=`<div class="section-card" style="padding:14px"><div style="font-size:13px;color:var(--color-text-secondary)">${g==='snake'?'Snake status appears on the scorecard during play. Payout shows on the Money tab.':"Two's Club payout shows on the Money tab."}</div></div>`;
+  if(g==='snake'){
+    const _sr=r;
+    const _off_snk=holeOffset(_sr),_n_snk=roundHoleCount(_sr);
+    const _snkHolder=STATE.snakeHolder&&STATE.snakeHolder[_sr];
+    // Build history: walk holes, emit a row each time holder changes
+    let _snkHistory=[],_snkPrevH=null,_snkPot=0;
+    if(_snkHolder){
+      for(let _h=_off_snk;_h<_off_snk+_n_snk;_h++){
+        const _hv=_snkHolder[_h];
+        if(_hv===null||_hv===undefined)continue;
+        if(_snkPrevH===null){
+          _snkPot=roundVal('snakeBase',_sr,WK.snakeBase||1);
+          _snkHistory.push({hi:_h,pi:_hv,pot:_snkPot,first:true});
+        } else if(_hv!==_snkPrevH){
+          _snkPot=WK.snakeGrowth==='double'?_snkPot*2:_snkPot+(WK.snakeIncrement||1);
+          _snkHistory.push({hi:_h,pi:_hv,pot:_snkPot,first:false});
+        }
+        _snkPrevH=_hv;
+      }
+    }
+    const _snkCurrent=_snkPrevH;
+    const _snkCurrentPot=_snkPot;
+    // Header: current holder + pot
+    let _snkHeaderHtml;
+    if(_snkCurrent===null||_snkCurrent===undefined){
+      _snkHeaderHtml=`<div style="font-size:13px;color:var(--color-text-secondary)">No holder yet</div>`;
+    } else {
+      _snkHeaderHtml=`<div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:11px;color:var(--color-text-tertiary);letter-spacing:0.05em;margin-bottom:2px">CURRENT HOLDER</div><div style="font-size:15px;font-weight:500;color:#D85A30">${displayName(_snkCurrent)} 🐍</div></div><div style="text-align:right"><div style="font-size:11px;color:var(--color-text-tertiary);letter-spacing:0.05em;margin-bottom:2px">POT</div><div style="font-size:15px;font-weight:500;color:var(--color-text-primary)">$${_snkCurrentPot.toFixed(2)}</div></div></div>`;
+    }
+    // History table
+    let _snkHistHtml='';
+    if(_snkHistory.length===0){
+      _snkHistHtml=`<div style="font-size:12px;color:var(--color-text-tertiary);padding:8px 0">No transfers yet</div>`;
+    } else {
+      _snkHistHtml=`<table style="width:100%;border-collapse:collapse;margin-top:2px">`;
+      _snkHistHtml+=`<tr><th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:left;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">Hole</th><th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:left;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">Player</th><th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:right;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">Pot</th></tr>`;
+      _snkHistory.forEach(e=>{
+        const _isLast=e===_snkHistory[_snkHistory.length-1];
+        const _rowClr=_isLast?'#D85A30':'var(--color-text-primary)';
+        _snkHistHtml+=`<tr><td style="font-size:12px;color:var(--color-text-secondary);padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)">H${e.hi+1}</td><td style="font-size:12px;font-weight:${_isLast?'500':'400'};color:${_rowClr};padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)">${displayName(e.pi)}${_isLast?' 🐍':''}</td><td style="font-size:12px;text-align:right;color:var(--color-text-primary);padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)">$${e.pot.toFixed(2)}</td></tr>`;
+      });
+      _snkHistHtml+=`</table>`;
+    }
+    // Payout line
+    let _snkPayoutHtml='';
+    if(_snkCurrent!==null&&_snkCurrent!==undefined&&_snkCurrentPot>0){
+      if(WK.snakePayout==='split'){
+        _snkPayoutHtml=`<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:10px;padding-top:8px;border-top:0.5px solid var(--color-border-tertiary)">Holder pays $${(_snkCurrentPot*(WK.players.length-1)).toFixed(2)} · others collect $${_snkCurrentPot.toFixed(2)} each</div>`;
+      } else {
+        const _snkOthers=WK.players.length-1;
+        _snkPayoutHtml=`<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:10px;padding-top:8px;border-top:0.5px solid var(--color-border-tertiary)">Holder pays $${_snkCurrentPot.toFixed(2)} · others collect $${(_snkCurrentPot/_snkOthers).toFixed(2)} each</div>`;
+      }
+    }
+    document.getElementById('gamesContent').innerHTML=`<div class="section-card" style="margin-bottom:10px;padding:14px">${_snkHeaderHtml}</div><div class="section-card" style="margin-bottom:10px;padding:14px"><div style="font-size:11px;color:var(--color-text-tertiary);letter-spacing:0.05em;margin-bottom:8px">HISTORY</div>${_snkHistHtml}${_snkPayoutHtml}</div>`;
+  }
+  if(g==='twos'){
+    const _tr=r;
+    const _off_tw=holeOffset(_tr),_n_tw=roundHoleCount(_tr);
+    const _twAmt=WK.twosAmt||25;
+    const _twPot=(_twAmt*WK.players.length).toFixed(0);
+    // Find all holes where at least one player has scored (show all played holes; highlight 2s)
+    // Two's Club counts any score of 2 regardless of par
+    const _twHoles=[];
+    for(let _h=_off_tw;_h<_off_tw+_n_tw;_h++){
+      const _hs=STATE.scores[_tr][_h];
+      if(_hs&&_hs.some(s=>s===2))_twHoles.push(_h);
+    }
+    let _twBodyHtml='';
+    if(_twHoles.length===0){
+      _twBodyHtml=`<div style="font-size:13px;color:var(--color-text-secondary)">No 2s yet</div>`;
+    } else {
+      // Header row
+      _twBodyHtml=`<table style="width:100%;border-collapse:collapse">`;
+      _twBodyHtml+=`<tr><th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:left;padding:4px 0 6px;border-bottom:0.5px solid var(--color-border-tertiary)">Hole</th>`;
+      WK.players.forEach((_,pi)=>{
+        _twBodyHtml+=`<th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:center;padding:4px 0 6px;border-bottom:0.5px solid var(--color-border-tertiary)">${WK.players[pi].ini||displayName(pi).slice(0,2)}</th>`;
+      });
+      _twBodyHtml+=`</tr>`;
+      _twHoles.forEach(_h=>{
+        const _scores=STATE.scores[_tr][_h];
+        const _anyPlayed=_scores&&_scores.some(s=>s!==null);
+        _twBodyHtml+=`<tr>`;
+        _twBodyHtml+=`<td style="font-size:12px;color:var(--color-text-secondary);padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary)">H${_h+1}</td>`;
+        WK.players.forEach((_,pi)=>{
+          const _g=_scores&&_scores[pi]!==null?_scores[pi]:null;
+          const _isTwo=_g===2;
+          const _cell=_g===null?((!_anyPlayed)?'<span style="color:var(--color-text-tertiary)">-</span>':'<span style="color:var(--color-text-tertiary)">-</span>'):_isTwo?`<span style="font-weight:600;color:#1D9E75">2 ✓</span>`:`<span style="color:var(--color-text-tertiary)">${_g}</span>`;
+          _twBodyHtml+=`<td style="text-align:center;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary)">${_cell}</td>`;
+        });
+        _twBodyHtml+=`</tr>`;
+      });
+      _twBodyHtml+=`</table>`;
+      // Summary: who has 2s
+      const _twCounts=calcRoundTwos(_tr);
+      const _twHavers=WK.players.map((_,pi)=>_twCounts[pi]>0?displayName(pi):null).filter(Boolean);
+      let _twSummary='';
+      if(_twHavers.length===0){
+        _twSummary=`<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:10px;padding-top:8px;border-top:0.5px solid var(--color-border-tertiary)">No 2s yet · Pot: $${_twPot}</div>`;
+      } else {
+        _twSummary=`<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:10px;padding-top:8px;border-top:0.5px solid var(--color-border-tertiary)">In the club: <strong style="color:var(--color-text-primary)">${_twHavers.join(', ')}</strong> · Pot: $${_twPot}</div>`;
+      }
+      _twBodyHtml+=_twSummary;
+    }
+    document.getElementById('gamesContent').innerHTML=`<div class="section-card" style="margin-bottom:10px;padding:14px"><div style="font-size:11px;color:var(--color-text-tertiary);letter-spacing:0.05em;margin-bottom:10px">TWO'S CLUB · $${_twAmt}/player · Pot $${_twPot}</div>${_twBodyHtml}</div>`;
   }
   if(def){
     const setupHtml=_gsSetupPlaceholder(def,r);
@@ -8231,8 +8374,6 @@ function calcRoundSkins(r){
 function calcRoundTwos(r){
   const n=WK.players.length,twos=Array(n).fill(0);
   STATE.scores[r].forEach((h,hi)=>{
-    const par=WK.rounds[r].course.holes[hi]?.par||4;
-    if(par!==3)return;
     h.forEach((g,pi)=>{if(g===2)twos[pi]++;});
   });
   return twos;
@@ -8389,7 +8530,7 @@ function renderMoney(){
     const summParts=complete?WK.players.map((p,i)=>`<span style="color:${roundNet[i]>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(i)} ${fmt(roundNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">In progress</span>`;
 
     html+=`<div class="section-card round-card-collapsed" id="rcard-${r}" style="margin-bottom:14px;${settled?'opacity:0.6;':''}">`;
-    const lkd_r=isRoundLocked(r);html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard(${r})"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>${roundLabel(r)} - ${WK.rounds[r].courseName}${lkd_r?' 🔒':''}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${summParts}</div></div><div style="display:flex;align-items:center;gap:8px">${settled&&!changed?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:settled&&changed?`<span style="color:#D97706;font-size:11px">⚠ Changed</span><button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:complete?`<button class="btn-sm" onclick="event.stopPropagation();settleRound(${r})">Settle</button>`:''} ${lkd_r&&!settled?`<button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unlockRound(${r})">Unlock</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
+    const lkd_r=isRoundLocked(r);html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard(${r})"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>${roundLabel(r)} - ${courseDisp(WK.rounds[r].courseName)}${lkd_r?' 🔒':''}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${summParts}</div></div><div style="display:flex;align-items:center;gap:8px">${settled&&!changed?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:settled&&changed?`<span style="color:#D97706;font-size:11px">⚠ Changed</span><button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:complete?`<button class="btn-sm" onclick="event.stopPropagation();settleRound(${r})">Settle</button>`:''} ${lkd_r&&!settled?`<button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unlockRound(${r})">Unlock</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
     html+=`<div class="round-card-body">`;
     if(changed)html+=`<div style="padding:8px 12px;background:#FEF3C7;border-bottom:0.5px solid #F59E0B;font-size:12px;color:#92400E">⚠ Scores edited after settlement - amounts are current.</div>`;
     if(!complete){html+=`<div class="pending-box">Scores incomplete</div></div></div>`;return;}
@@ -8858,14 +8999,14 @@ function renderExpenses(){
       e.owes.forEach(o=>{
         const on=WK.players[o.pi]?.name||'?';
         const isPayer=o.pi===e.paidBy;
-        const netAmt=isPayer?(e.amount-o.amt):o.amt;
-        if(isPayer){bdyHtml+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-primary)">${on}</span><span style="font-size:12px;font-weight:500;color:#1D9E75">paid +$${netAmt.toFixed(2)} net</span></div>`;}
-        else{bdyHtml+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-primary)">${on}</span><span style="font-size:12px;color:var(--color-text-secondary)">owes $${o.amt.toFixed(2)}</span></div>`;}
+        const netAmt=isPayer?e.owes.filter(x=>x.pi!==e.paidBy).reduce((s,x)=>s+x.amt,0):o.amt;
+        if(isPayer){bdyHtml+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-primary)">${on}</span><span style="font-size:12px;font-weight:500;color:#1D9E75">${e.cat==='golf'?('won +$'+netAmt.toFixed(2)):('paid $'+e.amount.toFixed(2)+' · net +$'+netAmt.toFixed(2))}</span></div>`;}
+        else{bdyHtml+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-primary)">${on}</span><span style="font-size:12px;color:var(--color-text-secondary)">${e.cat==='golf'?'lost':'owes'} $${o.amt.toFixed(2)}</span></div>`;}
       });
       const actionsHtml=(isReadOnly||expLocked)?'':`<div style="display:flex;gap:8px;padding:8px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary)"><button class="btn-sm" onclick="openExpForm('${e.id}')">Edit</button><button class="btn-danger" onclick="deleteExp('${e.id}')">Delete</button></div>`;
       html+=`<div style="margin:6px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden">
         <div style="background:var(--color-background-secondary);padding:9px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="(()=>{const b=document.getElementById('${bdyId}');const open=b.style.display==='none';b.style.display=open?'block':'none';const arr=document.getElementById('${bdyId}-arr');if(arr)arr.style.transform=open?'rotate(180deg)':'rotate(0deg)';})()">
-          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">${e.desc}</span><span style="font-size:11px;color:var(--color-text-secondary)">Paid by ${pn} · ${splitDesc}</span></div>
+          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">${e.desc}</span><span style="font-size:11px;color:var(--color-text-secondary)">${e.cat==='golf'?'Won by':'Paid by'} ${pn} · ${splitDesc}</span></div>
           <div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">$${e.amount.toFixed(2)}</span><span id="${bdyId}-arr" style="font-size:10px;color:#1D9E75;transition:transform 0.2s;display:inline-block">▼</span></div>
         </div>
         <div id="${bdyId}" style="display:none">${bdyHtml}${actionsHtml}</div>
@@ -8896,10 +9037,10 @@ function openExpForm(editId){
   const form=`<div style="padding:1rem;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:14px;background:var(--color-background-secondary)">
 <div style="font-size:15px;font-weight:500;margin-bottom:12px">${editId?'Edit':'Add'} Expense</div>
 <div class="field-row"><div class="field-label">Description</div><input class="text-input" id="eDesc" value="${ex?.desc||''}" placeholder="e.g. Airbnb night 1"/></div>
-<div class="field-row"><div class="field-label">Category</div><select class="course-select" id="eCat">${ECATS.map(c=>`<option value="${c.id}"${c.id===(ex?.cat||'misc')?' selected':''}>${c.e} ${c.l}</option>`).join('')}</select></div>
+<div class="field-row"><div class="field-label">Category</div><select class="course-select" id="eCat" onchange="(function(){const g=document.getElementById('eCat').value==='golf';document.getElementById('ePaidByLabel').textContent=g?'Won by':'Paid by';document.getElementById('eOwesLabel').textContent=g?'Who lost?':'Who owes?';})()">${ECATS.map(c=>`<option value="${c.id}"${c.id===(ex?.cat||'misc')?' selected':''}>${c.e} ${c.l}</option>`).join('')}</select></div>
 <div class="field-row"><div class="field-label">Amount ($)</div><input class="text-input" id="eAmt" type="number" step=".01" value="${ex?.amount||''}" placeholder="0.00" style="width:120px"/></div>
-<div class="field-row"><div class="field-label">Paid by</div><select class="course-select" id="ePaidBy">${WK.players.map((p,i)=>`<option value="${i}"${i===(ex?.paidBy??0)?' selected':''}>${displayName(i)}</option>`).join('')}</select></div>
-<div class="field-row"><div class="field-label">Who owes?</div><div id="eChips" style="display:flex;flex-wrap:wrap;gap:4px">${WK.players.map((p,i)=>{const ow=defOwes.some(o=>o.pi===i);return`<span class="pchip${ow?' active':''}" onclick="this.classList.toggle('active')">${displayName(i)}</span>`;}).join('')}</div></div>
+<div class="field-row"><div class="field-label" id="ePaidByLabel">${(ex?.cat||'misc')==='golf'?'Won by':'Paid by'}</div><select class="course-select" id="ePaidBy">${WK.players.map((p,i)=>`<option value="${i}"${i===(ex?.paidBy??0)?' selected':''}>${displayName(i)}</option>`).join('')}</select></div>
+<div class="field-row"><div class="field-label" id="eOwesLabel">${(ex?.cat||'misc')==='golf'?'Who lost?':'Who owes?'}</div><div id="eChips" style="display:flex;flex-wrap:wrap;gap:4px">${WK.players.map((p,i)=>{const ow=defOwes.some(o=>o.pi===i);return`<span class="pchip${ow?' active':''}" onclick="this.classList.toggle('active')">${displayName(i)}</span>`;}).join('')}</div></div>
 <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><label class="toggle"><input type="checkbox" id="eCustom" ${ex?.customSplit?'checked':''} onchange="document.getElementById('eCustomFields').style.display=this.checked?'block':'none'"><span class="toggle-slider"></span></label><span style="font-size:13px;color:var(--color-text-primary)">Custom split</span></div>
 <div id="eCustomFields" style="display:${ex?.customSplit?'block':'none'};margin-bottom:12px">${WK.players.map((p,i)=>{const oe=defOwes.find(o=>o.pi===i);return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="flex:1;font-size:13px">${displayName(i)}</span><span>$</span><input class="ie-num" id="eShare${i}" type="number" step=".01" placeholder="0.00" value="${oe?.amt??''}" style="width:90px"/></div>`;}).join('')}</div>
 <div style="display:flex;gap:8px"><button class="btn-primary" onclick="saveExp()">Save</button><button class="btn-secondary" style="flex:none" onclick="cancelExp()">Cancel</button></div>
@@ -9261,7 +9402,7 @@ getPresses(r,si).forEach(p=>{const pr=calcPressResult(r,si,p);if(!pr||pr.winner=
   if(gameOnAny('hammer')){WK.rounds.forEach((_,r)=>{const hSeg=hammerSegsForRound(r);getSegments(hSeg).forEach((seg,si)=>{const res=calcHammerSegResult(r,si);if(!res)return;const tm=STATE.hammerTeams?.[r]?.[si];if(!tm)return;const payout=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');const sv=payout==='perteam'?0.5:1;tm[0].forEach(pi=>hammNet[pi]+=res.netA*sv);tm[1].forEach(pi=>hammNet[pi]+=res.netB*sv);});});}
   // Two's net
   const twosNet=Array(n).fill(0);
-  if(gameOn('twos',0)){let totTwos=0;const twos=Array(n).fill(0);STATE.scores.forEach((rd,r)=>{rd.forEach((h,hi)=>{const par=WK.rounds[r].course.holes[hi]?.par||4;if(par!==3)return;h.forEach((g,pi)=>{if(g===2){twos[pi]++;totTwos++;}});});});const tp=WK.twosAmt*n;if(totTwos>0)twos.forEach((c,i)=>{twosNet[i]+=(c/totTwos)*tp-WK.twosAmt;});}// else: no 2s, no blood
+  if(gameOn('twos',0)){let totTwos=0;const twos=Array(n).fill(0);STATE.scores.forEach((rd,r)=>{rd.forEach((h,hi)=>{h.forEach((g,pi)=>{if(g===2){twos[pi]++;totTwos++;}});});});const tp=WK.twosAmt*n;if(totTwos>0)twos.forEach((c,i)=>{twosNet[i]+=(c/totTwos)*tp-WK.twosAmt;});}// else: no 2s, no blood
   // Weekend pot
   const done=totalHolesPlayed()>=totalHoles();
   const potData=calcPotRankings();
@@ -9272,7 +9413,7 @@ getPresses(r,si).forEach(p=>{const pr=calcPressResult(r,si,p);if(!pr||pr.winner=
 }
 function calcExpNetPerPlayer(){
   const net=Array(WK.players.length).fill(0);
-  (STATE.expenses||[]).forEach(e=>{net[e.paidBy]+=e.amount;e.owes.forEach(o=>net[o.pi]-=o.amt);});
+  (STATE.expenses||[]).forEach(e=>{e.owes.forEach(o=>{if(o.pi===e.paidBy)return;net[o.pi]-=o.amt;net[e.paidBy]+=o.amt;});});
   return net;
 }
 function simplifyDebts(balances){
@@ -9536,7 +9677,7 @@ function renderSettle(){
         settledRowsHtml+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--color-background-tertiary);border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:11px;color:var(--color-text-secondary)">Expenses <span style="font-style:italic">settled</span></span><span style="font-size:12px;color:var(--color-text-secondary)">${fmt(expNet[pi])}</span></div>`;
       } else {
         html+=catHdr('Expenses',expNet[pi]);
-                myExps.forEach(e=>{let mv=0;if(e.paidBy===pi)mv+=e.amount;const ow=e.owes.find(o=>o.pi===pi);if(ow)mv-=ow.amt;html+=subRow(e.desc,e.paidBy===pi?'paid':'owes',mv);});
+                myExps.forEach(e=>{let mv=0;e.owes.forEach(o=>{if(o.pi===e.paidBy)return;if(e.paidBy===pi)mv+=o.amt;if(o.pi===pi)mv-=o.amt;});const _g=e.cat==='golf';const _role=e.paidBy===pi?(_g?'won':'paid'):(_g?'lost':'owes');html+=subRow(e.desc,_role,mv);});
         html+=`</div></div>`;
       }
     }
