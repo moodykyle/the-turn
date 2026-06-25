@@ -1301,7 +1301,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v106.7.20';
+const APP_VERSION='v107';
 
 // ===== THEME =====
 (function(){
@@ -2685,7 +2685,7 @@ async function renameCourse(oldName,newName){newName=newName.trim();if(!newName|
 function loadTripsLocal(){try{const d=localStorage.getItem(LS_TRIPS);return d?JSON.parse(d):[];}catch(e){return[];}}
 function loadTrips(){return loadTripsLocal();}
 function saveTrips(trips){try{localStorage.setItem(LS_TRIPS,JSON.stringify(trips));}catch(e){}scheduleSbSave();}
-function autoSave(){if(!WK||!STATE||isReadOnly)return;s2MarkDirty(['trip','players','expenses']);const trips=loadTrips();const holesPlayed=totalHolesPlayed(),totalH=totalHoles(),complete=holesPlayed>=totalH;const potData=calcPotRankings();const winner=potData[0]?WK.players[potData[0].pi]?.name:'';const snapshot={id:WK._id||(WK._id=Date.now()+''),name:WK.name,is_quick_round:!!WK.isQuickRound,group_id:WK._groupId||null,date:WK.date,playerNames:WK.players.map((p,i)=>displayName(i)),playerInis:WK.players.map(p=>p.ini),playerColors:WK.players.map(p=>({bg:p.bg,fg:p.fg})),courses:WK.rounds.map(r=>r.courseName),holesPlayed,totalHoles:totalH,complete,winner,savedAt:new Date().toISOString()};const idx=trips.findIndex(t=>t.id===snapshot.id);if(idx>=0)trips[idx]=snapshot;else trips.unshift(snapshot);saveTrips(trips);showSaveToast();}
+function autoSave(silent){if(!WK||!STATE||isReadOnly)return;s2MarkDirty(['trip','players','expenses']);const trips=loadTrips();const holesPlayed=totalHolesPlayed(),totalH=totalHoles(),complete=holesPlayed>=totalH;const potData=calcPotRankings();const winner=potData[0]?WK.players[potData[0].pi]?.name:'';const snapshot={id:WK._id||(WK._id=Date.now()+''),name:WK.name,is_quick_round:!!WK.isQuickRound,group_id:WK._groupId||null,date:WK.date,playerNames:WK.players.map((p,i)=>displayName(i)),playerInis:WK.players.map(p=>p.ini),playerColors:WK.players.map(p=>({bg:p.bg,fg:p.fg})),courses:WK.rounds.map(r=>r.courseName),holesPlayed,totalHoles:totalH,complete,winner,savedAt:new Date().toISOString()};const idx=trips.findIndex(t=>t.id===snapshot.id);if(idx>=0)trips[idx]=snapshot;else trips.unshift(snapshot);saveTrips(trips);if(!silent)showSaveToast();}
 function showSaveToast(){const el=document.getElementById('saveIndicator');el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1500);}
 function showHome(){
   document.getElementById('homeScreen').style.display='block';
@@ -2863,7 +2863,19 @@ async function renderHomeDashboard(){
           if(t.totalHoles>0&&t.holesPlayed>=t.totalHoles)t.complete=true;
           const li=local.findIndex(function(x){return x.id===t.id;});
           if(li<0){local.unshift(t);changed=true;}
-          else if(!local[li].group_id&&t.group_id){local[li].group_id=t.group_id;changed=true;}
+          else{
+            if(!local[li].group_id&&t.group_id){local[li].group_id=t.group_id;changed=true;}
+            // Badge reconciliation: scores are the source of truth and accumulate, so adopt the
+            // higher hole count to heal a device whose local snapshot lagged the server. Without
+            // this a completed round can show 0% on a device that did not enter it.
+            if((t.holesPlayed||0)>(local[li].holesPlayed||0)){
+              local[li].holesPlayed=t.holesPlayed;
+              local[li].totalHoles=t.totalHoles||local[li].totalHoles;
+              local[li].complete=!!t.complete;
+              if(t.winner)local[li].winner=t.winner;
+              changed=true;
+            }
+          }
         });
       });
       // Prune local trips that no longer exist in Supabase (deleted or never written)
@@ -5235,7 +5247,7 @@ function renderScorecard(){
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
   try{renderRazzleBox();}catch(re){console.error('renderRazzleBox error:',re);const w=document.getElementById('razzleBoxWrap');if(w)w.innerHTML='';}
   try{renderWolfBox();}catch(we){console.error('renderWolfBox error:',we);const wb=document.getElementById('wolfBoxWrap');if(wb)wb.innerHTML='';}}
-function adjScore(pi,delta){if(isReadOnly)return;if((STATE.lockedRounds||[]).includes(STATE.currentRound))return;const r=STATE.currentRound,hi=STATE.currentHole,par=WK.rounds[r].course.holes[hi]?.par||4,c=STATE.scores[r][hi][pi];STATE.scores[r][hi][pi]=c===null?par:Math.max(1,c+delta);s2MarkDirty(['score'],r+':'+hi);clearTimeout(window._s2ScoreTimer);window._s2ScoreTimer=setTimeout(()=>s2WriteActive(),1500);// Check auto-press after all players scored this hole
+function adjScore(pi,delta){if(isReadOnly)return;if((STATE.lockedRounds||[]).includes(STATE.currentRound))return;const r=STATE.currentRound,hi=STATE.currentHole,par=WK.rounds[r].course.holes[hi]?.par||4,c=STATE.scores[r][hi][pi];STATE.scores[r][hi][pi]=c===null?par:Math.max(1,c+delta);s2MarkDirty(['score'],r+':'+hi);clearTimeout(window._s2ScoreTimer);window._s2ScoreTimer=setTimeout(()=>{autoSave(true);s2WriteActive();},1500);// Check auto-press after all players scored this hole
 const allScored=STATE.scores[r][hi].every(s=>s!==null);if(allScored&&gameOn('mp',r)){const mpG=mpGamesForRound(r);const _th=roundHoleCount(r);const si=segForHole(hi-holeOffset(r),mpG,_th);checkAutoPress(r,si);}renderScorecard();renderHoleDots();renderHammerBox();renderSkinsBoxWrap();renderMPHoleBox();renderVegasBoxWrap();
   _updateActionRow();
 }
