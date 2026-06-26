@@ -343,6 +343,7 @@ body.force-light .rd-sel{background:#FAFAF8;border-radius:10px;margin:0.5rem 1re
 .money-row:last-child{border-bottom:none;}
 .money-pos{color:#1D9E75;font-weight:500;}
 .money-neg{color:#D85A30;font-weight:500;}
+.money-nil{color:var(--color-text-secondary);font-weight:500;}
 .pending-box{padding:16px 12px;text-align:center;color:var(--color-text-secondary);font-size:13px;}
 .inline-edit{border:none;border-bottom:1px dashed var(--color-border-secondary);background:transparent;font-size:inherit;color:var(--color-text-primary);font-family:inherit;padding:1px 2px;width:100%;}
 .inline-edit:focus{outline:none;border-bottom-color:var(--color-text-primary);}
@@ -621,7 +622,7 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
   color:var(--tint-tx);
   border:0.5px solid var(--tint-bd);
 }
-.gs-setup-chevron{transition:transform 0.15s;font-size:10px;}
+.gs-setup-chevron{transition:transform 0.15s;font-size:10px;color:#1D9E75;}
 .gs-setup-toggle.open .gs-setup-chevron{transform:rotate(180deg);}
 .gs-setup-body{
   border:0.5px solid var(--color-border-tertiary);
@@ -1303,7 +1304,7 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v107.0.15';
+const APP_VERSION='v107.0.29';
 
 // ===== THEME =====
 (function(){
@@ -6130,7 +6131,7 @@ function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
         const strokesStr=rd.complete?(rdStrokes>0?rdStrokes+' stroke'+(rdStrokes!==1?'s':''):rdStrokes<0?'gives '+(-rdStrokes)+' stroke'+(rdStrokes!==-1?'s':''):'no strokes'):'';
         html+=`<div style="display:grid;grid-template-columns:auto 1fr auto auto auto;align-items:center;gap:6px;padding:6px 12px 6px 56px;border-bottom:0.5px solid var(--color-border-tertiary)">
           <span style="font-size:11px;color:var(--color-text-tertiary);white-space:nowrap">${roundLabel(rd.r)}</span>
-          <span style="font-size:11px;color:var(--color-text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cn}</span>
+          <span style="font-size:11px;color:var(--color-text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${rdLabel(rd.r)}</span>
           <span style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap">${rd.complete?rd.rGross+' ('+relGrossStr+')':'—'}</span>
           <span style="font-size:11px;color:var(--color-text-tertiary);white-space:nowrap">${strokesStr}</span>
           <span style="font-size:13px;font-weight:600;color:${netCol};white-space:nowrap;min-width:36px;text-align:right">${rd.complete?netStr:'—'}</span>
@@ -6140,21 +6141,7 @@ function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
     }
     html+=`</div>`;
   });
-  html+=`</div>`;const entries=calcRoundRankings();const isOpen=STATE.roundRankOpen;html+=`<div class="collapsible-hd${isOpen?' open':''}" onclick="toggleRoundRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Best individual rounds</span><span style="font-size:12px;color:#1D9E75">${isOpen?'▲':'▼'}</span></div>`;if(isOpen){if(entries.length===0){html+=`<div class="collapsible-body"><div style="padding:16px 12px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Complete at least one full round to see rankings</div></div>`;}else{html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;entries.forEach(e=>{const p=WK.players[e.pi];const ci=WK.rounds.findIndex(r=>r.courseName===e.courseName);const cbg=COURSE_COLORS[ci%COURSE_COLORS.length];const cfg=COURSE_FG[ci%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const badgeLabel=(()=>{
-  const allNames=WK.rounds.map(r=>r.courseName);
-  // Find longest common prefix shared by 2+ names
-  function commonPrefix(a,b){let i=0;while(i<a.length&&i<b.length&&a[i]===b[i])i++;return a.slice(0,i);}
-  let prefix='';
-  for(let i=0;i<allNames.length;i++){for(let j=i+1;j<allNames.length;j++){const cp=commonPrefix(allNames[i],allNames[j]);if(cp.length>prefix.length)prefix=cp;}}
-  // Trim prefix to last word boundary
-  if(prefix.length>2){const trimmed=prefix.trimEnd();const lastSpace=trimmed.lastIndexOf(' ');prefix=lastSpace>0?trimmed.slice(0,lastSpace+1):trimmed+' ';}else{prefix='';}
-  // Strip prefix from names that start with it, leave others as-is
-  const displayName2=prefix.length>0&&e.courseName.startsWith(prefix)?e.courseName.slice(prefix.length):e.courseName;
-  // If duplicate course name in trip: regular round = plain name, E9 round = name + (E9)
-  const sameNameRounds=WK.rounds.filter(r=>r.courseName===e.courseName);
-  if(sameNameRounds.length>1){const rd=WK.rounds[e.r];return displayName2+(rd.isE9?' (E9)':'');}
-  return displayName2||e.courseName;
-})();html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${displayName(e.pi)}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}};const eEntries=calcEmergencyRankings();if(eEntries.length>0){const eOpen=STATE.emergencyRankOpen;html+=`<div class="collapsible-hd${eOpen?' open':''}" onclick="toggleEmergencyRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Emergency rounds</span><span style="font-size:12px;color:#1D9E75">${eOpen?'▲':'▼'}</span></div>`;if(eOpen){html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;eEntries.forEach(e=>{const p=WK.players[e.pi];const ci=WK.rounds.findIndex(rd=>rd.courseName===e.courseName);const cbg=COURSE_COLORS[ci%COURSE_COLORS.length];const cfg=COURSE_FG[ci%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const erd=WK.rounds[e.r];const allNames=WK.rounds.map(rd=>rd.courseName);let ePrefix='';for(let i=0;i<allNames.length;i++){for(let j=i+1;j<allNames.length;j++){let k=0;while(k<allNames[i].length&&k<allNames[j].length&&allNames[i][k]===allNames[j][k])k++;const cp=allNames[i].slice(0,k);if(cp.length>ePrefix.length)ePrefix=cp;}}if(ePrefix.length>2){const tr=ePrefix.trimEnd();const ls=tr.lastIndexOf(' ');ePrefix=ls>0?tr.slice(0,ls+1):tr+' ';}else{ePrefix='';}const eName=ePrefix.length>0&&e.courseName.startsWith(ePrefix)?e.courseName.slice(ePrefix.length):e.courseName;const holeLabel=erd.nineHole==='front'?'Front 9':erd.nineHole==='back'?'Back 9':'9 holes';const badgeLabel=eName+(erd.nineHole?' - '+holeLabel:'');html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${displayName(e.pi)}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}}document.getElementById('boardContent').innerHTML=html;}
+  html+=`</div>`;const entries=calcRoundRankings();const isOpen=STATE.roundRankOpen;html+=`<div class="collapsible-hd${isOpen?' open':''}" onclick="toggleRoundRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Best individual rounds</span><span style="font-size:12px;color:#1D9E75">${isOpen?'▲':'▼'}</span></div>`;if(isOpen){if(entries.length===0){html+=`<div class="collapsible-body"><div style="padding:16px 12px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Complete at least one full round to see rankings</div></div>`;}else{html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;entries.forEach(e=>{const p=WK.players[e.pi];const cbg=COURSE_COLORS[e.r%COURSE_COLORS.length];const cfg=COURSE_FG[e.r%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const badgeLabel=rdLabel(e.r);html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${displayName(e.pi)}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}};const eEntries=calcEmergencyRankings();if(eEntries.length>0){const eOpen=STATE.emergencyRankOpen;html+=`<div class="collapsible-hd${eOpen?' open':''}" onclick="toggleEmergencyRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Emergency rounds</span><span style="font-size:12px;color:#1D9E75">${eOpen?'▲':'▼'}</span></div>`;if(eOpen){html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;eEntries.forEach(e=>{const p=WK.players[e.pi];const cbg=COURSE_COLORS[e.r%COURSE_COLORS.length];const cfg=COURSE_FG[e.r%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const erd=WK.rounds[e.r];const holeLabel=erd.nineHole==='front'?'Front 9':erd.nineHole==='back'?'Back 9':'9 holes';const badgeLabel=rdLabel(e.r)+(erd.nineHole?' - '+holeLabel:'');html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${displayName(e.pi)}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}}document.getElementById('boardContent').innerHTML=html;}
 function pOpts(sel){return WK.players.map((p,i)=>`<option value="${i}"${i===sel?' selected':''}>${displayName(i)}</option>`).join('');}
 function setWolfOrder(r,pos,newPi){
   if(!STATE.wolfOrder)STATE.wolfOrder=WK.rounds.map(()=>[0,1,2,3]);
@@ -6212,7 +6199,13 @@ function wolfForHole(hi,r){
   const tied=sorted.filter(x=>x.pts===lastPts);
   if(tied.length===1)return tied[0].pi;
   const tiedPis=tied.map(x=>x.pi);
-  for(let i=0;i<order.length;i++){if(tiedPis.includes(order[i]))return order[i];}
+  const netThru=tiedPis.map(pi=>{let s=0;for(let h=0;h<hi;h++){const n=getNet(pi,h,r);if(n!==null)s+=n;}return{pi,net:s};});
+  netThru.sort((a,b)=>b.net-a.net);
+  const worstNet=netThru[0].net;
+  const worstTied=netThru.filter(x=>x.net===worstNet);
+  if(worstTied.length===1)return worstTied[0].pi;
+  const worstPis=worstTied.map(x=>x.pi);
+  for(let i=0;i<order.length;i++){if(worstPis.includes(order[i]))return order[i];}
   return order[wolfIdx];
 }
 function wolfTeeOrder(hi,r){
@@ -6326,6 +6319,8 @@ function openWolfPickModal(hi,r){
 function closeWolfPickModal(){const el=document.getElementById('wolfPickOverlay');if(el)el.remove();}
 function setWolfPick(r,hi,type,partner){
   if(!STATE.wolfPicks)STATE.wolfPicks=Array(WK.rounds.length).fill(null).map(()=>Array(18).fill(null));
+  while(STATE.wolfPicks.length<WK.rounds.length)STATE.wolfPicks.push(Array(18).fill(null));
+  if(!STATE.wolfPicks[r])STATE.wolfPicks[r]=Array(18).fill(null);
   const blindToggle=document.getElementById('wolfBlindToggle');
   const isBlind=blindToggle&&blindToggle.checked;
   const finalType=(type==='lone'&&isBlind)?'blind':(type==='lone'?'lone':isBlind?'blind':type);
@@ -6461,7 +6456,7 @@ function renderWolfRound(){
   }
   const initials=WK.players.map(p=>{const parts=(p.name||p.last||'?').split(' ');return parts.length>1?parts[0][0]+parts[parts.length-1][0]:p.last?p.last.substring(0,2):'??';});
   let html='<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">';
-  html+='<div style="padding:10px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="(function(){var b=document.getElementById(\'wgb_'+r+'\');var open=b.style.display===\'none\';b.style.display=open?\'\':\' none\';})()"><span style="font-size:14px;font-weight:500">Wolf - Rd '+(r+1)+'</span><span style="font-size:11px;color:var(--color-text-tertiary)">$'+wolfVal+'/pt \u25bc</span></div>';
+  html+='<div style="padding:10px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="(function(){var b=document.getElementById(\'wgb_'+r+'\');var open=b.style.display===\'none\';b.style.display=open?\'\':\' none\';})()"><span style="font-size:14px;font-weight:500">Wolf - Rd '+(r+1)+'</span><span style="font-size:11px;color:#1D9E75">\u25bc</span></div>';
   html+='<div id="wgb_'+r+'" style="display:none">';
   html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;table-layout:fixed"><thead><tr style="border-bottom:0.5px solid var(--color-border-tertiary)">';
   html+='<th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:center;padding:6px 4px;width:44px;background:var(--color-background-secondary);border-right:0.5px solid var(--color-border-tertiary)">H</th>';
@@ -6498,7 +6493,7 @@ function renderWolfRound(){
   html+='</div>';
   html+='</div>';
   html+='<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">';
-  html+='<div style="padding:10px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Standings</span></div>';
+  html+='<div style="padding:10px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Standings</span><span style="font-size:11px;color:var(--color-text-tertiary)">$'+wolfVal+'/pt</span></div>';
   html+='<div style="padding:10px 14px">';
   const sorted=[...pts].sort((a,b)=>b.pts-a.pts);
   sorted.forEach(p=>{
@@ -8462,13 +8457,13 @@ function renderMoney(){
   if(!WK.isQuickRound){
   const potSettled=(STATE.settledRounds||[]).includes('pot');
   html+=`<div class="section-card round-card-collapsed" id="rcard-pot" style="margin-bottom:14px;${potSettled?'opacity:0.6;':''}">`;
-  const potSumm=allDone?potData.map(d=>{const p=WK.players[d.pi],isW=d===potData[0],v=isW?(pot-WK.buyIn):-WK.buyIn;return`<span style="color:${v>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(d.pi)} ${fmt(v)}</span>`;}).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">Settles after all holes</span>`;
-  html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('pot')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Weekend pot - $${pot}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${potSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${potSettled?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleItem('pot')">Unsettle</button>`:allDone?`<button class="btn-sm" onclick="event.stopPropagation();settleItem('pot')">Settle</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
+  const potSumm=allDone?potData.map(d=>{const p=WK.players[d.pi],isW=d===potData[0],v=isW?(pot-WK.buyIn):-WK.buyIn;return`<span style="color:${v>0?'#1D9E75':v<0?'#D85A30':'var(--color-text-secondary)'};font-size:11px">${displayName(d.pi)} ${fmt(v)}</span>`;}).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">Settles after all holes</span>`;
+  html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('pot')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-primary)">Weekend pot - $${pot}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${potSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${potSettled?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleItem('pot')">Unsettle</button>`:allDone?`<button class="btn-sm" onclick="event.stopPropagation();settleItem('pot')">Settle</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
   html+=`<div class="round-card-body">`;
   if(!allDone)html+=`<div class="pending-box">Settles after all ${totalHoles()} holes. ${totalHoles()-totalHolesPlayed()} remaining.</div>`;
   else{
     html+=`<div style="padding:4px 12px 2px;font-size:10px;color:var(--color-text-tertiary)">Winner determined by ${potLabel}</div>`;
-    potData.forEach((d,rank)=>{const p=WK.players[d.pi],isW=rank===0,net=isW?(pot-WK.buyIn):-WK.buyIn;html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(d.pi)}${isW?' 🏆':''}</span></div><div class="${net>=0?'money-pos':'money-neg'}">${fmt(net)}</div></div>`;});
+    potData.forEach((d,rank)=>{const p=WK.players[d.pi],isW=rank===0,net=isW?(pot-WK.buyIn):-WK.buyIn;html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(d.pi)}${isW?' 🏆':''}</span></div><div class="${net>0?'money-pos':net<0?'money-neg':'money-nil'}">${fmt(net)}</div></div>`;});
     const potNet=Array(n).fill(-WK.buyIn);potNet[potData[0].pi]=pot-WK.buyIn;
     const ptxns=simplifyDebts(potNet);
     if(ptxns.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Transfers</div>`;ptxns.forEach(t=>{html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px">${displayName(t.from)} → ${displayName(t.to)}</span><span style="font-size:13px;font-weight:500;color:var(--color-text-secondary)">$${t.amt.toFixed(2)}</span></div>`;});}
@@ -8527,10 +8522,10 @@ function renderMoney(){
     const netForTotal=snapNet||roundNet;
     if(complete)netForTotal.forEach((v,i)=>grandTotal[i]+=v);
 
-    const summParts=complete?WK.players.map((p,i)=>`<span style="color:${roundNet[i]>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(i)} ${fmt(roundNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">In progress</span>`;
+    const summParts=complete?WK.players.map((p,i)=>`<span style="color:${roundNet[i]>0?'#1D9E75':roundNet[i]<0?'#D85A30':'var(--color-text-secondary)'};font-size:11px">${displayName(i)} ${fmt(roundNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">In progress</span>`;
 
     html+=`<div class="section-card round-card-collapsed" id="rcard-${r}" style="margin-bottom:14px;${settled?'opacity:0.6;':''}">`;
-    const lkd_r=isRoundLocked(r);html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard(${r})"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>${roundLabel(r)} - ${courseDisp(WK.rounds[r].courseName)}${lkd_r?' 🔒':''}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${summParts}</div></div><div style="display:flex;align-items:center;gap:8px">${settled&&!changed?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:settled&&changed?`<span style="color:#D97706;font-size:11px">⚠ Changed</span><button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:complete?`<button class="btn-sm" onclick="event.stopPropagation();settleRound(${r})">Settle</button>`:''} ${lkd_r&&!settled?`<button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unlockRound(${r})">Unlock</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
+    const lkd_r=isRoundLocked(r);html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard(${r})"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-primary)">${roundLabel(r)} - ${courseDisp(WK.rounds[r].courseName)}${lkd_r?' 🔒':''} </span><div style="display:flex;gap:4px;flex-wrap:wrap">${summParts}</div></div><div style="display:flex;align-items:center;gap:8px">${settled&&!changed?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:settled&&changed?`<span style="color:#D97706;font-size:11px">⚠ Changed</span><button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:complete?`<button class="btn-sm" onclick="event.stopPropagation();settleRound(${r})">Settle</button>`:''} ${lkd_r&&!settled?`<button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unlockRound(${r})">Unlock</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
     html+=`<div class="round-card-body">`;
     if(changed)html+=`<div style="padding:8px 12px;background:#FEF3C7;border-bottom:0.5px solid #F59E0B;font-size:12px;color:#92400E">⚠ Scores edited after settlement - amounts are current.</div>`;
     if(!complete){html+=`<div class="pending-box">Scores incomplete</div></div></div>`;return;}
@@ -8698,11 +8693,11 @@ function renderMoney(){
       const hasSnake=finalHolder!==null;
       html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">🐍 Snake${hasSnake?` - pot $${sPot.toFixed(2)} · ${displayName(finalHolder)} holds`:' - not set'}</div>`;
       if(!hasSnake){html+=`<div class="pending-box">No snake assigned this round</div>`;}
-      else{WK.players.forEach((p,i)=>{html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(i)}${i===finalHolder?' 🐍':''}</span></div><div class="${rNet[i]>=0?'money-pos':'money-neg'}">${fmt(rNet[i])}</div></div>`;});}
+      else{WK.players.forEach((p,i)=>{html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(i)}${i===finalHolder?' 🐍':''}</span></div><div class="${rNet[i]>0?'money-pos':rNet[i]<0?'money-neg':'money-nil'}">${fmt(rNet[i])}</div></div>`;});}
     }
     // Wolf
     if(gameOn('wolf',r)&&wolfPtsR){
-      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary)">Wolf - $${wolfVal}/pt</div>`;
+      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Wolf - $${wolfVal}/pt</div>`;
       const wolfSorted=[...wolfPtsR].sort((a,b)=>b.pts-a.pts);
       wolfSorted.forEach(p=>{
         const dollars=p.pts*wolfVal;
@@ -8729,13 +8724,13 @@ function renderMoney(){
     // No 2s scored yet - no blood, pot carries
     twosNet.forEach((v,i)=>grandTotal[i]+=v);
     const twosSettled=(STATE.settledRounds||[]).includes('twos');
-    const twosSumm=tot>0?WK.players.map((p,i)=>`<span style="color:${twosNet[i]>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(i)} ${fmt(twosNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">No 2s yet</span>`;
+    const twosSumm=tot>0?WK.players.map((p,i)=>`<span style="color:${twosNet[i]>0?'#1D9E75':twosNet[i]<0?'#D85A30':'var(--color-text-secondary)'};font-size:11px">${displayName(i)} ${fmt(twosNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">No 2s yet</span>`;
     html+=`<div class="section-card round-card-collapsed" id="rcard-twos" style="margin-bottom:14px;${twosSettled?'opacity:0.6;':''}">`;
-    html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('twos')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span>Two's Club - pot $${tp}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${twosSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${twosSettled?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleItem('twos')">Unsettle</button>`:`<button class="btn-sm" onclick="event.stopPropagation();settleItem('twos')">Settle</button>`}<span class="round-card-chevron">▼</span></div></div>`;
+    html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('twos')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-primary)">Two's Club - pot $${tp}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${twosSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${twosSettled?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleItem('twos')">Unsettle</button>`:`<button class="btn-sm" onclick="event.stopPropagation();settleItem('twos')">Settle</button>`}<span class="round-card-chevron">▼</span></div></div>`;
     html+=`<div class="round-card-body">`;
     if(!tot)html+=`<div class="pending-box">No 2s yet - pot carries</div>`;
     else{
-      const twosDetail=calcTwosDetail();WK.players.forEach((p,i)=>{const hits=twosDetail[i];const badge=hits.length>0?`<span class="twos-badge">${hits.length} two${hits.length>1?'s':''}</span>`:'' ;const loc=hits.length>0?`<span style="font-size:11px;color:var(--color-text-secondary);margin-left:3px">· ${hits.join(', ')}</span>`:'';const extra=badge+loc;html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(i)}${extra}</span></div><div class="${twosNet[i]>=0?'money-pos':'money-neg'}">${fmt(twosNet[i])}</div></div>`;});
+      const twosDetail=calcTwosDetail();WK.players.forEach((p,i)=>{const hits=twosDetail[i];const badge=hits.length>0?`<span class="twos-badge">${hits.length} two${hits.length>1?'s':''}</span>`:'' ;const loc=hits.length>0?`<span style="font-size:11px;color:var(--color-text-secondary);margin-left:3px">· ${hits.join(', ')}</span>`:'';const extra=badge+loc;html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(i)}${extra}</span></div><div class="${twosNet[i]>0?'money-pos':twosNet[i]<0?'money-neg':'money-nil'}">${fmt(twosNet[i])}</div></div>`;});
       const ttxns=simplifyDebts(twosNet);
       if(ttxns.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Transfers</div>`;ttxns.forEach(t=>{html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px">${displayName(t.from)} → ${displayName(t.to)}</span><span style="font-size:13px;font-weight:500;color:var(--color-text-secondary)">$${t.amt.toFixed(2)}</span></div>`;});}
     }
@@ -8760,13 +8755,13 @@ function renderMoney(){
     return out;
   });
   const allSettled=outstandingTotal.every(v=>Math.abs(v)<0.01);
-  const gtSumm=WK.players.map((p,i)=>`<span style="color:${outstandingTotal[i]>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(i)} ${fmt(outstandingTotal[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>');
+  const gtSumm=WK.players.map((p,i)=>`<span style="color:${outstandingTotal[i]>0?'#1D9E75':outstandingTotal[i]<0?'#D85A30':'var(--color-text-secondary)'};font-size:11px">${displayName(i)} ${fmt(outstandingTotal[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>');
   html+=`<div class="section-card round-card-collapsed" id="rcard-grand" style="margin-bottom:14px">`;
-  html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('grand')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span style="color:var(--color-text-primary);font-weight:500">Golf outstanding</span><div style="display:flex;gap:4px;flex-wrap:wrap">${allSettled?'<span style="font-size:11px;color:#1D9E75">All settled 🎉</span>':gtSumm}</div></div><span class="round-card-chevron">▼</span></div>`;
+  html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('grand')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-primary)">Golf outstanding</span><div style="display:flex;gap:4px;flex-wrap:wrap">${allSettled?'<span style="font-size:11px;color:#1D9E75">All settled 🎉</span>':gtSumm}</div></div><span class="round-card-chevron">▼</span></div>`;
   html+=`<div class="round-card-body">`;
   if(allSettled){html+=`<div style="padding:16px 12px;text-align:center;font-size:13px;color:#1D9E75;font-weight:500">All golf bets settled 🎉</div>`;}
   else{
-    [...WK.players.map((p,i)=>({...p,i,t:outstandingTotal[i]}))].sort((a,b)=>b.t-a.t).forEach(p=>{html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(p.i)}</span></div><div class="${p.t>=0?'money-pos':'money-neg'}">${fmt(p.t)}</div></div>`;});
+    [...WK.players.map((p,i)=>({...p,i,t:outstandingTotal[i]}))].sort((a,b)=>b.t-a.t).forEach(p=>{html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(p.i)}</span></div><div class="${p.t>0?'money-pos':p.t<0?'money-neg':'money-nil'}">${fmt(p.t)}</div></div>`;});
     const gtxns=simplifyDebts(outstandingTotal);
     if(gtxns.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Outstanding transfers</div>`;gtxns.forEach(t=>{html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px">${displayName(t.from)} → ${displayName(t.to)}</span><span style="font-size:13px;font-weight:500;color:var(--color-text-secondary)">$${t.amt.toFixed(2)}</span></div>`;});}
   }
@@ -9020,10 +9015,10 @@ function renderExpenses(){
   const expTxns=simplifyDebts(expNet);
   const fmt=v=>v>=0?'+$'+v.toFixed(2):'-$'+Math.abs(v).toFixed(2);
   html+=`<div class="section-card round-card-collapsed" id="rcard-expenses" style="margin-bottom:14px;${expSettled?'opacity:0.6;':''}">`;
-  const expSumm=WK.players.map((p,i)=>`<span style="color:${expNet[i]>=0?'#1D9E75':'#D85A30'};font-size:11px">${displayName(i)} ${fmt(expNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>');
+  const expSumm=WK.players.map((p,i)=>`<span style="color:${expNet[i]>0?'#1D9E75':expNet[i]<0?'#D85A30':'var(--color-text-secondary)'};font-size:11px">${displayName(i)} ${fmt(expNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>');
   html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard('expenses')"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span style="font-weight:500">Expense summary</span><div style="display:flex;gap:4px;flex-wrap:wrap">${expSumm}</div></div><div style="display:flex;align-items:center;gap:8px">${expSettled?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleItem('expenses')">Unsettle</button>`:!isReadOnly?`<button class="btn-sm" onclick="event.stopPropagation();settleItem('expenses')">Settle</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
   html+=`<div class="round-card-body">`;
-  WK.players.forEach((p,i)=>{html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(i)}</span></div><div class="${expNet[i]>=0?'money-pos':'money-neg'}">${fmt(expNet[i])}</div></div>`;});
+  WK.players.forEach((p,i)=>{html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(i)}</span></div><div class="${expNet[i]>0?'money-pos':expNet[i]<0?'money-neg':'money-nil'}">${fmt(expNet[i])}</div></div>`;});
   if(expTxns.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary);border-bottom:0.5px solid var(--color-border-secondary)">Transfers</div>`;expTxns.forEach(t=>{html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px">${displayName(t.from)} → ${displayName(t.to)}</span><span style="font-size:13px;font-weight:500;color:var(--color-text-secondary)">$${t.amt.toFixed(2)}</span></div>`;});}
   else html+=`<div style="padding:8px 12px;text-align:center;font-size:12px;color:#1D9E75">All square on expenses 🎉</div>`;
   html+='</div></div>';
@@ -9568,9 +9563,9 @@ function renderSettle(){
     const golfAmt=a.total;
     html+=`<div style="flex:1;padding-left:8px"><div style="font-size:14px;font-weight:500;color:var(--color-text-primary)">${displayName(pi)}</div>`;
     html+=`<div style="display:flex;gap:8px;margin-top:2px;align-items:baseline;flex-wrap:nowrap">`;
-    html+=`<span style="font-size:11px;color:var(--color-text-secondary)">Golf <span style="color:${golfAmt>=0?'#1D9E75':'#D85A30'};font-weight:500">${fmt(golfAmt)}</span></span>`;
-    if(myExps.length||expNet[pi]!==0)html+=`<span style="font-size:11px;color:var(--color-text-secondary)">Exp <span style="color:${expNet[pi]>=0?'#1D9E75':'#D85A30'};font-weight:500">${fmt(expNet[pi])}</span></span>`;
-    html+=`<span style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap">Total <span style="font-size:13px;font-weight:600;color:${totalNet[pi]>=0?'#1D9E75':'#D85A30'}">${fmt(totalNet[pi])}</span></span>`;
+    html+=`<span style="font-size:11px;color:var(--color-text-secondary)">Golf <span style="color:${golfAmt>0?'#1D9E75':golfAmt<0?'#D85A30':'var(--color-text-secondary)'};font-weight:500">${fmt(golfAmt)}</span></span>`;
+    if(myExps.length||expNet[pi]!==0)html+=`<span style="font-size:11px;color:var(--color-text-secondary)">Exp <span style="color:${expNet[pi]>0?'#1D9E75':expNet[pi]<0?'#D85A30':'var(--color-text-secondary)'};font-weight:500">${fmt(expNet[pi])}</span></span>`;
+    html+=`<span style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap">Total <span style="font-size:13px;font-weight:600;color:${totalNet[pi]>0?'#1D9E75':totalNet[pi]<0?'#D85A30':'var(--color-text-secondary)'}">${fmt(totalNet[pi])}</span></span>`;
     html+=`</div>`;
     const settledAmt=totalNet[pi]-outstandingNet[pi];
     const fullySettled=settledAmt!==0&&Math.abs(outstandingNet[pi])<0.01;
@@ -9590,10 +9585,10 @@ function renderSettle(){
     html+=`<div class="audit-player-body" id="audit-body-${pi}">`;
 
     // Helper: collapsible category row
-    const catId=(name)=>`${pi}-${name.replace(/\s/g,'')}`;
+    const catId=(name)=>`${pi}-${name.replace(/[^a-zA-Z0-9]/g,'')}`;
     const subRow=(label,desc,val)=>`<div style="display:grid;grid-template-columns:80px 1fr 64px;align-items:baseline;gap:4px;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:11px;color:var(--color-text-tertiary)">${label}</span><span style="font-size:12px;color:var(--color-text-secondary)">${desc}</span><span style="font-size:12px;text-align:right;font-weight:500;color:${val>0?'#1D9E75':val<0?'#D85A30':'var(--color-text-secondary)'}">${fmt(val)}</span></div>`;
-    const staticRow=(name,sum)=>`<div style="margin:6px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden"><div style="background:var(--color-background-secondary);padding:9px 12px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em">${name}</span><span style="font-size:12px;font-weight:500;color:${sum>=0?'#1D9E75':'#D85A30'}">${fmt(sum)}</span></div></div>`;
-    const catHdr=(name,sum,extra='')=>{const id=catId(name);return`<div style="margin:6px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden"><div style="background:var(--color-background-secondary);padding:9px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleAuditCat('${id}')"><span style="font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em">${name}${extra?` <span style='font-size:10px;color:var(--color-text-tertiary)'>${extra}</span>`:''}</span><span style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:500;color:${sum>=0?'#1D9E75':'#D85A30'}">${fmt(sum)}</span><span class="audit-cat-chevron" style="font-size:10px;color:#1D9E75">▼</span></span></div><div class="audit-cat-body" id="audit-cat-${id}">`};
+    const staticRow=(name,sum)=>`<div style="margin:6px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden"><div style="background:var(--color-background-secondary);padding:9px 12px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em">${name}</span><span style="font-size:12px;font-weight:500;color:${sum>0?'#1D9E75':sum<0?'#D85A30':'var(--color-text-secondary)'}">${fmt(sum)}</span></div></div>`;
+    const catHdr=(name,sum,extra='')=>{const id=catId(name);return`<div style="margin:6px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden"><div style="background:var(--color-background-secondary);padding:9px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleAuditCat('${id}')"><span style="font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em">${name}${extra?` <span style='font-size:10px;color:var(--color-text-tertiary)'>${extra}</span>`:''}</span><span style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:500;color:${sum>0?'#1D9E75':sum<0?'#D85A30':'var(--color-text-secondary)'}">${fmt(sum)}</span><span class="audit-cat-chevron" style="font-size:10px;color:#1D9E75">▼</span></span></div><div class="audit-cat-body" id="audit-cat-${id}">`};
 
     // Settled rounds — top-level rows, one per settled round
     let settledRowsHtml='';
@@ -9622,7 +9617,7 @@ function renderSettle(){
       html+=`</div></div>`;
     }
     // Snake — expandable, per-round breakdown
-    if(gameOnAny('snake')&&snakeNet[pi]!==0){
+    if(gameOnAny('snake')){
       html+=catHdr('Snake',snakeNet[pi]);
             WK.rounds.forEach((_,r)=>{
         if((STATE.settledRounds||[]).includes(r))return;
@@ -9643,7 +9638,7 @@ function renderSettle(){
 
     // Razzle Dazzle — expandable, per-round
     const rzSum=a.razzle.reduce((s,x)=>s+x.val,0);
-    if(gameOnAny('razzle')&&a.razzle.some(x=>x.val!==0)){
+    if(gameOnAny('razzle')){
       html+=catHdr('Razzle Dazzle',rzSum);
             a.razzle.filter(x=>x.val!==0).forEach(x=>{html+=subRow(x.label,x.desc||'',x.val);});
       html+=`</div></div>`;
@@ -9651,7 +9646,7 @@ function renderSettle(){
 
     // Wolf
     const wolfSum=a.wolf.reduce((s,x)=>s+x.val,0);
-    if(gameOnAny('wolf')&&a.wolf.length){
+    if(gameOnAny('wolf')){
       html+=catHdr('Wolf',wolfSum);
             a.wolf.forEach(x=>{html+=subRow(x.label,x.desc,x.val);});
       html+=`</div></div>`;
@@ -9659,17 +9654,17 @@ function renderSettle(){
 
     // Hammer
     const hammSum=a.hammer.reduce((s,x)=>s+x.val,0);
-    if(gameOnAny('hammer')&&a.hammer.some(x=>x.val!==0)){
+    if(gameOnAny('hammer')){
       html+=catHdr('Hammer',hammSum);
             a.hammer.filter(x=>x.val!==0).forEach(x=>{html+=subRow(x.label,x.desc||'',x.val);});
       html+=`</div></div>`;
     }
 
     // Two's Club — non-expandable
-    if(gameOn('twos',0)&&a.twos!==0){const twsSet=(STATE.settledRounds||[]).includes('twos');if(twsSet){settledRowsHtml+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--color-background-tertiary);border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:11px;color:var(--color-text-secondary)">Two's Club <span style="font-style:italic">settled</span></span><span style="font-size:12px;color:var(--color-text-secondary)">${fmt(a.twos)}</span></div>`;}else{html+=staticRow("Two's Club",a.twos);}}
+    if(gameOn('twos',0)){const twsSet=(STATE.settledRounds||[]).includes('twos');if(twsSet){settledRowsHtml+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--color-background-tertiary);border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:11px;color:var(--color-text-secondary)">Two's Club <span style="font-style:italic">settled</span></span><span style="font-size:12px;color:var(--color-text-secondary)">${fmt(a.twos)}</span></div>`;}else{const _twsDetail=calcTwosDetail()[pi];const _twsDesc=_twsDetail.length>0?_twsDetail.join(', '):'no 2s';html+=catHdr("Two's Club",a.twos);html+=`<div style="display:flex;justify-content:space-between;align-items:baseline;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">${_twsDesc}</span><span style="font-size:12px;font-weight:500;color:${a.twos>0?'#1D9E75':a.twos<0?'#D85A30':'var(--color-text-secondary)'}">${fmt(a.twos)}</span></div>`;html+=`</div></div>`;}}
 
     // Weekend Pot — final cap
-    if(allDone&&!WK.isQuickRound){const potSet=(STATE.settledRounds||[]).includes('pot');if(potSet){settledRowsHtml+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--color-background-tertiary);border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:11px;color:var(--color-text-secondary)">Weekend pot <span style="font-style:italic">settled</span></span><span style="font-size:12px;color:var(--color-text-secondary)">${fmt(a.pot)}</span></div>`;}else{html+=staticRow('Weekend pot',a.pot);}}
+    if(allDone&&!WK.isQuickRound){const potSet=(STATE.settledRounds||[]).includes('pot');if(potSet){settledRowsHtml+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--color-background-tertiary);border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:11px;color:var(--color-text-secondary)">Weekend pot <span style="font-style:italic">settled</span></span><span style="font-size:12px;color:var(--color-text-secondary)">${fmt(a.pot)}</span></div>`;}else{const _potDesc=a.pot>0?'pot winner':a.pot<0?'buy-in':'no change';html+=catHdr('Weekend pot',a.pot);html+=`<div style="display:flex;justify-content:space-between;align-items:baseline;padding:7px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">${_potDesc}</span><span style="font-size:12px;font-weight:500;color:${a.pot>0?'#1D9E75':a.pot<0?'#D85A30':'var(--color-text-secondary)'}">${fmt(a.pot)}</span></div>`;html+=`</div></div>`;}}
 
     // Expenses — last item before net total
     if(myExps.length){
@@ -9692,7 +9687,7 @@ function renderSettle(){
         html+=`<div class="seg-total" style="background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-secondary)"><span style="font-size:12px;color:var(--color-text-secondary);font-weight:400">Settled <span style="font-weight:500;color:var(--color-text-secondary)">${fmt(settledAmt)}</span></span><span style="font-size:13px;font-weight:500;color:${_sc}">${_sl} ${fmt(outstandingNet[pi])}</span></div>`;
       }
     } else {
-      html+=`<div class="seg-total"><span style="font-weight:600">Net total</span><span style="font-size:15px;font-weight:700;color:${totalNet[pi]>=0?'#1D9E75':'#D85A30'}">${fmt(totalNet[pi])}</span></div>`;
+      html+=`<div class="seg-total"><span style="font-weight:600">Net total</span><span style="font-size:15px;font-weight:700;color:${totalNet[pi]>0?'#1D9E75':totalNet[pi]<0?'#D85A30':'var(--color-text-secondary)'}">${fmt(totalNet[pi])}</span></div>`;
     }
     html+='</div></div>';
   });
