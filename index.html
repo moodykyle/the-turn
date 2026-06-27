@@ -631,6 +631,11 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
   padding:12px;
   font-size:13px;color:var(--color-text-secondary);
 }
+.gs-setup-locked>*{opacity:0.55!important;pointer-events:none!important;}
+.gs-setup-locked .gs-setup-locked-note{opacity:1!important;}
+.gs-setup-locked .team-game-row{opacity:1!important;pointer-events:auto!important;}
+.gs-setup-locked .team-game-row *{pointer-events:auto!important;}
+.gs-setup-locked-note{display:flex;align-items:center;gap:8px;padding:9px 12px;margin:-12px -12px 10px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);}
 @media(prefers-color-scheme:light){body:not(.force-dark) .gs-setup-toggle,body:not(.force-dark) .gs-setup-body{box-shadow:0 2px 8px rgba(0,0,0,0.09),0 1px 3px rgba(0,0,0,0.06);}}
 body.force-light .gs-setup-toggle,body.force-light .gs-setup-body{box-shadow:0 2px 8px rgba(0,0,0,0.09),0 1px 3px rgba(0,0,0,0.06);}
 .gs-remove-btn{
@@ -1304,7 +1309,10 @@ const COURSE_FG=['#0C447C','#085041','#712B13','#72243E','#633806','#27500A'];
 function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR_PALETTE.filter(c=>!used.includes(c.bg));const pool=avail.length>0?avail:AVATAR_PALETTE;return pool[Math.floor(Math.random()*pool.length)];}
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
-const APP_VERSION='v107.0.33';
+var _simMember=false;
+function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
+function canEditTrip(){if(!WK)return true;if(_simMember)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(!WK._groupId)return true;return false;}
+const APP_VERSION='v108.0.3';
 
 // ===== THEME =====
 (function(){
@@ -1686,6 +1694,7 @@ async function s2ReadTrip(tripId){
     const newWK={
       _id:tripId,
       _groupId:t.group_id||null,
+      _createdBy:t.created_by||null,
       isQuickRound:!!(t.is_quick_round),
       name:t.name||'',
       date:t.date||'',
@@ -2764,7 +2773,7 @@ function _buildHomeTripCard(t){
     <div class="trip-card-progress"><div class="trip-card-progress-fill" style="width:${t.complete?100:pct}%"></div></div>
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div class="trip-card-players">${playerAvis}</div>
-      <div style="display:flex;align-items:center;gap:8px">${winnerLine}${(!t.group_id||(_groupCache[t.group_id]||_activeGroup)?.role==='admin')?`<button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();deleteTrip('${t.id}',this,'${t.group_id||""}')">Delete</button>`:''}</div>
+      <div style="display:flex;align-items:center;gap:8px">${winnerLine}${(!t.group_id||_amGroupAdmin(_groupCache[t.group_id]||_activeGroup))?`<button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();deleteTrip('${t.id}',this,'${t.group_id||""}')">Delete</button>`:''}</div>
     </div>
   </div>`;
 }
@@ -3098,7 +3107,7 @@ window._hmLaunchNewTrip=window._hmShowNewTripSheet;
 window.openGroupPage = function(gid){
   const g=_groupCache[gid];
   if(!g)return;
-  const isAdmin=g.role==='admin';
+  const isAdmin=_amGroupAdmin(g);
   const roleChip=isAdmin
     ?`<span class="hm-chip hm-chip-admin hm-chip-role">Admin</span>`
     :`<span class="hm-chip hm-chip-managed hm-chip-role">Member</span>`;
@@ -3122,7 +3131,8 @@ window.closeGroupPage = function(){
 async function renderGroupPage(gid){
   const g=_groupCache[gid];
   if(!g)return;
-  const isAdmin=g.role==='admin';
+  if(typeof _renderSimBadge==='function')_renderSimBadge();
+  const isAdmin=_amGroupAdmin(g);
   const body=document.getElementById('gpBody');
   body.innerHTML=`<div style="color:var(--color-text-secondary);font-size:13px;padding:1rem 0">Loading...</div>`;
 
@@ -3160,7 +3170,8 @@ async function renderGroupPage(gid){
 
   body.innerHTML=codeHtml
     +`<div class="hm-sec-label">Members (${members.length})</div>`
-    +`<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:0 14px;margin-bottom:16px">${memberRows||'<div style="padding:12px;font-size:13px;color:var(--color-text-secondary)">No members found.</div>'}</div>`
+    +`<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:0 14px;margin-bottom:10px">${memberRows||'<div style="padding:12px;font-size:13px;color:var(--color-text-secondary)">No members found.</div>'}</div>`
+    +(isAdmin?`<button class="hm-cta-soft home-elev" style="width:100%;margin-bottom:16px" onclick="window._openAddGuestSheet('${gid}')">+ Add Guest</button>`:'')
     +`<div class="hm-sec-label">Trips (${trips.length})</div>`
     +tripCards
     +`<div style="height:0.5px;background:var(--color-border-tertiary);margin:10px 0 8px"></div>`
@@ -3183,7 +3194,7 @@ window.openMemberSheet = function(gid,idx){
   if(!m)return;
   const currentUser=sbCurrentUser();
   const isMe=currentUser&&m.user_id===currentUser.id;
-  const isAdmin=g&&g.role==='admin';
+  const isAdmin=_amGroupAdmin(g);
   const isManaged=!m.user_id;
   const ini=(m.display_name||'??').split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
   const cidx=idx%AVATAR_PALETTE.length;
@@ -3238,7 +3249,7 @@ window._removeMember = async function(gid,memberId,name){
 window.openGroupSettings = function(gid){
   const g=_groupCache[gid];
   if(!g)return;
-  const isAdmin=g.role==='admin';
+  const isAdmin=_amGroupAdmin(g);
   let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><div style="font-size:16px;font-weight:600;color:var(--color-text-primary)">${g.name}</div><button style="width:28px;height:28px;border-radius:50%;background:var(--color-background-secondary);color:var(--color-text-secondary);border:none;font-size:14px;cursor:pointer" onclick="window.closeHmMemberSheet()">&#10005;</button></div>`;
   // Join code visible to all members
   html+=`<div class="hm-code-card"><div><div class="hm-code-k">Join Code</div><div class="hm-code-v">${g.join_code||'------'}</div></div><button class="hm-code-copy" onclick="window._copyGroupCode('${g.join_code||''}',this)">Copy</button></div>`;
@@ -3899,7 +3910,7 @@ function _renderTripListFromData(trips){
       <div class="trip-card-progress"><div class="trip-card-progress-fill" style="width:${t.complete?100:pct}%"></div></div>
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div class="trip-card-players">${playerAvis}</div>
-        <div style="display:flex;align-items:center;gap:8px">${winnerLine}${(!t.group_id||(_groupCache[t.group_id]||_activeGroup)?.role==='admin')?`<button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();deleteTrip('${t.id}',this,'${gid||""}')">Delete</button>`:''}</div>
+        <div style="display:flex;align-items:center;gap:8px">${winnerLine}${(!t.group_id||_amGroupAdmin(_groupCache[t.group_id]||_activeGroup))?`<button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();deleteTrip('${t.id}',this,'${gid||""}')">Delete</button>`:''}</div>
       </div>
     </div>`;
   }
@@ -4065,9 +4076,9 @@ function renderPressCfgRows(r){
   }
   return h;
 }
-function setPressesOnForRound(r,v){WK.rounds[r].pressesOn=v;if(!v){if(STATE.pressState&&STATE.pressState[r])STATE.pressState[r]=[];}autoSave();s2WriteActive();}
-function setAutoPressOnForRound(r,v){WK.rounds[r].autoPressOn=v;autoSave();s2WriteActive();}
-function setAutoPressThresholdForRound(r,v){WK.rounds[r].autoPressThreshold=v;autoSave();s2WriteActive();}
+function setPressesOnForRound(r,v){if(!canEditTrip())return;WK.rounds[r].pressesOn=v;if(!v){if(STATE.pressState&&STATE.pressState[r])STATE.pressState[r]=[];}autoSave();s2WriteActive();}
+function setAutoPressOnForRound(r,v){if(!canEditTrip())return;WK.rounds[r].autoPressOn=v;autoSave();s2WriteActive();}
+function setAutoPressThresholdForRound(r,v){if(!canEditTrip())return;WK.rounds[r].autoPressThreshold=v;autoSave();s2WriteActive();}
 function cancelLastPress(r,si,mi){
   if(!STATE.pressState||!STATE.pressState[r])return;
   const idx=STATE.pressState[r].map((p,i)=>(p.si===si&&(mi===undefined||p.mi===mi))?i:-1).filter(i=>i>=0);
@@ -4721,6 +4732,43 @@ window._twShowAddGuest=function(){
   ov.style.display='flex';
 };
 
+window._openAddGuestSheet=function(gid){
+  var _g=_groupCache[gid];
+  if(!_g||_g.role!=='admin')return;
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div style="font-size:16px;font-weight:600;color:var(--color-text-primary)">Add Guest</div>'
+    +'<button style="width:28px;height:28px;border-radius:50%;background:var(--color-background-secondary);color:var(--color-text-secondary);border:none;font-size:14px;cursor:pointer" onclick="window.closeHmMemberSheet()">&#10005;</button></div>';
+  html+='<div style="font-size:12px;color:var(--color-text-secondary);margin:0 0 14px;line-height:1.4">A player with no account. You manage their scores and handicap.</div>';
+  html+='<label style="display:block;font-size:13px;color:var(--color-text-secondary);margin:0 0 6px">Name</label>';
+  html+='<input id="agName" class="grp-in" placeholder="First Last" />';
+  html+='<label style="display:block;font-size:13px;color:var(--color-text-secondary);margin:14px 0 6px">Handicap index</label>';
+  html+='<input id="agHcp" class="grp-in" inputmode="decimal" placeholder="10" />';
+  html+='<label style="display:block;font-size:13px;color:var(--color-text-secondary);margin:14px 0 6px">Venmo (optional)</label>';
+  html+='<input id="agVenmo" class="grp-in" placeholder="@handle" />';
+  html+='<div id="grpDialogErr" class="grp-err" style="display:none"></div>';
+  html+='<button id="agSaveBtn" class="hm-sheet-btn primary" onclick="window._confirmAddGuest(\''+gid+'\')">Add to group</button>';
+  html+='<button class="hm-sheet-btn" onclick="window.closeHmMemberSheet()">Cancel</button>';
+  document.getElementById('hmMemberSheetBody').innerHTML=html;
+  document.getElementById('hmMemberSheetOverlay').style.display='flex';
+  var _n=document.getElementById('agName');if(_n)_n.focus();
+};
+window._confirmAddGuest=async function(gid){
+  var name=(document.getElementById('agName')?.value||'').trim();
+  if(!name){window._grpShowErr('Enter a name.');return;}
+  var hcpRaw=(document.getElementById('agHcp')?.value||'').trim();
+  var hcp_index=hcpRaw===''?null:parseFloat(hcpRaw);
+  var venmo=(document.getElementById('agVenmo')?.value||'').trim()||null;
+  var btn=document.getElementById('agSaveBtn');
+  if(btn){btn.disabled=true;btn.textContent='Adding...';}
+  try{
+    await window.createManagedPlayer(gid,{name,hcp_index,venmo});
+    window.closeHmMemberSheet();
+    renderGroupPage(gid);
+  }catch(e){
+    if(btn){btn.disabled=false;btn.textContent='Add to group';}
+    window._grpShowErr('Could not add guest. Please try again.');
+  }
+};
 // Shared managed player creation - callable from group settings too
 window.createManagedPlayer=async function(gid,{name,hcp_index,venmo}){
   const tok=_sbSession?.access_token||SB_KEY;
@@ -5049,8 +5097,35 @@ function gameOnAny(game){
 }
 function roundVal(key,r,tripDefault){return WK.rounds[r]?.[key]??tripDefault;}
 const OPT_PANELS=['menu','weekend','players','courses','info','htp'];
-function setOptPanel(p){STATE.optPanel=p;OPT_PANELS.forEach(n=>{const panel=document.getElementById('opt-panel-'+n);if(panel){panel.classList.remove('active');if(n===p)panel.classList.add('active');}});const back=document.getElementById('opt-back'),backT=document.getElementById('opt-back-title'),menuT=document.getElementById('opt-menu-title');const titles={weekend:(WK&&WK.isQuickRound)?'Round Setup':'Trip Setup',players:'Players',courses:'Courses',info:'Preferences',htp:'How It Works'};if(p==='menu'){if(back)back.style.display='none';if(menuT)menuT.style.display='';}else{if(back)back.style.display='';if(backT)backT.textContent=titles[p]||'';if(menuT)menuT.style.display='none';}renderOptPanel(p);}
+function setOptPanel(p){STATE.optPanel=p;OPT_PANELS.forEach(n=>{const panel=document.getElementById('opt-panel-'+n);if(panel){panel.classList.remove('active');if(n===p)panel.classList.add('active');}});const back=document.getElementById('opt-back'),backT=document.getElementById('opt-back-title'),menuT=document.getElementById('opt-menu-title');const titles={weekend:(WK&&WK.isQuickRound)?'Round Setup':'Trip Setup',players:'Players',courses:'Courses',info:'Preferences',htp:'How It Works'};if(p==='menu'){if(back)back.style.display='none';if(menuT)menuT.style.display='';}else{if(back)back.style.display='';if(backT)backT.textContent=titles[p]||'';if(menuT)menuT.style.display='none';}renderOptPanel(p);_wireSimLongPress();}
 function renderOptions(){setOptPanel('menu');}
+function _toggleSimMember(){
+  if(!WK){return;}
+  _simMember=!_simMember;
+  _renderSimBadge();
+  if(STATE&&STATE.optPanel)renderOptPanel(STATE.optPanel);
+  else renderOptPanel('menu');
+}
+function _renderSimBadge(){
+  var _b=document.getElementById('simMemberBadge');
+  if(_simMember){
+    if(!_b){_b=document.createElement('div');_b.id='simMemberBadge';_b.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99999;background:var(--color-text-primary);color:var(--color-background-primary);font-size:11px;font-weight:500;padding:4px 12px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,0.25);cursor:pointer';_b.textContent='Member view (debug) - tap to exit';_b.onclick=function(){_toggleSimMember();};document.body.appendChild(_b);}
+  }else if(_b){_b.remove();}
+}
+function _wireSimLongPress(){
+  var _el=document.getElementById('opt-menu-title');
+  if(!_el||_el._simWired)return;
+  _el._simWired=true;
+  var _t=null;
+  var _start=function(){_t=setTimeout(function(){_t=null;if(navigator.vibrate)navigator.vibrate(40);_toggleSimMember();},650);};
+  var _cancel=function(){if(_t){clearTimeout(_t);_t=null;}};
+  _el.addEventListener('touchstart',_start,{passive:true});
+  _el.addEventListener('touchend',_cancel);
+  _el.addEventListener('touchmove',_cancel,{passive:true});
+  _el.addEventListener('mousedown',_start);
+  _el.addEventListener('mouseup',_cancel);
+  _el.addEventListener('mouseleave',_cancel);
+}
 function renderOptMenu(){
   const el=document.getElementById('opt-panel-menu');if(!el)return;
   const isQ=!!(WK&&WK.isQuickRound);
@@ -5084,6 +5159,7 @@ function renderOptPanel(p){
     if(el)el.innerHTML=readonlyNotice;
     return;
   }
+  if(!canEditTrip()&&(p==='weekend'||p==='players'||p==='courses')){if(p==='weekend')renderWeekendPanel();else if(p==='players')renderPlayersPanel();else if(p==='courses')renderCoursesPanel();var _cet_el=document.getElementById('opt-panel-'+p);if(_cet_el){var _cet_banner='<div style=\"display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:2px\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"color:var(--color-text-secondary);flex-shrink:0\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" y1=\"16\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"8\" x2=\"12.01\" y2=\"8\"/></svg><span style=\"font-size:12px;color:var(--color-text-secondary);line-height:1.4\">Only the trip admin can change setup. You can still enter scores.</span></div>';_cet_el.innerHTML=_cet_banner+'<div style="opacity:0.55;pointer-events:none">'+_cet_el.innerHTML+'</div>';}return;}
   if(p==='menu')renderOptMenu();if(p==='htp')renderHtpPanel();if(p==='teams')renderTeamsPanel();if(p==='players')renderPlayersPanel();if(p==='weekend')renderWeekendPanel();if(p==='courses')renderCoursesPanel();if(p==='info')renderInfoPanel();
 }
 function renderInfoPanel(){
@@ -6202,11 +6278,11 @@ function setHammerDrop(si,slot,pIdx,r){
   teams[tIdx][pos]=pIdx;
   autoSave();s2WriteActive();_gsRefreshAfterEdit();renderHammerBox();
 }
-function setMPGamesForRound(r,g){WK.mpGamesPerRound[r]=g;if(isHeadsUp(r)){STATE.mpTeams[r]=defaultHUTeams(r);}else{const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams[r]=Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));}autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderMPHoleBox();}
-function setVegaSegsForRound(r,v){WK.vegasSegsPerRound[r]=v;const g=vegasSegForRound(r),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.vegTeams[r]=Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));autoSave();s2WriteActive();_gsRefreshAfterEdit();renderVegasBoxWrap();}
+function setMPGamesForRound(r,g){if(!canEditTrip())return;WK.mpGamesPerRound[r]=g;if(isHeadsUp(r)){STATE.mpTeams[r]=defaultHUTeams(r);}else{const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams[r]=Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));}autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderMPHoleBox();}
+function setVegaSegsForRound(r,v){if(!canEditTrip())return;WK.vegasSegsPerRound[r]=v;const g=vegasSegForRound(r),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.vegTeams[r]=Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));autoSave();s2WriteActive();_gsRefreshAfterEdit();renderVegasBoxWrap();}
 function skinsGamesForRound(r){const ov=WK.skinsGamesPerRound?.[r];return(ov>0)?ov:(WK.skinsGamesDefault>0?WK.skinsGamesDefault:mpGamesForRound(r));}
 function copyMPToSkins(r){const mpG=mpGamesForRound(r),sG=skinsGamesForRound(r),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.skinsTeams[r]=Array(sG).fill(null).map((_,si)=>{const mpSi=Math.min(si,mpG-1);return JSON.parse(JSON.stringify(STATE.mpTeams[r][mpSi]));});autoSave();s2WriteActive();_gsRefreshAfterEdit();}
-function setSkinsGamesForRound(r,v){if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=WK.rounds.map(()=>0);WK.skinsGamesPerRound[r]=v;const g=skinsGamesForRound(r),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];if(!STATE.skinsTeams)STATE.skinsTeams=[];STATE.skinsTeams[r]=Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));sanitizeTeams(r);autoSave();s2WriteActive();_gsRefreshAfterEdit();}
+function setSkinsGamesForRound(r,v){if(!canEditTrip())return;if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=WK.rounds.map(()=>0);WK.skinsGamesPerRound[r]=v;const g=skinsGamesForRound(r),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];if(!STATE.skinsTeams)STATE.skinsTeams=[];STATE.skinsTeams[r]=Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));sanitizeTeams(r);autoSave();s2WriteActive();_gsRefreshAfterEdit();}
 
 function wolfOrderForRound(r){return(STATE.wolfOrder&&STATE.wolfOrder[r])||[0,1,2,3];}
 function wolfPicksForRound(r){return(STATE.wolfPicks&&STATE.wolfPicks[r])||Array(18).fill(null);}
@@ -6531,14 +6607,14 @@ function renderWolfRound(){
 
 function renderTeamsPanel(){/* Stage 3: Game Setup tab eliminated. Scoring config + Weekend bet moved into renderWeekendPanel(). Per-game setup is migrating into the Games tab. This stub remains so any stray legacy caller does not throw. */}
 function setDropSkins(gameIdx,slot,pIdx,roundIdx){if(isReadOnly)return;if(!STATE.skinsTeams)return;const teams=STATE.skinsTeams[roundIdx][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();}
-function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span>Active players</span></div>`;WK.players.forEach((p,i)=>{const eff=effHdcp(i,r);html+=`<div class="setup-row"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><input class="inline-edit" value="${p.name}" style="flex:1;min-width:60px" onchange="WK.players[${i}].name=this.value;WK.players[${i}].ini=this.value.substring(0,2).toUpperCase();renderPlayersPanel();renderScorecard();renderBanner();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin:0 3px">idx</span><input class="ie-num" type="text" inputmode="decimal" value="${sbHcpDisplay(p.idx)}" style="width:70px" onchange="WK.players[${i}].idx=idxFromInput(this.value,0);renderPlayersPanel();renderScorecard();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px;white-space:nowrap">→ ${chDisplay(eff)}</span>${WK.players.length>2?`<button class="btn-danger" onclick="removePlayer(${i})">✕</button>`:''}</div>`;});if(WK.players.length<12){html+=`<div style="border-top:0.5px solid var(--color-border-tertiary)"><div id="addPlayerRow" style="display:none;padding:10px 12px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><input class="text-input" id="apFirst" placeholder="First" style="flex:2;font-size:13px;padding:6px 8px"/><input class="text-input" id="apLast" placeholder="Last" style="flex:2;font-size:13px;padding:6px 8px"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0">Hdcp</span><input class="ie-num" id="apIdx" type="text" inputmode="decimal" placeholder="10" style="width:58px;flex-shrink:0"/></div><div style="display:flex;gap:8px"><button class="btn-primary" style="font-size:12px;padding:5px 12px" onclick="confirmAddPlayer()">Save</button><button class="btn-secondary" style="font-size:12px;padding:5px 12px" onclick="toggleAddPlayerRow()">Cancel</button></div></div><button class="btn-sm" id="addPlayerToggleBtn" onclick="toggleAddPlayerRow()" style="margin:8px 12px">+ Add player</button></div>`;}html+=`</div>`;
+function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span>Active players</span></div>`;WK.players.forEach((p,i)=>{const eff=effHdcp(i,r);html+=`<div class="setup-row"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><input class="inline-edit" value="${p.name}" style="flex:1;min-width:60px" onchange="if(!canEditTrip())return;WK.players[${i}].name=this.value;WK.players[${i}].ini=this.value.substring(0,2).toUpperCase();renderPlayersPanel();renderScorecard();renderBanner();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin:0 3px">idx</span><input class="ie-num" type="text" inputmode="decimal" value="${sbHcpDisplay(p.idx)}" style="width:70px" onchange="if(!canEditTrip())return;WK.players[${i}].idx=idxFromInput(this.value,0);renderPlayersPanel();renderScorecard();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px;white-space:nowrap">→ ${chDisplay(eff)}</span>${WK.players.length>2?`<button class="btn-danger" onclick="removePlayer(${i})">✕</button>`:''}</div>`;});if(WK.players.length<12){html+=`<div style="border-top:0.5px solid var(--color-border-tertiary)"><div id="addPlayerRow" style="display:none;padding:10px 12px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><input class="text-input" id="apFirst" placeholder="First" style="flex:2;font-size:13px;padding:6px 8px"/><input class="text-input" id="apLast" placeholder="Last" style="flex:2;font-size:13px;padding:6px 8px"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0">Hdcp</span><input class="ie-num" id="apIdx" type="text" inputmode="decimal" placeholder="10" style="width:58px;flex-shrink:0"/></div><div style="display:flex;gap:8px"><button class="btn-primary" style="font-size:12px;padding:5px 12px" onclick="confirmAddPlayer()">Save</button><button class="btn-secondary" style="font-size:12px;padding:5px 12px" onclick="toggleAddPlayerRow()">Cancel</button></div></div><button class="btn-sm" id="addPlayerToggleBtn" onclick="toggleAddPlayerRow()" style="margin:8px 12px">+ Add player</button></div>`;}html+=`</div>`;
     document.getElementById('opt-panel-players').innerHTML=html;
 }
 function toggleEditPanel(eid,btnId){const panel=document.getElementById(eid);const btn=document.getElementById(btnId);const display=document.getElementById(eid+'_display');if(!panel)return;const isOpen=panel.style.display!=='none';panel.style.display=isOpen?'none':'block';if(display)display.style.display=isOpen?'flex':'none';if(btn)btn.style.display=isOpen?'inline-block':'none';if(isOpen){const mc=eid.match(/^ce_(.+)$/);if(mc){const cname=mc[1].replace(/_/g,' ');if(CATALOG[cname])saveCourse(cname);}renderPlayersPanel();}}
 function toggleAddPlayerRow(){const row=document.getElementById('addPlayerRow');const btn=document.getElementById('addPlayerToggleBtn');if(!row)return;const opening=row.style.display==='none';row.style.display=opening?'block':'none';if(btn)btn.style.display=opening?'none':'inline-block';if(opening)setTimeout(function(){var el=document.getElementById('apFirst');if(el)el.focus();},50);}
-function confirmAddPlayer(){var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=idxFromInput(document.getElementById('apIdx')?document.getElementById('apIdx').value:'',10);if(!first){alert('Enter a first name.');return;}if(WK.players.length>=12)return;var c=pickColor();var newP={name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};var allPlayers=WK.players.concat([newP]);resolveDisplayNames(allPlayers);WK.players.push(newP);WK.rounds.forEach(function(_,r){STATE.scores[r].forEach(function(h){h.push(null);});sanitizeTeams(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();if(typeof renderGamesTab==='function'&&document.getElementById('view-games')&&document.getElementById('view-games').style.display!=='none')renderGamesTab();autoSave();}
-function addPlayer(){if(WK.players.length>=12)return;const c=pickColor(),i=WK.players.length;WK.players.push({name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));sanitizeTeams(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();}
-function removePlayer(idx){if(WK.players.length<=2){alert('Need at least 2 players.');return;}WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=fixTeams(STATE.mpTeams);STATE.vegTeams=fixTeams(STATE.vegTeams);if(STATE.skinsTeams)STATE.skinsTeams=fixTeams(STATE.skinsTeams);if(STATE.hammerTeams)STATE.hammerTeams=fixTeams(STATE.hammerTeams);if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';WK.rounds.forEach((_,r)=>sanitizeTeams(r));renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
+function confirmAddPlayer(){if(!canEditTrip())return;var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=idxFromInput(document.getElementById('apIdx')?document.getElementById('apIdx').value:'',10);if(!first){alert('Enter a first name.');return;}if(WK.players.length>=12)return;var c=pickColor();var newP={name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};var allPlayers=WK.players.concat([newP]);resolveDisplayNames(allPlayers);WK.players.push(newP);WK.rounds.forEach(function(_,r){STATE.scores[r].forEach(function(h){h.push(null);});sanitizeTeams(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();if(typeof renderGamesTab==='function'&&document.getElementById('view-games')&&document.getElementById('view-games').style.display!=='none')renderGamesTab();autoSave();}
+function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=12)return;const c=pickColor(),i=WK.players.length;WK.players.push({name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));sanitizeTeams(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();}
+function removePlayer(idx){if(!canEditTrip())return;if(WK.players.length<=2){alert('Need at least 2 players.');return;}WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=fixTeams(STATE.mpTeams);STATE.vegTeams=fixTeams(STATE.vegTeams);if(STATE.skinsTeams)STATE.skinsTeams=fixTeams(STATE.skinsTeams);if(STATE.hammerTeams)STATE.hammerTeams=fixTeams(STATE.hammerTeams);if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';WK.rounds.forEach((_,r)=>sanitizeTeams(r));renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
 function renderWeekendPanel(){
   // For quick rounds, keep WK.name in sync with the course display name
   if(WK&&WK.isQuickRound&&WK.rounds&&WK.rounds[0]){
@@ -6604,7 +6680,7 @@ window._wkSetCourse=function(ri,cn){
   }
   s2MarkDirty(['trip']);autoSave();s2WriteActive();renderWeekendPanel();
 };
-function addRound(){const cn=document.getElementById('newRoundCourse')?.value||Object.keys(CATALOG)[0];WK.rounds.push({courseName:cn,course:CATALOG[cn]});const nP=WK.players.length;STATE.scores.push(Array(18).fill(null).map(()=>Array(nP).fill(null)));const g=WK.mpGamesDefault;WK.mpGamesPerRound.push(g);WK.vegasSegsPerRound.push(WK.vegasSegsDefault);if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=[];WK.skinsGamesPerRound.push(0);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams.push(Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));const vg=vegasSegForRound(WK.rounds.length-1);STATE.vegTeams.push(Array(vg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));if(!STATE.hammerTeams)STATE.hammerTeams=[];STATE.hammerTeams.push(defaultHammerTeams(WK.rounds.length-1));if(!STATE.hammerState)STATE.hammerState=[];STATE.hammerState.push(Array(18).fill(null));if(!WK.hammerSegsPerRound)WK.hammerSegsPerRound=[];WK.hammerSegsPerRound.push(WK.hammerSegsDefault||1);if(!STATE.pressState)STATE.pressState=[];STATE.pressState.push([]);if(!STATE.skinsTeams)STATE.skinsTeams=[];const sg=skinsGamesForRound(WK.rounds.length-1);STATE.skinsTeams.push(Array(sg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));renderWeekendPanel();}
+function addRound(){if(!canEditTrip())return;const cn=document.getElementById('newRoundCourse')?.value||Object.keys(CATALOG)[0];WK.rounds.push({courseName:cn,course:CATALOG[cn]});const nP=WK.players.length;STATE.scores.push(Array(18).fill(null).map(()=>Array(nP).fill(null)));const g=WK.mpGamesDefault;WK.mpGamesPerRound.push(g);WK.vegasSegsPerRound.push(WK.vegasSegsDefault);if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=[];WK.skinsGamesPerRound.push(0);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams.push(Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));const vg=vegasSegForRound(WK.rounds.length-1);STATE.vegTeams.push(Array(vg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));if(!STATE.hammerTeams)STATE.hammerTeams=[];STATE.hammerTeams.push(defaultHammerTeams(WK.rounds.length-1));if(!STATE.hammerState)STATE.hammerState=[];STATE.hammerState.push(Array(18).fill(null));if(!WK.hammerSegsPerRound)WK.hammerSegsPerRound=[];WK.hammerSegsPerRound.push(WK.hammerSegsDefault||1);if(!STATE.pressState)STATE.pressState=[];STATE.pressState.push([]);if(!STATE.skinsTeams)STATE.skinsTeams=[];const sg=skinsGamesForRound(WK.rounds.length-1);STATE.skinsTeams.push(Array(sg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));renderWeekendPanel();}
 function launchE9(){
   _e9State={step:1,cn:null,nineHole:null,inStandings:false,tee:null,pendingCn:null};
   _showE9Modal();
@@ -7567,6 +7643,7 @@ function _gsSetOn(def,r,on){
   if(on&&def.id==='hammer'){if(!STATE.hammerTeams)STATE.hammerTeams=WK.rounds.map((_,ri)=>defaultHammerTeams(ri));if(!STATE.hammerTeams[r])STATE.hammerTeams[r]=defaultHammerTeams(r);}
 }
 window._gsOpenAddPicker=function(){
+  if(!canEditTrip())return;
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
   const inactive=GAME_DEFS.filter(def=>!_gsIsOn(def,r));
   const list=document.getElementById('gsAddPickerList');
@@ -7579,6 +7656,7 @@ window._gsOpenAddPicker=function(){
 };
 window._gsCloseAddPicker=function(){document.getElementById('gsAddPicker').classList.remove('visible');};
 window._gsAddGame=function(gameId){
+  if(!canEditTrip())return;
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
   const def=GAME_DEFS.find(d=>d.id===gameId);
   if(!def)return;
@@ -7591,6 +7669,7 @@ window._gsAddGame=function(gameId){
   window._gsOpenSetupModal(gameId);
 };
 window._gsOpenSetupModal=function(gameId){
+  if(!canEditTrip())return;
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
   const def=GAME_DEFS.find(d=>d.id===gameId);
   if(!def)return;
@@ -7618,6 +7697,7 @@ window._gsCloseSetupModal=function(){
   renderGamesContent();
 };
 window._gsRemoveGame=function(gameId){
+  if(!canEditTrip())return;
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
   const def=GAME_DEFS.find(d=>d.id===gameId);
   if(!def)return;
@@ -7711,7 +7791,7 @@ function _gsVegasSetupBody(r){
   const _opTwo=_dblOff?_opDim:_opFull,_peTwo=_dblOff?_peNone:_peAuto;
   const _chkDbl=_vd?'checked':'',_chkTwo=_vt?'checked':'';
   h+=`<div class="setup-row" id="vfp-row-dbl-${r}" style="opacity:${_opDbl};pointer-events:${_peDbl};"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Double on eagle<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Eagle flips and doubles the hole</span></span><label class="toggle"><input type="checkbox" ${_chkDbl} onchange="_setVegasDouble(${r},this.checked)"><span class="toggle-slider"></span></label></div>`;
-  h+=`<div class="setup-row" id="vfp-row-two-${r}" style="opacity:${_opTwo};pointer-events:${_peTwo};"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Two birdies = eagle<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Two net birdies on a team count as a double</span></span><label class="toggle"><input type="checkbox" ${_chkTwo} onchange="const v=this.checked;WK.rounds[${r}].vegasTwoBird=v;autoSave();s2WriteActive()"><span class="toggle-slider"></span></label></div>`;
+  h+=`<div class="setup-row" id="vfp-row-two-${r}" style="opacity:${_opTwo};pointer-events:${_peTwo};"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Two birdies = eagle<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Two net birdies on a team count as a double</span></span><label class="toggle"><input type="checkbox" ${_chkTwo} onchange="if(!canEditTrip())return;const v=this.checked;WK.rounds[${r}].vegasTwoBird=v;autoSave();s2WriteActive()"><span class="toggle-slider"></span></label></div>`;
   setTimeout(()=>_vegasFlipPillTo(r),0);
   return h;
 }
@@ -7782,8 +7862,12 @@ function _gsHammerSetupBody(r){
 }
 function _gsSetupPlaceholder(def,r){
   const isOpen=!!(STATE.gamesSetupOpen&&STATE.gamesSetupOpen[def.id]);
+  const _locked=!canEditTrip();
+  const _note=_locked?`<div class="gs-setup-locked-note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-secondary);flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span style="font-size:12px;color:var(--color-text-secondary);line-height:1.4">Only the trip admin can change setup. You can still adjust teams.</span></div>`:'';
+  const _removeBtn=_locked?'':`<button class="gs-remove-btn" onclick="window._gsRemoveGame('${def.id}')">Remove ${def.label} from ${def.tripLevel?'trip':'this round'}</button>`;
+  const _bodyCls=_locked?'gs-setup-body gs-setup-locked':'gs-setup-body';
   return `<button class="gs-setup-toggle${isOpen?' open':''}" onclick="window._gsToggleSetup('${def.id}')"><span>Setup</span><span class="gs-setup-chevron">&#9660;</span></button>`+
-    (isOpen?`<div class="gs-setup-body">${_gsSetupBody(def,r)}<button class="gs-remove-btn" onclick="window._gsRemoveGame('${def.id}')">Remove ${def.label} from ${def.tripLevel?'trip':'this round'}</button></div>`:'');
+    (isOpen?`<div class="${_bodyCls}">${_note}${_gsSetupBody(def,r)}${_removeBtn}</div>`:'');
 }
 function _gsSnakeSetupBody(r){
   const growth=WK.snakeGrowth||'double';
@@ -7804,14 +7888,14 @@ function renderGamesTab(){
   const activeGames=GAME_DEFS.filter(def=>_gsIsOn(def,r));
   const gameSel=document.getElementById('gamesGameSel');
   if(activeGames.length===0){
-    gameSel.innerHTML='<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+ Add Game</button>';
-    document.getElementById('gamesContent').innerHTML='<div class="gs-empty-state">No games yet for this round. Tap + Add Game above to set one up.</div>';
+    gameSel.innerHTML=canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+ Add Game</button>':'';
+    document.getElementById('gamesContent').innerHTML='<div class="gs-empty-state">'+(canEditTrip()?'No games yet for this round. Tap + Add Game above to set one up.':'No games set up for this round yet.')+'</div>';
     return;
   }
   if(!STATE.gamesViewGame||!activeGames.find(g=>g.id===STATE.gamesViewGame)){
     STATE.gamesViewGame=activeGames[0].id;
   }
-  gameSel.innerHTML=activeGames.map(def=>`<button class="game-pill${def.id===STATE.gamesViewGame?' active':''}" onclick="switchGamesGame('${def.id}')">${def.label}</button>`).join('')+'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+</button>';
+  gameSel.innerHTML=activeGames.map(def=>`<button class="game-pill${def.id===STATE.gamesViewGame?' active':''}" onclick="switchGamesGame('${def.id}')">${def.label}</button>`).join('')+(canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+</button>':'');
   renderGamesContent();
 }
 function renderGamesContent(){
@@ -9011,6 +9095,7 @@ function _vegasFlipPillTo(r){
   if(first){void pill.offsetWidth;pill.style.transition='';}
 }
 function _setVegasFlip(r,val){
+  if(!canEditTrip())return;
   WK.rounds[r].vegasFlip=val;
   ['birdie','eagle','off'].forEach(v=>{
     const b=document.getElementById('vfp-'+v+'-'+r);
@@ -9027,6 +9112,7 @@ function _setVegasFlip(r,val){
   autoSave();s2WriteActive();
 }
 function _setVegasDouble(r,val){
+  if(!canEditTrip())return;
   WK.rounds[r].vegasDouble=val;
   const flipOff=roundVal('vegasFlip',r,WK.vegasFlip||'birdie')==='off';
   const dblOff=flipOff||!val;
