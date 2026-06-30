@@ -1310,9 +1310,11 @@ function pickColor(){const used=WK?WK.players.map(p=>p.bg):[];const avail=AVATAR
 const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point','Mid Pines','Pine Needles'];
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
 var _simMember=false;
+var _simRunner=false;
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
-function canEditTrip(){if(!WK)return true;if(_simMember)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(!WK._groupId)return true;return false;}
-const APP_VERSION='v108.0.3';
+function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
+function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
+const APP_VERSION='v109.0.1';
 
 // ===== THEME =====
 (function(){
@@ -1423,7 +1425,8 @@ async function s2WriteActive(){
         region:WK.region||'',
         is_quick_round:!!WK.isQuickRound,
         group_id:WK._groupId||null,
-        created_by:sbCurrentUser()?.id||null,
+        created_by:WK._createdBy||sbCurrentUser()?.id||null,
+        trip_admins:WK._tripAdmins||[],
         buy_in:WK.buyIn||0,
         hdcp_pct:WK.hdcpPct||0.8,
         pot_method:WK.potMethod||'netstroke',
@@ -1695,6 +1698,7 @@ async function s2ReadTrip(tripId){
       _id:tripId,
       _groupId:t.group_id||null,
       _createdBy:t.created_by||null,
+      _tripAdmins:Array.isArray(t.trip_admins)?t.trip_admins:[],
       isQuickRound:!!(t.is_quick_round),
       name:t.name||'',
       date:t.date||'',
@@ -3826,6 +3830,7 @@ function _qrLaunchRound(){
 
   // Stamp group_id directly onto WK before first save - do not rely on autoSave side effect
   if(window._pendingGroupId){WK._groupId=window._pendingGroupId;window._pendingGroupId=null;}
+  WK._createdBy=sbCurrentUser()?.id||null;
   isReadOnly=false;viewingTripId=null;_isQuickRoundWizard=false;
   window._qrNineHole=nineHole;
   window._qrWasQR=true;
@@ -4862,6 +4867,7 @@ function _twLaunch(){
     WK._groupId=window._pendingGroupId;
     window._pendingGroupId=null;
   }
+  WK._createdBy=sbCurrentUser()?.id||null;
   isReadOnly=false;viewingTripId=null;
   document.getElementById('wizardScreen').style.display='none';
   initState(s.netOffLow);
@@ -5101,15 +5107,19 @@ function setOptPanel(p){STATE.optPanel=p;OPT_PANELS.forEach(n=>{const panel=docu
 function renderOptions(){setOptPanel('menu');}
 function _toggleSimMember(){
   if(!WK){return;}
-  _simMember=!_simMember;
+  if(!_simMember&&!_simRunner){_simMember=true;_simRunner=false;}
+  else if(_simMember&&!_simRunner){_simMember=false;_simRunner=true;}
+  else{_simMember=false;_simRunner=false;}
   _renderSimBadge();
   if(STATE&&STATE.optPanel)renderOptPanel(STATE.optPanel);
   else renderOptPanel('menu');
 }
 function _renderSimBadge(){
   var _b=document.getElementById('simMemberBadge');
-  if(_simMember){
-    if(!_b){_b=document.createElement('div');_b.id='simMemberBadge';_b.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99999;background:var(--color-text-primary);color:var(--color-background-primary);font-size:11px;font-weight:500;padding:4px 12px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,0.25);cursor:pointer';_b.textContent='Member view (debug) - tap to exit';_b.onclick=function(){_toggleSimMember();};document.body.appendChild(_b);}
+  if(_simMember||_simRunner){
+    var _label=_simRunner?'Trip admin view (debug) - tap to cycle':'Member view (debug) - tap to cycle';
+    if(!_b){_b=document.createElement('div');_b.id='simMemberBadge';_b.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99999;background:var(--color-text-primary);color:var(--color-background-primary);font-size:11px;font-weight:500;padding:4px 12px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,0.25);cursor:pointer';_b.onclick=function(){_toggleSimMember();};document.body.appendChild(_b);}
+    _b.textContent=_label;
   }else if(_b){_b.remove();}
 }
 function _wireSimLongPress(){
@@ -5159,7 +5169,7 @@ function renderOptPanel(p){
     if(el)el.innerHTML=readonlyNotice;
     return;
   }
-  if(!canEditTrip()&&(p==='weekend'||p==='players'||p==='courses')){if(p==='weekend')renderWeekendPanel();else if(p==='players')renderPlayersPanel();else if(p==='courses')renderCoursesPanel();var _cet_el=document.getElementById('opt-panel-'+p);if(_cet_el){var _cet_banner='<div style=\"display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:2px\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"color:var(--color-text-secondary);flex-shrink:0\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" y1=\"16\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"8\" x2=\"12.01\" y2=\"8\"/></svg><span style=\"font-size:12px;color:var(--color-text-secondary);line-height:1.4\">Only the trip admin can change setup. You can still enter scores.</span></div>';_cet_el.innerHTML=_cet_banner+'<div style="opacity:0.55;pointer-events:none">'+_cet_el.innerHTML+'</div>';}return;}
+  if(!canEditTrip()&&(p==='weekend'||p==='players'||p==='courses')){if(p==='weekend')renderWeekendPanel();else if(p==='players')renderPlayersPanel();else if(p==='courses')renderCoursesPanel();var _cet_el=document.getElementById('opt-panel-'+p);if(_cet_el){var _cet_banner='<div style=\"display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:2px\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"color:var(--color-text-secondary);flex-shrink:0\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" y1=\"16\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"8\" x2=\"12.01\" y2=\"8\"/></svg><span style=\"font-size:12px;color:var(--color-text-secondary);line-height:1.4\">No edit access for this trip. You can still enter scores.</span></div>';_cet_el.innerHTML=_cet_banner+'<div style="opacity:0.55;pointer-events:none">'+_cet_el.innerHTML+'</div>';}return;}
   if(p==='menu')renderOptMenu();if(p==='htp')renderHtpPanel();if(p==='teams')renderTeamsPanel();if(p==='players')renderPlayersPanel();if(p==='weekend')renderWeekendPanel();if(p==='courses')renderCoursesPanel();if(p==='info')renderInfoPanel();
 }
 function renderInfoPanel(){
@@ -6615,6 +6625,37 @@ function toggleAddPlayerRow(){const row=document.getElementById('addPlayerRow');
 function confirmAddPlayer(){if(!canEditTrip())return;var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=idxFromInput(document.getElementById('apIdx')?document.getElementById('apIdx').value:'',10);if(!first){alert('Enter a first name.');return;}if(WK.players.length>=12)return;var c=pickColor();var newP={name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};var allPlayers=WK.players.concat([newP]);resolveDisplayNames(allPlayers);WK.players.push(newP);WK.rounds.forEach(function(_,r){STATE.scores[r].forEach(function(h){h.push(null);});sanitizeTeams(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();if(typeof renderGamesTab==='function'&&document.getElementById('view-games')&&document.getElementById('view-games').style.display!=='none')renderGamesTab();autoSave();}
 function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=12)return;const c=pickColor(),i=WK.players.length;WK.players.push({name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));sanitizeTeams(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();}
 function removePlayer(idx){if(!canEditTrip())return;if(WK.players.length<=2){alert('Need at least 2 players.');return;}WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=fixTeams(STATE.mpTeams);STATE.vegTeams=fixTeams(STATE.vegTeams);if(STATE.skinsTeams)STATE.skinsTeams=fixTeams(STATE.skinsTeams);if(STATE.hammerTeams)STATE.hammerTeams=fixTeams(STATE.hammerTeams);if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';WK.rounds.forEach((_,r)=>sanitizeTeams(r));renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
+// Trip admin management handlers
+var _tripAdminPickerMembers=[];
+window._tripAdminAdd=function(idx){
+  if(!canManageRunners())return;
+  var m=_tripAdminPickerMembers[idx];
+  if(!m||!m.user_id)return;
+  var admins=WK._tripAdmins||[];
+  if(admins.indexOf(m.user_id)>=0)return;
+  admins=admins.concat([m.user_id]);
+  WK._tripAdmins=admins;
+  _tripAdminSave();
+  renderWeekendPanel();
+};
+window._tripAdminRemove=function(uid){
+  if(!canManageRunners())return;
+  WK._tripAdmins=(WK._tripAdmins||[]).filter(function(x){return x!==uid;});
+  _tripAdminSave();
+  renderWeekendPanel();
+};
+async function _tripAdminSave(){
+  if(!canManageRunners())return;
+  var tripId=s2TripId();if(!tripId)return;
+  try{
+    var tok=_sbSession?.access_token||SB_KEY;
+    await fetch(SB_URL+'/rest/v1/trips?trip_id=eq.'+encodeURIComponent(tripId),{
+      method:'PATCH',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({trip_admins:WK._tripAdmins||[]})
+    });
+  }catch(e){console.warn('[_tripAdminSave] failed',e);}
+}
 function renderWeekendPanel(){
   // For quick rounds, keep WK.name in sync with the course display name
   if(WK&&WK.isQuickRound&&WK.rounds&&WK.rounds[0]){
@@ -6663,6 +6704,80 @@ function renderWeekendPanel(){
   // --- Weekend bet ---
   html+=(WK.isQuickRound?'':(`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Weekend bet</div><div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Buy-in per player</span>$<input class="ie-num" type="number" value="${WK.buyIn}" style="width:90px" onchange="WK.buyIn=parseFloat(this.value);autoSave()"/></div><div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Weekend winner</span><select class="ie-sel" onchange="WK.potMethod=this.value;renderWeekendPanel();renderBoard();renderMoney()"><option value="netstroke"${(WK.potMethod||'netstroke')==='netstroke'?' selected':''}>Net stroke play</option><option value="matchplay"${WK.potMethod==='matchplay'?' selected':''}>Match play points</option></select></div></div>`));
 
+  // --- Trip admins (visible only to canManageRunners) ---
+  if(canManageRunners()&&WK&&WK._groupId){
+    var _gid=WK._groupId;
+    var _grpM=(_groupCache[_gid]&&_groupCache[_gid]._members)||[];
+    var _tripAdmins=WK._tripAdmins||[];
+    var _creatorUid=WK._createdBy||'';
+    // identify group admin(s)
+    var _grpAdmins=_grpM.filter(function(m){return m.role==='admin'&&m.user_id;});
+    var _grpAdminUids=_grpAdmins.map(function(m){return m.user_id;});
+    var _creatorIsAdmin=_grpAdminUids.indexOf(_creatorUid)>=0;
+    var _adminRows='';
+    // shared row fragment builder (no onclick — just display)
+    function _taStaticRow(ini,name,tag){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'
+        +'<div style="width:28px;height:28px;border-radius:50%;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(ini||'').substring(0,2).toUpperCase()+'</div>'
+        +'<span style="flex:1;font-size:13px;color:var(--color-text-primary)">'+name+'</span>'
+        +'<span style="font-size:11px;color:var(--color-text-secondary);background:var(--color-background-secondary);padding:2px 7px;border-radius:999px">'+tag+'</span>'
+        +'</div>';
+    }
+    // group admin row(s) first — no remove button
+    _grpAdmins.forEach(function(m){
+      var _tag=m.user_id===_creatorUid?'Group admin + Creator':'Group admin';
+      _adminRows+=_taStaticRow(m.display_name||'Admin',m.display_name||'Admin',_tag);
+    });
+    // creator row only if not already shown as group admin
+    if(_creatorUid&&!_creatorIsAdmin){
+      var _cm=_grpM.find(function(m){return m.user_id===_creatorUid;});
+      var _cname=_cm?(_cm.display_name||'Trip creator'):'Trip creator';
+      _adminRows+=_taStaticRow(_cname,_cname,'Creator');
+    }
+    // assigned trip admins — pre-compute safeUid outside string, use index-stash for remove onclick
+    var _grpAdminUids=_grpAdmins.map(function(m){return m.user_id;});
+    _tripAdmins.forEach(function(uid){
+      if(uid===_creatorUid||_grpAdminUids.indexOf(uid)>=0)return;
+      var _rm=_grpM.find(function(m){return m.user_id===uid;});
+      var _rname=_rm?(_rm.display_name||'Member'):'Member';
+      var _rini=(_rname).substring(0,2).toUpperCase();
+      var _safeUid=uid.replace(/'/g,'');
+      _adminRows+='<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'
+        +'<div style="width:28px;height:28px;border-radius:50%;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+_rini+'</div>'
+        +'<span style="flex:1;font-size:13px;color:var(--color-text-primary)">'+_rname+'</span>'
+        +'<span style="font-size:11px;color:var(--color-text-secondary);background:var(--color-background-secondary);padding:2px 7px;border-radius:999px">Trip admin</span>'
+        +'<button onclick="window._tripAdminRemove(\''+_safeUid+'\')" style="background:transparent;border:none;color:#E53935;font-size:18px;line-height:1;cursor:pointer;padding:0 2px;flex-shrink:0">&times;</button>'
+        +'</div>';
+    });
+    // picker: authenticated, not in any authority role
+    var _excludeUids=_grpAdminUids.concat(_tripAdmins).concat(_creatorUid?[_creatorUid]:[]);
+    _tripAdminPickerMembers=_grpM.filter(function(m){
+      return m.user_id&&_excludeUids.indexOf(m.user_id)<0;
+    });
+    var _managedMembers=_grpM.filter(function(m){return !m.user_id;});
+    var _pickerRows='';
+    _tripAdminPickerMembers.forEach(function(m,i){
+      var _pname=m.display_name||'Member';
+      var _pini=(_pname).substring(0,2).toUpperCase();
+      _pickerRows+='<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'
+        +'<div style="width:28px;height:28px;border-radius:50%;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+_pini+'</div>'
+        +'<span style="flex:1;font-size:13px;color:var(--color-text-primary)">'+_pname+'</span>'
+        +'<button onclick="window._tripAdminAdd('+i+')" style="background:transparent;border:0.5px solid #1D9E75;color:#1D9E75;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;cursor:pointer">Add</button>'
+        +'</div>';
+    });
+    _managedMembers.forEach(function(m){
+      var _pname=m.display_name||'Guest';
+      var _pini=(_pname).substring(0,2).toUpperCase();
+      _pickerRows+='<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary);opacity:0.45">'
+        +'<div style="width:28px;height:28px;border-radius:50%;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+_pini+'</div>'
+        +'<div style="flex:1"><div style="font-size:13px;color:var(--color-text-primary)">'+_pname+'</div>'
+        +'<div style="font-size:11px;color:var(--color-text-secondary)">needs account to be a Trip admin</div></div>'
+        +'</div>';
+    });
+    var _addCard=(_pickerRows||_managedMembers.length)?
+      '<div class="section-card" style="margin-top:4px"><div class="section-hd">Add a Trip admin</div>'+_pickerRows+'</div>':'';
+    html+='<div class="section-card" style="margin-top:14px"><div class="section-hd">Trip admins</div>'+_adminRows+'</div>'+_addCard;
+  }
   document.getElementById('opt-panel-weekend').innerHTML=html;
 }
 window._wkSetTee=function(ri,val){var _v=val.split('|');window._gcaSetTee(ri,_v[0],_v[1]);renderWeekendPanel();}
@@ -7863,7 +7978,7 @@ function _gsHammerSetupBody(r){
 function _gsSetupPlaceholder(def,r){
   const isOpen=!!(STATE.gamesSetupOpen&&STATE.gamesSetupOpen[def.id]);
   const _locked=!canEditTrip();
-  const _note=_locked?`<div class="gs-setup-locked-note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-secondary);flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span style="font-size:12px;color:var(--color-text-secondary);line-height:1.4">Only the trip admin can change setup. You can still adjust teams.</span></div>`:'';
+  const _note=_locked?`<div class="gs-setup-locked-note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-secondary);flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span style="font-size:12px;color:var(--color-text-secondary);line-height:1.4">You don't have edit access for this trip. You can still adjust teams.</span></div>`:'';
   const _removeBtn=_locked?'':`<button class="gs-remove-btn" onclick="window._gsRemoveGame('${def.id}')">Remove ${def.label} from ${def.tripLevel?'trip':'this round'}</button>`;
   const _bodyCls=_locked?'gs-setup-body gs-setup-locked':'gs-setup-body';
   return `<button class="gs-setup-toggle${isOpen?' open':''}" onclick="window._gsToggleSetup('${def.id}')"><span>Setup</span><span class="gs-setup-chevron">&#9660;</span></button>`+
