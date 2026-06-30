@@ -1311,10 +1311,25 @@ const DEFAULT_COURSES=['Turtle Point','Osprey Point','Ocean Course','Oak Point',
 let WK=null,STATE=null,wizStep=1,isReadOnly=false,viewingTripId=null,editExpId=null,_isQuickRoundWizard=false;
 var _simMember=false;
 var _simRunner=false;
+var _simViewer=false;
+function _pencilActive(){return !!(WK&&WK._groupId);}
+function _pencilLockFor(r){if(!WK)return null;var arr=WK._pencilLock||[];return arr[r]||null;}
+function _pencilViewerLocked(r){if(!_pencilActive())return false;return !holdsPencil(r);}
+function _updateActionRowGameLock(){
+  var r=STATE.currentRound;
+  var locked=_pencilViewerLocked(r);
+  ['hammerBoxWrap','wolfBoxWrap','snakeEntryWrap','skinsBoxWrap','razzleBoxWrap','mpBoxWrap','vegasBoxWrap'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.style.cssText=locked?'opacity:0.5;pointer-events:none':'';
+  });
+}
+function pencilHolder(r){var lk=_pencilLockFor(r);return lk?lk.uid:null;}
+function holdsPencil(r){if(_simViewer)return false;var lk=_pencilLockFor(r);if(!lk)return false;var _uid=sbCurrentUser()?.id;return !!(_uid&&lk.uid===_uid);}
+function pencilUnheld(r){if(!_pencilActive())return false;if(_simViewer)return false;return !_pencilLockFor(r);}
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v109.0.1';
+const APP_VERSION='v110.0.2';
 
 // ===== THEME =====
 (function(){
@@ -1699,6 +1714,7 @@ async function s2ReadTrip(tripId){
       _groupId:t.group_id||null,
       _createdBy:t.created_by||null,
       _tripAdmins:Array.isArray(t.trip_admins)?t.trip_admins:[],
+      _pencilLock:Array.isArray(t.pencil_lock)?t.pencil_lock:[],
       isQuickRound:!!(t.is_quick_round),
       name:t.name||'',
       date:t.date||'',
@@ -4938,11 +4954,32 @@ function _updateActionRow(){
   const isCard=_scViewMode==='card';
   if(isCard){
     row.className='visible cardmode';
+    row.style.gridTemplateColumns='';
     row.innerHTML='<span class="act-card-lbl">Scorecard</span><button class="act-tog" onclick="window._actToggleView()" title="Hole view"><i class="ti ti-cards"></i></button>';
     return;
   }
   row.className='visible';
-  row.innerHTML='<button class="act-clear" id="actClearBtn" onclick="window._actClear()">Clear</button><button class="act-save" id="actSaveBtn" onclick="window._actSave()">Save &amp; Continue</button><button class="act-tog" id="actTogBtn" onclick="window._actToggleView()" title="Card view"><i class="ti ti-layout-grid"></i></button>';
+  row.style.gridTemplateColumns='';
+  var _gridBtn='<button class="act-tog" id="actTogBtn" onclick="window._actToggleView()" title="Card view"><i class="ti ti-layout-grid"></i></button>';
+  if(!isReadOnly&&_pencilActive()){
+    if(pencilUnheld(r)){
+      row.style.gridTemplateColumns='1fr 64px';
+      row.innerHTML='<button class="act-save" id="actStartBtn" onclick="window._pencilClaim()">Start Scoring</button>'+_gridBtn;
+      _updateActionRowGameLock();
+      return;
+    }
+    if(!holdsPencil(r)){
+      var _hName=_pencilHolderName(r);
+      row.style.gridTemplateColumns='1fr auto 64px';
+      row.innerHTML='<div class="act-pencil-viewing" style="display:flex;align-items:center;gap:8px;min-width:0">'
+        +'<span style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_hName+' is scoring</span>'
+        +'</div><button class="act-clear" onclick="window._pencilTakeoverConfirm()">Take Over</button>'+_gridBtn;
+      _updateActionRowGameLock();
+      return;
+    }
+  }
+  row.innerHTML='<button class="act-clear" id="actClearBtn" onclick="window._actClear()">Clear</button><button class="act-save" id="actSaveBtn" onclick="window._actSave()">Save &amp; Continue</button>'+_gridBtn;
+  _updateActionRowGameLock();
   const clearBtn=document.getElementById('actClearBtn');
   if(clearBtn){
     const hasScores=STATE.scores[r][hi].some(s=>s!==null);
@@ -4960,6 +4997,7 @@ function _updateActionRow(){
 
 window._actClear=function(){
   if(isReadOnly)return;
+  if(_pencilViewerLocked(STATE.currentRound))return;
   const r=STATE.currentRound,hi=STATE.currentHole;
   if(isRoundLocked(r))return;
   WK.players.forEach((_,pi)=>{STATE.scores[r][hi][pi]=null;});
@@ -5107,17 +5145,18 @@ function setOptPanel(p){STATE.optPanel=p;OPT_PANELS.forEach(n=>{const panel=docu
 function renderOptions(){setOptPanel('menu');}
 function _toggleSimMember(){
   if(!WK){return;}
-  if(!_simMember&&!_simRunner){_simMember=true;_simRunner=false;}
-  else if(_simMember&&!_simRunner){_simMember=false;_simRunner=true;}
-  else{_simMember=false;_simRunner=false;}
+  if(!_simMember&&!_simRunner&&!_simViewer){_simMember=true;_simRunner=false;_simViewer=false;}
+  else if(_simMember&&!_simRunner&&!_simViewer){_simMember=false;_simRunner=true;_simViewer=false;}
+  else if(_simRunner&&!_simViewer){_simMember=false;_simRunner=false;_simViewer=true;}
+  else{_simMember=false;_simRunner=false;_simViewer=false;}
   _renderSimBadge();
   if(STATE&&STATE.optPanel)renderOptPanel(STATE.optPanel);
   else renderOptPanel('menu');
 }
 function _renderSimBadge(){
   var _b=document.getElementById('simMemberBadge');
-  if(_simMember||_simRunner){
-    var _label=_simRunner?'Trip admin view (debug) - tap to cycle':'Member view (debug) - tap to cycle';
+  if(_simMember||_simRunner||_simViewer){
+    var _label=_simViewer?'Viewer view (debug) - tap to cycle':(_simRunner?'Trip admin view (debug) - tap to cycle':'Member view (debug) - tap to cycle');
     if(!_b){_b=document.createElement('div');_b.id='simMemberBadge';_b.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99999;background:var(--color-text-primary);color:var(--color-background-primary);font-size:11px;font-weight:500;padding:4px 12px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,0.25);cursor:pointer';_b.onclick=function(){_toggleSimMember();};document.body.appendChild(_b);}
     _b.textContent=_label;
   }else if(_b){_b.remove();}
@@ -5367,12 +5406,12 @@ function renderScorecard(){
   const hole=WK.rounds[r].course.holes[hi]||{par:4,si:hi+1};
   // Determine current snake holder (last set on or before this hole)
   const snakeHolder=currentSnakeHolder(r,hi);
-  const wolfActive=gameOn('wolf',r)&&WK.players.length>=4;const displayOrder=wolfActive?wolfTeeOrder(hi,r):WK.players.map((_,idx)=>idx);document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=strokes(i,hi,r),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}</span>`:`<span class="stroke-tag stroke-no">no stroke</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&snakeHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const roStyle=(isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'';const wolfPiHere=wolfActive?wolfForHole(hi,r):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';return topDivider+`<div class="${rowCls}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}"><button class="adj" onclick="adjScore(${i},-1)">−</button><div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div><button class="adj" onclick="adjScore(${i},1)">+</button></div></div>`+bottomDivider;}).join('');
+  const wolfActive=gameOn('wolf',r)&&WK.players.length>=4;const displayOrder=wolfActive?wolfTeeOrder(hi,r):WK.players.map((_,idx)=>idx);document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=strokes(i,hi,r),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}</span>`:`<span class="stroke-tag stroke-no">no stroke</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&snakeHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const roStyle=(isReadOnly||isRoundLocked(r)||_pencilViewerLocked(r))?'opacity:0.5;pointer-events:none':'';const wolfPiHere=wolfActive?wolfForHole(hi,r):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';return topDivider+`<div class="${rowCls}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}"><button class="adj" onclick="adjScore(${i},-1)">−</button><div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div><button class="adj" onclick="adjScore(${i},1)">+</button></div></div>`+bottomDivider;}).join('');
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
   try{renderRazzleBox();}catch(re){console.error('renderRazzleBox error:',re);const w=document.getElementById('razzleBoxWrap');if(w)w.innerHTML='';}
   try{renderWolfBox();}catch(we){console.error('renderWolfBox error:',we);const wb=document.getElementById('wolfBoxWrap');if(wb)wb.innerHTML='';}}
-function adjScore(pi,delta){if(isReadOnly)return;if((STATE.lockedRounds||[]).includes(STATE.currentRound))return;const r=STATE.currentRound,hi=STATE.currentHole,par=WK.rounds[r].course.holes[hi]?.par||4,c=STATE.scores[r][hi][pi];STATE.scores[r][hi][pi]=c===null?par:Math.max(1,c+delta);s2MarkDirty(['score'],r+':'+hi);clearTimeout(window._s2ScoreTimer);window._s2ScoreTimer=setTimeout(()=>{autoSave(true);s2WriteActive();},1500);// Check auto-press after all players scored this hole
+function adjScore(pi,delta){if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRound))return;if((STATE.lockedRounds||[]).includes(STATE.currentRound))return;const r=STATE.currentRound,hi=STATE.currentHole,par=WK.rounds[r].course.holes[hi]?.par||4,c=STATE.scores[r][hi][pi];STATE.scores[r][hi][pi]=c===null?par:Math.max(1,c+delta);s2MarkDirty(['score'],r+':'+hi);clearTimeout(window._s2ScoreTimer);window._s2ScoreTimer=setTimeout(()=>{autoSave(true);s2WriteActive();},1500);// Check auto-press after all players scored this hole
 const allScored=STATE.scores[r][hi].every(s=>s!==null);if(allScored&&gameOn('mp',r)){const mpG=mpGamesForRound(r);const _th=roundHoleCount(r);const si=segForHole(hi-holeOffset(r),mpG,_th);checkAutoPress(r,si);}renderScorecard();renderHoleDots();renderHammerBox();renderSkinsBoxWrap();renderMPHoleBox();renderVegasBoxWrap();
   _updateActionRow();
 }
@@ -6076,12 +6115,12 @@ function updateHoleUI(){
   if(!bn){bn=document.createElement('div');bn.id='lockedRoundBanner';bn.style.cssText='margin:0.5rem 1rem;padding:8px 12px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:12px;color:var(--color-text-secondary);text-align:center';bn.textContent='🔒 Round locked - scores are final. Unlock to make changes.';const sc=document.getElementById('scorecard');if(sc&&sc.parentNode)sc.parentNode.insertBefore(bn,sc);}
   document.getElementById('lockedRoundBanner').style.display=locked?'block':'none';
   if(document.getElementById('scorecard'))document.getElementById('scorecard').style.opacity=locked?'0.45':'1';
-  renderBanner();renderScorecard();renderHoleDots();renderHammerBox();renderSkinsBoxWrap();renderMPHoleBox();renderVegasBoxWrap();
+  renderBanner();renderScorecard();renderHoleDots();renderHammerBox();renderSkinsBoxWrap();renderMPHoleBox();renderVegasBoxWrap();_updateActionRowGameLock();
   // Update hole strip + action row
   _updateHoleStrip();
   _updateActionRow();
 }
-function saveHole(){if(isReadOnly)return;const r=STATE.currentRound,hi=STATE.currentHole;if(!STATE.scores[r][hi].every(s=>s!==null)){alert('Enter all scores first.');return;}autoSave();s2WriteActive();if(hi<holeOffset(r)+roundHoleCount(r)-1)changeHole(1);else setView('board');}
+function saveHole(){if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRound))return;const r=STATE.currentRound,hi=STATE.currentHole;if(!STATE.scores[r][hi].every(s=>s!==null)){alert('Enter all scores first.');return;}autoSave();s2WriteActive();if(hi<holeOffset(r)+roundHoleCount(r)-1)changeHole(1);else setView('board');}
 function resetHole(){
   if(isReadOnly)return;
   const r=STATE.currentRound,hi=STATE.currentHole;
@@ -6262,7 +6301,7 @@ function setWolfOrder(r,pos,newPi){
   autoSave();s2WriteActive();
   _gsRefreshAfterEdit();
 }
-function setDrop(gameIdx,slot,pIdx,roundIdx,isVegas){if(isReadOnly)return;const arr=isVegas?STATE.vegTeams:STATE.mpTeams;const teams=arr[roundIdx][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderScorecard();}
+function setDrop(gameIdx,slot,pIdx,roundIdx,isVegas){if(isReadOnly)return;if(_pencilViewerLocked(roundIdx))return;const arr=isVegas?STATE.vegTeams:STATE.mpTeams;const teams=arr[roundIdx][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderScorecard();}
 function copySkinsToMP(r){
   if(!STATE.skinsTeams||!STATE.skinsTeams[r])return;
   const sG=skinsGamesForRound(r),mpG=mpGamesForRound(r);
@@ -6379,7 +6418,7 @@ function calcWolfPoints(r,throughHole){
   return pts;
 }
 function openWolfPickModal(hi,r){
-  if(isRoundLocked(r))return;
+  if(isRoundLocked(r))return;if(isReadOnly||_pencilViewerLocked(r))return;
   const wolf=wolfForHole(hi,r);
   const wolfName=displayName(wolf);
   const order=wolfOrderForRound(r);
@@ -6616,7 +6655,7 @@ function renderWolfRound(){
 }
 
 function renderTeamsPanel(){/* Stage 3: Game Setup tab eliminated. Scoring config + Weekend bet moved into renderWeekendPanel(). Per-game setup is migrating into the Games tab. This stub remains so any stray legacy caller does not throw. */}
-function setDropSkins(gameIdx,slot,pIdx,roundIdx){if(isReadOnly)return;if(!STATE.skinsTeams)return;const teams=STATE.skinsTeams[roundIdx][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();}
+function setDropSkins(gameIdx,slot,pIdx,roundIdx){if(isReadOnly)return;if(_pencilViewerLocked(roundIdx))return;if(!STATE.skinsTeams)return;const teams=STATE.skinsTeams[roundIdx][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();}
 function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span>Active players</span></div>`;WK.players.forEach((p,i)=>{const eff=effHdcp(i,r);html+=`<div class="setup-row"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><input class="inline-edit" value="${p.name}" style="flex:1;min-width:60px" onchange="if(!canEditTrip())return;WK.players[${i}].name=this.value;WK.players[${i}].ini=this.value.substring(0,2).toUpperCase();renderPlayersPanel();renderScorecard();renderBanner();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin:0 3px">idx</span><input class="ie-num" type="text" inputmode="decimal" value="${sbHcpDisplay(p.idx)}" style="width:70px" onchange="if(!canEditTrip())return;WK.players[${i}].idx=idxFromInput(this.value,0);renderPlayersPanel();renderScorecard();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px;white-space:nowrap">→ ${chDisplay(eff)}</span>${WK.players.length>2?`<button class="btn-danger" onclick="removePlayer(${i})">✕</button>`:''}</div>`;});if(WK.players.length<12){html+=`<div style="border-top:0.5px solid var(--color-border-tertiary)"><div id="addPlayerRow" style="display:none;padding:10px 12px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><input class="text-input" id="apFirst" placeholder="First" style="flex:2;font-size:13px;padding:6px 8px"/><input class="text-input" id="apLast" placeholder="Last" style="flex:2;font-size:13px;padding:6px 8px"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0">Hdcp</span><input class="ie-num" id="apIdx" type="text" inputmode="decimal" placeholder="10" style="width:58px;flex-shrink:0"/></div><div style="display:flex;gap:8px"><button class="btn-primary" style="font-size:12px;padding:5px 12px" onclick="confirmAddPlayer()">Save</button><button class="btn-secondary" style="font-size:12px;padding:5px 12px" onclick="toggleAddPlayerRow()">Cancel</button></div></div><button class="btn-sm" id="addPlayerToggleBtn" onclick="toggleAddPlayerRow()" style="margin:8px 12px">+ Add player</button></div>`;}html+=`</div>`;
     document.getElementById('opt-panel-players').innerHTML=html;
 }
@@ -6655,6 +6694,49 @@ async function _tripAdminSave(){
       body:JSON.stringify({trip_admins:WK._tripAdmins||[]})
     });
   }catch(e){console.warn('[_tripAdminSave] failed',e);}
+}
+window._pencilClaim=function(){
+  if(isReadOnly)return;
+  var r=STATE.currentRound;
+  if(!pencilUnheld(r))return;
+  var _uid=sbCurrentUser()?.id;if(!_uid)return;
+  if(!WK._pencilLock)WK._pencilLock=[];
+  while(WK._pencilLock.length<=r)WK._pencilLock.push(null);
+  WK._pencilLock[r]={uid:_uid,ts:Date.now()};
+  _pencilSave();
+  updateHoleUI();
+};
+window._pencilTakeoverConfirm=function(){
+  if(isReadOnly)return;
+  var r=STATE.currentRound;
+  var holderUid=pencilHolder(r);
+  var holderName=_pencilHolderName(r);
+  if(!holderUid){window._pencilClaim();return;}
+  if(!confirm('Take over scoring from '+holderName+'?'))return;
+  var _uid=sbCurrentUser()?.id;if(!_uid)return;
+  if(!WK._pencilLock)WK._pencilLock=[];
+  while(WK._pencilLock.length<=r)WK._pencilLock.push(null);
+  WK._pencilLock[r]={uid:_uid,ts:Date.now()};
+  _pencilSave();
+  updateHoleUI();
+};
+function _pencilHolderName(r){
+  var uid=pencilHolder(r);if(!uid)return'';
+  var _grp=WK._groupId?_groupCache[WK._groupId]:null;
+  var _grpM=(_grp&&_grp._members)||[];
+  var m=_grpM.find(function(x){return x.user_id===uid;});
+  return (m&&m.display_name)||'Member';
+}
+async function _pencilSave(){
+  var tripId=s2TripId();if(!tripId)return;
+  try{
+    var tok=_sbSession?.access_token||SB_KEY;
+    await fetch(SB_URL+'/rest/v1/trips?trip_id=eq.'+encodeURIComponent(tripId),{
+      method:'PATCH',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({pencil_lock:WK._pencilLock||[]})
+    });
+  }catch(e){console.warn('[_pencilSave] failed',e);}
 }
 function renderWeekendPanel(){
   // For quick rounds, keep WK.name in sync with the course display name
