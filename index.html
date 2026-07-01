@@ -895,6 +895,7 @@ body.force-light{
 <div class="save-indicator" id="saveIndicator">✓ Saved</div>
 <div id="syncStatus" style="display:none;position:fixed;top:12px;left:50%;transform:translateX(-50%);background:var(--color-text-primary);color:var(--color-background-primary);font-size:11px;padding:4px 12px;border-radius:20px;z-index:9999;opacity:0.85">Syncing…</div>
 <div id="connWarning" style="display:none;position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#D97706;color:#ffffff;font-size:12px;font-weight:500;padding:6px 14px;border-radius:20px;z-index:9999;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3)">⚠ Connection lost - use paper backup</div>
+<div id="sessionWarning" style="display:none;position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#B91C1C;color:#ffffff;font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;z-index:10001;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:pointer">Session expired - tap to reconnect</div>
 <div class="app">
 
   <!-- SPLASH -->
@@ -1199,7 +1200,7 @@ body.force-light{
       <div class="rd-sel" id="entryRdSel" style="display:none"></div>
       <!-- Hole detail view -->
       <div id="holeDetailWrap">
-        <div class="hole-nav"><button class="nav-btn" id="prevBtn" onclick="changeHole(-1)" disabled>&#8592;</button><div style="text-align:center"><div class="hole-label" id="holeLabel"></div><div style="font-size:13px;color:var(--color-text-secondary)" id="holeMeta"></div></div><button class="nav-btn" id="nextBtn" onclick="changeHole(1)">&#8594;</button></div>
+        <div class="hole-nav"><button class="nav-btn" id="prevBtn" onclick="changeHole(-1)" disabled>&#8592;</button><div style="text-align:center"><div class="hole-label" id="holeLabel"></div><span id="viewOnlyPill" style="display:none;align-items:center;gap:3px;font-size:9px;font-weight:500;letter-spacing:0.5px;color:#e0b44a;background:rgba(224,180,74,0.14);padding:2px 8px;border-radius:10px;margin-top:3px"><i class="ti ti-eye" style="font-size:11px" aria-hidden="true"></i>VIEW ONLY</span><div style="font-size:13px;color:var(--color-text-secondary)" id="holeMeta"></div></div><button class="nav-btn" id="nextBtn" onclick="changeHole(1)">&#8594;</button></div>
         <div class="banner" id="banner"></div>
         <div class="scorecard" id="scorecard"></div>
         <div id="hammerBoxWrap"></div><div id="wolfBoxWrap"></div><div id="snakeEntryWrap"></div><div id="skinsBoxWrap"></div><div id="razzleBoxWrap"></div><div id="mpBoxWrap"></div><div id="vegasBoxWrap"></div>
@@ -1329,7 +1330,7 @@ function pencilUnheld(r){if(!_pencilActive())return false;if(_simViewer)return f
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v110.0.3';
+const APP_VERSION='v110.1.1';
 
 // ===== THEME =====
 (function(){
@@ -1403,7 +1404,7 @@ function s2PlayerId(pi){return WK._id+':player:'+pi;}
 async function s2Upsert(table,rows,onConflict){
   if(!rows||!rows.length)return true;
   try{
-    const res=await fetch(SB_URL+'/rest/v1/'+table+(onConflict?('?on_conflict='+onConflict):''),{
+    const res=await sbApiFetch(SB_URL+'/rest/v1/'+table+(onConflict?('?on_conflict='+onConflict):''),{
       method:'POST',
       headers:{
         'apikey':SB_KEY,
@@ -2307,7 +2308,10 @@ async function sbRefreshSession(refreshToken){
     if (!r.ok) return false;
     const data = await r.json();
     if (!data.access_token) return false;
-    sbSaveSession({ ...data, user: data.user });
+    // Normalize expiry: prefer expires_at; else derive from expires_in.
+    let _exp = data.expires_at ? parseInt(data.expires_at, 10) : 0;
+    if (!_exp && data.expires_in) _exp = Math.floor(Date.now()/1000) + parseInt(data.expires_in, 10);
+    sbSaveSession({ ...data, expires_at: _exp || data.expires_at, user: data.user });
     return true;
   } catch(e) { return false; }
 }
@@ -2356,6 +2360,125 @@ function sbCurrentUser(){
 
 // Auth bearer token - uses session access_token when available, anon key as fallback
 function sbBearer(){return _sbSession?.access_token||SB_KEY;}
+
+// ============================================================================
+// v110.1.0 - Session keepalive: proactive refresh + reactive retry.
+// The access token (default 1h TTL) expires mid-session on an idle phone; every
+// write then 401s (PGRST303) and was silently swallowed = silent data loss.
+// Layer 1 keeps the in-memory token fresh so all synchronous token reads
+// (sbBearer + inline reads) stay valid with no call-site changes. Layer 2
+// (sbApiFetch) is the write-path safety net + user-facing recovery.
+// ============================================================================
+let _refreshInFlight = null;   // single-flight guard: only ever one refresh at a time
+let _refreshTimer = null;      // proactive pre-expiry timer
+
+// Returns a valid access token, refreshing first if near/at expiry (or if forced).
+// force=true is used after a 401, where expires_at may look fine but the token
+// is actually dead (clock skew or server-side revocation).
+async function sbValidToken(force){
+  if(!_sbSession || !_sbSession.refresh_token){
+    return (_sbSession && _sbSession.access_token) || SB_KEY;
+  }
+  const now = Date.now()/1000;
+  const near = _sbSession.expires_at && now > (_sbSession.expires_at - 60);
+  if(!force && !near){
+    return _sbSession.access_token;
+  }
+  // Single-flight: concurrent callers share one refresh so we never reuse a
+  // rotated refresh token (which would trip GoTrue reuse-detection and sign the
+  // user out mid-round).
+  if(!_refreshInFlight){
+    const rt = _sbSession.refresh_token;
+    _refreshInFlight = sbRefreshSession(rt)
+      .then(function(ok){ if(ok) sbScheduleRefresh(); return ok; })
+      .catch(function(){ return false; })
+      .then(function(ok){ _refreshInFlight = null; return ok; });
+  }
+  await _refreshInFlight;
+  return (_sbSession && _sbSession.access_token) || SB_KEY;
+}
+
+// Arm a timer to refresh ~60s before expiry. Re-armed after every refresh.
+function sbScheduleRefresh(){
+  if(_refreshTimer){ clearTimeout(_refreshTimer); _refreshTimer = null; }
+  if(!_sbSession || !_sbSession.expires_at || !_sbSession.refresh_token) return;
+  const now = Date.now()/1000;
+  let delay = (_sbSession.expires_at - 60 - now) * 1000;
+  if(delay < 0) delay = 0;
+  _refreshTimer = setTimeout(function(){ sbValidToken(true); }, delay);
+}
+
+// On return-to-foreground, refresh now if stale (mobile browsers throttle timers
+// while backgrounded - this is the real 'phone in pocket between rounds' case).
+async function sbEnsureFresh(){
+  if(!_sbSession || !_sbSession.refresh_token) return;
+  const now = Date.now()/1000;
+  if(!_sbSession.expires_at || now > (_sbSession.expires_at - 60)){
+    await sbValidToken(true);
+  } else {
+    sbScheduleRefresh(); // re-arm a timer that may have been paused while hidden
+  }
+}
+
+// Reactive wrapper for WRITE paths. Ensures a fresh token, and on a JWT-expired
+// 401 force-refreshes once and retries. If recovery genuinely fails, surfaces
+// the reconnect banner instead of failing silently. NOTE: named sbApiFetch, not
+// sbFetch - sbFetch() is the existing remote-trip loader.
+async function sbApiFetch(url, opts){
+  opts = opts || {};
+  const token = await sbValidToken(false);
+  const h = Object.assign({}, opts.headers || {}, { 'Authorization': 'Bearer ' + token });
+  if(!h.apikey) h.apikey = SB_KEY;
+  let res = await fetch(url, Object.assign({}, opts, { headers: h }));
+  if(res.status === 401){
+    let body = '';
+    try { body = await res.clone().text(); } catch(e){}
+    if(/PGRST303|jwt expired|invalid.*(jwt|token)/i.test(body)){
+      const t2 = await sbValidToken(true);
+      if(t2 && t2 !== token){
+        const h2 = Object.assign({}, opts.headers || {}, { 'Authorization': 'Bearer ' + t2 });
+        if(!h2.apikey) h2.apikey = SB_KEY;
+        res = await fetch(url, Object.assign({}, opts, { headers: h2 }));
+      }
+      if(res.status === 401){ showSessionExpired(); }
+    }
+  }
+  return res;
+}
+
+// User-facing recovery banner (reuses the connWarning fixed-banner pattern).
+function showSessionExpired(){
+  const b = document.getElementById('sessionWarning');
+  if(!b) return;
+  b.textContent = 'Session expired - tap to reconnect';
+  b.onclick = _sessionReconnect;
+  b.style.display = 'flex';
+}
+async function _sessionReconnect(){
+  const b = document.getElementById('sessionWarning');
+  if(b){ b.onclick = null; b.textContent = 'Reconnecting...'; }
+  await sbValidToken(true);
+  const now = Date.now()/1000;
+  const ok = _sbSession && _sbSession.access_token && _sbSession.expires_at && now < (_sbSession.expires_at - 1);
+  if(ok){
+    if(b) b.style.display = 'none';
+    try { await s2WriteActive(); } catch(e){}
+    try { showConnStatus(true); } catch(e){}
+  } else if(b){
+    b.textContent = 'Session ended - tap to sign in';
+    b.onclick = function(){ b.style.display = 'none'; sbShowLogin(); };
+  }
+}
+
+// Start Layer 1 once a session is confirmed at boot.
+function sbStartSessionKeepalive(){
+  sbScheduleRefresh();
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'visible') sbEnsureFresh();
+  });
+  window.addEventListener('focus', sbEnsureFresh);
+}
+
 
 
 // Phone formatting helpers
@@ -2719,7 +2842,7 @@ async function saveCourse(name){
   try{
     // Upsert (merge-duplicates on courses.name) so editing a course that
     // has no DB row yet REGISTERS it rather than no-op PATCHing zero rows.
-    const _res=await fetch(SB_URL+'/rest/v1/courses',{
+    const _res=await sbApiFetch(SB_URL+'/rest/v1/courses',{
       method:'POST',
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer(),'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
       body:JSON.stringify({name,slope:c.slope,rating:c.rating||null,holes:c.holes,is_custom:c.source==='custom',tees:c.tees||null,source:c.source||'custom',external_id:c.external_id||null,api_fetched_at:c.api_fetched_at||null,display_name:c.displayName||null,location:c.location||null})
@@ -2733,7 +2856,7 @@ async function saveNewCourse(name){
   if(!c)return;
   try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}
   try{
-    await fetch(SB_URL+'/rest/v1/courses',{
+    await sbApiFetch(SB_URL+'/rest/v1/courses',{
       method:'POST',
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer(),'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
       body:JSON.stringify({name,slope:c.slope,rating:c.rating||null,holes:c.holes,is_custom:c.source==='custom',tees:c.tees||null,source:c.source||'custom',external_id:c.external_id||null,display_name:c.displayName||null,api_fetched_at:c.api_fetched_at||null,location:c.location||null})
@@ -4963,6 +5086,7 @@ function _updateActionRow(){
   }
   row.className='visible';
   row.style.gridTemplateColumns='';
+  row.style.background='';
   var _gridBtn='<button class="act-tog" id="actTogBtn" onclick="window._actToggleView()" title="Card view"><i class="ti ti-layout-grid"></i></button>';
   if(!isReadOnly&&_pencilActive()){
     if(pencilUnheld(r)){
@@ -4974,9 +5098,11 @@ function _updateActionRow(){
     if(!holdsPencil(r)){
       var _hName=_pencilHolderName(r);
       row.style.gridTemplateColumns='1fr auto 64px';
-      row.innerHTML='<div class="act-pencil-viewing" style="display:flex;align-items:center;gap:8px;min-width:0">'
-        +'<span style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_hName+' is scoring</span>'
-        +'</div><button class="act-clear" onclick="window._pencilTakeoverConfirm()">Take Over</button>'+_gridBtn;
+      row.style.background='rgba(224,180,74,0.12)';
+      row.innerHTML='<div class="act-pencil-viewing" style="display:flex;align-items:center;gap:6px;min-width:0">'
+        +'<i class="ti ti-lock" style="font-size:14px;color:#e0b44a;flex-shrink:0" aria-hidden="true"></i>'
+        +'<span style="font-size:13px;color:#e6c977;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_hName+' is scoring</span>'
+        +'</div><button class="act-clear" onclick="window._pencilTakeoverConfirm()" style="background:#1D9E75;color:#0c1712;border:none">Take Over</button>'+_gridBtn;
       _updateActionRowGameLock();
       return;
     }
@@ -5409,7 +5535,7 @@ function renderScorecard(){
   const hole=WK.rounds[r].course.holes[hi]||{par:4,si:hi+1};
   // Determine current snake holder (last set on or before this hole)
   const snakeHolder=currentSnakeHolder(r,hi);
-  const wolfActive=gameOn('wolf',r)&&WK.players.length>=4;const displayOrder=wolfActive?wolfTeeOrder(hi,r):WK.players.map((_,idx)=>idx);document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=strokes(i,hi,r),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}</span>`:`<span class="stroke-tag stroke-no">no stroke</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&snakeHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const roStyle=(isReadOnly||isRoundLocked(r)||_pencilViewerLocked(r))?'opacity:0.5;pointer-events:none':'';const wolfPiHere=wolfActive?wolfForHole(hi,r):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';return topDivider+`<div class="${rowCls}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}"><button class="adj" onclick="adjScore(${i},-1)">−</button><div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div><button class="adj" onclick="adjScore(${i},1)">+</button></div></div>`+bottomDivider;}).join('');
+  const wolfActive=gameOn('wolf',r)&&WK.players.length>=4;const displayOrder=wolfActive?wolfTeeOrder(hi,r):WK.players.map((_,idx)=>idx);document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=strokes(i,hi,r),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}</span>`:`<span class="stroke-tag stroke-no">no stroke</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&snakeHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r);const roStyle=_pvLock?'pointer-events:none':((isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'');const _rowDim=_pvLock?'opacity:0.42;':'';const _minusBtn=_pvLock?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_pvLock?'<i class="ti ti-lock" style="font-size:16px;color:var(--color-text-secondary);margin-left:2px" aria-hidden="true"></i>':'<button class="adj" onclick="adjScore('+i+',1)">+</button>';const wolfPiHere=wolfActive?wolfForHole(hi,r):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';return topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('');
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
   try{renderRazzleBox();}catch(re){console.error('renderRazzleBox error:',re);const w=document.getElementById('razzleBoxWrap');if(w)w.innerHTML='';}
@@ -6102,6 +6228,7 @@ function updateHoleUI(){
   const hole=WK.rounds[r].course.holes?.[hi]||{par:4,si:hi+1};
   const locked=isRoundLocked(r),complete=isRoundComplete(r);
   document.getElementById('holeLabel').textContent='Hole '+(hi+1);
+  var _voPill=document.getElementById('viewOnlyPill');if(_voPill)_voPill.style.display=_pencilViewerLocked(r)?'inline-flex':'none';
   const _yds=hole.yardage||0;const _ydStr=_yds>0?' · '+_yds+' yds':'';document.getElementById('holeMeta').textContent='Par '+hole.par+_ydStr+' · Hdcp '+hole.si;
   const _minHole=holeOffset(r),_maxHole=holeOffset(r)+roundHoleCount(r)-1;
   document.getElementById('prevBtn').disabled=hi===_minHole;
@@ -6709,19 +6836,49 @@ window._pencilClaim=function(){
   _pencilSave();
   updateHoleUI();
 };
+function _confirmSheet(opts){
+  opts=opts||{};
+  var ex=document.getElementById('confirmSheet');if(ex)ex.remove();
+  var ov=document.createElement('div');
+  ov.id='confirmSheet';
+  ov.style.cssText='position:fixed;inset:0;z-index:10002;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;justify-content:center';
+  var card=document.createElement('div');
+  card.style.cssText='width:100%;max-width:440px;background:#132019;border-top:0.5px solid #24352c;border-radius:16px 16px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box';
+  var iconHtml=opts.icon?'<div style="display:flex;justify-content:center;margin-bottom:12px"><div style="width:42px;height:42px;border-radius:50%;background:rgba(29,158,117,0.15);display:flex;align-items:center;justify-content:center"><i class="ti '+opts.icon+'" style="font-size:20px;color:#1D9E75" aria-hidden="true"></i></div></div>':'';
+  card.innerHTML=iconHtml
+    +'<div style="text-align:center;font-size:16px;font-weight:500;color:#e8efe9;margin-bottom:6px">'+(opts.title||'Are you sure?')+'</div>'
+    +'<div style="text-align:center;font-size:13px;color:#a9b8b0;line-height:1.5;margin-bottom:16px">'+(opts.body||'')+'</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button id="_csCancel" style="flex:1;font-size:14px;font-weight:500;color:#c2cdc6;background:transparent;border:0.5px solid #2c3a33;padding:11px 0;border-radius:10px">Cancel</button>'
+    +'<button id="_csOk" style="flex:1;font-size:14px;font-weight:500;color:#0c1712;background:#1D9E75;border:none;padding:11px 0;border-radius:10px">'+(opts.okLabel||'Confirm')+'</button>'
+    +'</div>';
+  ov.appendChild(card);
+  document.body.appendChild(ov);
+  function close(){ov.remove();}
+  ov.addEventListener('click',function(e){if(e.target===ov)close();});
+  card.querySelector('#_csCancel').addEventListener('click',close);
+  card.querySelector('#_csOk').addEventListener('click',function(){close();if(typeof opts.onOk==='function')opts.onOk();});
+}
 window._pencilTakeoverConfirm=function(){
   if(isReadOnly)return;
   var r=STATE.currentRound;
   var holderUid=pencilHolder(r);
   var holderName=_pencilHolderName(r);
   if(!holderUid){window._pencilClaim();return;}
-  if(!confirm('Take over scoring from '+holderName+'?'))return;
-  var _uid=sbCurrentUser()?.id;if(!_uid)return;
-  if(!WK._pencilLock)WK._pencilLock=[];
-  while(WK._pencilLock.length<=r)WK._pencilLock.push(null);
-  WK._pencilLock[r]={uid:_uid,ts:Date.now()};
-  _pencilSave();
-  updateHoleUI();
+  _confirmSheet({
+    icon:'ti-pencil',
+    title:'Take over scoring?',
+    body:"You'll take the pencil from "+holderName+". They'll switch to view-only.",
+    okLabel:'Take Over',
+    onOk:function(){
+      var _uid=sbCurrentUser()?.id;if(!_uid)return;
+      if(!WK._pencilLock)WK._pencilLock=[];
+      while(WK._pencilLock.length<=r)WK._pencilLock.push(null);
+      WK._pencilLock[r]={uid:_uid,ts:Date.now()};
+      _pencilSave();
+      updateHoleUI();
+    }
+  });
 };
 function _pencilHolderName(r){
   var uid=pencilHolder(r);if(!uid)return'';
@@ -6733,10 +6890,9 @@ function _pencilHolderName(r){
 async function _pencilSave(){
   var tripId=s2TripId();if(!tripId)return;
   try{
-    var tok=_sbSession?.access_token||SB_KEY;
-    await fetch(SB_URL+'/rest/v1/trips?trip_id=eq.'+encodeURIComponent(tripId),{
+    await sbApiFetch(SB_URL+'/rest/v1/trips?trip_id=eq.'+encodeURIComponent(tripId),{
       method:'PATCH',
-      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json','Prefer':'return=minimal'},
+      headers:{'apikey':SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
       body:JSON.stringify({pencil_lock:WK._pencilLock||[]})
     });
   }catch(e){console.warn('[_pencilSave] failed',e);}
@@ -10109,6 +10265,7 @@ sbInit().then(authed => {
     return;
   }
   // Session exists - proceed to app
+  sbStartSessionKeepalive();
   Promise.all([loadCourses()]).then(()=>{
     syncOnLoad().then(()=>{
       renderGroupList();
