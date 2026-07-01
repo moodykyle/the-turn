@@ -1329,7 +1329,7 @@ function pencilUnheld(r){if(!_pencilActive())return false;if(_simViewer)return f
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v110.0.2';
+const APP_VERSION='v110.0.3';
 
 // ===== THEME =====
 (function(){
@@ -2717,12 +2717,15 @@ async function saveCourse(name){
   if(!c)return;
   try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}
   try{
-    await fetch(SB_URL+'/rest/v1/courses?name=eq.'+encodeURIComponent(name),{
-      method:'PATCH',
-      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer(),'Content-Type':'application/json','Prefer':'return=minimal'},
-      body:JSON.stringify({slope:c.slope,rating:c.rating||null,holes:c.holes,tees:c.tees||null,source:c.source||'custom',external_id:c.external_id||null,api_fetched_at:c.api_fetched_at||null,display_name:c.displayName||null,location:c.location||null})
+    // Upsert (merge-duplicates on courses.name) so editing a course that
+    // has no DB row yet REGISTERS it rather than no-op PATCHing zero rows.
+    const _res=await fetch(SB_URL+'/rest/v1/courses',{
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer(),'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({name,slope:c.slope,rating:c.rating||null,holes:c.holes,is_custom:c.source==='custom',tees:c.tees||null,source:c.source||'custom',external_id:c.external_id||null,api_fetched_at:c.api_fetched_at||null,display_name:c.displayName||null,location:c.location||null})
     });
-  }catch(e){}
+    if(!_res.ok){const _t=await _res.text().catch(()=>'');console.warn('[saveCourse] '+_res.status+': '+_t);}
+  }catch(e){console.warn('[saveCourse] exception:',e);}
   autoSave();
 }
 async function saveNewCourse(name){
@@ -7372,6 +7375,9 @@ window._gcaSelectResult=async function(idx){
     if(!r.ok)throw new Error('Fetch failed');
     const data=await r.json();
     window._gcaPendingCourse=data.course;
+    var _tz=data.course&&data.course.tees;
+    var _hasTees=!!(_tz&&(( _tz.male&&_tz.male.length)||(_tz.female&&_tz.female.length)));
+    if(!_hasTees){_gcaManualFromApi(data.course);return;}
     _gcaShowTeePicker(data.course);
   }catch(e){
     el.innerHTML='<div style="font-size:12px;color:#DC2626">Could not load course details.</div>';
@@ -7447,6 +7453,18 @@ window._gcaSaveEdit=function(eid){
   saveCourse(name);
   toggleEditPanel(eid,eid+'_btn');
 };
+function _gcaManualFromApi(apiCourse){
+  var el=document.getElementById('gcaResults');
+  var composed=apiCourse.club_name+(apiCourse.course_name&&apiCourse.course_name!==apiCourse.club_name?' - '+apiCourse.course_name:'');
+  window._gcaSeedExternalId=apiCourse.id||null;
+  window._gcaSeedLocation=apiCourse.location||null;
+  if(el)el.innerHTML='<div style="font-size:12px;color:var(--color-text-secondary);padding:8px 0">This course has no tee data from the API. Enter the scorecard details below - it will be saved for reuse.</div>';
+  var f=document.getElementById('addCourseForm');
+  if(f)f.style.display='block';
+  var nm=document.getElementById('newCName');
+  if(nm)nm.value=composed;
+  if(f)f.scrollIntoView({behavior:'smooth'});
+}
 window._gcaShowManual=function(){
   document.getElementById('gcaResults').innerHTML='';
   document.getElementById('addCourseForm').style.display='block';
@@ -7817,7 +7835,7 @@ function renderCoursesPanel(){
   html+='</div>';
   document.getElementById('opt-panel-courses').innerHTML=html;
 }
-function addCourse(){const name=document.getElementById('newCName').value.trim(),slope=parseInt(document.getElementById('newCSlope').value)||113,rating=parseFloat(document.getElementById('newCRating').value)||null;const parse=id=>(document.getElementById(id).value||'').split(',').map(x=>parseInt(x.trim())||4);const fp=parse('newCFP'),fsi=parse('newCFSI'),bp=parse('newCBP'),bsi=parse('newCBSI');if(!name){alert('Enter a course name.');return;}const allSI=[...fsi,...bsi];const siIssues=validateSI(allSI);if(siIssues.length){if(!confirm('SI validation issues:\n\n'+siIssues.join('\n')+'\n\nSave anyway?'))return;}const holes=[];for(let i=0;i<9;i++)holes.push({par:fp[i]||4,si:fsi[i]||i*2+1});for(let i=0;i<9;i++)holes.push({par:bp[i]||4,si:bsi[i]||i*2+2});CATALOG[name]={slope,rating,holes};saveNewCourse(name);renderCoursesPanel();}
+function addCourse(){const name=document.getElementById('newCName').value.trim(),slope=parseInt(document.getElementById('newCSlope').value)||113,rating=parseFloat(document.getElementById('newCRating').value)||null;const parse=id=>(document.getElementById(id).value||'').split(',').map(x=>parseInt(x.trim())||4);const fp=parse('newCFP'),fsi=parse('newCFSI'),bp=parse('newCBP'),bsi=parse('newCBSI');if(!name){alert('Enter a course name.');return;}const allSI=[...fsi,...bsi];const siIssues=validateSI(allSI);if(siIssues.length){if(!confirm('SI validation issues:\n\n'+siIssues.join('\n')+'\n\nSave anyway?'))return;}const holes=[];for(let i=0;i<9;i++)holes.push({par:fp[i]||4,si:fsi[i]||i*2+1});for(let i=0;i<9;i++)holes.push({par:bp[i]||4,si:bsi[i]||i*2+2});CATALOG[name]={slope,rating,holes};if(window._gcaSeedExternalId){CATALOG[name].external_id=window._gcaSeedExternalId;CATALOG[name].source='api';window._gcaSeedExternalId=null;}if(window._gcaSeedLocation){CATALOG[name].location=window._gcaSeedLocation;window._gcaSeedLocation=null;}saveNewCourse(name);renderCoursesPanel();}
 // Stage 3: ordered game definitions, single source of truth for the
 // Games-tab pill row, the Add Game picker, and the on/off field mapping.
 // tripLevel:true means the on-flag lives on WK directly (Two's Club only),
