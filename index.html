@@ -1330,7 +1330,7 @@ function pencilUnheld(r){if(!_pencilActive())return false;if(_simViewer)return f
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v110.1.2';
+const APP_VERSION='v110.1.3';
 
 // ===== THEME =====
 (function(){
@@ -1587,7 +1587,7 @@ async function s2WriteActive(){
           });
         });
       });
-      if(scoreRows.length)await s2Upsert('scores',scoreRows);
+      if(scoreRows.length)await s2Upsert('scores',scoreRows,'round_id,player_id,hole_index');
       _s2Dirty.scores.clear();
     }
 
