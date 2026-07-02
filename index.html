@@ -1330,7 +1330,7 @@ function pencilUnheld(r){if(!_pencilActive())return false;if(_simViewer)return f
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v110.1.1';
+const APP_VERSION='v110.1.2';
 
 // ===== THEME =====
 (function(){
@@ -6956,7 +6956,7 @@ function renderWeekendPanel(){
     var _grpAdminUids=_grpAdmins.map(function(m){return m.user_id;});
     var _creatorIsAdmin=_grpAdminUids.indexOf(_creatorUid)>=0;
     var _adminRows='';
-    // shared row fragment builder (no onclick — just display)
+    // shared row fragment builder (no onclick - just display)
     function _taStaticRow(ini,name,tag){
       return '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'
         +'<div style="width:28px;height:28px;border-radius:50%;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(ini||'').substring(0,2).toUpperCase()+'</div>'
@@ -6964,7 +6964,7 @@ function renderWeekendPanel(){
         +'<span style="font-size:11px;color:var(--color-text-secondary);background:var(--color-background-secondary);padding:2px 7px;border-radius:999px">'+tag+'</span>'
         +'</div>';
     }
-    // group admin row(s) first — no remove button
+    // group admin row(s) first - no remove button
     _grpAdmins.forEach(function(m){
       var _tag=m.user_id===_creatorUid?'Group admin + Creator':'Group admin';
       _adminRows+=_taStaticRow(m.display_name||'Admin',m.display_name||'Admin',_tag);
@@ -6975,8 +6975,7 @@ function renderWeekendPanel(){
       var _cname=_cm?(_cm.display_name||'Trip creator'):'Trip creator';
       _adminRows+=_taStaticRow(_cname,_cname,'Creator');
     }
-    // assigned trip admins — pre-compute safeUid outside string, use index-stash for remove onclick
-    var _grpAdminUids=_grpAdmins.map(function(m){return m.user_id;});
+    // assigned trip admins - pre-compute safeUid outside string, use index-stash for remove onclick
     _tripAdmins.forEach(function(uid){
       if(uid===_creatorUid||_grpAdminUids.indexOf(uid)>=0)return;
       var _rm=_grpM.find(function(m){return m.user_id===uid;});
