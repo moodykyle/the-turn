@@ -1327,10 +1327,15 @@ function _updateActionRowGameLock(){
 function pencilHolder(r){var lk=_pencilLockFor(r);return lk?lk.uid:null;}
 function holdsPencil(r){if(_simViewer)return false;var lk=_pencilLockFor(r);if(!lk)return false;var _uid=sbCurrentUser()?.id;return !!(_uid&&lk.uid===_uid);}
 function pencilUnheld(r){if(!_pencilActive())return false;if(_simViewer)return false;return !_pencilLockFor(r);}
+// Render-time self-heal writes (defaultTee backfill etc.) must not fire from a stale
+// viewer's snapshot — that would clobber the live scorer's in-progress game state on
+// their next redraw. If the pencil isn't in play (solo/quick round), there's only one
+// device touching this trip, so self-heal is always safe.
+function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!=null?r:STATE.currentRound);}
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v110.1.3';
+const APP_VERSION='v110.1.4';
 
 // ===== THEME =====
 (function(){
@@ -1426,11 +1431,13 @@ async function s2Upsert(table,rows,onConflict){
   }
 }
 
+let _s2WriteInFlight=false; // sync poll must never rebuild over a write that hasn't landed yet
 async function s2WriteActive(){
   if(!WK||!STATE)return;
   const tripId=s2TripId();
   if(!tripId)return;
 
+  _s2WriteInFlight=true;
   try{
     // 1. Trip upsert
     if(_s2Dirty.trip){
@@ -1607,7 +1614,10 @@ async function s2WriteActive(){
       _s2Dirty.expenses=false;
     }
 
-  }catch(e){}
+  }catch(e){
+  }finally{
+    _s2WriteInFlight=false;
+  }
 }
 
 async function s2ValidateOnLoad(){
@@ -1716,6 +1726,7 @@ async function s2ReadTrip(tripId){
       _createdBy:t.created_by||null,
       _tripAdmins:Array.isArray(t.trip_admins)?t.trip_admins:[],
       _pencilLock:Array.isArray(t.pencil_lock)?t.pencil_lock:[],
+      _updatedAt:t.updated_at||null, // server-stamped trip row watermark — sync poll seeds off this
       isQuickRound:!!(t.is_quick_round),
       name:t.name||'',
       date:t.date||'',
@@ -4094,7 +4105,15 @@ function viewTrip(id){
       WK=JSON.parse(JSON.stringify(trip.WK));STATE=JSON.parse(JSON.stringify(trip.STATE));
       console.log('[Step3] Loaded trip from blob (fallback)');
     }
-    if(!STATE.expenses)STATE.expenses=[];if(!STATE.moneyTab)STATE.moneyTab='golf';if(!STATE.skinsViewRound)STATE.skinsViewRound=0;if(!STATE.settledRounds)STATE.settledRounds=[];if(!STATE.roundSettleData)STATE.roundSettleData={};if(!STATE.lockedRounds)STATE.lockedRounds=[];if(WK&&WK.rounds&&typeof sanitizeTeams==='function'){WK.rounds.forEach((_,r)=>sanitizeTeams(r));}
+    _s2RehydrateLoadedTrip();
+  isReadOnly=false;viewingTripId=id;
+  const _allDone=STATE._resumeAllDone;delete STATE._resumeAllDone;launchMainApp();if(_allDone)setView('board');s2ValidateOnLoad();
+  });}
+// Shared rehydration path for a freshly-loaded WK/STATE pair — used on initial trip
+// open (viewTrip) AND by the device-sync poll's trip-row rebuild. Keeping this as one
+// function means sync reuses the exact verified load path instead of a parallel one.
+function _s2RehydrateLoadedTrip(){
+  if(!STATE.expenses)STATE.expenses=[];if(!STATE.moneyTab)STATE.moneyTab='golf';if(!STATE.skinsViewRound)STATE.skinsViewRound=0;if(!STATE.settledRounds)STATE.settledRounds=[];if(!STATE.roundSettleData)STATE.roundSettleData={};if(!STATE.lockedRounds)STATE.lockedRounds=[];if(WK&&WK.rounds&&typeof sanitizeTeams==='function'){WK.rounds.forEach((_,r)=>sanitizeTeams(r));}
   // Re-hydrate course objects: prefer live CATALOG (handles built-in + loaded custom courses)
   // Fall back to blob's own course data for custom courses not yet in CATALOG
   // Either way, ensure holes array exists
@@ -4130,7 +4149,6 @@ function viewTrip(id){
   if(!STATE.snakeHolder)STATE.snakeHolder=WK.rounds.map(()=>Array(18).fill(null));
   if(!STATE.snakePot)STATE.snakePot=WK.rounds.map(()=>0);
   if(!STATE.pressState)STATE.pressState=WK.rounds.map(()=>[]);if(!STATE.autoPressToasts)STATE.autoPressToasts=[];
-  isReadOnly=false;viewingTripId=id;
   // Pre-populate razzle state so toasts and team modal don't re-fire on existing scores
   if(!STATE.razzleFiredToasts)STATE.razzleFiredToasts={};
   if(!STATE.razzleMatchTeams)STATE.razzleMatchTeams=WK.rounds.map(()=>[]);
@@ -4154,8 +4172,7 @@ function viewTrip(id){
       }
     });
   });
-  const _allDone=STATE._resumeAllDone;delete STATE._resumeAllDone;launchMainApp();if(_allDone)setView('board');s2ValidateOnLoad();
-  });}
+}
 function resumeTrip(){if(!viewingTripId)return;isReadOnly=false;viewingTripId=null;updateHoleUI();setMoneyTab(STATE.moneyTab||'golf');renderOptPanel(STATE.optPanel||'weekend');}
 function nameToIni(n){
   const parts=(n||'').trim().split(/\s+/).filter(p=>p&&p!=='.');
@@ -4198,7 +4215,7 @@ async function deleteTrip(id,btn,gid){
     else{_ipOverlay.remove();renderHomeDashboard();}
   } else if(gid){renderGroupPage(gid);}else{renderGroupList();}
 }
-function goHome(){document.getElementById('mainTabBar')?.classList.remove('visible');const _ar=document.getElementById('scoreActionRow');if(_ar)_ar.className='';if(!isReadOnly&&WK){autoSave();s2WriteActive();}showHome();}
+function goHome(){_syncStop();document.getElementById('mainTabBar')?.classList.remove('visible');const _ar=document.getElementById('scoreActionRow');if(_ar)_ar.className='';if(!isReadOnly&&WK){autoSave();s2WriteActive();}showHome();}
 function getSegments(count,totalHoles){const th=totalHoles||18;const s=Math.floor(th/count);return Array.from({length:count},(_,i)=>({start:i*s,end:i===count-1?th:(i+1)*s,label:'Game '+(i+1)}));}
 function segOptionHtml(totalHoles,curVal){const opts=totalHoles===9?[[1,'1 game - 9 holes'],[3,'3 games - 3 holes']]:[[1,'1 game - 18 holes'],[2,'2 games - 9 holes'],[3,'3 games - 6 holes']];return opts.map(([v,l])=>`<option value="${v}"${v===curVal?' selected':''}>${l}</option>`).join('');}
 function segForHole(h,count,totalHoles){return getSegments(count,totalHoles).findIndex(s=>h>=s.start&&h<s.end);}
@@ -5068,7 +5085,7 @@ function initState(netOffLow){const nR=WK.rounds.length,nP=WK.players.length;con
     hammerTeams:Array(nR).fill(null).map((_,ri)=>defaultHammerTeams(ri)),
     hammerState:Array(nR).fill(null).map(()=>Array(18).fill(null))
   };}
-function launchMainApp(){window._qrNineHole=null;_isQuickRoundWizard=false;document.getElementById('wizardScreen')?.classList.remove('qr-mode');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';['homeGroupScreen','groupSetupScreen','groupCreateScreen','groupJoinScreen','groupPickerScreen'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;const _fmtDate=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' · '+_fmtDate(WK.date)):WK.region||_fmtDate(WK.date)||'';updateTabDimming();setView('scores');document.getElementById('mainTabBar')?.classList.add('visible');}
+function launchMainApp(){window._qrNineHole=null;_isQuickRoundWizard=false;document.getElementById('wizardScreen')?.classList.remove('qr-mode');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';['homeGroupScreen','groupSetupScreen','groupCreateScreen','groupJoinScreen','groupPickerScreen'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;const _fmtDate=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' · '+_fmtDate(WK.date)):WK.region||_fmtDate(WK.date)||'';updateTabDimming();setView('scores');document.getElementById('mainTabBar')?.classList.add('visible');_syncStart();}
 // Stage 2: Scores tab view mode
 let _scViewMode='hole';
 
@@ -6887,8 +6904,10 @@ function _pencilHolderName(r){
   var m=_grpM.find(function(x){return x.user_id===uid;});
   return (m&&m.display_name)||'Member';
 }
+let _pencilSaveInFlight=false; // a local claim/takeover PATCH is outstanding — sync must not reconcile a stale lock over it
 async function _pencilSave(){
   var tripId=s2TripId();if(!tripId)return;
+  _pencilSaveInFlight=true;
   try{
     await sbApiFetch(SB_URL+'/rest/v1/trips?trip_id=eq.'+encodeURIComponent(tripId),{
       method:'PATCH',
@@ -6896,7 +6915,233 @@ async function _pencilSave(){
       body:JSON.stringify({pencil_lock:WK._pencilLock||[]})
     });
   }catch(e){console.warn('[_pencilSave] failed',e);}
+  finally{_pencilSaveInFlight=false;}
 }
+
+// ============================================================================
+// v110.1.4 - Device sync (poll-based). Design locked in the July 2026 Opus
+// architecture session; see thread brief "sync-design-and-updated-at" append.
+// Three streams: trip row (jsonb blob, rebuilt via s2ReadTrip), scores (per-cell
+// delta), pencil lock (reconciled every tick, cheapest signal). Flat 15s cadence,
+// backs off to 60s on failure, immediate tick on visibility/focus chained after
+// sbEnsureFresh, single-flight guarded. Never applies a remote pull over an
+// unflushed local edit — gated on the same _s2Dirty flags the write path uses.
+// ============================================================================
+let _syncTimer=null;          // self-rescheduling setTimeout handle (not setInterval — backoff needs a variable delay)
+let _syncInFlight=null;       // single-flight guard, same pattern as _refreshInFlight
+let _syncBackoffMs=15000;     // current tick interval; 15s normally, 60s after a failed tick
+let _syncTripUpdatedAt=null;  // last-applied trips.updated_at (beacon watermark)
+let _syncScoreWatermark=null; // last-applied scores.updated_at (delta watermark)
+
+function _syncDirtyPending(){
+  // Covers both debounce timers (the 800ms trip/expenses save and the 1500ms score
+  // save) without needing to inspect the timers themselves: s2MarkDirty runs
+  // synchronously at the moment of the user action, before either debounce delay
+  // elapses, and the flag only clears once s2WriteActive's upsert actually lands.
+  return !!(_s2Dirty.trip||_s2Dirty.players||_s2Dirty.expenses||_s2Dirty.scores.size>0||_s2WriteInFlight||_pencilSaveInFlight);
+}
+
+function _syncLifecycleOk(){
+  if(document.visibilityState!=='visible')return false;
+  if(!sbCurrentUser())return false;
+  if(!WK||!STATE)return false;
+  if(!_pencilActive())return false; // group trips only — solo/quick rounds are single-device by nature
+  if(document.getElementById('mainScreen')?.style.display!=='block')return false;
+  const totalH=totalHoles();
+  if(totalH>0&&totalHolesPlayed()>=totalH)return false; // trip complete — nothing left to converge
+  return true;
+}
+
+function _syncBackoff(){_syncBackoffMs=60000;}
+function _syncResetBackoff(){_syncBackoffMs=15000;}
+
+function _syncScheduleNext(){
+  if(_syncTimer){clearTimeout(_syncTimer);_syncTimer=null;}
+  _syncTimer=setTimeout(_syncTickWrapper,_syncBackoffMs);
+}
+async function _syncTickWrapper(){
+  await _syncTick();
+  _syncScheduleNext();
+}
+
+function _syncStart(){
+  _syncStop();
+  _syncTripUpdatedAt=(WK&&WK._updatedAt)||null;
+  // Seed the score watermark from the trip's SERVER-stamped updated_at. If it's
+  // absent (blob-fallback trip), fall back to epoch — the first tick re-pulls every
+  // score row (all idempotent no-ops against the loaded grid) rather than trusting
+  // the client clock, which would risk silently missing another phone's earlier-
+  // stamped write. Never seed from new Date() on a money path.
+  _syncScoreWatermark=(WK&&WK._updatedAt)||'1970-01-01T00:00:00Z';
+  _syncBackoffMs=15000;
+  _syncScheduleNext();
+}
+function _syncStop(){
+  if(_syncTimer){clearTimeout(_syncTimer);_syncTimer=null;}
+  _syncInFlight=null;
+}
+
+async function _syncTick(){
+  if(_syncInFlight)return;
+  if(!_syncLifecycleOk())return;
+  if(_syncDirtyPending())return; // never apply remote over an unflushed local edit
+  _syncInFlight=_syncTickInner();
+  try{await _syncInFlight;}
+  finally{_syncInFlight=null;}
+}
+
+async function _syncTickInner(){
+  const tripId=s2TripId();
+  if(!tripId)return;
+  try{
+    const beaconRows=await _syncFetchBeacon(tripId);
+    if(!beaconRows){_syncBackoff();return;}
+    if(!beaconRows.length){_syncBackoff();return;} // trip row not found this tick — try again later, don't prune locally
+    const beacon=beaconRows[0];
+
+    // Always reconcile the pencil lock — cheapest signal, drives the existing
+    // coordination bar (v110.1.1 UI), no rebuild required.
+    _syncReconcilePencilLock(Array.isArray(beacon.pencil_lock)?beacon.pencil_lock:[]);
+
+    // Ordering rule (short-array hydration bug class): rebuild the trip row FIRST
+    // if it changed (resizes the score grid for an added round/player), THEN apply
+    // the score delta. Never the reverse.
+    const tripChanged=!_syncTripUpdatedAt||(beacon.updated_at&&beacon.updated_at>_syncTripUpdatedAt);
+    if(tripChanged){
+      const ok=await _syncApplyTripRebuild(tripId);
+      if(ok)_syncTripUpdatedAt=beacon.updated_at||_syncTripUpdatedAt;
+    }
+
+    // Score delta always runs, even right after a rebuild — cheap, idempotent (skips
+    // unchanged cells), and catches anything written a moment after the beacon read.
+    await _syncApplyScoreDelta(tripId);
+
+    _syncResetBackoff();
+  }catch(e){
+    _syncBackoff();
+  }
+}
+
+async function _syncFetchBeacon(tripId){
+  try{
+    const res=await sbApiFetch(SB_URL+'/rest/v1/trips?trip_id=eq.'+encodeURIComponent(tripId)+'&select=updated_at,pencil_lock',{
+      headers:{'apikey':SB_KEY}
+    });
+    if(!res.ok)return null;
+    return await res.json();
+  }catch(e){return null;}
+}
+
+function _syncReconcilePencilLock(remoteLock){
+  if(!WK)return;
+  if(_pencilSaveInFlight)return; // our own claim is mid-PATCH; the beacon is stale — don't revert it
+  const cur=WK._pencilLock||[];
+  if(JSON.stringify(cur)===JSON.stringify(remoteLock))return;
+  WK._pencilLock=remoteLock;
+  // Re-render the existing pencil bar/lock UI (v110.1.1) — no new UI, just re-driving
+  // the states that already exist so a claim/takeover shows up on the next tick.
+  if(typeof _updateActionRow==='function')_updateActionRow();
+}
+
+async function _syncApplyScoreDelta(tripId){
+  if(!WK||!STATE)return;
+  const wm=_syncScoreWatermark||'1970-01-01T00:00:00Z';
+  try{
+    const res=await sbApiFetch(SB_URL+'/rest/v1/scores?round_id=like.'+encodeURIComponent(tripId+':round:%')+'&updated_at=gt.'+encodeURIComponent(wm)+'&order=updated_at.asc',{
+      headers:{'apikey':SB_KEY}
+    });
+    if(!res.ok)return;
+    const rows=await res.json();
+    if(!rows||!rows.length)return;
+    let changed=false;
+    // Pass 1: apply every appliable cell, and record the earliest timestamp we could
+    // NOT apply because the local grid isn't sized for that round/player yet. A hole's
+    // player rows are written in one upsert, so a whole batch shares one server
+    // updated_at — the watermark must never cross a blocked row's timestamp, or its
+    // same-timestamp siblings would be skipped forever.
+    let _firstBlockedTs=null;
+    rows.forEach(s=>{
+      const rIdx=parseInt((s.round_id||'').split(':round:')[1]);
+      const hi=s.hole_index;
+      const pi=parseInt((s.player_id||'').split(':player:')[1]);
+      if(isNaN(rIdx)||isNaN(hi)||isNaN(pi))return; // malformed id — never appliable, ignore
+      if(!STATE.scores[rIdx]||!STATE.scores[rIdx][hi]||pi>=STATE.scores[rIdx][hi].length){
+        if(!_firstBlockedTs||s.updated_at<_firstBlockedTs)_firstBlockedTs=s.updated_at;
+        return; // trip rebuild (this tick or a later one) resizes the grid; re-pull then
+      }
+      if(STATE.scores[rIdx][hi][pi]!==s.strokes){
+        STATE.scores[rIdx][hi][pi]=s.strokes;
+        changed=true;
+      }
+    });
+    // Pass 2: advance the watermark only up to — never to or past — the first blocked
+    // timestamp, so blocked rows and their siblings re-pull on the next tick.
+    rows.forEach(s=>{
+      if(_firstBlockedTs&&s.updated_at>=_firstBlockedTs)return;
+      if(!_syncScoreWatermark||s.updated_at>_syncScoreWatermark)_syncScoreWatermark=s.updated_at;
+    });
+    if(changed)_syncRerenderAfterApply();
+  }catch(e){}
+}
+
+async function _syncApplyTripRebuild(tripId){
+  if(!WK||!STATE)return false;
+  const s2data=await s2ReadTrip(tripId);
+  if(!s2data)return false;
+  // Capture local view state so a remote rebuild never yanks the viewer to a
+  // different round/hole/tab than the one they're actually looking at.
+  const _view={
+    currentRound:STATE.currentRound,currentHole:STATE.currentHole,
+    mpViewRound:STATE.mpViewRound,vegasViewRound:STATE.vegasViewRound,
+    skinsViewRound:STATE.skinsViewRound,scRound:STATE.scRound,
+    optPanel:STATE.optPanel,teamsRound:STATE.teamsRound,moneyTab:STATE.moneyTab,
+    roundRankOpen:STATE.roundRankOpen,emergencyRankOpen:STATE.emergencyRankOpen,
+    // ephemeral UI-expansion toggles — not reconstructed by s2ReadTrip, so a wholesale
+    // STATE replace would collapse every open accordion on the viewer each rebuild tick
+    mpExpanded:STATE.mpExpanded,vegasExpanded:STATE.vegasExpanded,
+    skinsExpanded:STATE.skinsExpanded,razzleExpanded:STATE.razzleExpanded,
+    lbExpanded:STATE.lbExpanded,hammerExpanded:STATE.hammerExpanded,
+    gamesSetupOpen:STATE.gamesSetupOpen,expCatExpanded:STATE.expCatExpanded
+  };
+  WK=s2data.WK;
+  STATE=s2data.STATE;
+  Object.assign(STATE,_view);
+  delete STATE._resumeAllDone; // only meaningful on initial load, not a background rebuild
+  _s2RehydrateLoadedTrip(); // reuse the exact same verified path viewTrip uses
+  _syncRerenderAfterApply();
+  return true;
+}
+
+function _syncRerenderAfterApply(){
+  if(!WK||!STATE)return;
+  // Re-render whatever the user is currently looking at, WITHOUT resetting
+  // navigation the way setView()/setOptPanel() would (setView('setup') in
+  // particular always jumps Options back to the menu — wrong for a background tick).
+  const activeV=ALL_VIEWS.find(n=>document.getElementById('tab-'+n)?.classList.contains('active'));
+  if(activeV==='setup'){
+    renderOptPanel(STATE.optPanel||'menu');
+  }else if(activeV==='money'){
+    setMoneyTab(STATE.moneyTab||'golf');
+  }else if(activeV==='card'){
+    renderRdSel('cardRdSel',STATE.scRound,'switchCardRound');renderSCGrid();
+  }else if(activeV==='games'){
+    renderGamesTab();
+  }else if(activeV==='board'){
+    renderBoard();
+  }else{
+    updateHoleUI();
+  }
+  if(typeof _updateActionRow==='function')_updateActionRow();
+}
+
+// Immediate tick on return-to-foreground, chained after the token refresh (token
+// first, then poll) — separate listeners from sbStartSessionKeepalive's so the
+// auth-hardening code (verified, do not touch) and the sync code stay decoupled.
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='visible')sbEnsureFresh().then(_syncTick);
+});
+window.addEventListener('focus',function(){sbEnsureFresh().then(_syncTick);});
+
 function renderWeekendPanel(){
   // For quick rounds, keep WK.name in sync with the course display name
   if(WK&&WK.isQuickRound&&WK.rounds&&WK.rounds[0]){
@@ -6921,7 +7166,8 @@ function renderWeekendPanel(){
     const origI=WK.rounds.indexOf(rd);
     const rdOpts=_tripCourseNames.map(n=>`<option value="${n}"${rd.courseName===n?' selected':''}>${courseDisp(n)}</option>`).join('');
     // self-heal defaultTee if missing (mirrors Courses tab _gcaTripCourseCard)
-    if(rd.course&&!rd.course.defaultTee){const _ct=CATALOG[rd.courseName];if(_ct&&_ct.tees){const _m=_ct.tees.male||[];const _f=_ct.tees.female||[];const _defT=_m.length>1?_m[1]:(_m[0]||_f[0]);if(_defT){const _defG=_m.includes(_defT)?'male':'female';rd.course=Object.assign({},rd.course,{defaultTee:{gender:_defG,teeName:_defT.tee_name}});s2MarkDirty(['trip']);s2WriteActive();}}}
+    // gated: a stale viewer snapshot must never write the whole trip row over the live scorer's state
+    if(rd.course&&!rd.course.defaultTee&&_s2CanSelfHeal(origI)){const _ct=CATALOG[rd.courseName];if(_ct&&_ct.tees){const _m=_ct.tees.male||[];const _f=_ct.tees.female||[];const _defT=_m.length>1?_m[1]:(_m[0]||_f[0]);if(_defT){const _defG=_m.includes(_defT)?'male':'female';rd.course=Object.assign({},rd.course,{defaultTee:{gender:_defG,teeName:_defT.tee_name}});s2MarkDirty(['trip']);s2WriteActive();}}}
     // tee pill (interactive) - mirrors Courses tab
     const dt=rd.course&&rd.course.defaultTee;
     const teeName=dt?dt.teeName:'';
@@ -7795,7 +8041,8 @@ function _gcaTeeColor(teeName,allTees){
   return palette[hash%palette.length];
 }
 function _gcaTripCourseCard(rd,ri,c,eid){
-  if(rd.course&&!rd.course.defaultTee){const _ct=CATALOG[rd.courseName];if(_ct&&_ct.tees){const _m=_ct.tees.male||[];const _f=_ct.tees.female||[];const _defT=_m.length>1?_m[1]:(_m[0]||_f[0]);if(_defT){const _defG=_m.includes(_defT)?'male':'female';rd.course=Object.assign({},rd.course,{defaultTee:{gender:_defG,teeName:_defT.tee_name}});s2MarkDirty(['trip']);s2WriteActive();}}}
+  // gated: a stale viewer snapshot must never write the whole trip row over the live scorer's state
+  if(rd.course&&!rd.course.defaultTee&&_s2CanSelfHeal(ri)){const _ct=CATALOG[rd.courseName];if(_ct&&_ct.tees){const _m=_ct.tees.male||[];const _f=_ct.tees.female||[];const _defT=_m.length>1?_m[1]:(_m[0]||_f[0]);if(_defT){const _defG=_m.includes(_defT)?'male':'female';rd.course=Object.assign({},rd.course,{defaultTee:{gender:_defG,teeName:_defT.tee_name}});s2MarkDirty(['trip']);s2WriteActive();}}}
   const dt=rd.course&&rd.course.defaultTee;
   const teeName=dt?dt.teeName:'';
   const teeGender=dt?dt.gender:'male';
