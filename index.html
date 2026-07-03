@@ -1335,7 +1335,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v110.1.4';
+const APP_VERSION='v110.1.5';
 
 // ===== THEME =====
 (function(){
@@ -1383,6 +1383,7 @@ function toggleTheme(){
   if(document.getElementById('opt-panel-info')&&document.getElementById('opt-panel-info').innerHTML)renderInfoPanel();
 }
 const LS_TRIPS='theturn_trips',LS_LIB='theturn_library',LS_COURSES='theturn_courses';
+const LS_ACTIVE_TRIP='tt_active_trip_v1';
 // One-time remote cache reset: on next load, clears cached trips/courses (and any other
 // local junk) on EVERY device while preserving the login session. Bump RESET_TOKEN to
 // trigger a fresh clear for all users (e.g. after a server-side data wipe).
@@ -2031,7 +2032,11 @@ function sbRouteAfterAuth(){
   if (sbNeedsProfile()) {
     sbShowProfileCapture();
   } else {
-    sbCheckAndSetGroup().then(()=>{ showHome(); });
+    sbCheckAndSetGroup().then(()=>{
+      showHome();
+      const crumb=_readActiveTripCrumb();
+      if(crumb)viewTrip(crumb.id);
+    });
   }
 }
 
@@ -2362,6 +2367,7 @@ async function sbSignOut(){
     }
   } catch(e) {}
   sbSaveSession(null);
+  _clearActiveTripCrumb();
   sbShowLogin();
 }
 
@@ -4084,7 +4090,24 @@ function _renderTripListFromData(trips){
 
   el.innerHTML=html;
 }
+// Auto-resume breadcrumb: lets a cold boot (iOS PWA eviction) land back on the
+// active trip with zero taps. Written at the top of viewTrip (retry-safe if the
+// load itself gets interrupted by another eviction). 36h TTL covers a weekend
+// trip's overnight; cleared on deliberate exit, delete, sign-out, or stale read.
+function _writeActiveTripCrumb(id){try{localStorage.setItem(LS_ACTIVE_TRIP,JSON.stringify({id:id,ts:Date.now()}));}catch(e){}}
+function _clearActiveTripCrumb(){try{localStorage.removeItem(LS_ACTIVE_TRIP);}catch(e){}}
+function _readActiveTripCrumb(){
+  try{
+    const raw=localStorage.getItem(LS_ACTIVE_TRIP);
+    if(!raw)return null;
+    const c=JSON.parse(raw);
+    if(!c||!c.id||!c.ts){_clearActiveTripCrumb();return null;}
+    if(Date.now()-c.ts>36*60*60*1000){_clearActiveTripCrumb();return null;}
+    return c;
+  }catch(e){_clearActiveTripCrumb();return null;}
+}
 function viewTrip(id){
+  _writeActiveTripCrumb(id);
   // Step 3: try new schema first, fall back to blob
   s2ReadTrip(id).then(s2data=>{
     if(s2data){
@@ -4100,6 +4123,7 @@ function viewTrip(id){
         try{localStorage.setItem(LS_TRIPS,JSON.stringify(pruned));}catch(e){}
         const t2=document.createElement('div');t2.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#555;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';t2.textContent='This trip was deleted on another device.';document.body.appendChild(t2);setTimeout(()=>t2.remove(),3500);
         _renderTripListFromData(pruned);
+        const _dc=_readActiveTripCrumb();if(_dc&&_dc.id===id)_clearActiveTripCrumb();
         return;
       }
       WK=JSON.parse(JSON.stringify(trip.WK));STATE=JSON.parse(JSON.stringify(trip.STATE));
@@ -4204,6 +4228,7 @@ async function deleteTrip(id,btn,gid){
     alert('Delete failed. Please try again.');
     return;
   }
+  const _crumb=_readActiveTripCrumb();if(_crumb&&_crumb.id===id)_clearActiveTripCrumb();
   // Remove from localStorage and reconcile
   const trips=loadTrips().filter(t=>t.id!==id);
   saveTrips(trips);
@@ -4215,7 +4240,7 @@ async function deleteTrip(id,btn,gid){
     else{_ipOverlay.remove();renderHomeDashboard();}
   } else if(gid){renderGroupPage(gid);}else{renderGroupList();}
 }
-function goHome(){_syncStop();document.getElementById('mainTabBar')?.classList.remove('visible');const _ar=document.getElementById('scoreActionRow');if(_ar)_ar.className='';if(!isReadOnly&&WK){autoSave();s2WriteActive();}showHome();}
+function goHome(){_syncStop();_clearActiveTripCrumb();document.getElementById('mainTabBar')?.classList.remove('visible');const _ar=document.getElementById('scoreActionRow');if(_ar)_ar.className='';if(!isReadOnly&&WK){autoSave();s2WriteActive();}showHome();}
 function getSegments(count,totalHoles){const th=totalHoles||18;const s=Math.floor(th/count);return Array.from({length:count},(_,i)=>({start:i*s,end:i===count-1?th:(i+1)*s,label:'Game '+(i+1)}));}
 function segOptionHtml(totalHoles,curVal){const opts=totalHoles===9?[[1,'1 game - 9 holes'],[3,'3 games - 3 holes']]:[[1,'1 game - 18 holes'],[2,'2 games - 9 holes'],[3,'3 games - 6 holes']];return opts.map(([v,l])=>`<option value="${v}"${v===curVal?' selected':''}>${l}</option>`).join('');}
 function segForHole(h,count,totalHoles){return getSegments(count,totalHoles).findIndex(s=>h>=s.start&&h<s.end);}
