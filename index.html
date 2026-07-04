@@ -1335,7 +1335,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v110.1.5';
+const APP_VERSION='v110.1.6';
 
 // ===== THEME =====
 (function(){
@@ -1673,6 +1673,11 @@ async function s2ValidateOnLoad(){
   }
 }
 
+// Distinguishes a CLEAN 'trip row is gone' answer (server reached, zero rows) from
+// a transient failure (HTTP error, partial fetch). s2ReadTrip returns this sentinel
+// only for confirmed-absent; it returns null for every transient case. Callers that
+// prune must act on S2_ABSENT, never on null - a flaky signal must not read as a delete.
+const S2_ABSENT={__s2absent:true};
 async function s2ReadTrip(tripId){
   try{
     // Fetch trip row
@@ -1681,7 +1686,7 @@ async function s2ReadTrip(tripId){
     });
     if(!tr.ok){console.warn('[s2ReadTrip] trips fetch not ok:',tr.status);return null;}
     const tripRows=await tr.json();
-    if(!tripRows||!tripRows.length){console.warn('[s2ReadTrip] no trip row for',tripId);return null;}
+    if(!tripRows||!tripRows.length){console.warn('[s2ReadTrip] no trip row for',tripId);return S2_ABSENT;}
     const t=tripRows[0];
     console.log('[s2ReadTrip] trip row found, rounds_data:',t.rounds_data?.length,'summary:',!!t.summary);
 
@@ -2033,9 +2038,9 @@ function sbRouteAfterAuth(){
     sbShowProfileCapture();
   } else {
     sbCheckAndSetGroup().then(()=>{
-      showHome();
       const crumb=_readActiveTripCrumb();
-      if(crumb)viewTrip(crumb.id);
+      if(crumb){viewTrip(crumb.id);}
+      else{showHome();}
     });
   }
 }
@@ -2123,6 +2128,7 @@ function sbNeedsProfile(){
 }
 
 function sbShowProfileCapture(){
+  dismissSplash();
   const user = sbCurrentUser();
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('homeScreen').style.display = 'none';
@@ -2888,6 +2894,7 @@ function saveTrips(trips){try{localStorage.setItem(LS_TRIPS,JSON.stringify(trips
 function autoSave(silent){if(!WK||!STATE||isReadOnly)return;s2MarkDirty(['trip','players','expenses']);const trips=loadTrips();const holesPlayed=totalHolesPlayed(),totalH=totalHoles(),complete=holesPlayed>=totalH;const potData=calcPotRankings();const winner=potData[0]?WK.players[potData[0].pi]?.name:'';const snapshot={id:WK._id||(WK._id=Date.now()+''),name:WK.name,is_quick_round:!!WK.isQuickRound,group_id:WK._groupId||null,date:WK.date,playerNames:WK.players.map((p,i)=>displayName(i)),playerInis:WK.players.map(p=>p.ini),playerColors:WK.players.map(p=>({bg:p.bg,fg:p.fg})),courses:WK.rounds.map(r=>r.courseName),holesPlayed,totalHoles:totalH,complete,winner,savedAt:new Date().toISOString()};const idx=trips.findIndex(t=>t.id===snapshot.id);if(idx>=0)trips[idx]=snapshot;else trips.unshift(snapshot);saveTrips(trips);if(!silent)showSaveToast();}
 function showSaveToast(){const el=document.getElementById('saveIndicator');el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1500);}
 function showHome(){
+  dismissSplash();
   document.getElementById('homeScreen').style.display='block';
   document.getElementById('wizardScreen').style.display='none';
   document.getElementById('mainScreen').style.display='none';
@@ -4106,32 +4113,52 @@ function _readActiveTripCrumb(){
     return c;
   }catch(e){_clearActiveTripCrumb();return null;}
 }
+function _viewTripToast(msg){
+  const t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#555;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3500);
+}
 function viewTrip(id){
   _writeActiveTripCrumb(id);
   // Step 3: try new schema first, fall back to blob
   s2ReadTrip(id).then(s2data=>{
-    if(s2data){
+    if(s2data&&s2data!==S2_ABSENT){
       WK=s2data.WK;
       STATE=s2data.STATE;
     } else {
-      // Blob fallback — old trips only (pre-v66 had WK/STATE in blob)
+      // No relational data this read. A present local blob wins for BOTH sub-cases
+      // (pre-v66 trips live only in the blob and also read as absent), so check it first.
       const trips=loadTrips();const trip=trips.find(t=>t.id===id);
-      if(!trip||!trip.WK||!trip.STATE){
-        console.warn('[viewTrip] No blob WK/STATE for',id,', aborting');
-        // Trip was deleted on another device — prune it from local cache and refresh home screen
+      if(trip&&trip.WK&&trip.STATE){
+        WK=JSON.parse(JSON.stringify(trip.WK));STATE=JSON.parse(JSON.stringify(trip.STATE));
+        console.log('[viewTrip] Loaded trip from blob (fallback)');
+      } else if(s2data===S2_ABSENT){
+        // Confirmed deleted: server answered cleanly with no row, and nothing local.
+        console.warn('[viewTrip] trip absent server-side and no local blob for',id);
         const pruned=trips.filter(t=>t.id!==id);
         try{localStorage.setItem(LS_TRIPS,JSON.stringify(pruned));}catch(e){}
-        const t2=document.createElement('div');t2.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#555;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';t2.textContent='This trip was deleted on another device.';document.body.appendChild(t2);setTimeout(()=>t2.remove(),3500);
+        _viewTripToast('This trip was deleted on another device.');
         _renderTripListFromData(pruned);
         const _dc=_readActiveTripCrumb();if(_dc&&_dc.id===id)_clearActiveTripCrumb();
+        dismissSplash();
+        return;
+      } else {
+        // Transient failure (s2data===null) with nothing local. Do NOT prune and do NOT
+        // clear the crumb - the trip is likely fine, we just could not reach the server.
+        // Land on home with a soft notice; the surviving crumb retries on the next boot.
+        console.warn('[viewTrip] transient load failure for',id,'- leaving trip intact');
+        showHome();
+        _viewTripToast('Could not load this trip. Check your connection and try again.');
+        dismissSplash();
         return;
       }
-      WK=JSON.parse(JSON.stringify(trip.WK));STATE=JSON.parse(JSON.stringify(trip.STATE));
-      console.log('[Step3] Loaded trip from blob (fallback)');
     }
     _s2RehydrateLoadedTrip();
-  isReadOnly=false;viewingTripId=id;
-  const _allDone=STATE._resumeAllDone;delete STATE._resumeAllDone;launchMainApp();if(_allDone)setView('board');s2ValidateOnLoad();
+    isReadOnly=false;viewingTripId=id;
+    const _allDone=STATE._resumeAllDone;delete STATE._resumeAllDone;launchMainApp();if(_allDone)setView('board');s2ValidateOnLoad();
+    dismissSplash();
   });}
 // Shared rehydration path for a freshly-loaded WK/STATE pair — used on initial trip
 // open (viewTrip) AND by the device-sync poll's trip-row rebuild. Keeping this as one
@@ -5118,6 +5145,10 @@ function _updateActionRow(){
   if(!WK||!STATE)return;
   const row=document.getElementById('scoreActionRow');
   if(!row)return;
+  // Scores tab only. Sync ticks and pencil-lock reconciles call this from whatever
+  // tab the user is on; without this guard a background tick repaints the scoring
+  // bar over Games/Money/etc. Mirrors the rule _updateTabBar already enforces on nav.
+  if(!document.getElementById('tab-entry')?.classList.contains('active')){row.className='';return;}
   const r=STATE.currentRound,hi=STATE.currentHole;
   const isCard=_scViewMode==='card';
   if(isCard){
@@ -7112,7 +7143,7 @@ async function _syncApplyScoreDelta(tripId){
 async function _syncApplyTripRebuild(tripId){
   if(!WK||!STATE)return false;
   const s2data=await s2ReadTrip(tripId);
-  if(!s2data)return false;
+  if(!s2data||s2data===S2_ABSENT)return false;
   // Capture local view state so a remote rebuild never yanks the viewer to a
   // different round/hole/tab than the one they're actually looking at.
   const _view={
@@ -7154,7 +7185,12 @@ function _syncRerenderAfterApply(){
   }else if(activeV==='board'){
     renderBoard();
   }else{
+    // Entry tab. Keep the hole view fresh (unchanged behavior) so a toggle back to
+    // hole view is current, AND repaint the inline scorecard grid when it's the
+    // surface actually on screen - a background tick lands score data in STATE but
+    // updateHoleUI never touches the grid, so grid mode went stale until a manual toggle.
     updateHoleUI();
+    if(_scViewMode==='card')renderSCGrid();
   }
   if(typeof _updateActionRow==='function')_updateActionRow();
 }
@@ -10541,9 +10577,16 @@ sbInit().then(authed => {
     syncOnLoad().then(()=>{
       renderGroupList();
       const elapsed=Date.now()-_splashStart;
-      const remain=Math.max(0,2800-elapsed);
+      // Mid-round resume: a live crumb means the user is coming back to score. Keep the
+      // splash UP through the resume so the round paints straight over it - dismissing
+      // here first would flash the home screen for the length of the trip fetch. viewTrip
+      // and its failure branches dismiss the splash once something is on screen. No crumb:
+      // dismiss now and reveal home as usual. 1200ms floor so an instant fetch never flickers.
+      const _hasCrumb=!!_readActiveTripCrumb();
+      const _splashMin=_hasCrumb?1200:2800;
+      const remain=Math.max(0,_splashMin-elapsed);
       setTimeout(()=>{
-        dismissSplash();
+        if(!_hasCrumb)dismissSplash();
         sbRouteAfterAuth();
       }, remain);
     });
