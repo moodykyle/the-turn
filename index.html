@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="The Turn"/>
 <meta name="theme-color" content="#0f2419"/>
@@ -474,6 +475,12 @@ body.force-light .footer-btn{background:#1D9E75;color:#ffffff;}
 .trip-status{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500;}
 .trip-status.complete{background:#E1F5EE;color:#085041;}
 .trip-status.inprogress{background:#FEF3C7;color:#92400E;}
+.tc-del-btn{width:30px;height:30px;padding:0;border-radius:50%;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.tc-del-btn:active{background:var(--color-background-secondary);}
+.undo-toast{position:fixed;left:14px;right:14px;bottom:calc(16px + env(safe-area-inset-bottom));max-width:452px;margin:0 auto;z-index:10050;background:#132019;border:0.5px solid #24352c;border-radius:var(--border-radius-md);padding:11px 14px;display:none;align-items:center;justify-content:space-between;box-shadow:0 4px 16px rgba(0,0,0,0.3);}
+.undo-toast.show{display:flex;}
+.undo-toast-msg{font-size:13px;color:#e8efe9;}
+.undo-toast-btn{font-size:13px;font-weight:700;color:#1D9E75;background:transparent;border:none;cursor:pointer;font-family:inherit;padding:4px 4px 4px 12px;}
 /* ── Option B home: elevation (light + dark) ── */
 .home-elev{box-shadow:0 2px 8px rgba(0,0,0,0.10),0 1px 3px rgba(0,0,0,0.06);}
 body.force-light .home-elev{box-shadow:0 2px 10px rgba(0,0,0,0.11),0 1px 4px rgba(0,0,0,0.07);border-color:var(--color-border-secondary) !important;}
@@ -1335,7 +1342,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v110.1.6';
+const APP_VERSION='v110.1.7';
 
 // ===== THEME =====
 (function(){
@@ -1970,6 +1977,9 @@ const SB_AUTH_URL = SB_URL + '/auth/v1';
 let _sbSession = null;
 let _activeGroup = null;
 const LS_ACTIVE_GROUP = 'tt_active_group';
+const LS_GROUPS_CACHE = 'tt_groups_cache';
+function _cacheGroups(list){try{localStorage.setItem(LS_GROUPS_CACHE,JSON.stringify(list||[]));}catch(e){}}
+function _loadCachedGroups(){try{const d=localStorage.getItem(LS_GROUPS_CACHE);return d?JSON.parse(d):[];}catch(e){return[];}}
 
 function sbGetStoredSession(){
   try {
@@ -2374,6 +2384,7 @@ async function sbSignOut(){
   } catch(e) {}
   sbSaveSession(null);
   _clearActiveTripCrumb();
+  try{localStorage.removeItem(LS_GROUPS_CACHE);}catch(e){}
   sbShowLogin();
 }
 
@@ -2407,6 +2418,8 @@ async function sbValidToken(force){
   if(!force && !near){
     return _sbSession.access_token;
   }
+  // Offline: never attempt a network refresh (avoids the iOS airplane-mode dialog); return the best token on hand.
+  if(!navigator.onLine){ return _sbSession.access_token || SB_KEY; }
   // Single-flight: concurrent callers share one refresh so we never reuse a
   // rotated refresh token (which would trip GoTrue reuse-detection and sign the
   // user out mid-round).
@@ -2531,14 +2544,18 @@ function sbSetActiveGroup(g){_activeGroup=g;try{if(g)localStorage.setItem(LS_ACT
 async function sbGetUserGroups(){
   const user=sbCurrentUser();
   if(!user)return [];
+  // Offline: skip the fetch (avoids the iOS airplane-mode dialog) and serve the last-good cached list.
+  if(!navigator.onLine)return _loadCachedGroups();
   try{
     const r=await fetch(SB_URL+'/rest/v1/group_members?user_id=eq.'+encodeURIComponent(user.id)+'&select=member_id,role,group_id,groups(group_id,name,join_code)',{
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+(_sbSession?.access_token||SB_KEY),'Accept':'application/json'}
     });
-    if(!r.ok)return [];
+    if(!r.ok)return _loadCachedGroups();
     const rows=await r.json();
-    return rows.map(m=>({...m.groups,role:m.role,member_id:m.member_id}));
-  }catch(e){return [];}
+    const list=rows.map(m=>({...m.groups,role:m.role,member_id:m.member_id}));
+    _cacheGroups(list);
+    return list;
+  }catch(e){return _loadCachedGroups();}
 }
 
 async function sbCreateGroup(name){
@@ -2943,7 +2960,7 @@ function _buildHomeTripCard(t){
     <div class="trip-card-progress"><div class="trip-card-progress-fill" style="width:${t.complete?100:pct}%"></div></div>
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div class="trip-card-players">${playerAvis}</div>
-      <div style="display:flex;align-items:center;gap:8px">${winnerLine}${(!t.group_id||_amGroupAdmin(_groupCache[t.group_id]||_activeGroup))?`<button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();deleteTrip('${t.id}',this,'${t.group_id||""}')">Delete</button>`:''}</div>
+      <div style="display:flex;align-items:center;gap:8px">${winnerLine}${(!t.group_id||_amGroupAdmin(_groupCache[t.group_id]||_activeGroup))?`<button class="tc-del-btn" aria-label="Delete" onclick="event.stopPropagation();_tripDeleteTap('${t.id}',this,'${t.group_id||""}')"><i class="ti ti-trash" style="font-size:15px" aria-hidden="true"></i></button>`:''}</div>
     </div>
   </div>`;
 }
@@ -3054,10 +3071,13 @@ async function renderHomeDashboard(){
     html+='</div>';
   }
 
+  html+='<div class="home-dash-sec" id="homeIndivSec"></div>';
+
   dash.innerHTML=html;
+  _renderIndivRoundsSection();
 
   // Async Supabase sync (preserved)
-  if(!_grpListSyncing&&groups.length){
+  if(!_grpListSyncing&&navigator.onLine&&groups.length){
     _grpListSyncing=true;
     const _indivFetch=fetch(SB_URL+'/rest/v1/trips?is_quick_round=eq.true&group_id=is.null&select=trip_id,name,date,summary,is_quick_round,group_id&order=updated_at.desc',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}}).then(r=>r.ok?r.json():null).then(rows=>rows&&rows.length?rows.map(t=>{const s=t.summary||{};return{id:t.trip_id,name:t.name||'',date:t.date||'',is_quick_round:true,group_id:null,playerNames:s.playerNames||[],playerInis:s.playerInis||[],playerColors:s.playerColors||[],courses:s.courses||[],holesPlayed:s.holesPlayed||0,totalHoles:s.totalHoles||18,complete:!!(s.complete),winner:s.winner||'',savedAt:s.savedAt||''};}):null).catch(()=>null);
     Promise.all([...groups.map(function(g){return s2LoadTripList(g.group_id).catch(function(){return null;});}),_indivFetch]).then(function(results){
@@ -3116,6 +3136,7 @@ window.toggleTripSection = function(id){
 
 // Stage 5: async member loader for doorway cards
 async function _loadGroupMembersIntoDoor(gid){
+  if(!navigator.onLine)return;
   try{
     const tok=_sbSession?.access_token||SB_KEY;
     const r=await fetch(SB_URL+'/rest/v1/group_members?group_id=eq.'+encodeURIComponent(gid)+'&select=member_id,display_name,hcp_index,role,user_id',{
@@ -4081,7 +4102,7 @@ function _renderTripListFromData(trips){
       <div class="trip-card-progress"><div class="trip-card-progress-fill" style="width:${t.complete?100:pct}%"></div></div>
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div class="trip-card-players">${playerAvis}</div>
-        <div style="display:flex;align-items:center;gap:8px">${winnerLine}${(!t.group_id||_amGroupAdmin(_groupCache[t.group_id]||_activeGroup))?`<button class="btn-danger" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();deleteTrip('${t.id}',this,'${gid||""}')">Delete</button>`:''}</div>
+        <div style="display:flex;align-items:center;gap:8px">${winnerLine}${(!t.group_id||_amGroupAdmin(_groupCache[t.group_id]||_activeGroup))?`<button class="tc-del-btn" aria-label="Delete" onclick="event.stopPropagation();_tripDeleteTap('${t.id}',this,'${gid||""}')"><i class="ti ti-trash" style="font-size:15px" aria-hidden="true"></i></button>`:''}</div>
       </div>
     </div>`;
   }
@@ -4244,8 +4265,101 @@ async function s2DeleteTrip(id){
   await del('rounds','trip_id=eq.'+enc);
   await del('trips','trip_id=eq.'+enc);
 }
-async function deleteTrip(id,btn,gid){
-  if(!confirm('Delete this trip? This cannot be undone.'))return;
+const _pendingRoundDeletes=new Set();
+const _roundDeleteTimers={};
+let _undoToastId=null;
+let _undoToastTimer=null;
+function _refreshRoundSurfaces(){
+  if(document.getElementById('homeIndivSec'))_renderIndivRoundsSection();
+  if(document.getElementById('yourRoundsPage'))_fillYourRoundsList();
+}
+function _showUndoToast(id){
+  let t=document.getElementById('undoToast');
+  if(!t){
+    t=document.createElement('div');t.id='undoToast';t.className='undo-toast';
+    t.innerHTML='<span class="undo-toast-msg">Round deleted</span><button class="undo-toast-btn" id="undoToastBtn">Undo</button>';
+    document.body.appendChild(t);
+  }
+  _undoToastId=id;
+  document.getElementById('undoToastBtn').onclick=function(){window._undoRoundDelete(id);};
+  t.classList.add('show');
+  clearTimeout(_undoToastTimer);
+  _undoToastTimer=setTimeout(function(){_hideUndoToast();},5000);
+}
+function _hideUndoToast(){
+  const t=document.getElementById('undoToast');if(t)t.classList.remove('show');
+  _undoToastId=null;
+}
+function _deleteRoundWithUndo(id,btn){
+  _pendingRoundDeletes.add(id);
+  _refreshRoundSurfaces();
+  clearTimeout(_roundDeleteTimers[id]);
+  _roundDeleteTimers[id]=setTimeout(function(){_commitRoundDelete(id);},5000);
+  _showUndoToast(id);
+}
+window._undoRoundDelete=function(id){
+  clearTimeout(_roundDeleteTimers[id]);delete _roundDeleteTimers[id];
+  _pendingRoundDeletes.delete(id);
+  _hideUndoToast();
+  _refreshRoundSurfaces();
+};
+async function _commitRoundDelete(id){
+  clearTimeout(_roundDeleteTimers[id]);delete _roundDeleteTimers[id];
+  _pendingRoundDeletes.delete(id);
+  if(_undoToastId===id)_hideUndoToast();
+  const trips=loadTrips().filter(function(t){return t.id!==id;});saveTrips(trips);
+  const _crumb=_readActiveTripCrumb();if(_crumb&&_crumb.id===id)_clearActiveTripCrumb();
+  try{await s2DeleteTrip(id);}catch(e){}
+}
+function _indivRoundsFromLocal(){
+  return loadTrips().filter(function(t){return t.is_quick_round&&!t.group_id&&!_pendingRoundDeletes.has(t.id);}).sort(function(a,b){return new Date(b.savedAt||0)-new Date(a.savedAt||0);});
+}
+function _renderIndivRoundsSection(){
+  const el=document.getElementById('homeIndivSec');if(!el)return;
+  const rounds=_indivRoundsFromLocal();
+  if(!rounds.length){el.innerHTML='';return;}
+  const seeMore=rounds.length>3?'<button onclick="window._showYourRoundsPage()" style="background:none;border:none;color:#1D9E75;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:0.05em;padding:0">See More ('+rounds.length+')</button>':'';
+  el.innerHTML='<div class="home-dash-sec-label" style="display:flex;align-items:center;justify-content:space-between"><span>Individual Rounds</span>'+seeMore+'</div>'+rounds.slice(0,3).map(function(t){return _buildHomeTripCard(t);}).join('');
+}
+window._yourRoundsViewTrip=function(id){
+  const el=document.getElementById('yourRoundsPage');if(el)el.remove();
+  viewTrip(id);
+};
+function _fillYourRoundsList(){
+  const list=document.getElementById('yourRoundsList');if(!list)return;
+  const rounds=_indivRoundsFromLocal();
+  if(!rounds.length){list.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);font-size:13px;padding:30px 0">No individual rounds.</div>';return;}
+  list.innerHTML=rounds.map(function(t){return _buildHomeTripCard(t).replace(/onclick="viewTrip\(/g,'onclick="window._yourRoundsViewTrip(');}).join('');
+}
+window._showYourRoundsPage=function(){
+  const existing=document.getElementById('yourRoundsPage');if(existing)existing.remove();
+  const div=document.createElement('div');div.id='yourRoundsPage';
+  div.style.cssText='position:fixed;inset:0;z-index:9980;background:var(--color-background-primary);overflow-y:auto;padding:16px 14px 40px;';
+  div.innerHTML='<div style="display:flex;align-items:center;min-height:44px;position:relative;margin-bottom:16px">'
+    +'<button onclick="document.getElementById(\'yourRoundsPage\').remove()" style="background:none;border:none;color:var(--color-text-secondary);cursor:pointer;padding:6px;line-height:1;flex-shrink:0;z-index:1" aria-label="Home"><i class="ti ti-home" style="font-size:22px"></i></button>'
+    +'<div style="position:absolute;left:0;right:0;text-align:center;font-size:16px;font-weight:700;color:var(--color-text-primary);pointer-events:none">Your Rounds</div>'
+    +'</div>'
+    +'<div id="yourRoundsList"></div>';
+  document.body.appendChild(div);
+  _fillYourRoundsList();
+};
+function _tripDeleteTap(id,btn,gid){
+  if(gid){
+    const t=loadTrips().find(function(x){return x.id===id;});
+    const nm=t&&t.name?t.name:'This trip';
+    _confirmSheet({
+      icon:'ti-trash',
+      title:'Delete this trip?',
+      body:'"'+nm+'" and its scores, games, and expenses will be permanently deleted. This cannot be undone.',
+      okLabel:'Delete Trip',
+      onOk:function(){_commitDeleteTrip(id,btn,gid);}
+    });
+  }else{
+    _deleteRoundWithUndo(id,btn);
+  }
+}
+window.deleteTrip=_tripDeleteTap;
+async function _commitDeleteTrip(id,btn,gid){
   const card=btn?.closest('.trip-card,.home-resume-card');
   if(card){card.style.opacity='0.3';card.style.pointerEvents='none';}
   try{
@@ -6998,6 +7112,7 @@ function _syncDirtyPending(){
 }
 
 function _syncLifecycleOk(){
+  if(!navigator.onLine)return false;
   if(document.visibilityState!=='visible')return false;
   if(!sbCurrentUser())return false;
   if(!WK||!STATE)return false;
