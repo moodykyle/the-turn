@@ -245,7 +245,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(52%) sepia(9
 .result-pts.tied{color:var(--color-text-secondary);}
 .mp-team-block{display:flex;align-items:stretch;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary);}
 .mp-team-letter{font-size:18px;font-weight:700;color:var(--color-text-secondary);width:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-right:10px;}
-.mp-team-players{flex:1;}
+.mp-team-players{flex:1;display:flex;flex-direction:column;justify-content:center;}
 .mp-team-label{font-size:10px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;}
 .mp-player-line{display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;}
 .mp-player-name{color:var(--color-text-secondary);}
@@ -684,6 +684,8 @@ body.force-light .gs-setup-toggle,body.force-light .gs-setup-body{box-shadow:0 2
   margin-bottom:8px;cursor:pointer;
 }
 .gs-add-row:active{background:var(--color-background-secondary);}
+.gs-add-row-disabled{cursor:default;}
+.gs-add-row-disabled:active{background:transparent;}
 .gs-empty-state{
   text-align:center;color:var(--color-text-secondary);
   padding:2rem 1rem;
@@ -1063,7 +1065,7 @@ body.force-light{
       <div class="login-title">Join Group</div>
       <div class="login-sub">Enter the 6-character code from your group admin.</div>
       <div id="groupJoinError" class="login-error" style="display:none"></div>
-      <input id="groupJoinCode" class="login-input" type="text" placeholder="XKTP7N" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="6"/>
+      <input id="groupJoinCode" class="login-input" type="text" placeholder="XKTP7N" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="10" oninput="this.value=this.value.toUpperCase()"/>
       <button id="groupJoinBtn" class="login-btn" onclick="window.sbDoJoinGroup()">Join Group</button>
       <button class="login-btn" style="background:transparent;color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);margin-top:8px" onclick="window.sbGroupFlowBack('groupJoinScreen')">Back</button>
     </div>
@@ -1342,7 +1344,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v110.1.8';
+const APP_VERSION='v110.1.11';
 
 // ===== THEME =====
 (function(){
@@ -2714,9 +2716,9 @@ window.sbDoCreateGroup=async function(){
 };
 
 window.sbDoJoinGroup=async function(){
-  const code=(document.getElementById('groupJoinCode').value||'').trim();
+  const code=(document.getElementById('groupJoinCode').value||'').trim().toUpperCase();
   const errEl=document.getElementById('groupJoinError');
-  if(code.length!==6){errEl.textContent='Enter the 6-character group code.';errEl.style.display='block';return;}
+  if(code.length<4||code.length>10){errEl.textContent='Enter a group code (4 to 10 characters).';errEl.style.display='block';return;}
   const btn=document.getElementById('groupJoinBtn');
   btn.disabled=true;btn.textContent='Joining...';
   const result=await sbJoinGroup(code);
@@ -3797,13 +3799,11 @@ function _qrStepHtml(){
 
   if(_qrS.step===5){
     if(_qrS.n===1){_qrFinish();return '';}
-    const _grey={};if(_qrS.n<4){_grey['Vegas']=true;_grey['Razzle Dazzle']=true;}if(_qrS.n<3){_grey['Wolf']=true;}
     const games=['Match Play','Vegas','Skins','Razzle Dazzle','Wolf','Hammer',"Two's Club",'Snake'];
     let gameRows=games.map(function(g,i){
-      const greyed=!!_grey[g];const on=!greyed&&!!_gsGames[g];
+      const _note=_gameMinNote(g,_qrS.n);const greyed=!!_note;const on=!greyed&&!!_gsGames[g];
       const isLast=i===games.length-1;
-      const _qrMinP={'Vegas':4,'Razzle Dazzle':4,'Wolf':3};
-      const _qrNeedLbl=greyed&&_qrMinP[g]?'<span style="font-size:11px;color:var(--color-text-tertiary);margin-right:8px">Needs '+_qrMinP[g]+'</span>':'';
+      const _qrNeedLbl=_note?'<span style="font-size:11px;color:var(--color-text-tertiary);margin-right:8px">'+_note+'</span>':'';
       return'<div '+(greyed?'':'onclick="window._qrToggleGame('+i+')"')+' style="display:flex;align-items:center;padding:11px 12px;'+(isLast?'':'border-bottom:0.5px solid var(--color-border-tertiary);')+(greyed?'opacity:0.35;':'cursor:pointer;')+'">'
         +'<div style="width:3px;height:28px;border-radius:1px;background:'+(on?'#1D9E75':'transparent')+';margin-right:10px;flex-shrink:0"></div>'
         +'<div style="flex:1;font-size:13px;color:var(--color-text-'+(on?'primary':'secondary')+')">'+g+'</div>'
@@ -3825,6 +3825,7 @@ function _qrStepHtml(){
 window._qrToggleGame=function(i){
   const games=['Match Play','Vegas','Skins','Razzle Dazzle','Wolf','Hammer',"Two's Club",'Snake'];
   const g=games[i];if(!g)return;
+  if(_gameMinNote(g,_qrS.n))return;
   if(_gsGames[g])delete _gsGames[g];
   else _gsGames[g]=true;
   _qrRender();
@@ -4736,14 +4737,18 @@ function _twStep4Html(){
 // Step 5: Money & games
 function _twStep5Html(){
   const games=['Match Play','Vegas','Skins','Razzle Dazzle','Wolf','Hammer',"Two's Club",'Snake'];
+  const _twN=(_twS.selectedMembers||[]).length;
   let gameRows=games.map((g,i)=>{
-    const on=!!_twS.games[g];
+    const _note=_gameMinNote(g,_twN);const greyed=!!_note;const on=!greyed&&!!_twS.games[g];
     const isLast=i===games.length-1;
-    return`<div onclick="window._twToggleGameIdx(${i})" style="display:flex;align-items:center;padding:11px 12px;${isLast?'':'border-bottom:0.5px solid var(--color-border-tertiary);'}cursor:pointer;">`+
+    const _needLbl=_note?`<span style="font-size:11px;color:var(--color-text-tertiary);margin-right:8px;">${_note}</span>`:'';
+    const _rowClick=greyed?'':`onclick="window._twToggleGameIdx(${i})"`;
+    const _cursor=greyed?'opacity:0.5;':'cursor:pointer;';
+    const _toggle=greyed?`<div style="width:42px;height:24px;border-radius:12px;background:var(--color-border-secondary);position:relative;flex-shrink:0;"><span style="position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;opacity:0.6;"></span></div>`:`<div onclick="event.stopPropagation();window._twToggleGameIdx(${i})" style="width:42px;height:24px;border-radius:12px;background:${on?'#1D9E75':'var(--color-border-secondary)'};position:relative;cursor:pointer;flex-shrink:0;"><span style="position:absolute;top:2px;${on?'right':'left'}:2px;width:20px;height:20px;border-radius:50%;background:#fff;"></span></div>`;
+    return`<div ${_rowClick} style="display:flex;align-items:center;padding:11px 12px;${isLast?'':'border-bottom:0.5px solid var(--color-border-tertiary);'}${_cursor}">`+
       `<div style="width:3px;height:28px;border-radius:1px;background:${on?'#1D9E75':'transparent'};margin-right:10px;flex-shrink:0;"></div>`+
       `<div style="flex:1;font-size:13px;color:var(--color-text-${on?'primary':'secondary'});">${g}</div>`+
-      `<div onclick="event.stopPropagation();window._twToggleGameIdx(${i})" style="width:42px;height:24px;border-radius:12px;background:${on?'#1D9E75':'var(--color-border-secondary)'};position:relative;cursor:pointer;flex-shrink:0;">`+
-      `<span style="position:absolute;top:2px;${on?'right':'left'}:2px;width:20px;height:20px;border-radius:50%;background:#fff;"></span></div></div>`;
+      _needLbl+_toggle+`</div>`;
   }).join('');
   return _twHeader('New trip','Money and games','')+
     `<div style="padding:14px 20px 10px;">`+
@@ -5014,6 +5019,7 @@ window._twToggleMember=function(memberId){
 window._twToggleGameIdx=function(i){
   const games=['Match Play','Vegas','Skins','Razzle Dazzle','Wolf','Hammer',"Two's Club",'Snake'];
   const g=games[i];if(!g)return;
+  if(_gameMinNote(g,(_twS.selectedMembers||[]).length))return;
   if(_twS.games[g])delete _twS.games[g];
   else _twS.games[g]=true;
   _twRender();
@@ -5123,7 +5129,8 @@ window._confirmAddGuest=async function(gid){
   var btn=document.getElementById('agSaveBtn');
   if(btn){btn.disabled=true;btn.textContent='Adding...';}
   try{
-    await window.createManagedPlayer(gid,{name,hcp_index,venmo});
+    const newMember=await window.createManagedPlayer(gid,{name,hcp_index,venmo});
+    if(_groupCache[gid]){if(!_groupCache[gid]._members)_groupCache[gid]._members=[];_groupCache[gid]._members.push(newMember);}
     window.closeHmMemberSheet();
     renderGroupPage(gid);
   }catch(e){
@@ -5269,9 +5276,10 @@ if(STATE.skinsTeams&&STATE.skinsTeams[r]&&(STATE.skinsTeams[r].length!==skinsGam
   const sg=skinsGamesForRound(r);
   STATE.skinsTeams[r]=Array(sg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));
 }
-if(STATE.hammerTeams&&STATE.hammerTeams[r]&&(STATE.hammerTeams[r].length!==hammerSegsForRound(r)||!isValidFlat(STATE.hammerTeams[r]))){
-  const hg=hammerSegsForRound(r);
-  STATE.hammerTeams[r]=Array(hg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));
+if(STATE.hammerTeams&&STATE.hammerTeams[r]){
+  const _hHU=WK.players.length<4;
+  const _hOk=_hHU?STATE.hammerTeams[r].every(game=>game&&game[0]&&game[1]&&game[0].length===1&&game[1].length===1&&game[0][0]!==game[1][0]&&_vp(game[0][0])&&_vp(game[1][0])):isValidFlat(STATE.hammerTeams[r]);
+  if(STATE.hammerTeams[r].length!==hammerSegsForRound(r)||!_hOk){STATE.hammerTeams[r]=defaultHammerTeams(r);}
 }
 }
 function initState(netOffLow){const nR=WK.rounds.length,nP=WK.players.length;const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];const mkSkTeams=r=>{const g=skinsGamesForRound(r);return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));};STATE={currentRound:0,currentHole:holeOffset(0),netOffLow:netOffLow||false,mpViewRound:0,vegasViewRound:0,skinsViewRound:0,scRound:0,optPanel:'teams',teamsRound:0,roundRankOpen:false,emergencyRankOpen:false,moneyTab:'golf',expenses:[],settledRounds:[],roundSettleData:{},lockedRounds:[],scores:Array(nR).fill(null).map(()=>Array(18).fill(null).map(()=>Array(nP).fill(null))),mpTeams:Array(nR).fill(null).map((_,r)=>isHeadsUp(r)?defaultHUTeams(r):defaultTeams(r)),vegTeams:Array(nR).fill(null).map((_,r)=>defaultVegasTeams(r)),skinsTeams:Array(nR).fill(null).map((_,r)=>mkSkTeams(r)),
@@ -8467,6 +8475,7 @@ function _gsSetOn(def,r,on){
   if(on&&def.team)sanitizeTeams(r);
   if(on&&def.id==='hammer'){if(!STATE.hammerTeams)STATE.hammerTeams=WK.rounds.map((_,ri)=>defaultHammerTeams(ri));if(!STATE.hammerTeams[r])STATE.hammerTeams[r]=defaultHammerTeams(r);}
 }
+function _gameMinNote(id,n){const k={'Match Play':'mp','Vegas':'vegas','Skins':'skins','Razzle Dazzle':'razzle','Wolf':'wolf','Hammer':'hammer',"Two's Club":'twos','Snake':'snake'}[id]||id;if(k==='hammer')return(n===2||n>=4)?null:'Needs 2 or 4 players';if(k==='wolf'||k==='vegas'||k==='razzle')return n>=4?null:'Needs 4 players';if(k==='mp')return n>=2?null:'Needs 2 players';return null;}
 window._gsOpenAddPicker=function(){
   if(!canEditTrip())return;
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
@@ -8475,7 +8484,8 @@ window._gsOpenAddPicker=function(){
   if(inactive.length===0){
     list.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:1rem 0;font-size:13px">All games are already active for this round.</div>';
   } else {
-    list.innerHTML=inactive.map(def=>`<div class="gs-add-row" onclick="window._gsAddGame('${def.id}')"><span style="font-size:14px;color:var(--color-text-primary)">${def.label}</span><span style="color:#1D9E75;font-size:18px">+</span></div>`).join('');
+    const _np=WK.players.length;
+    list.innerHTML=inactive.map(def=>{const _note=_gameMinNote(def.id,_np);if(_note){return`<div class="gs-add-row gs-add-row-disabled"><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;color:var(--color-text-tertiary)">${def.label}</span><span style="font-size:11px;color:var(--color-text-tertiary)">${_note}</span></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>`;}return`<div class="gs-add-row" onclick="window._gsAddGame('${def.id}')"><span style="font-size:14px;color:var(--color-text-primary)">${def.label}</span><span style="color:#1D9E75;font-size:18px">+</span></div>`;}).join('');
   }
   document.getElementById('gsAddPicker').classList.add('visible');
 };
@@ -8676,7 +8686,7 @@ function _gsHammerSetupBody(r){
   const hSegs=hammerSegsForRound(r),segs=getSegments(hSegs);
   let h=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Segments</span><select class="ie-sel" onchange="setHammerSegsForRound(${r},parseInt(this.value))">${segOptionHtml(roundHoleCount(r),hammerSegsForRound(r))}</select></div>`;
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per hole</span>$<input class="ie-num" type="number" placeholder="${WK.hammerVal||2}" value="${WK.rounds[r].hammerVal!=null?WK.rounds[r].hammerVal:''}" step="0.25" style="width:80px" oninput="const v=this.value.trim();if(v===''){delete WK.rounds[${r}].hammerVal;}else{WK.rounds[${r}].hammerVal=parseFloat(v);}autoSave();s2WriteActive();"/></div>`;
-  h+=segs.map((seg,si)=>{const tm=STATE.hammerTeams?.[r]?.[si]||[[0,1],[2,3]];const[a0,a1]=tm[0],[b0,b1]=tm[1];return`<div class="team-game-row"><div class="team-game-label">Game ${si+1}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setHammerDrop(${si},'a0',parseInt(this.value),${r})">${pOpts(a0)}</select><select class="team-dropdown" onchange="setHammerDrop(${si},'a1',parseInt(this.value),${r})">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setHammerDrop(${si},'b0',parseInt(this.value),${r})">${pOpts(b0)}</select><select class="team-dropdown" onchange="setHammerDrop(${si},'b1',parseInt(this.value),${r})">${pOpts(b1)}</select></div></div></div>`;}).join('');
+  h+=segs.map((seg,si)=>{const tm=STATE.hammerTeams?.[r]?.[si]||[[0,1],[2,3]];if(WK.players.length<4){return`<div class="team-game-row"><div class="team-game-label">Game ${si+1}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</div></div><div style="flex:1;display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:var(--color-text-primary)">${displayName(0)}</span><span style="font-size:11px;color:var(--color-text-tertiary)">vs</span><span style="font-size:13px;color:var(--color-text-primary)">${displayName(1)}</span></div></div>`;}const[a0,a1]=tm[0],[b0,b1]=tm[1];return`<div class="team-game-row"><div class="team-game-label">Game ${si+1}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setHammerDrop(${si},'a0',parseInt(this.value),${r})">${pOpts(a0)}</select><select class="team-dropdown" onchange="setHammerDrop(${si},'a1',parseInt(this.value),${r})">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setHammerDrop(${si},'b0',parseInt(this.value),${r})">${pOpts(b0)}</select><select class="team-dropdown" onchange="setHammerDrop(${si},'b1',parseInt(this.value),${r})">${pOpts(b1)}</select></div></div></div>`;}).join('');
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Scoring</span><select class="ie-sel" onchange="WK.rounds[${r}].hammerScoring=this.value;autoSave();s2WriteActive()"><option value="bestball"${roundVal('hammerScoring',r,WK.hammerScoring||'bestball')==='bestball'?' selected':''}>Better ball</option><option value="combined"${roundVal('hammerScoring',r,WK.hammerScoring||'bestball')==='combined'?' selected':''}>Combined net</option></select></div>`;
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Hammer mode</span><select class="ie-sel" onchange="WK.rounds[${r}].hammerMode=this.value;autoSave();s2WriteActive();_gsRefreshAfterEdit()"><option value="any"${roundVal('hammerMode',r,WK.hammerMode||'any')==='any'?' selected':''}>Anyone anytime</option><option value="alt"${roundVal('hammerMode',r,WK.hammerMode||'any')==='alt'?' selected':''}>Alternating</option></select></div>`;
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Max hammers / hole</span><select class="ie-sel" onchange="WK.rounds[${r}].hammerMax=parseInt(this.value);autoSave();s2WriteActive()"><option value="0"${roundVal('hammerMax',r,WK.hammerMax!=null?WK.hammerMax:0)===0?' selected':''}>Unlimited</option><option value="1"${roundVal('hammerMax',r,WK.hammerMax!=null?WK.hammerMax:0)===1?' selected':''}>1</option><option value="2"${roundVal('hammerMax',r,WK.hammerMax!=null?WK.hammerMax:0)===2?' selected':''}>2</option></select></div>`;
@@ -10063,8 +10073,9 @@ function deleteExp(id){if(isReadOnly||(STATE.settledRounds||[]).includes('expens
 // ===== SETTLE UP =====
 
 function defaultHammerTeams(r){
-  const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];
   const g=hammerSegsForRound(r)||1;
+  if(WK.players.length<4){return Array(g).fill(null).map(()=>[[0],[1]]);}
+  const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];
   return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));
 }
 function hammerSegsForRound(r){const ov=WK.hammerSegsPerRound?.[r];return(ov>0)?ov:(WK.hammerSegsDefault>0?WK.hammerSegsDefault:1);}
@@ -10196,7 +10207,7 @@ function renderHammerBox(){
   const wrap=document.getElementById('hammerBoxWrap');if(!wrap)return;
   const r=STATE.currentRound,hi=STATE.currentHole;
   if(!gameOn('hammer',r)){wrap.innerHTML='';return;}
-  if(WK.players.length<4){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Hammer</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>';return;}
+  {const _hn=_gameMinNote('hammer',WK.players.length);if(_hn){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Hammer</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">'+_hn+'.</div></div>';return;}}
   const hc=calcHammerHole(hi,r);if(!hc){wrap.innerHTML='';return;}
   const{tA,tB,nA,nB,scoreA,scoreB,allIn,hs,potVal,si}=hc;
   const locked=isRoundLocked(r);
@@ -10278,7 +10289,7 @@ function renderHammerRound(){
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
   const el=document.getElementById('gamesContent');
   if(!gameOn('hammer',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Hammer is off for this round</div>';return;}
-  if(WK.players.length<4){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Hammer requires 4 players.</div>';return;}
+  {const _hn=_gameMinNote('hammer',WK.players.length);if(_hn){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">'+_hn+'.</div>';return;}}
   const hSeg=hammerSegsForRound(r),segs=getSegments(hSeg);
   const baseVal=roundVal('hammerVal',r,WK.hammerVal||2);
   const payout=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');
