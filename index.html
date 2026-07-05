@@ -1344,7 +1344,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v110.1.11';
+const APP_VERSION='v110.1.12';
 
 // ===== THEME =====
 (function(){
@@ -2613,32 +2613,164 @@ async function sbCreateGroup(name){
   }catch(e){return null;}
 }
 
-async function sbJoinGroup(code){
+async function sbJoinGroup(code, claimId){
   const user=sbCurrentUser();
   if(!user)return {ok:false,error:'Not signed in'};
   const clean=code.toUpperCase().trim();
   try{
-    const gr=await fetch(SB_URL+'/rest/v1/groups?join_code=eq.'+encodeURIComponent(clean)+'&select=group_id,name,join_code',{
-      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+(_sbSession?.access_token||SB_KEY),'Accept':'application/json'}
-    });
-    if(!gr.ok)return {ok:false,error:'Could not reach server'};
-    const grRows=await gr.json();
-    if(!grRows.length)return {ok:false,error:'Code not found. Check and try again.'};
-    const group=grRows[0];
-    const chk=await fetch(SB_URL+'/rest/v1/group_members?group_id=eq.'+group.group_id+'&user_id=eq.'+encodeURIComponent(user.id)+'&select=member_id',{
-      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+(_sbSession?.access_token||SB_KEY),'Accept':'application/json'}
-    });
-    const exRows=chk.ok?await chk.json():[];
-    if(exRows.length)return {ok:true,group,alreadyMember:true};
-    const meta=user.user_metadata||{};
-    const mr=await fetch(SB_URL+'/rest/v1/group_members',{
+    const r=await fetch(SB_URL+'/rest/v1/rpc/join_group',{
       method:'POST',
-      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+(_sbSession?.access_token||SB_KEY),'Content-Type':'application/json','Prefer':'return=minimal'},
-      body:JSON.stringify({group_id:group.group_id,user_id:user.id,role:'member',display_name:meta.full_name||user.email,hcp_index:meta.hcp!=null?meta.hcp:null,venmo:meta.venmo||null})
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+(_sbSession?.access_token||SB_KEY),'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({p_code:clean,p_claim_id:claimId||null})
     });
-    if(!mr.ok)return {ok:false,error:'Could not join group. Try again.'};
-    return {ok:true,group};
+    if(!r.ok)return {ok:false,error:'Could not join group. Try again.'};
+    const res=await r.json();
+    if(!res||res.ok!==true)return {ok:false,error:(res&&res.error)||'Could not join. Try again.',code:(res&&res.code)||null};
+    return {ok:true,status:res.status,group:{group_id:res.group_id,name:res.group_name,join_code:res.join_code}};
   }catch(e){return {ok:false,error:'Network error. Try again.'};}
+}
+
+async function sbListClaimable(code){
+  const clean=code.toUpperCase().trim();
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/rpc/list_claimable_members',{
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+(_sbSession?.access_token||SB_KEY),'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({p_code:clean})
+    });
+    if(!r.ok)return {ok:false,error:'Could not reach server. Try again.'};
+    const rows=await r.json();
+    return {ok:true,rows:Array.isArray(rows)?rows:[]};
+  }catch(e){return {ok:false,error:'Network error. Try again.'};}
+}
+
+function _clEsc(s){s=(s==null?'':''+s);return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function _claimIni(nm){nm=(nm||'').trim();var p=nm.split(/\s+/);return(((p[0]||'')[0]||'?')+((p[1]||'')[0]||'')).toUpperCase();}
+
+var _claimS=null;
+function _claimSheet(code,rows){
+  _claimS={code:code,rows:rows,sel:null,busy:false};
+  var ex=document.getElementById('claimSheet');if(ex)ex.remove();
+  var ov=document.createElement('div');
+  ov.id='claimSheet';
+  ov.style.cssText='position:fixed;inset:0;z-index:10002;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;justify-content:center';
+  var card=document.createElement('div');
+  card.style.cssText='width:100%;max-width:440px;background:#132019;border-top:0.5px solid #24352c;border-radius:16px 16px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box';
+  var rowsHtml='';
+  for(var i=0;i<rows.length;i++){
+    rowsHtml+='<div class="_clRow" data-i="'+i+'" onclick="window._claimPick('+i+')" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border:0.5px solid #2c3a33;border-radius:10px;background:#0e1a14;cursor:pointer;margin-bottom:8px">'
+      +'<div style="width:34px;height:34px;border-radius:50%;background:rgba(29,158,117,0.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#1D9E75;flex-shrink:0">'+_claimIni(rows[i].display_name)+'</div>'
+      +'<div style="flex:1;font-size:14px;color:#e8efe9;font-weight:500">'+_clEsc(rows[i].display_name)+'</div>'
+      +'<div class="_clRadio" style="width:20px;height:20px;border-radius:50%;border:1.5px solid #2c3a33;flex-shrink:0"></div>'
+      +'</div>';
+  }
+  rowsHtml+='<div class="_clRow" data-i="-1" onclick="window._claimPick(-1)" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border:0.5px solid #2c3a33;border-radius:10px;background:transparent;cursor:pointer;margin-bottom:8px">'
+    +'<div style="width:34px;height:34px;border-radius:50%;background:#1a2b22;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-plus" style="font-size:16px;color:#8a9a91"></i></div>'
+    +'<div style="flex:1;font-size:14px;color:#e8efe9;font-weight:500">None of these, I&#39;m new</div>'
+    +'<div class="_clRadio" style="width:20px;height:20px;border-radius:50%;border:1.5px solid #2c3a33;flex-shrink:0"></div>'
+    +'</div>';
+  card.innerHTML='<div style="display:flex;justify-content:center;margin-bottom:12px"><div style="width:42px;height:42px;border-radius:50%;background:rgba(29,158,117,0.15);display:flex;align-items:center;justify-content:center"><i class="ti ti-user-check" style="font-size:20px;color:#1D9E75"></i></div></div>'
+    +'<div style="text-align:center;font-size:16px;font-weight:500;color:#e8efe9;margin-bottom:6px">Is one of these you?</div>'
+    +'<div id="_clSub" style="text-align:center;font-size:13px;color:#a9b8b0;line-height:1.5;margin-bottom:16px">These players were added before they had an account. Pick yourself to keep your scores and history.</div>'
+    +'<div id="_clList">'+rowsHtml+'</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button id="_clCancel" style="flex:1;font-size:14px;font-weight:500;color:#c2cdc6;background:transparent;border:0.5px solid #2c3a33;padding:11px 0;border-radius:10px">Cancel</button>'
+    +'<button id="_clOk" style="flex:1.4;font-size:14px;font-weight:500;color:#5a6b62;background:#16241c;border:none;padding:11px 0;border-radius:10px">Choose one</button>'
+    +'</div>';
+  ov.appendChild(card);
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){if(e.target===ov)window._claimClose();});
+  card.querySelector('#_clCancel').addEventListener('click',function(){window._claimClose();});
+  card.querySelector('#_clOk').addEventListener('click',function(){window._claimConfirm();});
+}
+window._claimPick=function(i){
+  if(!_claimS||_claimS.busy)return;
+  _claimS.sel=i;
+  var rows=document.querySelectorAll('#claimSheet ._clRow');
+  rows.forEach(function(r){
+    var ri=parseInt(r.getAttribute('data-i'),10);
+    var rd=r.querySelector('._clRadio');
+    if(ri===i){
+      r.style.border='1.5px solid #1D9E75';
+      rd.style.border='1.5px solid #1D9E75';rd.style.background='#1D9E75';
+      rd.innerHTML='<i class="ti ti-check" style="font-size:13px;color:#0c1712;display:block;line-height:20px;text-align:center"></i>';
+    }else{
+      r.style.border='0.5px solid #2c3a33';
+      rd.style.border='1.5px solid #2c3a33';rd.style.background='transparent';rd.innerHTML='';
+    }
+  });
+  var ok=document.getElementById('_clOk');
+  if(ok){
+    ok.style.color='#0c1712';ok.style.background='#1D9E75';
+    if(i===-1){ok.textContent='Join as new player';}
+    else{var nm=(_claimS.rows[i]&&_claimS.rows[i].display_name)||'';var fn=(nm.split(/\s+/)[0])||nm;ok.textContent='Join as '+fn;}
+  }
+};
+window._claimClose=function(){var ov=document.getElementById('claimSheet');if(ov)ov.remove();_claimS=null;};
+window._claimConfirm=async function(){
+  if(!_claimS||_claimS.busy||_claimS.sel===null)return;
+  _claimS.busy=true;
+  var code=_claimS.code;
+  var claimId=_claimS.sel===-1?null:_claimS.rows[_claimS.sel].member_id;
+  var ok=document.getElementById('_clOk');if(ok){ok.textContent='Joining...';ok.style.opacity='0.7';}
+  var result=await sbJoinGroup(code,claimId);
+  if(result.ok){
+    window._claimClose();
+    sbSetActiveGroup(result.group);
+    var js=document.getElementById('groupJoinScreen');if(js)js.style.display='none';
+    showHome();
+    return;
+  }
+  if(result.code==='already_claimed'){
+    var lc=await sbListClaimable(code);
+    if(lc.ok&&lc.rows.length){
+      _claimSheet(code,lc.rows);
+      var sub=document.getElementById('_clSub');
+      if(sub){sub.textContent='That player was just claimed by someone else. Pick again.';sub.style.color='#e0a03a';}
+      return;
+    }
+    window._claimClose();
+    await _finishJoinFresh(code);
+    return;
+  }
+  _claimS.busy=false;
+  var sub2=document.getElementById('_clSub');
+  if(sub2){sub2.textContent=result.error||'Could not join. Try again.';sub2.style.color='#e0a03a';}
+  if(ok){ok.textContent='Try again';ok.style.opacity='1';}
+};
+function _infoSheet(opts){
+  opts=opts||{};
+  var ex=document.getElementById('infoSheet');if(ex)ex.remove();
+  var ov=document.createElement('div');
+  ov.id='infoSheet';
+  ov.style.cssText='position:fixed;inset:0;z-index:10002;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;justify-content:center';
+  var card=document.createElement('div');
+  card.style.cssText='width:100%;max-width:440px;background:#132019;border-top:0.5px solid #24352c;border-radius:16px 16px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box';
+  var iconHtml=opts.icon?'<div style="display:flex;justify-content:center;margin-bottom:12px"><div style="width:42px;height:42px;border-radius:50%;background:rgba(29,158,117,0.15);display:flex;align-items:center;justify-content:center"><i class="ti '+opts.icon+'" style="font-size:20px;color:#1D9E75"></i></div></div>':'';
+  card.innerHTML=iconHtml
+    +'<div style="text-align:center;font-size:16px;font-weight:500;color:#e8efe9;margin-bottom:6px">'+(opts.title||'')+'</div>'
+    +'<div style="text-align:center;font-size:13px;color:#a9b8b0;line-height:1.55;margin-bottom:16px">'+(opts.body||'')+'</div>'
+    +'<button id="_isOk" style="width:100%;font-size:14px;font-weight:500;color:#0c1712;background:#1D9E75;border:none;padding:11px 0;border-radius:10px">'+(opts.okLabel||'Got it')+'</button>';
+  ov.appendChild(card);
+  document.body.appendChild(ov);
+  function close(){ov.remove();}
+  ov.addEventListener('click',function(e){if(e.target===ov)close();});
+  card.querySelector('#_isOk').addEventListener('click',close);
+}
+window._snapshotInfo=function(){
+  _infoSheet({icon:'ti-camera',title:'Handicap snapshot',body:'Handicaps here are a snapshot from when each player joined this trip. Editing one changes this trip only. It won&#39;t change anyone&#39;s profile, and updating a profile later won&#39;t change this trip.'});
+};
+
+async function _finishJoinFresh(code){
+  var errEl=document.getElementById('groupJoinError');
+  var btn=document.getElementById('groupJoinBtn');
+  if(btn){btn.disabled=true;btn.textContent='Joining...';}
+  var result=await sbJoinGroup(code,null);
+  if(btn){btn.disabled=false;btn.textContent='Join Group';}
+  if(!result.ok){if(errEl){errEl.textContent=result.error||'Could not join. Try again.';errEl.style.display='block';}return;}
+  sbSetActiveGroup(result.group);
+  var js=document.getElementById('groupJoinScreen');if(js)js.style.display='none';
+  showHome();
 }
 
 async function sbCheckAndSetGroup(){
@@ -2719,15 +2851,20 @@ window.sbDoJoinGroup=async function(){
   const code=(document.getElementById('groupJoinCode').value||'').trim().toUpperCase();
   const errEl=document.getElementById('groupJoinError');
   if(code.length<4||code.length>10){errEl.textContent='Enter a group code (4 to 10 characters).';errEl.style.display='block';return;}
+  errEl.style.display='none';
   const btn=document.getElementById('groupJoinBtn');
-  btn.disabled=true;btn.textContent='Joining...';
-  const result=await sbJoinGroup(code);
+  btn.disabled=true;btn.textContent='Checking...';
+  const lc=await sbListClaimable(code);
+  if(!lc.ok){
+    btn.disabled=false;btn.textContent='Join Group';
+    errEl.textContent=lc.error||'Could not join. Try again.';errEl.style.display='block';
+    return;
+  }
   btn.disabled=false;btn.textContent='Join Group';
-  if(!result.ok){errEl.textContent=result.error||'Could not join. Try again.';errEl.style.display='block';return;}
-  sbSetActiveGroup(result.group);
-  document.getElementById('groupJoinScreen').style.display='none';
-  showHome();
+  if(lc.rows.length){_claimSheet(code,lc.rows);return;}
+  await _finishJoinFresh(code);
 };
+
 
 // ── End Supabase Auth ───────────────────────────────────────────────────────
 
@@ -7013,7 +7150,7 @@ function renderWolfRound(){
 
 function renderTeamsPanel(){/* Stage 3: Game Setup tab eliminated. Scoring config + Weekend bet moved into renderWeekendPanel(). Per-game setup is migrating into the Games tab. This stub remains so any stray legacy caller does not throw. */}
 function setDropSkins(gameIdx,slot,pIdx,roundIdx){if(isReadOnly)return;if(_pencilViewerLocked(roundIdx))return;if(!STATE.skinsTeams)return;const teams=STATE.skinsTeams[roundIdx][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();}
-function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span>Active players</span></div>`;WK.players.forEach((p,i)=>{const eff=effHdcp(i,r);html+=`<div class="setup-row"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><input class="inline-edit" value="${p.name}" style="flex:1;min-width:60px" onchange="if(!canEditTrip())return;WK.players[${i}].name=this.value;WK.players[${i}].ini=this.value.substring(0,2).toUpperCase();renderPlayersPanel();renderScorecard();renderBanner();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin:0 3px">idx</span><input class="ie-num" type="text" inputmode="decimal" value="${sbHcpDisplay(p.idx)}" style="width:70px" onchange="if(!canEditTrip())return;WK.players[${i}].idx=idxFromInput(this.value,0);renderPlayersPanel();renderScorecard();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px;white-space:nowrap">→ ${chDisplay(eff)}</span>${WK.players.length>2?`<button class="btn-danger" onclick="removePlayer(${i})">✕</button>`:''}</div>`;});if(WK.players.length<12){html+=`<div style="border-top:0.5px solid var(--color-border-tertiary)"><div id="addPlayerRow" style="display:none;padding:10px 12px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><input class="text-input" id="apFirst" placeholder="First" style="flex:2;font-size:13px;padding:6px 8px"/><input class="text-input" id="apLast" placeholder="Last" style="flex:2;font-size:13px;padding:6px 8px"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0">Hdcp</span><input class="ie-num" id="apIdx" type="text" inputmode="decimal" placeholder="10" style="width:58px;flex-shrink:0"/></div><div style="display:flex;gap:8px"><button class="btn-primary" style="font-size:12px;padding:5px 12px" onclick="confirmAddPlayer()">Save</button><button class="btn-secondary" style="font-size:12px;padding:5px 12px" onclick="toggleAddPlayerRow()">Cancel</button></div></div><button class="btn-sm" id="addPlayerToggleBtn" onclick="toggleAddPlayerRow()" style="margin:8px 12px">+ Add player</button></div>`;}html+=`</div>`;
+function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span>Active players</span><button onclick="window._snapshotInfo()" aria-label="About these handicaps" style="background:transparent;border:none;padding:0 0 0 6px;cursor:pointer;line-height:1;vertical-align:middle"><i class="ti ti-info-circle" style="font-size:15px;color:#5f7385"></i></button></div>`;WK.players.forEach((p,i)=>{const eff=effHdcp(i,r);html+=`<div class="setup-row"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><input class="inline-edit" value="${p.name}" style="flex:1;min-width:60px" onchange="if(!canEditTrip())return;WK.players[${i}].name=this.value;WK.players[${i}].ini=this.value.substring(0,2).toUpperCase();renderPlayersPanel();renderScorecard();renderBanner();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin:0 3px">idx</span><input class="ie-num" type="text" inputmode="decimal" value="${sbHcpDisplay(p.idx)}" style="width:70px" onchange="if(!canEditTrip())return;WK.players[${i}].idx=idxFromInput(this.value,0);renderPlayersPanel();renderScorecard();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px;white-space:nowrap">→ ${chDisplay(eff)}</span>${WK.players.length>2?`<button class="btn-danger" onclick="removePlayer(${i})">✕</button>`:''}</div>`;});if(WK.players.length<12){html+=`<div style="border-top:0.5px solid var(--color-border-tertiary)"><div id="addPlayerRow" style="display:none;padding:10px 12px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><input class="text-input" id="apFirst" placeholder="First" style="flex:2;font-size:13px;padding:6px 8px"/><input class="text-input" id="apLast" placeholder="Last" style="flex:2;font-size:13px;padding:6px 8px"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0">Hdcp</span><input class="ie-num" id="apIdx" type="text" inputmode="decimal" placeholder="10" style="width:58px;flex-shrink:0"/></div><div style="display:flex;gap:8px"><button class="btn-primary" style="font-size:12px;padding:5px 12px" onclick="confirmAddPlayer()">Save</button><button class="btn-secondary" style="font-size:12px;padding:5px 12px" onclick="toggleAddPlayerRow()">Cancel</button></div></div><button class="btn-sm" id="addPlayerToggleBtn" onclick="toggleAddPlayerRow()" style="margin:8px 12px">+ Add player</button></div>`;}html+=`</div>`;
     document.getElementById('opt-panel-players').innerHTML=html;
 }
 function toggleEditPanel(eid,btnId){const panel=document.getElementById(eid);const btn=document.getElementById(btnId);const display=document.getElementById(eid+'_display');if(!panel)return;const isOpen=panel.style.display!=='none';panel.style.display=isOpen?'none':'block';if(display)display.style.display=isOpen?'flex':'none';if(btn)btn.style.display=isOpen?'inline-block':'none';if(isOpen){const mc=eid.match(/^ce_(.+)$/);if(mc){const cname=mc[1].replace(/_/g,' ');if(CATALOG[cname])saveCourse(cname);}renderPlayersPanel();}}
