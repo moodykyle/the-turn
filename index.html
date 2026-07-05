@@ -2997,38 +2997,10 @@ async function renderHomeDashboard(){
   const trips=loadTrips();
   trips.forEach(t=>{if(t.totalHoles>0&&t.holesPlayed>=t.totalHoles)t.complete=true;});
 
-  const continueTrip=trips.filter(t=>!t.complete).sort((a,b)=>new Date(b.savedAt||0)-new Date(a.savedAt||0))[0]||null;
-
   let html='';
 
-  // CONTINUE PLAYING
-  if(continueTrip){
-    const ct=continueTrip;
-    const pct=ct.totalHoles>0?Math.round(ct.holesPlayed/ct.totalHoles*100):0;
-    const grpName=ct.group_id&&_groupCache[ct.group_id]?_groupCache[ct.group_id].name:'';
-    const ctaLabel=ct.is_quick_round?'Resume Round':'Resume Trip';
-    const inProgressTrips=trips.filter(function(t){return!t.complete;});
-    const seeAllLink=inProgressTrips.length>1
-      ?'<button onclick="window._hmShowAllInProgress()" style="background:none;border:none;color:#1D9E75;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:0.05em;padding:0">See All ('+inProgressTrips.length+')</button>'
-      :'';
-    html+='<div class="home-dash-sec">'
-      +'<div class="home-dash-sec-label" style="display:flex;align-items:center;justify-content:space-between">'
-      +'<span>Continue Playing</span>'
-      +seeAllLink
-      +'</div>'
-      +'<div class="home-cont-card home-elev"'+(ct.is_quick_round?' style="border-left-color:#F59E0B"':'')+'>'
-      +'<div class="home-cont-row">'
-      +'<div style="flex:1;min-width:0">'
-      +'<div class="home-cont-name">'+(ct.name||'Unnamed Trip')+'</div>'
-      +(grpName?'<div class="home-cont-grp">'+grpName+'</div>':'')
-      +'</div>'
-      +'<div class="home-cont-pct">'+pct+'%</div>'
-      +'</div>'
-      +'<div class="home-cont-prog" style="margin:10px 0 12px"><div class="home-cont-prog-fill" style="width:'+pct+'%"></div></div>'
-      +'<button class="home-resume-btn" onclick="viewTrip(\''+ct.id+'\')">'+ctaLabel+' <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></button>'
-      +'</div>'
-      +'</div>';
-  }
+  // CONTINUE PLAYING - rendered by _renderContinueSection so a delete/undo can refresh it in place.
+  html+='<div class="home-dash-sec" id="homeContinueSec"></div>';
 
   // START SOMETHING
   html+='<div class="home-dash-sec">'
@@ -3074,6 +3046,7 @@ async function renderHomeDashboard(){
   html+='<div class="home-dash-sec" id="homeIndivSec"></div>';
 
   dash.innerHTML=html;
+  _renderContinueSection();
   _renderIndivRoundsSection();
 
   // Async Supabase sync (preserved)
@@ -3089,7 +3062,7 @@ async function renderHomeDashboard(){
         sbTrips.forEach(function(t){
           if(t.totalHoles>0&&t.holesPlayed>=t.totalHoles)t.complete=true;
           const li=local.findIndex(function(x){return x.id===t.id;});
-          if(li<0){local.unshift(t);changed=true;}
+          if(li<0){if(!_deletedTripIds.has(t.id)){local.unshift(t);changed=true;}}
           else{
             if(!local[li].group_id&&t.group_id){local[li].group_id=t.group_id;changed=true;}
             // Badge reconciliation: scores are the source of truth and accumulate, so adopt the
@@ -3239,7 +3212,7 @@ window._hmInProgressViewTrip=function(id){
   viewTrip(id);
 };
 window._hmShowAllInProgress=function(){
-  const trips=loadTrips().filter(function(t){return!t.complete;}).sort(function(a,b){return new Date(b.savedAt||0)-new Date(a.savedAt||0);});
+  const trips=loadTrips().filter(function(t){return!t.complete&&!_pendingRoundDeletes.has(t.id);}).sort(function(a,b){return new Date(b.savedAt||0)-new Date(a.savedAt||0);});
   const existing=document.getElementById('hmAllInProgress');if(existing)existing.remove();
   const div=document.createElement('div');div.id='hmAllInProgress';
   div.style.cssText='position:fixed;inset:0;z-index:9980;background:var(--color-background-primary);overflow-y:auto;padding:16px 14px 40px;';
@@ -3317,6 +3290,7 @@ window.closeGroupPage = function(){
   document.getElementById('homeGroupScreen').style.display='none';
   document.getElementById('homeScreen').style.display='block';
   window.scrollTo(0,0);
+  renderHomeDashboard();
 };
 
 async function renderGroupPage(gid){
@@ -4266,10 +4240,12 @@ async function s2DeleteTrip(id){
   await del('trips','trip_id=eq.'+enc);
 }
 const _pendingRoundDeletes=new Set();
+const _deletedTripIds=new Set();
 const _roundDeleteTimers={};
 let _undoToastId=null;
 let _undoToastTimer=null;
 function _refreshRoundSurfaces(){
+  if(document.getElementById('homeContinueSec'))_renderContinueSection();
   if(document.getElementById('homeIndivSec'))_renderIndivRoundsSection();
   if(document.getElementById('yourRoundsPage'))_fillYourRoundsList();
 }
@@ -4306,13 +4282,43 @@ window._undoRoundDelete=function(id){
 async function _commitRoundDelete(id){
   clearTimeout(_roundDeleteTimers[id]);delete _roundDeleteTimers[id];
   _pendingRoundDeletes.delete(id);
+  _deletedTripIds.add(id);
   if(_undoToastId===id)_hideUndoToast();
   const trips=loadTrips().filter(function(t){return t.id!==id;});saveTrips(trips);
   const _crumb=_readActiveTripCrumb();if(_crumb&&_crumb.id===id)_clearActiveTripCrumb();
+  _refreshRoundSurfaces();
   try{await s2DeleteTrip(id);}catch(e){}
+  _deletedTripIds.delete(id);
 }
 function _indivRoundsFromLocal(){
   return loadTrips().filter(function(t){return t.is_quick_round&&!t.group_id&&!_pendingRoundDeletes.has(t.id);}).sort(function(a,b){return new Date(b.savedAt||0)-new Date(a.savedAt||0);});
+}
+function _renderContinueSection(){
+  const el=document.getElementById('homeContinueSec');if(!el)return;
+  const trips=loadTrips().filter(function(t){return!_pendingRoundDeletes.has(t.id);});
+  trips.forEach(function(t){if(t.totalHoles>0&&t.holesPlayed>=t.totalHoles)t.complete=true;});
+  const inProgressTrips=trips.filter(function(t){return!t.complete;}).sort(function(a,b){return new Date(b.savedAt||0)-new Date(a.savedAt||0);});
+  const ct=inProgressTrips[0]||null;
+  if(!ct){el.innerHTML='';return;}
+  const pct=ct.totalHoles>0?Math.round(ct.holesPlayed/ct.totalHoles*100):0;
+  const grpName=ct.group_id&&_groupCache[ct.group_id]?_groupCache[ct.group_id].name:'';
+  const ctaLabel=ct.is_quick_round?'Resume Round':'Resume Trip';
+  const seeAllLink=inProgressTrips.length>1
+    ?'<button onclick="window._hmShowAllInProgress()" style="background:none;border:none;color:#1D9E75;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:0.05em;padding:0">See All ('+inProgressTrips.length+')</button>'
+    :'';
+  el.innerHTML='<div class="home-dash-sec-label" style="display:flex;align-items:center;justify-content:space-between">'
+    +'<span>Continue Playing</span>'+seeAllLink+'</div>'
+    +'<div class="home-cont-card home-elev"'+(ct.is_quick_round?' style="border-left-color:#F59E0B"':'')+'>'
+    +'<div class="home-cont-row">'
+    +'<div style="flex:1;min-width:0">'
+    +'<div class="home-cont-name">'+(ct.name||'Unnamed Trip')+'</div>'
+    +(grpName?'<div class="home-cont-grp">'+grpName+'</div>':'')
+    +'</div>'
+    +'<div class="home-cont-pct">'+pct+'%</div>'
+    +'</div>'
+    +'<div class="home-cont-prog" style="margin:10px 0 12px"><div class="home-cont-prog-fill" style="width:'+pct+'%"></div></div>'
+    +'<button class="home-resume-btn" onclick="viewTrip(\''+ct.id+'\')">'+ctaLabel+' <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></button>'
+    +'</div>';
 }
 function _renderIndivRoundsSection(){
   const el=document.getElementById('homeIndivSec');if(!el)return;
@@ -4360,26 +4366,23 @@ function _tripDeleteTap(id,btn,gid){
 }
 window.deleteTrip=_tripDeleteTap;
 async function _commitDeleteTrip(id,btn,gid){
-  const card=btn?.closest('.trip-card,.home-resume-card');
-  if(card){card.style.opacity='0.3';card.style.pointerEvents='none';}
-  try{
-    await s2DeleteTrip(id);
-  }catch(e){
-    if(card){card.style.opacity='';card.style.pointerEvents='';}
-    alert('Delete failed. Please try again.');
-    return;
-  }
+  // Optimistic: remove locally and re-render the current surface immediately, then delete on
+  // the server in the background. Removes the greyed multi-second wait on the confirm. The
+  // network delete is several sequential DELETEs; blocking the UI on it felt like a hang.
+  // _deletedTripIds keeps the home reconciliation from re-adding the trip while that network
+  // delete is in flight. A failed network delete self-heals: the trip reappears on next sync.
+  _deletedTripIds.add(id);
   const _crumb=_readActiveTripCrumb();if(_crumb&&_crumb.id===id)_clearActiveTripCrumb();
-  // Remove from localStorage and reconcile
   const trips=loadTrips().filter(t=>t.id!==id);
   saveTrips(trips);
-  // If deleting from the In Progress overlay, re-render it (or close if now empty)
   const _ipOverlay=document.getElementById('hmAllInProgress');
   if(_ipOverlay){
     const remaining=trips.filter(t=>!t.complete);
     if(remaining.length){window._hmShowAllInProgress();}
     else{_ipOverlay.remove();renderHomeDashboard();}
   } else if(gid){renderGroupPage(gid);}else{renderGroupList();}
+  try{await s2DeleteTrip(id);}catch(e){}
+  _deletedTripIds.delete(id);
 }
 function goHome(){_syncStop();_clearActiveTripCrumb();document.getElementById('mainTabBar')?.classList.remove('visible');const _ar=document.getElementById('scoreActionRow');if(_ar)_ar.className='';if(!isReadOnly&&WK){autoSave();s2WriteActive();}showHome();}
 function getSegments(count,totalHoles){const th=totalHoles||18;const s=Math.floor(th/count);return Array.from({length:count},(_,i)=>({start:i*s,end:i===count-1?th:(i+1)*s,label:'Game '+(i+1)}));}
