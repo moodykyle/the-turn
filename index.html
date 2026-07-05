@@ -1342,7 +1342,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v110.1.7';
+const APP_VERSION='v110.1.8';
 
 // ===== THEME =====
 (function(){
@@ -1414,16 +1414,26 @@ function s2TripId(){return WK._id||'';}
 function s2RoundId(r){return WK._id+':round:'+r;}
 function s2PlayerId(pi){return WK._id+':player:'+pi;}
 
-async function s2Upsert(table,rows,onConflict){
+async function s2Upsert(table,rows,onConflict,returnSelect){
   if(!rows||!rows.length)return true;
   try{
-    const res=await sbApiFetch(SB_URL+'/rest/v1/'+table+(onConflict?('?on_conflict='+onConflict):''),{
+    // returnSelect (optional): when set, ask PostgREST to hand back just those
+    // columns of the written row(s) via return=representation, so the caller can read
+    // the SERVER-assigned values (e.g. the trigger-stamped updated_at). Unset keeps the
+    // original return=minimal behavior byte-for-byte, so every existing caller is
+    // unchanged. select= only filters the returned representation; it never changes
+    // which columns are written.
+    const _params=[];
+    if(onConflict)_params.push('on_conflict='+onConflict);
+    if(returnSelect)_params.push('select='+returnSelect);
+    const _qs=_params.length?('?'+_params.join('&')):'';
+    const res=await sbApiFetch(SB_URL+'/rest/v1/'+table+_qs,{
       method:'POST',
       headers:{
         'apikey':SB_KEY,
         'Authorization':'Bearer '+sbBearer(),
         'Content-Type':'application/json',
-        'Prefer':'resolution=merge-duplicates,return=minimal'
+        'Prefer':'resolution=merge-duplicates,return='+(returnSelect?'representation':'minimal')
       },
       body:JSON.stringify(rows)
     });
@@ -1431,6 +1441,11 @@ async function s2Upsert(table,rows,onConflict){
       const errText=await res.text().catch(()=>'');
       console.warn('[s2Upsert] '+table+' failed '+res.status+': '+errText);
       return false;
+    }
+    if(returnSelect){
+      // Parse failure degrades to a plain success (true): the caller then skips its
+      // watermark advance and simply takes one harmless self-rebuild (status quo).
+      try{return await res.json();}catch(_je){return true;}
     }
     return true;
   }catch(e){
@@ -1449,7 +1464,7 @@ async function s2WriteActive(){
   try{
     // 1. Trip upsert
     if(_s2Dirty.trip){
-      const _tripOk=await s2Upsert('trips',[{
+      const _tripRes=await s2Upsert('trips',[{
         trip_id:tripId,
         name:WK.name||'',
         date:WK.date||'',
@@ -1561,8 +1576,22 @@ async function s2WriteActive(){
           winner:(()=>{const pd=calcPotRankings();return pd[0]?WK.players[pd[0].pi]?.name:'';})()
         },
         updated_at:new Date().toISOString()
-      }]);
-      if(_tripOk)_s2Dirty.trip=false;
+      }],undefined,'updated_at');
+      if(_tripRes)_s2Dirty.trip=false;
+      // Self-echo suppression. autoSave marks the trip dirty every hole, so this write
+      // bumps the server-stamped trips.updated_at every hole. The beacon watermark was
+      // only advanced when the SYNC applied a rebuild, never when WE wrote, so the next
+      // tick saw our own save as a remote change and re-pulled+rebuilt the whole trip.
+      // The watermark is meant to be "the latest trip version I already hold"; we
+      // authored this one, so advance it to the value the server just assigned us. A
+      // genuine remote write always lands with a strictly greater timestamp, so it is
+      // never masked. If no timestamp came back, we DON'T advance and take one harmless
+      // self-rebuild (status quo) rather than ever risk missing a remote write.
+      if(Array.isArray(_tripRes)&&_tripRes[0]&&_tripRes[0].updated_at){
+        const _srvTs=_tripRes[0].updated_at;
+        if(!_syncTripUpdatedAt||_srvTs>_syncTripUpdatedAt)_syncTripUpdatedAt=_srvTs;
+        if(WK)WK._updatedAt=_srvTs; // keep the loaded watermark coherent if sync restarts
+      }
     }
 
     // 2. Players upsert
