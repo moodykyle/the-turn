@@ -281,8 +281,8 @@ body.force-light .sc-grid .total-col{background:#F0EFEB;}
 .sc-cell{width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin:auto;font-size:10px;font-weight:500;}
 .sc-cell.birdie{border-radius:50%;border:1.5px solid #1D9E75;color:#1D9E75;}
 .sc-cell.eagle{border-radius:50%;border:2px solid #0F6E56;outline:1.5px solid #0F6E56;outline-offset:1px;color:#0F6E56;}
-.sc-cell.bogey{border:1.5px solid #D85A30;color:#D85A30;}
-.sc-cell.double{border:2px solid #993C1D;color:#993C1D;}
+.sc-cell.bogey{border:1.5px solid #EF9F27;color:#EF9F27;}
+.sc-cell.double{border:1.5px solid #D85A30;color:#D85A30;}
 .sc-cell.par{color:var(--color-text-secondary);}
 .dot-row{height:6px;display:flex;align-items:center;justify-content:center;}.stroke-dot{width:3px;height:3px;border-radius:50%;background:#1D9E75;display:inline-block;margin:0 1.5px;}.stroke-dot-give{background:#D85A30;}
 .view{padding:1rem;}
@@ -898,6 +898,33 @@ body.force-light{
 /* ── Hide old seg-nav (replaced by tab bar) ── */
 .seg-nav{display:none!important;}
 
+.fs-pill{flex:0 0 auto;min-width:56px;position:relative;}
+.fs-pill-btn{height:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 8px;background:var(--color-background-primary);border:1px solid #1D9E75;border-radius:13px;cursor:pointer;}
+.fs-pill-lab{font-size:14px;font-weight:700;color:var(--color-text-primary);}
+.fs-pill-cv{color:#1D9E75;font-size:11px;}
+.fs-pill-menu{display:none;position:absolute;right:0;top:calc(100% + 5px);z-index:60;min-width:190px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:11px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.35);}
+.fs-pill.open .fs-pill-menu{display:block;}
+.fs-pill-menu div{padding:10px 12px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;color:var(--color-text-primary);}
+.fs-pill-menu div.sel{color:#1D9E75;}
+.fs-pill-menu div .fpm-who{font-size:10px;color:var(--color-text-secondary);margin-left:auto;}
+.rd-ctx-row{display:flex;gap:8px;align-items:stretch;flex:1;min-width:0;}
+.rd-ctx-row>#ctxRdSelBar{flex:1 1 auto;min-width:0;}.rd-ctx-row>#ctxRdSelBar>.rd-picker-bar{width:100%;}
+.fs-slot{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+.fs-slot-dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff;}
+.fs-slot select{flex:1;}
+.fs-slot .fs-rm{width:26px;height:26px;flex-shrink:0;border-radius:7px;border:0.5px solid var(--color-border-tertiary);background:transparent;color:var(--color-text-secondary);font-size:14px;cursor:pointer;}
+.fs-addp{margin-top:4px;font-size:12.5px;color:#1D9E75;cursor:pointer;padding:6px 2px;display:inline-block;}
+.fs-addf{margin-top:8px;border:1px dashed var(--color-border-secondary);border-radius:11px;text-align:center;padding:11px;font-size:13px;color:var(--color-text-secondary);cursor:pointer;}
+.gf-filter{display:flex;margin:8px 0 0;border:0.5px solid var(--color-border-tertiary);border-radius:10px;overflow:hidden;}
+.gf-filter button{flex:1;font-size:12px;font-weight:600;padding:8px 4px;border:0;background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;}
+.gf-filter button+button{border-left:0.5px solid var(--color-border-tertiary);}
+.gf-filter button.on{background:rgba(29,158,117,0.16);color:#1D9E75;}
+.gf-blk-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-secondary);margin:14px 2px 4px;display:flex;align-items:center;gap:7px;}
+.gf-blk-lbl .bd{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.fs-pick-prompt{padding:22px 14px;text-align:center;}
+.fs-pick-prompt .fpp-t{font-size:14px;font-weight:600;color:var(--color-text-primary);margin-bottom:12px;}
+.fs-pick-opt{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:11px;margin-bottom:8px;cursor:pointer;text-align:left;}
+.fs-pick-opt .fpo-who{font-size:11px;color:var(--color-text-secondary);margin-left:auto;}
 </style>
 </head>
 <body>
@@ -1222,7 +1249,7 @@ body.force-light{
         <div class="hole-dots" id="holeDots"></div>
       </div>
       <!-- Card view (scorecard grid folded in) -->
-      <div id="inlineCardWrap"><div class="rd-sel" id="cardRdSel" style="display:none"></div><div id="scGridWrap"></div></div>
+      <div id="inlineCardWrap"><div class="rd-sel" id="cardRdSel" style="display:none"></div><div id="scGridFilterWrap"></div><div id="scGridWrap"></div></div>
       <!-- Old buttons hidden - replaced by action row -->
       <button class="footer-btn" id="saveBtn" onclick="saveHole()" style="display:none">Save Hole &amp; Continue</button>
       <button id="resetHoleBtn" onclick="resetHole()" style="display:none">Clear Hole</button>
@@ -1263,6 +1290,7 @@ body.force-light{
       <div class="board-section-label" id="opt-menu-title">Settings</div>
       <div id="opt-panel-menu" class="opt-panel"></div>
       <div id="opt-panel-players" class="opt-panel"></div>
+      <div id="opt-panel-flights" class="opt-panel"></div>
       <div id="opt-panel-weekend" class="opt-panel"></div>
       <div id="opt-panel-courses" class="opt-panel"></div>
       <div id="opt-panel-info" class="opt-panel"></div>
@@ -1344,7 +1372,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v110.1.14';
+const APP_VERSION='v111.4';
 
 // ===== THEME =====
 (function(){
@@ -1459,6 +1487,11 @@ async function s2Upsert(table,rows,onConflict,returnSelect){
 let _s2WriteInFlight=false; // sync poll must never rebuild over a write that hasn't landed yet
 async function s2WriteActive(){
   if(!WK||!STATE)return;
+  // Wolf writes the per-foursome [r][fi] shape, so stamp the flag in the same trip
+  // upsert. This is the authoritative signal hydrate uses to tell nested from old
+  // flat data; wolf_order/wolf_picks and flighted_games ride the same trip row, so
+  // they cannot desync. Idempotent.
+  markGameFlighted('wolf');
   const tripId=s2TripId();
   if(!tripId)return;
 
@@ -1475,6 +1508,7 @@ async function s2WriteActive(){
         group_id:WK._groupId||null,
         created_by:WK._createdBy||sbCurrentUser()?.id||null,
         trip_admins:WK._tripAdmins||[],
+        flighted_games:WK._flightedGames||[],
         buy_in:WK.buyIn||0,
         hdcp_pct:WK.hdcpPct||0.8,
         pot_method:WK.potMethod||'netstroke',
@@ -1514,6 +1548,7 @@ async function s2WriteActive(){
         razzle_hwm:STATE.razzleHWM||null,
         mp_teams:STATE.mpTeams||null,
         vegas_teams:STATE.vegTeams||null,
+        round_flights:STATE.roundFlights||null,
         hammer_on:gameOnAny('hammer'),hammer_val:WK.hammerVal||2,hammer_mode:WK.hammerMode||'any',hammer_max:WK.hammerMax!=null?WK.hammerMax:0,hammer_payout:WK.hammerPayout||'perplayer',hammer_halve:WK.hammerHalve||'carry',hammer_scoring:WK.hammerScoring||'bestball',hammer_segs_default:WK.hammerSegsDefault||1,hammer_first_team:WK.hammerFirstTeam||0,hammer_teams:STATE.hammerTeams||null,hammer_state:STATE.hammerState||null,presses_on:!!WK.pressesOn,press_val:WK.pressVal!=null?WK.pressVal:null,auto_press_on:!!WK.autoPressOn,auto_press_threshold:WK.autoPressThreshold||2,press_state:STATE.pressState||null,
         skins_teams:STATE.skinsTeams||null,
         snake_holder:STATE.snakeHolder||null,
@@ -1522,6 +1557,7 @@ async function s2WriteActive(){
         round_settle_data:STATE.roundSettleData||null,
         locked_rounds:STATE.lockedRounds||null,
         net_off_low:!!STATE.netOffLow,
+        game_net_off_flight_low:!!STATE.netOffFlightLow,
         staged_courses:(WK.stagedCourses||[]).map(n=>({name:n,defaultTee:(WK.stagedCourseTees||{})[n]||null}))||null,
         rounds_data:WK.rounds.map(rd=>({
           courseName:rd.courseName,
@@ -1769,6 +1805,7 @@ async function s2ReadTrip(tripId){
       _groupId:t.group_id||null,
       _createdBy:t.created_by||null,
       _tripAdmins:Array.isArray(t.trip_admins)?t.trip_admins:[],
+      _flightedGames:Array.isArray(t.flighted_games)?t.flighted_games:[],
       _pencilLock:Array.isArray(t.pencil_lock)?t.pencil_lock:[],
       _updatedAt:t.updated_at||null, // server-stamped trip row watermark — sync poll seeds off this
       isQuickRound:!!(t.is_quick_round),
@@ -1920,11 +1957,19 @@ async function s2ReadTrip(tripId){
       }
       return{r:0,h:0,allDone:true};
     })();
+    // Foursomes and per-round flight counts, needed by any per-game [r][fi] hydrate below.
+    // Computed locally (not via flightsForRound/flightCountsForTrip) because global WK/STATE
+    // are not assigned until this whole object is returned to the caller.
+    const _rf=padFlights(t.round_flights,nR,nP);
+    const _flCounts=_rf.map(fl=>fl.length);
+    if(!Array.isArray(newWK._flightedGames))newWK._flightedGames=[];
+    if(newWK._flightedGames.indexOf('wolf')<0)newWK._flightedGames.push('wolf');
     const newSTATE={
       currentRound:_resumePos.r,
       currentHole:_resumePos.h,
       _resumeAllDone:_resumePos.allDone||false,
       netOffLow:!!t.net_off_low,
+      netOffFlightLow:!!t.game_net_off_flight_low,
       mpViewRound:0,
       vegasViewRound:0,
       skinsViewRound:0,
@@ -1939,7 +1984,10 @@ async function s2ReadTrip(tripId){
       skinsTeams:t.skins_teams||Array(nR).fill(null).map((_,r=>{const g=skinsGamesForRound(r);return Array(g).fill(null).map(()=>JSON.parse(JSON.stringify([[0,1],[2,3]])));})),
       snakeHolder:t.snake_holder||Array(nR).fill(null).map(()=>Array(18).fill(null)),
       snakePot:t.snake_pot||Array(nR).fill(0),
-      wolfOrder:t.wolf_order||Array(nR).fill(null).map(()=>[0,1,2,3]),wolfPicks:t.wolf_picks||Array(nR).fill(null).map(()=>Array(18).fill(null)),hammerTeams:t.hammer_teams||Array(nR).fill(null).map(()=>[[[0,1],[2,3]]]),hammerState:t.hammer_state||Array(nR).fill(null).map(()=>Array(18).fill(null)),pressState:t.press_state||Array(nR).fill(null).map(()=>[]),razzleOrder:t.razzle_order||Array(nR).fill(null).map(()=>[0,1,2,3]),
+      wolfOrder:hydrateFlightedGame(t.wolf_order,t.flighted_games,_flCounts,'wolf',function(r,fi){return (_rf[r][fi]||[]).slice();}),
+      wolfPicks:hydrateFlightedGame(t.wolf_picks,t.flighted_games,_flCounts,'wolf',function(r,fi){return Array(18).fill(null);}),
+      hammerTeams:t.hammer_teams||Array(nR).fill(null).map(()=>[[[0,1],[2,3]]]),hammerState:t.hammer_state||Array(nR).fill(null).map(()=>Array(18).fill(null)),pressState:t.press_state||Array(nR).fill(null).map(()=>[]),razzleOrder:t.razzle_order||Array(nR).fill(null).map(()=>[0,1,2,3]),
+      roundFlights:_rf,currentFlight:0,
       razzleMatchTeams:t.razzle_match_teams||Array(nR).fill(null).map(()=>[]),
       razzleFiredToasts:t.razzle_fired_toasts||{},
       razzleHWM:t.razzle_hwm||{},
@@ -4327,7 +4375,7 @@ function viewTrip(id){
 // open (viewTrip) AND by the device-sync poll's trip-row rebuild. Keeping this as one
 // function means sync reuses the exact verified load path instead of a parallel one.
 function _s2RehydrateLoadedTrip(){
-  if(!STATE.expenses)STATE.expenses=[];if(!STATE.moneyTab)STATE.moneyTab='golf';if(!STATE.skinsViewRound)STATE.skinsViewRound=0;if(!STATE.settledRounds)STATE.settledRounds=[];if(!STATE.roundSettleData)STATE.roundSettleData={};if(!STATE.lockedRounds)STATE.lockedRounds=[];if(WK&&WK.rounds&&typeof sanitizeTeams==='function'){WK.rounds.forEach((_,r)=>sanitizeTeams(r));}
+  if(!STATE.expenses)STATE.expenses=[];if(!STATE.moneyTab)STATE.moneyTab='golf';if(!STATE.skinsViewRound)STATE.skinsViewRound=0;if(!STATE.settledRounds)STATE.settledRounds=[];if(!STATE.roundSettleData)STATE.roundSettleData={};if(!STATE.lockedRounds)STATE.lockedRounds=[];if(WK&&WK.rounds&&typeof sanitizeTeams==='function'){WK.rounds.forEach((_,r)=>{sanitizeTeams(r);reconcileWolfOrder(r);});}
   // Re-hydrate course objects: prefer live CATALOG (handles built-in + loaded custom courses)
   // Fall back to blob's own course data for custom courses not yet in CATALOG
   // Either way, ensure holes array exists
@@ -4685,6 +4733,7 @@ function buildCourseFields(){const nR=parseInt(document.getElementById('numRound
 // ── Trip Wizard Modal (_tw) ─────────────────────────────────────────────────
 // _twS: wizard state object
 // step 1=Trip setup, 2=Players, 3=Handicap, 4=Courses, 5=Money & games
+const TW_MAX_PLAYERS=12;
 let _twS={step:1,name:'',date:'',region:'',numRounds:4,selectedMembers:[],hdcpPct:80,netOffLow:false,courses:[],tees:[],games:{},buyIn:50,potMethod:'netstroke'};
 const _TW_TOTAL_STEPS=5;
 
@@ -4779,9 +4828,9 @@ function _twStep2Html(){
     `<div><div style="font-size:13px;color:var(--color-text-secondary);">Add guest</div><div style="font-size:11px;color:var(--color-text-tertiary);">Saved to the group for future trips</div></div>`+
   `</div>`;
   const selCount=_twS.selectedMembers.length;
-  const tooMany=selCount>4;
-  const canNext=selCount>=2&&selCount<=4;
-  const countLabel=selCount===0?'None selected':`${selCount} selected${tooMany?' - max 4':''}`;
+  const tooMany=selCount>TW_MAX_PLAYERS;
+  const canNext=selCount>=2&&selCount<=TW_MAX_PLAYERS;
+  const countLabel=selCount===0?'None selected':`${selCount} selected${tooMany?' - max '+TW_MAX_PLAYERS:''}`;
   return _twHeader('New trip','Players',`Pick who is playing from ${groupName}.`)+
     `<div id="tw_guestError" style="display:none;margin:8px 16px 0;padding:8px 12px;background:#FAEEDA;border:0.5px solid #EFB880;border-radius:var(--border-radius-md);font-size:12px;color:#633806;"></div>`+
     `<div style="padding:6px 12px 6px;">${rows}</div>`+
@@ -4936,7 +4985,7 @@ window._twNext=function(){
       if(el)m.hcp_index=parseFloat(el.value)||m.hcp_index||0;
     });
     if(_twS.selectedMembers.length<2){alert('Please select at least 2 players.');return;}
-    if(_twS.selectedMembers.length>4){alert('Maximum 4 players for a trip.');return;}
+    if(_twS.selectedMembers.length>TW_MAX_PLAYERS){alert('Maximum '+TW_MAX_PLAYERS+' players for a trip.');return;}
     _twS.step=3;_twRender();return;
   }
   if(_twS.step===3){
@@ -5144,9 +5193,9 @@ window._twToggleMember=function(memberId){
   if(idx>=0){
     _twS.selectedMembers.splice(idx,1);
   } else {
-    if(_twS.selectedMembers.length>=4){
+    if(_twS.selectedMembers.length>=TW_MAX_PLAYERS){
       const errEl=document.getElementById('tw_guestError');
-      if(errEl){errEl.textContent='Maximum 4 players per trip.';errEl.style.display='block';setTimeout(()=>{errEl.style.display='none';},2500);}
+      if(errEl){errEl.textContent='Maximum '+TW_MAX_PLAYERS+' players per trip.';errEl.style.display='block';setTimeout(()=>{errEl.style.display='none';},2500);}
       return;
     }
     _twS.selectedMembers.push({member_id:m.member_id,display_name:m.display_name,hcp_index:m.hcp_index,venmo:m.venmo||'',user_id:m.user_id||null});
@@ -5420,14 +5469,121 @@ if(STATE.hammerTeams&&STATE.hammerTeams[r]){
   if(STATE.hammerTeams[r].length!==hammerSegsForRound(r)||!_hOk){STATE.hammerTeams[r]=defaultHammerTeams(r);}
 }
 }
-function initState(netOffLow){const nR=WK.rounds.length,nP=WK.players.length;const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];const mkSkTeams=r=>{const g=skinsGamesForRound(r);return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));};STATE={currentRound:0,currentHole:holeOffset(0),netOffLow:netOffLow||false,mpViewRound:0,vegasViewRound:0,skinsViewRound:0,scRound:0,optPanel:'teams',teamsRound:0,roundRankOpen:false,emergencyRankOpen:false,moneyTab:'golf',expenses:[],settledRounds:[],roundSettleData:{},lockedRounds:[],scores:Array(nR).fill(null).map(()=>Array(18).fill(null).map(()=>Array(nP).fill(null))),mpTeams:Array(nR).fill(null).map((_,r)=>isHeadsUp(r)?defaultHUTeams(r):defaultTeams(r)),vegTeams:Array(nR).fill(null).map((_,r)=>defaultVegasTeams(r)),skinsTeams:Array(nR).fill(null).map((_,r)=>mkSkTeams(r)),
+function defaultFlights(nP){var a=[];for(var i=0;i<nP;i++)a.push(i);return [a];}
+function padFlights(raw,nR,nP){
+  var out=[];
+  for(var r=0;r<nR;r++){
+    var src=(raw&&Array.isArray(raw[r]))?raw[r]:null;
+    var flights=[],seen={};
+    if(src){
+      for(var f=0;f<src.length;f++){
+        if(!Array.isArray(src[f]))continue;
+        var kept=[];
+        for(var k=0;k<src[f].length;k++){
+          var pi=src[f][k];
+          if(typeof pi!=='number'||pi<0||pi>=nP)continue;
+          if(seen[pi])continue;
+          seen[pi]=1;kept.push(pi);
+        }
+        flights.push(kept);
+      }
+    }
+    if(!flights.length)flights=[[]];
+    for(var p=0;p<nP;p++){if(!seen[p]){flights[0].push(p);seen[p]=1;}}
+    flights=flights.filter(function(fl,idx){return idx===0||fl.length>0;});
+    out.push(flights);
+  }
+  return out;
+}
+function flightsForRound(r){return (STATE.roundFlights&&STATE.roundFlights[r])||[WK.players.map((_,i)=>i)];}
+function isMultiFlight(r){return flightsForRound(r).length>1;}
+
+// ---- per-foursome games machinery (step 1). No game uses these yet. ----
+// Old shape [r] -> new shape [r][0]. Uniform across every game, used on the
+// first hydrate after a game adopts the axis (game not yet in flighted_games).
+function wrapGameToFoursome0(perRoundState){
+  return (perRoundState||[]).map(function(rd){return [rd];});
+}
+// Enforce game[r].length === flight count for round r. defaultFn(r,fi) builds a
+// foursome's default game state. Mirrors the shipped padFlights invariant.
+function padGameFoursomes(state, flightCounts, defaultFn){
+  var out=[], nR=flightCounts.length;
+  for(var r=0;r<nR;r++){
+    var slots=(state && Array.isArray(state[r])) ? state[r].slice() : [];
+    var want=flightCounts[r];
+    if(slots.length>want) slots=slots.slice(0, want);
+    while(slots.length<want) slots.push(defaultFn(r, slots.length));
+    out.push(slots);
+  }
+  return out;
+}
+// Per-round flight counts for the current trip, from the roundFlights model.
+function flightCountsForTrip(){
+  var n=(WK&&WK.rounds)?WK.rounds.length:0, out=[];
+  for(var r=0;r<n;r++) out.push(flightsForRound(r).length);
+  return out;
+}
+// Has game <key> adopted the per-foursome axis for this trip?
+function isGameFlighted(key){
+  return !!(WK && Array.isArray(WK._flightedGames) && WK._flightedGames.indexOf(key)>=0);
+}
+// Uniform per-game hydrate: raw (stored) shape -> [r][fi] shape, gated on flightedGames.
+// raw==null: brand-new/no data, start empty and let defaultFn fill every slot.
+// key already in flightedGames: raw is already [r][fi], pass through.
+// otherwise: raw is OLD shape [r] (flat per round), wrap each round as its single foursome-0.
+// Either way, padGameFoursomes then enforces the length invariant against flightCounts.
+// Local (not global-WK-dependent) so it is safe to call mid-hydrate before WK/STATE are assigned.
+function hydrateFlightedGame(raw, flightedGames, flightCounts, key, defaultFn){
+  var wasFlighted=Array.isArray(flightedGames) && flightedGames.indexOf(key)>=0;
+  var base;
+  if(raw==null){
+    base=flightCounts.map(function(){return [];});
+  }else if(wasFlighted){
+    base=raw;
+  }else{
+    base=wrapGameToFoursome0(raw);
+  }
+  return padGameFoursomes(base, flightCounts, defaultFn);
+}
+// Mark game <key> as flighted (called by a game's migration step after it writes
+// the new shape). Idempotent.
+function markGameFlighted(key){
+  if(!WK)return;
+  if(!Array.isArray(WK._flightedGames)) WK._flightedGames=[];
+  if(WK._flightedGames.indexOf(key)<0) WK._flightedGames.push(key);
+}
+function _flightPickKey(r){return 'tfPick_'+(s2TripId()||'x')+'_'+r;}
+function getFlightPick(r){
+  if(!isMultiFlight(r))return 0;
+  try{
+    var v=localStorage.getItem(_flightPickKey(r));
+    if(v===null)return null;
+    var n=parseInt(v,10);
+    var fl=flightsForRound(r);
+    return (n>=0&&n<fl.length)?n:null;
+  }catch(e){return null;}
+}
+function setFlightPick(r,idx){try{localStorage.setItem(_flightPickKey(r),String(idx));}catch(e){}}
+function flightMemberInitials(r,fi){
+  var fl=flightsForRound(r)[fi]||[];
+  return fl.map(function(pi){return WK.players[pi]?WK.players[pi].ini:'?';}).join(', ');
+}
+function initState(netOffLow){const nR=WK.rounds.length,nP=WK.players.length;const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];const mkSkTeams=r=>{const g=skinsGamesForRound(r);return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));};
+  // Foursomes must exist before per-round game defaults that key off them (Wolf order).
+  const _rf0=Array(nR).fill(null).map(()=>defaultFlights(nP));
+  STATE={currentRound:0,currentHole:holeOffset(0),netOffLow:netOffLow||false,netOffFlightLow:false,mpViewRound:0,vegasViewRound:0,skinsViewRound:0,scRound:0,optPanel:'teams',teamsRound:0,roundRankOpen:false,emergencyRankOpen:false,moneyTab:'golf',expenses:[],settledRounds:[],roundSettleData:{},lockedRounds:[],scores:Array(nR).fill(null).map(()=>Array(18).fill(null).map(()=>Array(nP).fill(null))),mpTeams:Array(nR).fill(null).map((_,r)=>isHeadsUp(r)?defaultHUTeams(r):defaultTeams(r)),vegTeams:Array(nR).fill(null).map((_,r)=>defaultVegasTeams(r)),skinsTeams:Array(nR).fill(null).map((_,r)=>mkSkTeams(r)),
     // Snake: per round, per hole holder index (null = no holder)
     snakeHolder:Array(nR).fill(null).map(()=>Array(18).fill(null)),
     snakePot:Array(nR).fill(0),
     razzleOrder:Array(nR).fill(null).map(()=>[0,1,2,3]),
     razzleMatchTeams:Array(nR).fill(null).map(()=>[]),
     hammerTeams:Array(nR).fill(null).map((_,ri)=>defaultHammerTeams(ri)),
-    hammerState:Array(nR).fill(null).map(()=>Array(18).fill(null))
+    hammerState:Array(nR).fill(null).map(()=>Array(18).fill(null)),
+    // Wolf: per round, per foursome. [r][fi] = tee order / 18-hole picks for that foursome.
+    wolfOrder:_rf0.map(fl=>fl.map(g=>g.slice())),
+    wolfPicks:_rf0.map(fl=>fl.map(()=>Array(18).fill(null))),
+    roundFlights:_rf0,
+    currentFlight:0
   };}
 function launchMainApp(){window._qrNineHole=null;_isQuickRoundWizard=false;document.getElementById('wizardScreen')?.classList.remove('qr-mode');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';['homeGroupScreen','groupSetupScreen','groupCreateScreen','groupJoinScreen','groupPickerScreen'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;const _fmtDate=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' · '+_fmtDate(WK.date)):WK.region||_fmtDate(WK.date)||'';updateTabDimming();setView('scores');document.getElementById('mainTabBar')?.classList.add('visible');_syncStart();}
 // Stage 2: Scores tab view mode
@@ -5497,7 +5653,7 @@ window._actClear=function(){
   WK.players.forEach((_,pi)=>{STATE.scores[r][hi][pi]=null;});
   if(STATE.hammerState&&STATE.hammerState[r])STATE.hammerState[r][hi]=null;
   if(STATE.snakeHolder&&STATE.snakeHolder[r])STATE.snakeHolder[r][hi]=undefined;
-  if(STATE.wolfPicks&&STATE.wolfPicks[r])STATE.wolfPicks[r][hi]=null;
+  if(STATE.wolfPicks&&STATE.wolfPicks[r])STATE.wolfPicks[r].forEach(function(fp){if(fp)fp[hi]=null;});
   s2MarkDirty(['score'],r+':'+hi);
   autoSave();updateHoleUI();
 };
@@ -5556,7 +5712,17 @@ function _renderCtxRdSel(v){
   if(!showChip){slot.innerHTML='';return;}
   // Render into the shared slot, routing switch fn based on view
   if(v==='scores'||v==='entry'){
-    renderRdPicker('ctxRdSel',STATE.currentRound,'switchEntryRound');
+    const _r=STATE.currentRound;
+    if(isMultiFlight(_r)){
+      slot.innerHTML='<div class="rd-ctx-row"><div id="ctxRdSelBar"></div>'
+        +'<div class="fs-pill" id="fsPill"><div class="fs-pill-btn" onclick="_fsPillToggle()">'
+        +'<span class="fs-pill-lab" id="fsPillLab">-</span><span class="fs-pill-cv">&#9662;</span></div>'
+        +'<div class="fs-pill-menu" id="fsPillMenu"></div></div></div>';
+      renderRdPicker('ctxRdSelBar',_r,'switchEntryRound');
+      _fsPillRender();
+    }else{
+      renderRdPicker('ctxRdSel',_r,'switchEntryRound');
+    }
   } else {
     renderRdPicker('ctxRdSel',STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound,'switchGamesRound');
   }
@@ -5634,8 +5800,8 @@ function gameOnAny(game){
   return WK.rounds.some((_,r)=>gameOn(game,r));
 }
 function roundVal(key,r,tripDefault){return WK.rounds[r]?.[key]??tripDefault;}
-const OPT_PANELS=['menu','weekend','players','courses','info','htp'];
-function setOptPanel(p){STATE.optPanel=p;OPT_PANELS.forEach(n=>{const panel=document.getElementById('opt-panel-'+n);if(panel){panel.classList.remove('active');if(n===p)panel.classList.add('active');}});const back=document.getElementById('opt-back'),backT=document.getElementById('opt-back-title'),menuT=document.getElementById('opt-menu-title');const titles={weekend:(WK&&WK.isQuickRound)?'Round Setup':'Trip Setup',players:'Players',courses:'Courses',info:'Preferences',htp:'How It Works'};if(p==='menu'){if(back)back.style.display='none';if(menuT)menuT.style.display='';}else{if(back)back.style.display='';if(backT)backT.textContent=titles[p]||'';if(menuT)menuT.style.display='none';}renderOptPanel(p);_wireSimLongPress();}
+const OPT_PANELS=['menu','weekend','players','flights','courses','info','htp'];
+function setOptPanel(p){STATE.optPanel=p;OPT_PANELS.forEach(n=>{const panel=document.getElementById('opt-panel-'+n);if(panel){panel.classList.remove('active');if(n===p)panel.classList.add('active');}});const back=document.getElementById('opt-back'),backT=document.getElementById('opt-back-title'),menuT=document.getElementById('opt-menu-title');const titles={weekend:(WK&&WK.isQuickRound)?'Round Setup':'Trip Setup',players:'Players',flights:'Foursomes',courses:'Courses',info:'Preferences',htp:'How It Works'};if(p==='menu'){if(back)back.style.display='none';if(menuT)menuT.style.display='';}else{if(back)back.style.display='';if(backT)backT.textContent=titles[p]||'';if(menuT)menuT.style.display='none';}renderOptPanel(p);_wireSimLongPress();}
 function renderOptions(){setOptPanel('menu');}
 function _toggleSimMember(){
   if(!WK){return;}
@@ -5684,6 +5850,7 @@ function renderOptMenu(){
   el.innerHTML='<div class="opt-menu-card">'
     +row('ti-calendar-event',setupTitle,setupSub,"setOptPanel('weekend')")
     +row('ti-users','Players',nP+' player'+(nP===1?'':'s'),"setOptPanel('players')")
+    +row('ti-users-group','Foursomes','Split rounds into groups',"setOptPanel('flights')")
     +row('ti-map-pin','Courses','Course library',"setOptPanel('courses')")
     +row('ti-adjustments-horizontal','Preferences','Appearance, version',"setOptPanel('info')")
     +'</div><div class="opt-menu-gap"></div><div class="opt-menu-card">'
@@ -5702,8 +5869,8 @@ function renderOptPanel(p){
     if(el)el.innerHTML=readonlyNotice;
     return;
   }
-  if(!canEditTrip()&&(p==='weekend'||p==='players'||p==='courses')){if(p==='weekend')renderWeekendPanel();else if(p==='players')renderPlayersPanel();else if(p==='courses')renderCoursesPanel();var _cet_el=document.getElementById('opt-panel-'+p);if(_cet_el){var _cet_banner='<div style=\"display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:2px\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"color:var(--color-text-secondary);flex-shrink:0\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" y1=\"16\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"8\" x2=\"12.01\" y2=\"8\"/></svg><span style=\"font-size:12px;color:var(--color-text-secondary);line-height:1.4\">No edit access for this trip. You can still enter scores.</span></div>';_cet_el.innerHTML=_cet_banner+'<div style="opacity:0.55;pointer-events:none">'+_cet_el.innerHTML+'</div>';}return;}
-  if(p==='menu')renderOptMenu();if(p==='htp')renderHtpPanel();if(p==='teams')renderTeamsPanel();if(p==='players')renderPlayersPanel();if(p==='weekend')renderWeekendPanel();if(p==='courses')renderCoursesPanel();if(p==='info')renderInfoPanel();
+  if(!canEditTrip()&&(p==='weekend'||p==='players'||p==='flights'||p==='courses')){if(p==='weekend')renderWeekendPanel();else if(p==='players')renderPlayersPanel();else if(p==='flights')renderFlightsPanel();else if(p==='courses')renderCoursesPanel();var _cet_el=document.getElementById('opt-panel-'+p);if(_cet_el){var _cet_banner='<div style=\"display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:2px\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"color:var(--color-text-secondary);flex-shrink:0\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" y1=\"16\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"8\" x2=\"12.01\" y2=\"8\"/></svg><span style=\"font-size:12px;color:var(--color-text-secondary);line-height:1.4\">No edit access for this trip. You can still enter scores.</span></div>';_cet_el.innerHTML=_cet_banner+'<div style="opacity:0.55;pointer-events:none">'+_cet_el.innerHTML+'</div>';}return;}
+  if(p==='menu')renderOptMenu();if(p==='htp')renderHtpPanel();if(p==='teams')renderTeamsPanel();if(p==='players')renderPlayersPanel();if(p==='flights')renderFlightsPanel();if(p==='weekend')renderWeekendPanel();if(p==='courses')renderCoursesPanel();if(p==='info')renderInfoPanel();
 }
 function renderInfoPanel(){
   const sections=[
@@ -5767,7 +5934,7 @@ function openRoundSheet(fnName,cur){
 function closeRoundSheet(){const s=document.getElementById('roundSheet');if(s)s.remove();}
 function renderRdSel(cid,cur,fn){const el=document.getElementById(cid);if(!el)return;const isEntry=cid==='entryRdSel'||cid==='ctxRdSel';el.innerHTML=WK.rounds.map((rd,i)=>{const done=isRoundComplete(i);const lkd=(STATE.lockedRounds||[]).includes(i);const detailsLink=isEntry&&i===cur?`<div onclick="event.stopPropagation();showRoundDetails()" style="position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,0.5);color:rgba(255,255,255,0.8);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1">i</div>`:'';return`<div class="rd-btn${i===cur?' active':''}${done?' done':''}" onclick="${fn}(${i})">${roundLabel(i)}${lkd?' 🔒':''}<br><span style="font-size:9px;opacity:0.75">${rdLabel(i)}</span>${detailsLink}</div>`;}).join('');}
 function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=holeOffset(r);STATE.razzleToastOk=false;if(!STATE.razzleHWM)STATE.razzleHWM={};const _roundComplete=isRoundComplete(r);const _maxH=holeOffset(r)+roundHoleCount(r)-1;if(STATE.razzleHWM[r]===undefined)STATE.razzleHWM[r]=_roundComplete?_maxH:-1;renderRdSel('entryRdSel',r,'switchEntryRound');renderRdPicker('ctxRdSel',r,'switchEntryRound');STATE.scRound=r;updateHoleUI();if(_scViewMode==='card')renderSCGrid();}
-function switchCardRound(r){STATE.scRound=r;renderRdSel('cardRdSel',r,'switchCardRound');renderSCGrid();}
+function switchCardRound(r){STATE.scRound=r;renderRdSel('cardRdSel',r,'switchCardRound');STATE.scGridFlightSel=-1;renderSCGrid();}
 function switchGamesRound(r){STATE.gamesViewRound=r;renderGamesTab();}
 function switchGamesGame(g){STATE.gamesViewGame=g;renderGamesTab();}
 function switchTeamsRound(r){STATE.teamsRound=r;renderTeamsPanel();}
@@ -5793,6 +5960,15 @@ function lowCH(r){return Math.min(...WK.players.map((_,pi)=>{let ch=courseHdcp(p
 function effHdcp(pi,r){let ch=courseHdcp(pi,r);if(WK.rounds[r]&&WK.rounds[r].nineHole)ch=Math.round(ch/2);return STATE.netOffLow?Math.max(0,ch-lowCH(r)):ch;}
 function strokes(pi,hi,r){const h=effHdcp(pi,r);const nineHole=WK.rounds[r]&&WK.rounds[r].nineHole;if(nineHole){const activeHoles=holesForRound(r);const offset=holeOffset(r);const localHi=hi-offset;if(localHi<0||localHi>=activeHoles.length)return 0;const thisSI=activeHoles[localHi].si;const rank=activeHoles.filter(ah=>ah.si<=thisSI).length;if(h<0){const a=-h;return -(Math.floor(a/9)+(rank>=10-(a%9)?1:0));}return Math.floor(h/9)+(h%9>=rank?1:0);}const si=WK.rounds[r].course.holes[hi]?.si||hi+1;if(h<0){const a=-h;return -(Math.floor(a/18)+(si>=19-(a%18)?1:0));}return Math.floor(h/18)+(h%18>=si?1:0);}
 function getNet(pi,hi,r){const g=STATE.scores[r][hi][pi];return g===null?null:g-strokes(pi,hi,r);}
+// ---- Amendment A: foursome low-man netting for games (game-only path) ----
+// getNet/strokes/effHdcp/lowCH above are never modified. When STATE.netOffFlightLow
+// is off, effHdcpForFlight returns effHdcp(pi,r) unchanged and strokesForFlight
+// duplicates strokes()'s SI math exactly, so getNetForFlight(...) is byte-identical
+// to getNet(pi,hi,r) for a one-foursome round. This is what makes the toggle safe.
+function lowCHForFlight(r,flightPlayers){return Math.min(...flightPlayers.map(pi=>{let ch=courseHdcp(pi,r);if(WK.rounds[r]&&WK.rounds[r].nineHole)ch=Math.round(ch/2);return ch;}));}
+function effHdcpForFlight(pi,r,flightPlayers){if(!STATE.netOffFlightLow)return effHdcp(pi,r);let ch=courseHdcp(pi,r);if(WK.rounds[r]&&WK.rounds[r].nineHole)ch=Math.round(ch/2);return Math.max(0,ch-lowCHForFlight(r,flightPlayers));}
+function strokesForFlight(pi,hi,r,flightPlayers){const h=effHdcpForFlight(pi,r,flightPlayers);const nineHole=WK.rounds[r]&&WK.rounds[r].nineHole;if(nineHole){const activeHoles=holesForRound(r);const offset=holeOffset(r);const localHi=hi-offset;if(localHi<0||localHi>=activeHoles.length)return 0;const thisSI=activeHoles[localHi].si;const rank=activeHoles.filter(ah=>ah.si<=thisSI).length;if(h<0){const a=-h;return -(Math.floor(a/9)+(rank>=10-(a%9)?1:0));}return Math.floor(h/9)+(h%9>=rank?1:0);}const si=WK.rounds[r].course.holes[hi]?.si||hi+1;if(h<0){const a=-h;return -(Math.floor(a/18)+(si>=19-(a%18)?1:0));}return Math.floor(h/18)+(h%18>=si?1:0);}
+function getNetForFlight(pi,hi,r,flightPlayers){const g=STATE.scores[r][hi][pi];return g===null?null:g-strokesForFlight(pi,hi,r,flightPlayers);}
 function scoreClass(g,par){const d=g-par;if(d<=-2)return'eagle';if(d===-1)return'birdie';if(d===0)return'par';if(d===1)return'bogey';return'double';}
 function bestBird(team,hi,r){const par=WK.rounds[r].course.holes[hi]?.par||4;let b=0;team.forEach(pi=>{const n=getNet(pi,hi,r);if(n===null)return;const d=par-n;if(d>=2)b=Math.max(b,2);else if(d===1)b=Math.max(b,1);});return b;}
 function teamBirdCount(team,hi,r){const par=WK.rounds[r].course.holes[hi]?.par||4;return team.filter(pi=>{const n=getNet(pi,hi,r);return n!==null&&(par-n)>=1;}).length;}
@@ -5895,7 +6071,38 @@ function renderScorecard(){
   const hole=WK.rounds[r].course.holes[hi]||{par:4,si:hi+1};
   // Determine current snake holder (last set on or before this hole)
   const snakeHolder=currentSnakeHolder(r,hi);
-  const wolfActive=gameOn('wolf',r)&&WK.players.length>=4;const displayOrder=wolfActive?wolfTeeOrder(hi,r):WK.players.map((_,idx)=>idx);document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=strokes(i,hi,r),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}</span>`:`<span class="stroke-tag stroke-no">no stroke</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&snakeHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r);const roStyle=_pvLock?'pointer-events:none':((isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'');const _rowDim=_pvLock?'opacity:0.42;':'';const _minusBtn=_pvLock?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_pvLock?'<i class="ti ti-lock" style="font-size:16px;color:var(--color-text-secondary);margin-left:2px" aria-hidden="true"></i>':'<button class="adj" onclick="adjScore('+i+',1)">+</button>';const wolfPiHere=wolfActive?wolfForHole(hi,r):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';return topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('');
+  // More than 4 players and not yet split into foursomes: Wolf's rotation cannot render
+  // a meaningful card (it would show only 4 of the group). Guide to the Foursomes editor.
+  if(gameOn('wolf',r)&&flightsForRound(r).length===1&&(flightsForRound(r)[0]||[]).length>4){
+    document.getElementById('scorecard').innerHTML=_wolfNeedsFoursomesHtml(false);
+    return;
+  }
+  let _fp=0;
+  if(isMultiFlight(r)){
+    _fp=getFlightPick(r);
+    if(_fp===null){
+      const _fl=flightsForRound(r);
+      let _promptHtml='<div class="fs-pick-prompt"><div class="fpp-t">Select your foursome</div>';
+      for(let _fi=0;_fi<_fl.length;_fi++){
+        _promptHtml+='<div class="fs-pick-opt" onclick="_fsPillPick('+_fi+')">Foursome '+(_fi+1)+'<span class="fpo-who">'+flightMemberInitials(r,_fi)+'</span></div>';
+      }
+      _promptHtml+='</div>';
+      document.getElementById('scorecard').innerHTML=_promptHtml;
+      return;
+    }
+  }
+  const wolfActive=gameOn('wolf',r)&&(flightsForRound(r)[_fp]||[]).length>=4;let displayOrder=wolfActive?wolfTeeOrder(hi,r,_fp):WK.players.map((_,idx)=>idx);
+  if(isMultiFlight(r)){
+    const _flSet={};(flightsForRound(r)[_fp]||[]).forEach(pi=>{_flSet[pi]=1;});
+    displayOrder=displayOrder.filter(i=>_flSet[i]);
+  }
+  // Hole view shows GAME strokes/net (off foursome low) whenever a foursome-aware game is
+  // live with the toggle on, since the per-hole stroke is the wolf's partner-pick signal. The
+  // grid view keeps weekend net for standings. With the toggle off, strokesForFlight collapses
+  // to strokes, so this is a no-op for the common case; a lone foursome equals the field too.
+  const _gameNet=STATE.netOffFlightLow&&gameOn('wolf',r);
+  const _flPlayers=(flightsForRound(r)[_fp]||WK.players.map((_,idx)=>idx));
+  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}</span>`:`<span class="stroke-tag stroke-no">no stroke</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&snakeHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r);const roStyle=_pvLock?'pointer-events:none':((isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'');const _rowDim=_pvLock?'opacity:0.42;':'';const _minusBtn=_pvLock?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_pvLock?'<i class="ti ti-lock" style="font-size:16px;color:var(--color-text-secondary);margin-left:2px" aria-hidden="true"></i>':'<button class="adj" onclick="adjScore('+i+',1)">+</button>';const wolfPiHere=wolfActive?wolfForHole(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';return topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('');
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
   try{renderRazzleBox();}catch(re){console.error('renderRazzleBox error:',re);const w=document.getElementById('razzleBoxWrap');if(w)w.innerHTML='';}
@@ -6568,9 +6775,60 @@ function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap')
           </div>`;
   }
   wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdr}${inner}</div>`;}
-function renderHoleDots(){const r=STATE.currentRound;const nHoles=roundHoleCount(r);const off=holeOffset(r);const makeDot=(i)=>{const done=STATE.scores[r][i]&&STATE.scores[r][i].every(s=>s!==null);return'<div class="hdot'+(done?' done':'')+(i===STATE.currentHole?' cur':'')+'" onclick="jumpHole('+i+')">'+(i+1)+'</div>';};let html='';if(nHoles<=9){html='<div class="hole-dots-row">'+Array.from({length:nHoles},(_,i)=>makeDot(i+off)).join('')+'</div>';}else{const front=Array.from({length:9},(_,i)=>makeDot(i)).join('');const back=Array.from({length:nHoles-9},(_,i)=>makeDot(i+9)).join('');html='<div class="hole-dots-row">'+front+'</div><div class="hole-dots-row">'+back+'</div>';}document.getElementById('holeDots').innerHTML=html;}
+function renderHoleDots(){const r=STATE.currentRound;const nHoles=roundHoleCount(r);const off=holeOffset(r);const _need=_flightNeedIdxs(r);const makeDot=(i)=>{const done=STATE.scores[r][i]&&_need.every(function(pi){return STATE.scores[r][i][pi]!==null;});return'<div class="hdot'+(done?' done':'')+(i===STATE.currentHole?' cur':'')+'" onclick="jumpHole('+i+')">'+(i+1)+'</div>';};let html='';if(nHoles<=9){html='<div class="hole-dots-row">'+Array.from({length:nHoles},(_,i)=>makeDot(i+off)).join('')+'</div>';}else{const front=Array.from({length:9},(_,i)=>makeDot(i)).join('');const back=Array.from({length:nHoles-9},(_,i)=>makeDot(i+9)).join('');html='<div class="hole-dots-row">'+front+'</div><div class="hole-dots-row">'+back+'</div>';}document.getElementById('holeDots').innerHTML=html;}
 function jumpHole(i){STATE.razzleToastOk=false;STATE.currentHole=i;updateHoleUI();}
 function changeHole(d){const r=STATE.currentRound,curHole=STATE.currentHole,_maxHi=holeOffset(r)+roundHoleCount(r)-1,nextHole=Math.max(holeOffset(r),Math.min(_maxHi,curHole+d));if(d>0&&gameOn('razzle',r)&&razzleMatchClosedOnHole(r,curHole)&&!isRoundLocked(r)){const _cms=calcRazzle(r);const _closedM=_cms.find(m=>m.closedOnHole===curHole);const _nextMi=_closedM?_closedM.mi+1:_cms.length;const _teamsSet=STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r]&&STATE.razzleMatchTeams[r][_nextMi];if(!_teamsSet){showRazzleTeamModal(r,nextHole);return;}}if(d>0){if(!STATE.razzleHWM)STATE.razzleHWM={};const hwm=STATE.razzleHWM[r]??-1;if(nextHole>hwm){STATE.razzleHWM[r]=nextHole;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}}else{STATE.razzleToastOk=false;}STATE.currentHole=nextHole;updateHoleUI();}
+function _fsPillOutside(e){
+  var p=document.getElementById('fsPill');
+  if(p&&!p.contains(e.target)){p.classList.remove('open');document.removeEventListener('click',_fsPillOutside,true);}
+}
+function _fsPillClose(){
+  var p=document.getElementById('fsPill');if(p)p.classList.remove('open');
+  document.removeEventListener('click',_fsPillOutside,true);
+}
+function _fsPillToggle(){
+  var p=document.getElementById('fsPill');if(!p)return;
+  var willOpen=!p.classList.contains('open');
+  p.classList.toggle('open');
+  if(willOpen){setTimeout(function(){document.addEventListener('click',_fsPillOutside,true);},0);}
+  else{document.removeEventListener('click',_fsPillOutside,true);}
+}
+function _fsPillRender(){
+  var r=STATE.currentRound;
+  var fl=flightsForRound(r);
+  var picked=getFlightPick(r);
+  var lab=document.getElementById('fsPillLab');
+  if(lab)lab.textContent=(picked===null)?'Pick':('F'+(picked+1));
+  var menu=document.getElementById('fsPillMenu');
+  if(!menu)return;
+  var html='';
+  for(var i=0;i<fl.length;i++){
+    html+='<div class="'+(picked===i?'sel':'')+'" onclick="_fsPillPick('+i+')">Foursome '+(i+1)+'<span class="fpm-who">'+flightMemberInitials(r,i)+'</span></div>';
+  }
+  menu.innerHTML=html;
+}
+function _flightResumeHole(r,fi){
+  const off=holeOffset(r),n=roundHoleCount(r);
+  const need=(flightsForRound(r)[fi]||[]).filter(function(pi){return pi>=0;});
+  if(!need.length)return off;
+  for(let hi=off;hi<off+n;hi++){
+    const row=STATE.scores[r]&&STATE.scores[r][hi];
+    const complete=row&&need.every(function(pi){return row[pi]!==null;});
+    if(!complete)return hi;
+  }
+  return off+n-1; // that foursome is fully scored: land on the last hole for review
+}
+function _fsPillPick(i){
+  var r=STATE.currentRound;
+  var prev=getFlightPick(r);
+  setFlightPick(r,i);
+  // On an actual foursome switch, resume where that group left off rather than sitting
+  // on the hole the previous group ended on.
+  if(prev!==i)STATE.currentHole=_flightResumeHole(r,i);
+  _fsPillClose();
+  _fsPillRender();
+  updateHoleUI();
+}
 function updateHoleUI(){
   if(!WK||!STATE||!WK.rounds||!WK.players)return;
   const r=STATE.currentRound,hi=STATE.currentHole;
@@ -6610,7 +6868,14 @@ function updateHoleUI(){
   _updateHoleStrip();
   _updateActionRow();
 }
-function saveHole(){if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRound))return;const r=STATE.currentRound,hi=STATE.currentHole;if(!STATE.scores[r][hi].every(s=>s!==null)){alert('Enter all scores first.');return;}autoSave();s2WriteActive();if(hi<holeOffset(r)+roundHoleCount(r)-1)changeHole(1);else setView('board');}
+function _flightNeedIdxs(r){
+  if(typeof isMultiFlight==='function'&&isMultiFlight(r)){
+    var _fp=getFlightPick(r);
+    if(_fp!==null)return (flightsForRound(r)[_fp]||[]).filter(function(pi){return pi>=0;});
+  }
+  return WK.players.map(function(_,pi){return pi;});
+}
+function saveHole(){if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRound))return;const r=STATE.currentRound,hi=STATE.currentHole;if(!_flightNeedIdxs(r).every(function(pi){return STATE.scores[r][hi][pi]!==null;})){alert('Enter all scores first.');return;}autoSave();s2WriteActive();if(hi<holeOffset(r)+roundHoleCount(r)-1)changeHole(1);else setView('board');}
 function resetHole(){
   if(isReadOnly)return;
   const r=STATE.currentRound,hi=STATE.currentHole;
@@ -6622,12 +6887,28 @@ function resetHole(){
   // Clear snake for this hole
   if(STATE.snakeHolder&&STATE.snakeHolder[r])STATE.snakeHolder[r][hi]=undefined;
   // Clear wolf picks for this hole
-  if(STATE.wolfPicks&&STATE.wolfPicks[r])STATE.wolfPicks[r][hi]=null;
+  if(STATE.wolfPicks&&STATE.wolfPicks[r])STATE.wolfPicks[r].forEach(function(fp){if(fp)fp[hi]=null;});
   s2MarkDirty(['score'],r+':'+hi);
   autoSave();updateHoleUI();
 }
+function _scGridFilterRender(){
+  const el=document.getElementById('scGridFilterWrap');if(!el)return;
+  const r=STATE.scRound;
+  if(!isMultiFlight(r)){el.innerHTML='';return;}
+  if(STATE.scGridFlightSel===undefined)STATE.scGridFlightSel=-1;
+  const fl=flightsForRound(r);
+  let sel=STATE.scGridFlightSel;
+  if(sel>=fl.length)sel=-1;
+  let html='<div class="gf-filter">';
+  fl.forEach((g,i)=>{html+='<button class="'+(sel===i?'on':'')+'" onclick="_scGridFilterPick('+i+')">Foursome '+(i+1)+'</button>';});
+  html+='<button class="'+(sel===-1?'on':'')+'" onclick="_scGridFilterPick(-1)">All</button></div>';
+  el.innerHTML=html;
+}
+function _scGridFilterPick(i){STATE.scGridFlightSel=i;_scGridFilterRender();renderSCGrid();}
+function _flightsAccent0(i){return ['#3B82F6','#1D9E75','#F59E0B','#8B5CF6','#EC4899'][i%5];}
 function renderSCGrid(){
   const r=STATE.scRound;
+  _scGridFilterRender();
   const activeHoles=holesForRound(r);
   const off=holeOffset(r);
   const totalPar=activeHoles.reduce((a,h)=>a+h.par,0);
@@ -6657,34 +6938,64 @@ function renderSCGrid(){
   let hcpRow=`<tr><td class="player-col" style="font-size:10px;color:var(--color-text-secondary)">HCP</td>`;
   activeHoles.forEach(h=>hcpRow+=`<td style="color:var(--color-text-secondary);font-size:10px">${h.si}</td>`);
   hcpRow+=`<td class="total-col"></td><td class="net-col"></td></tr>`;
-  let playerRows='';
-  WK.players.forEach((p,pi)=>{
-    const cells=activeHoles.map((hole,i)=>{
-      const hi=i+off;
-      const g=STATE.scores[r][hi][pi],st=strokes(pi,hi,r);
-      const dot=st>=2?`<div class="dot-row"><span class="stroke-dot"></span><span class="stroke-dot"></span></div>`:st===1?`<div class="dot-row"><span class="stroke-dot"></span></div>`:st<=-1?('<div class="dot-row">'+'<span class="stroke-dot stroke-dot-give"></span>'.repeat(Math.min(-st,2))+'</div>'):`<div class="dot-row"></div>`;
-      const snakeSet=gameOn('snake',r)&&STATE.snakeHolder&&STATE.snakeHolder[r]&&STATE.snakeHolder[r][hi]===pi;
-      const snakeStyle=snakeSet?'border-top:2px solid #f59e0b;':'';
-      if(g===null)return`<td><div style="display:flex;flex-direction:column;align-items:center;${snakeStyle}">${dot}<div class="sc-cell"></div></div></td>`;
-      return`<td><div style="display:flex;flex-direction:column;align-items:center;${snakeStyle}">${dot}<div class="sc-cell ${scoreClass(g,hole.par)}">${g}</div></div></td>`;
+  function _scGridRowsFor(idxs){
+    let rows='';
+    idxs.forEach((pi)=>{
+      const cells=activeHoles.map((hole,i)=>{
+        const hi=i+off;
+        const g=STATE.scores[r][hi][pi],st=strokes(pi,hi,r);
+        const dot=st>=2?`<div class="dot-row"><span class="stroke-dot"></span><span class="stroke-dot"></span></div>`:st===1?`<div class="dot-row"><span class="stroke-dot"></span></div>`:st<=-1?('<div class="dot-row">'+'<span class="stroke-dot stroke-dot-give"></span>'.repeat(Math.min(-st,2))+'</div>'):`<div class="dot-row"></div>`;
+        const snakeSet=gameOn('snake',r)&&STATE.snakeHolder&&STATE.snakeHolder[r]&&STATE.snakeHolder[r][hi]===pi;
+        const snakeStyle=snakeSet?'border-top:2px solid #f59e0b;':'';
+        if(g===null)return`<td><div style="display:flex;flex-direction:column;align-items:center;${snakeStyle}"><div class="dot-row"></div><div class="sc-cell"></div></div></td>`;
+        return`<td><div style="display:flex;flex-direction:column;align-items:center;${snakeStyle}">${dot}<div class="sc-cell ${scoreClass(g,hole.par)}">${g}</div></div></td>`;
+      });
+      const hasAny=activeHoles.some((_,i)=>STATE.scores[r][i+off][pi]!==null);
+      const tG=activeHoles.reduce((a,_,i)=>a+(STATE.scores[r][i+off][pi]||0),0);
+      const tN=activeHoles.reduce((a,_,i)=>{const n=getNet(pi,i+off,r);return n!==null?a+n:a;},0);
+      rows+=`<tr>`;
+      rows+=`<td class="player-col"><span style="font-weight:500">${displayName(pi)}</span></td>`;
+      rows+=cells.join('');
+      rows+=`<td class="total-col">${hasAny?tG:''}</td>`;
+      rows+=`<td class="net-col">${hasAny?tN:''}</td>`;
+      rows+=`</tr>`;
     });
-    const hasAny=activeHoles.some((_,i)=>STATE.scores[r][i+off][pi]!==null);
-    const tG=activeHoles.reduce((a,_,i)=>a+(STATE.scores[r][i+off][pi]||0),0);
-    const tN=activeHoles.reduce((a,_,i)=>{const n=getNet(pi,i+off,r);return n!==null?a+n:a;},0);
-    playerRows+=`<tr>`;
-    playerRows+=`<td class="player-col"><span style="font-weight:500">${displayName(pi)}</span></td>`;
-    playerRows+=cells.join('');
-    playerRows+=`<td class="total-col">${hasAny?tG:''}</td>`;
-    playerRows+=`<td class="net-col">${hasAny?tN:''}</td>`;
-    playerRows+=`</tr>`;
-  });
+    return rows;
+  }
+  let playerRows='';
+  const _mf=isMultiFlight(r);
+  const _fl=flightsForRound(r);
+  let _sel=STATE.scGridFlightSel;if(_sel===undefined)_sel=-1;if(_sel>=_fl.length)_sel=-1;
+  if(!_mf){
+    playerRows=_scGridRowsFor(WK.players.map((_,pi)=>pi));
+  }else if(_sel===-1){
+    _fl.forEach((grp,gi)=>{
+      const idxs=grp.filter(pi=>pi>=0);
+      playerRows+='<tr><td colspan="'+(activeHoles.length+3)+'" style="position:static;left:auto;text-align:left;background:transparent;border-bottom:none;padding:14px 10px 4px;font-size:12px;font-weight:500;color:var(--color-text-secondary)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(gi)+';margin-right:7px;vertical-align:middle"></span>Foursome '+(gi+1)+'</td></tr>';
+      playerRows+=_scGridRowsFor(idxs);
+    });
+  }else{
+    playerRows=_scGridRowsFor((_fl[_sel]||[]).filter(pi=>pi>=0));
+  }
 
   const snakeLegend=gameOn('snake',STATE.scRound)?`<span><span style="border-top:2px solid #f59e0b;display:inline-block;width:14px;height:12px;vertical-align:middle"></span> Snake set</span>`:'';
   const legend=`<div style="display:flex;gap:10px;padding:0.75rem 1rem;font-size:10px;color:var(--color-text-secondary);flex-wrap:wrap;align-items:center"><span><span class="sc-cell eagle" style="display:inline-flex;width:16px;height:16px;font-size:9px">2</span> Eagle</span><span><span class="sc-cell birdie" style="display:inline-flex;width:16px;height:16px;font-size:9px">3</span> Birdie</span><span><span class="sc-cell bogey" style="display:inline-flex;width:16px;height:16px;font-size:9px">5</span> Bogey</span><span><span class="sc-cell double" style="display:inline-flex;width:16px;height:16px;font-size:9px">6</span> Double+</span><span><span style="width:6px;height:6px;border-radius:50%;background:#1D9E75;display:inline-block;margin-right:2px"></span>Stroke</span>${snakeLegend}</div>`;
 
   const _scTeeHd=_scTeeName?`<span style="display:inline-flex;align-items:center;gap:5px;margin-left:6px"><span style="width:9px;height:9px;border-radius:50%;background:${_scTeeColor};box-shadow:0 0 0 1px rgba(0,0,0,0.15);flex-shrink:0"></span><span style="font-size:11px;color:var(--color-text-tertiary)">${_scTeeName}</span></span>`:'';
+  // Weekend-net caption, shown only when a foursome game with the toggle on makes the hole
+  // view diverge. Mirrors the hole view's "Wolf net" caption so a mismatch reads as intended.
+  let _gridNetCap='';
+  if(STATE.netOffFlightLow&&gameOn('wolf',r)&&isMultiFlight(r)){
+    if(STATE.netOffLow){
+      const _fLow=WK.players.reduce((a,_,pi)=>effHdcp(pi,r)<effHdcp(a,r)?pi:a,0);
+      _gridNetCap='<div style="font-size:11px;color:var(--color-text-secondary);padding:0 1rem 0.35rem">Weekend net (off field low: '+displayName(_fLow)+')</div>';
+    }else{
+      _gridNetCap='<div style="font-size:11px;color:var(--color-text-secondary);padding:0 1rem 0.35rem">Weekend net</div>';
+    }
+  }
   document.getElementById('scGridWrap').innerHTML=
     `<div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);padding:0.5rem 1rem 0.25rem;display:flex;align-items:center">${_scDispName}${_scTeeHd}</div>`+
+    _gridNetCap+
     `<div class="sc-grid-wrap" id="scGridWrapInner"><table class="sc-grid" style="min-width:100%">${hdr}${yardsRow}${parRow}${hcpRow}${playerRows}</table></div>`+
     legend;
   // Force full-width in landscape by measuring actual viewport
@@ -6780,9 +7091,53 @@ function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
   });
   html+=`</div>`;const entries=calcRoundRankings();const isOpen=STATE.roundRankOpen;html+=`<div class="collapsible-hd${isOpen?' open':''}" onclick="toggleRoundRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Best individual rounds</span><span style="font-size:12px;color:#1D9E75">${isOpen?'▲':'▼'}</span></div>`;if(isOpen){if(entries.length===0){html+=`<div class="collapsible-body"><div style="padding:16px 12px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Complete at least one full round to see rankings</div></div>`;}else{html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;entries.forEach(e=>{const p=WK.players[e.pi];const cbg=COURSE_COLORS[e.r%COURSE_COLORS.length];const cfg=COURSE_FG[e.r%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const badgeLabel=rdLabel(e.r);html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${displayName(e.pi)}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}};const eEntries=calcEmergencyRankings();if(eEntries.length>0){const eOpen=STATE.emergencyRankOpen;html+=`<div class="collapsible-hd${eOpen?' open':''}" onclick="toggleEmergencyRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Emergency rounds</span><span style="font-size:12px;color:#1D9E75">${eOpen?'▲':'▼'}</span></div>`;if(eOpen){html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;eEntries.forEach(e=>{const p=WK.players[e.pi];const cbg=COURSE_COLORS[e.r%COURSE_COLORS.length];const cfg=COURSE_FG[e.r%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const erd=WK.rounds[e.r];const holeLabel=erd.nineHole==='front'?'Front 9':erd.nineHole==='back'?'Back 9':'9 holes';const badgeLabel=rdLabel(e.r)+(erd.nineHole?' - '+holeLabel:'');html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${displayName(e.pi)}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}}document.getElementById('boardContent').innerHTML=html;}
 function pOpts(sel){return WK.players.map((p,i)=>`<option value="${i}"${i===sel?' selected':''}>${displayName(i)}</option>`).join('');}
-function setWolfOrder(r,pos,newPi){
-  if(!STATE.wolfOrder)STATE.wolfOrder=WK.rounds.map(()=>[0,1,2,3]);
-  const order=STATE.wolfOrder[r];
+// Same as pOpts but restricted to one foursome's players, for per-foursome dropdowns.
+function pOptsForFlight(sel,flightPlayers){return (flightPlayers||[]).map(i=>`<option value="${i}"${i===sel?' selected':''}>${displayName(i)}</option>`).join('');}
+// Ensures STATE.wolfOrder[r][fi] exists, seeded from that foursome's actual membership
+// (never a hardcoded [0,1,2,3], since a foursome's global indices vary).
+function _ensureWolfOrderSlot(r,fi){
+  if(!STATE.wolfOrder)STATE.wolfOrder=WK.rounds.map(()=>[]);
+  if(!STATE.wolfOrder[r])STATE.wolfOrder[r]=[];
+  if(!STATE.wolfOrder[r][fi])STATE.wolfOrder[r][fi]=(flightsForRound(r)[fi]||[]).slice();
+  return STATE.wolfOrder[r][fi];
+}
+// Reconcile every foursome's Wolf tee order against its CURRENT membership. Keeps the
+// chosen order for players still in the foursome, appends any new members, drops any who
+// left, and matches the foursome-axis length to the flight count. This is the "after any
+// flight or roster edit" half of the state-model invariant: without it, the pre-split
+// single-foursome order (all players in slot 0) survives a later split and the dropdowns
+// collapse to duplicates. No-op on a one-foursome round (order already equals the roster).
+// Skipped on settled or locked rounds so finalized money is never disturbed.
+function reconcileWolfOrder(r){
+  if((STATE.settledRounds||[]).includes(r)||isRoundLocked(r))return;
+  if(!STATE.wolfOrder)STATE.wolfOrder=WK.rounds.map(()=>[]);
+  if(!Array.isArray(STATE.wolfOrder[r]))STATE.wolfOrder[r]=[];
+  var fl=flightsForRound(r),out=[];
+  for(var fi=0;fi<fl.length;fi++){
+    var members=(fl[fi]||[]).filter(function(pi){return typeof pi==='number'&&pi>=0;});
+    var mset={};members.forEach(function(pi){mset[pi]=1;});
+    var stored=Array.isArray(STATE.wolfOrder[r][fi])?STATE.wolfOrder[r][fi]:[];
+    var kept=stored.filter(function(pi){return mset[pi];});
+    var kset={};kept.forEach(function(pi){kset[pi]=1;});
+    members.forEach(function(pi){if(!kset[pi])kept.push(pi);});
+    out[fi]=kept;
+  }
+  STATE.wolfOrder[r]=out;
+}
+// Guidance shown when a round has more than 4 players but has not been split into
+// foursomes yet. Wolf needs groups of four, so neither the tee-order editor nor the
+// scorecard can render meaningfully until foursomes exist. compact=true is the in-setup
+// variant; false is the full Scores-screen prompt. Button jumps to the Foursomes editor.
+function _wolfNeedsFoursomesHtml(compact){
+  var msg='This trip has more than 4 players. Set your foursomes first, then each group gets its own Wolf rotation.';
+  var btn='<button style="background:#0F6E56;color:#E1F5EE;border:none;padding:10px 18px;border-radius:var(--border-radius-md);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit" onclick="setView(\'setup\');setOptPanel(\'flights\')">Set Foursomes</button>';
+  if(compact){
+    return '<div style="padding:14px 12px"><div style="font-size:13px;color:var(--color-text-secondary);line-height:1.5;margin-bottom:10px">'+msg+'</div>'+btn+'</div>';
+  }
+  return '<div class="fs-pick-prompt"><div class="fpp-t">Set your foursomes</div><div style="font-size:13px;color:var(--color-text-secondary);line-height:1.5;margin:0 0 14px">'+msg+'</div>'+btn+'</div>';
+}
+function setWolfOrder(r,pos,newPi,fi){
+  const order=_ensureWolfOrderSlot(r,fi);
   const oldPi=order[pos];
   if(oldPi===newPi)return;
   const swapPos=order.indexOf(newPi);
@@ -6823,20 +7178,24 @@ function skinsGamesForRound(r){const ov=WK.skinsGamesPerRound?.[r];return(ov>0)?
 function copyMPToSkins(r){const mpG=mpGamesForRound(r),sG=skinsGamesForRound(r),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.skinsTeams[r]=Array(sG).fill(null).map((_,si)=>{const mpSi=Math.min(si,mpG-1);return JSON.parse(JSON.stringify(STATE.mpTeams[r][mpSi]));});autoSave();s2WriteActive();_gsRefreshAfterEdit();}
 function setSkinsGamesForRound(r,v){if(!canEditTrip())return;if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=WK.rounds.map(()=>0);WK.skinsGamesPerRound[r]=v;const g=skinsGamesForRound(r),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];if(!STATE.skinsTeams)STATE.skinsTeams=[];STATE.skinsTeams[r]=Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));sanitizeTeams(r);autoSave();s2WriteActive();_gsRefreshAfterEdit();}
 
-function wolfOrderForRound(r){return(STATE.wolfOrder&&STATE.wolfOrder[r])||[0,1,2,3];}
-function wolfPicksForRound(r){return(STATE.wolfPicks&&STATE.wolfPicks[r])||Array(18).fill(null);}
-function wolfForHole(hi,r){
-  const order=wolfOrderForRound(r);
+function wolfOrderForRound(r,fi){const stored=STATE.wolfOrder&&STATE.wolfOrder[r]&&STATE.wolfOrder[r][fi];if(stored&&stored.length)return stored;const fl=flightsForRound(r)[fi];return (fl&&fl.length)?fl:[0,1,2,3];}
+function wolfPicksForRound(r,fi){return(STATE.wolfPicks&&STATE.wolfPicks[r]&&STATE.wolfPicks[r][fi])||Array(18).fill(null);}
+function wolfForHole(hi,r,fi){
+  const order=wolfOrderForRound(r,fi);
+  const flightPlayers=flightsForRound(r)[fi]||order;
   const placement=(WK.rounds[r]&&WK.rounds[r].wolfPlacement)||WK.wolfPlacement||'last';
   const wolfIdx=placement==='last'?(3-hi%4+4)%4:hi%4;
   if(hi<16)return order[wolfIdx];
-  const pts=calcWolfPoints(r,hi-1);
+  // pts is already ordered by the foursome's natural (ascending index) order, same as
+  // the pre-flight code's WK.players order, so this tie-break is byte-identical to today
+  // for a one-foursome round.
+  const pts=calcWolfPoints(r,hi-1,fi);
   const sorted=[...pts].sort((a,b)=>a.pts-b.pts);
   const lastPts=sorted[0].pts;
   const tied=sorted.filter(x=>x.pts===lastPts);
   if(tied.length===1)return tied[0].pi;
   const tiedPis=tied.map(x=>x.pi);
-  const netThru=tiedPis.map(pi=>{let s=0;for(let h=0;h<hi;h++){const n=getNet(pi,h,r);if(n!==null)s+=n;}return{pi,net:s};});
+  const netThru=tiedPis.map(pi=>{let s=0;for(let h=0;h<hi;h++){const n=getNetForFlight(pi,h,r,flightPlayers);if(n!==null)s+=n;}return{pi,net:s};});
   netThru.sort((a,b)=>b.net-a.net);
   const worstNet=netThru[0].net;
   const worstTied=netThru.filter(x=>x.net===worstNet);
@@ -6845,10 +7204,10 @@ function wolfForHole(hi,r){
   for(let i=0;i<order.length;i++){if(worstPis.includes(order[i]))return order[i];}
   return order[wolfIdx];
 }
-function wolfTeeOrder(hi,r){
-  const order=wolfOrderForRound(r);
+function wolfTeeOrder(hi,r,fi){
+  const order=wolfOrderForRound(r,fi);
   const placement=(WK.rounds[r]&&WK.rounds[r].wolfPlacement)||WK.wolfPlacement||'last';
-  const wolfPi=wolfForHole(hi,r);
+  const wolfPi=wolfForHole(hi,r,fi);
   const wolfPos=order.indexOf(wolfPi);
   const seq=[];
   if(placement==='last'){
@@ -6860,65 +7219,86 @@ function wolfTeeOrder(hi,r){
   }
   return seq;
 }
-function calcWolfPoints(r,throughHole){
+// fi: which foursome. Iterates only that foursome's four players; output stays keyed
+// by global player index (pts entries only for that foursome's four), so the caller
+// aggregates by index same as always. Nets via getNetForFlight, which is byte-identical
+// to getNet when STATE.netOffFlightLow is off. See the Amendment A note above getNetForFlight.
+function calcWolfPoints(r,throughHole,fi){
   const through=throughHole!==undefined?throughHole:17;
-  const pts=WK.players.map((_,i)=>({pi:i,pts:0}));
-  const picks=wolfPicksForRound(r);
+  const flightPlayers=flightsForRound(r)[fi]||[];
+  const pts=flightPlayers.map(pi=>({pi,pts:0}));
+  const picks=wolfPicksForRound(r,fi);
   const blindMult=(WK.rounds[r]&&WK.rounds[r].wolfBlindMult!=null?WK.rounds[r].wolfBlindMult:WK.wolfBlindMult)||2;
   const loneMode=(WK.rounds[r]&&WK.rounds[r].wolfLoneMode)||WK.wolfLoneMode||'A';
+  const ptsByPi={};pts.forEach(p=>{ptsByPi[p.pi]=p;});
   for(let hi=0;hi<=through;hi++){
     const pick=picks[hi];
     if(!pick)continue;
-    const wolf=wolfForHole(hi,r);
-    const wolfNet=getNet(wolf,hi,r);
+    const wolf=wolfForHole(hi,r,fi);
+    const wolfNet=getNetForFlight(wolf,hi,r,flightPlayers);
     if(wolfNet===null)continue;
-    const others=WK.players.map((_,i)=>i).filter(i=>i!==wolf);
+    const others=flightPlayers.filter(i=>i!==wolf);
     if(pick.type==='partner'){
       const partneri=pick.partner;
       if(partneri===null||partneri===undefined)continue;
-      const partnerNet=getNet(partneri,hi,r);
+      const partnerNet=getNetForFlight(partneri,hi,r,flightPlayers);
       if(partnerNet===null)continue;
       const teamA=[wolf,partneri];
       const teamB=others.filter(i=>i!==partneri);
       const partnerMode=(WK.rounds[r]&&WK.rounds[r].wolfPartnerMode)||WK.wolfPartnerMode||'bestball';
       let sA,sB;
       if(partnerMode==='bestball'){
-        sA=Math.min(...teamA.map(i=>{const n=getNet(i,hi,r);return n===null?99:n;}));
-        sB=Math.min(...teamB.map(i=>{const n=getNet(i,hi,r);return n===null?99:n;}));
+        sA=Math.min(...teamA.map(i=>{const n=getNetForFlight(i,hi,r,flightPlayers);return n===null?99:n;}));
+        sB=Math.min(...teamB.map(i=>{const n=getNetForFlight(i,hi,r,flightPlayers);return n===null?99:n;}));
       }else{
-        sA=teamA.reduce((s,i)=>{const n=getNet(i,hi,r);return s+(n===null?99:n);},0);
-        sB=teamB.reduce((s,i)=>{const n=getNet(i,hi,r);return s+(n===null?99:n);},0);
+        sA=teamA.reduce((s,i)=>{const n=getNetForFlight(i,hi,r,flightPlayers);return s+(n===null?99:n);},0);
+        sB=teamB.reduce((s,i)=>{const n=getNetForFlight(i,hi,r,flightPlayers);return s+(n===null?99:n);},0);
       }
       if(sA===sB)continue;
       const aWins=sA<sB;
-      teamA.forEach(i=>pts[i].pts+=aWins?1:-1);
-      teamB.forEach(i=>pts[i].pts+=aWins?-1:1);
+      teamA.forEach(i=>ptsByPi[i].pts+=aWins?1:-1);
+      teamB.forEach(i=>ptsByPi[i].pts+=aWins?-1:1);
     }else{
       const mult=(pick.type==='blind')?blindMult:1;
       const totalPts=3*mult;
-      const otherNets=others.map(i=>({pi:i,net:getNet(i,hi,r)})).filter(x=>x.net!==null).sort((a,b)=>a.net-b.net);
+      const otherNets=others.map(i=>({pi:i,net:getNetForFlight(i,hi,r,flightPlayers)})).filter(x=>x.net!==null).sort((a,b)=>a.net-b.net);
       if(!otherNets.length)continue;
       let wolfWins;
       if(loneMode==='A'){wolfWins=wolfNet===otherNets[0].net?null:wolfNet<otherNets[0].net;}
       else{const wolfAdj=wolfNet*2;const best2=otherNets.slice(0,2).reduce((s,x)=>s+x.net,0);wolfWins=wolfAdj===best2?null:wolfAdj<best2;}
-      if(wolfWins){pts[wolf].pts+=totalPts;others.forEach(i=>pts[i].pts-=mult);}
-      else{pts[wolf].pts-=totalPts;others.forEach(i=>pts[i].pts+=mult);}
+      if(wolfWins===null)continue;
+      if(wolfWins){ptsByPi[wolf].pts+=totalPts;others.forEach(i=>ptsByPi[i].pts-=mult);}
+      else{ptsByPi[wolf].pts-=totalPts;others.forEach(i=>ptsByPi[i].pts+=mult);}
     }
   }
   return pts;
 }
-function openWolfPickModal(hi,r){
+// Money-path aggregator for Wolf: merges every foursome's per-hole points into one
+// array positioned by GLOBAL player index, matching the pre-flight contract that
+// settlement and the audit trail below already rely on (wPts[pi]). Never touches
+// how those callers sum or display the result. It only changes how Wolf itself is computed.
+// For a one-foursome round this is byte-identical: one foursome covers every player.
+function calcWolfPointsAllFlights(r,throughHole){
+  const fl=flightsForRound(r);
+  const out=WK.players.map((_,i)=>({pi:i,pts:0}));
+  fl.forEach((flightPlayers,fi)=>{
+    if(flightPlayers.length<4)return;
+    calcWolfPoints(r,throughHole,fi).forEach(p=>{out[p.pi].pts=p.pts;});
+  });
+  return out;
+}
+function openWolfPickModal(hi,r,fi){
   if(isRoundLocked(r))return;if(isReadOnly||_pencilViewerLocked(r))return;
-  const wolf=wolfForHole(hi,r);
+  const wolf=wolfForHole(hi,r,fi);
   const wolfName=displayName(wolf);
-  const order=wolfOrderForRound(r);
+  const order=wolfOrderForRound(r,fi);
   const placement=(WK.rounds[r]&&WK.rounds[r].wolfPlacement)||WK.wolfPlacement||'last';
   const wolfIdx=order.indexOf(wolf);
-  // Build others in actual tee order for this hole
+  // Build others in actual tee order for this hole, this foursome's three only.
   const others=placement==='last'
     ?[order[(wolfIdx+1)%4],order[(wolfIdx+2)%4],order[(wolfIdx+3)%4]]
     :[order[(wolfIdx+1)%4],order[(wolfIdx+2)%4],order[(wolfIdx+3)%4]];
-  const existingPick=wolfPicksForRound(r)[hi];
+  const existingPick=wolfPicksForRound(r,fi)[hi];
   const blindMult=(WK.rounds[r]&&WK.rounds[r].wolfBlindMult!=null?WK.rounds[r].wolfBlindMult:WK.wolfBlindMult)||2;
   const blindOff=blindMult===1;
   const isBlind=existingPick&&existingPick.type==='blind';
@@ -6929,7 +7309,7 @@ function openWolfPickModal(hi,r){
   html+=`<div style="background:#0F6E56;padding:14px 16px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:11px;color:#9FE1CB;letter-spacing:0.06em">HOLE ${hi+1} - PAR ${hole.par} - SI ${hole.si}</div><div style="font-size:18px;font-weight:500;color:#E1F5EE">Wolf</div></div><div style="background:#085041;border-radius:999px;padding:6px 14px;text-align:center"><div style="font-size:11px;color:#9FE1CB">Wolf</div><div style="font-size:15px;font-weight:500;color:#E1F5EE">${wolfName}</div></div></div>`;
   if(!blindOff){
     const blindChecked=isBlind?'checked':'';
-    html+=`<div style="padding:12px 16px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Go blind wolf</div><div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">Declare before tee shots - ${blindMult}x points</div></div><label class="toggle"><input type="checkbox" id="wolfBlindToggle" ${blindChecked} onchange="setWolfPick(${r},${hi},this.checked?'lone':'lone',null)"><span class="toggle-slider"></span></label></div>`;
+    html+=`<div style="padding:12px 16px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Go blind wolf</div><div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">Declare before tee shots - ${blindMult}x points</div></div><label class="toggle"><input type="checkbox" id="wolfBlindToggle" ${blindChecked} onchange="setWolfPick(${r},${hi},this.checked?'lone':'lone',null,${fi})"><span class="toggle-slider"></span></label></div>`;
   }
   const teeLabels=['1st tee','2nd tee','3rd tee'];
   html+='<div style="padding:12px 16px"><div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:10px;letter-spacing:0.05em">TAP TO PICK PARTNER</div><div style="display:flex;flex-direction:column;gap:8px">';
@@ -6939,13 +7319,13 @@ function openWolfPickModal(hi,r){
     const border=sel?'0.5px solid #0F6E56':'0.5px solid var(--color-border-tertiary)';
     const nameColor=sel?'#E1F5EE':'var(--color-text-primary)';
     const subColor=sel?'#9FE1CB':'var(--color-text-tertiary)';
-    html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:${bg};border-radius:var(--border-radius-md);border:${border};cursor:pointer" onclick="setWolfPick(${r},${hi},'partner',${pi})"><div style="font-size:14px;color:${nameColor}">${displayName(pi)}</div><div style="font-size:11px;color:${subColor}">${teeLabels[idx]||''}</div></div>`;
+    html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:${bg};border-radius:var(--border-radius-md);border:${border};cursor:pointer" onclick="setWolfPick(${r},${hi},'partner',${pi},${fi})"><div style="font-size:14px;color:${nameColor}">${displayName(pi)}</div><div style="font-size:11px;color:${subColor}">${teeLabels[idx]||''}</div></div>`;
   });
   const loneSel=(existingPick&&(existingPick.type==='lone'||existingPick.type==='blind'));
   const loneBg=loneSel?'#085041':'var(--color-background-secondary)';
   const loneBorder=loneSel?'0.5px solid #0F6E56':'0.5px solid var(--color-border-secondary)';
   const loneColor=loneSel?'#E1F5EE':'var(--color-text-secondary)';
-  html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:${loneBg};border-radius:var(--border-radius-md);border:${loneBorder};cursor:pointer" onclick="setWolfPick(${r},${hi},'lone',null)"><div style="font-size:14px;font-style:italic;color:${loneColor}">Go lone wolf</div><div style="font-size:11px;color:${loneColor}">1 vs 3</div></div>`;
+  html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:${loneBg};border-radius:var(--border-radius-md);border:${loneBorder};cursor:pointer" onclick="setWolfPick(${r},${hi},'lone',null,${fi})"><div style="font-size:14px;font-style:italic;color:${loneColor}">Go lone wolf</div><div style="font-size:11px;color:${loneColor}">1 vs 3</div></div>`;
   html+='</div></div>';
   html+='<div style="padding:12px 16px 24px"><button style="width:100%;padding:12px;font-size:14px;font-weight:500;border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary)" onclick="closeWolfPickModal()">Cancel</button></div>';
   html+='</div></div>';
@@ -6954,15 +7334,16 @@ function openWolfPickModal(hi,r){
   document.body.appendChild(overlay.firstChild);
 }
 function closeWolfPickModal(){const el=document.getElementById('wolfPickOverlay');if(el)el.remove();}
-function setWolfPick(r,hi,type,partner){
-  if(!STATE.wolfPicks)STATE.wolfPicks=Array(WK.rounds.length).fill(null).map(()=>Array(18).fill(null));
-  while(STATE.wolfPicks.length<WK.rounds.length)STATE.wolfPicks.push(Array(18).fill(null));
-  if(!STATE.wolfPicks[r])STATE.wolfPicks[r]=Array(18).fill(null);
+function setWolfPick(r,hi,type,partner,fi){
+  if(!STATE.wolfPicks)STATE.wolfPicks=Array(WK.rounds.length).fill(null).map(()=>[]);
+  while(STATE.wolfPicks.length<WK.rounds.length)STATE.wolfPicks.push([]);
+  if(!STATE.wolfPicks[r])STATE.wolfPicks[r]=[];
+  if(!STATE.wolfPicks[r][fi])STATE.wolfPicks[r][fi]=Array(18).fill(null);
   const blindToggle=document.getElementById('wolfBlindToggle');
   const isBlind=blindToggle&&blindToggle.checked;
   const finalType=(type==='lone'&&isBlind)?'blind':(type==='lone'?'lone':isBlind?'blind':type);
   const finalPartner=(finalType==='partner')?partner:null;
-  STATE.wolfPicks[r][hi]={type:finalType,partner:finalPartner};
+  STATE.wolfPicks[r][fi][hi]={type:finalType,partner:finalPartner};
   autoSave();
   closeWolfPickModal();
   renderWolfBox();
@@ -6972,32 +7353,48 @@ function renderWolfBox(){
   if(!wrap)return;
   const r=STATE.currentRound,hi=STATE.currentHole;
   if(!gameOn('wolf',r)){wrap.innerHTML='';return;}
-  if(WK.players.length<4){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Wolf</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>';return;}
-  const wolf=wolfForHole(hi,r);
+  // Pill-scoped: follows the same foursome pick as the scorecard. If the round is
+  // multi-foursome and no pick has been made yet, the scorecard's prompt already
+  // owns that state. The Wolf box just stays quiet until a foursome is chosen.
+  let fi=0;
+  if(isMultiFlight(r)){
+    fi=getFlightPick(r);
+    if(fi===null){wrap.innerHTML='';return;}
+  }
+  const flightPlayers=flightsForRound(r)[fi]||[];
+  if(flightPlayers.length<4){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Wolf</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>';return;}
+  const wolf=wolfForHole(hi,r,fi);
   const wolfName=displayName(wolf);
   const wolfPill=`<span style="font-size:10px;background:#085041;color:#9FE1CB;padding:1px 6px;border-radius:999px;font-weight:400;margin-left:4px">wolf</span>`;
-  const pick=wolfPicksForRound(r)[hi];
+  const pick=wolfPicksForRound(r,fi)[hi];
   const locked=isRoundLocked(r);
   const loneMode=(WK.rounds[r]&&WK.rounds[r].wolfLoneMode)||WK.wolfLoneMode||'A';
   const blindMult=(WK.rounds[r]&&WK.rounds[r].wolfBlindMult!=null?WK.rounds[r].wolfBlindMult:WK.wolfBlindMult)||2;
-  const changePick=!locked?`<button class="btn-sm" onclick="openWolfPickModal(${hi},${r})">Change pick</button>`:'';
+  const changePick=!locked?`<button class="btn-sm" onclick="openWolfPickModal(${hi},${r},${fi})">Change pick</button>`:'';
+  // Baseline note for the header row, replacing the old full-width scorecard caption.
+  // Compact (initials) since it rides on the "WOLF - Hn" title line.
+  let _wbBaseNote='';
+  if(STATE.netOffFlightLow&&isMultiFlight(r)&&flightPlayers.length){
+    const _wbLow=flightPlayers.reduce((a,pi)=>{let ca=courseHdcp(a,r),cp=courseHdcp(pi,r);if(WK.rounds[r]&&WK.rounds[r].nineHole){ca=Math.round(ca/2);cp=Math.round(cp/2);}return cp<ca?pi:a;},flightPlayers[0]);
+    _wbBaseNote='<span style="font-weight:400;color:var(--color-text-tertiary);margin-left:6px;text-transform:none">net off '+(WK.players[_wbLow]?WK.players[_wbLow].ini:'?')+'</span>';
+  }
   let html='<div class="calc-box" style="margin-top:0.75rem">';
   if(!pick){
-    html+=`<div class="calc-hd" style="display:flex;justify-content:space-between;align-items:center"><span>Wolf - H${hi+1}</span>${!locked?`<button class="btn-sm" style="background:#0F6E56;color:#E1F5EE;border:none" onclick="openWolfPickModal(${hi},${r})">Pick Partner</button>`:''}</div>`;
+    html+=`<div class="calc-hd" style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center"><span>Wolf - H${hi+1}</span>${_wbBaseNote}</div>${!locked?`<button class="btn-sm" style="background:#0F6E56;color:#E1F5EE;border:none" onclick="openWolfPickModal(${hi},${r},${fi})">Pick Partner</button>`:''}</div>`;
     html+=`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Wolf this hole: <span style="font-weight:500;color:var(--color-text-primary)">${wolfName}</span>${wolfPill}</div>`;
   }else{
     const isBlind=pick.type==='blind';
     const isLone=pick.type==='lone'||isBlind;
-    const holePts=calcWolfPoints(r,hi);
-    const wolfHolePts=holePts[wolf].pts;
+    const holePts=calcWolfPoints(r,hi,fi);
+    const wolfHolePts=(holePts.find(p=>p.pi===wolf)||{pts:0}).pts;
     const typeBadge=isBlind?`<span style="font-size:11px;background:#085041;color:#9FE1CB;padding:2px 8px;border-radius:999px;margin-left:6px">Blind wolf</span>`:isLone?`<span style="font-size:11px;color:var(--color-text-tertiary);margin-left:6px">Lone wolf</span>`:'';
     const hdrColor=wolfHolePts>0?'#1D9E75':wolfHolePts<0?'#D85A30':'var(--color-text-tertiary)';
     const holePtsStr=wolfHolePts>0?`+${wolfHolePts} pts`:wolfHolePts<0?`${wolfHolePts} pts`:'Push';
-    html+=`<div class="calc-hd" style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center"><span>Wolf - H${hi+1}</span>${typeBadge}</div>${changePick}</div>`;
+    html+=`<div class="calc-hd" style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center"><span>Wolf - H${hi+1}</span>${typeBadge}${_wbBaseNote}</div>${changePick}</div>`;
     if(isLone){
-      const wolfNet=getNet(wolf,hi,r);
-      const others=WK.players.map((_,i)=>i).filter(i=>i!==wolf);
-      const otherNets=others.map(i=>({pi:i,net:getNet(i,hi,r)})).filter(x=>x.net!==null).sort((a,b)=>a.net-b.net);
+      const wolfNet=getNetForFlight(wolf,hi,r,flightPlayers);
+      const others=flightPlayers.filter(i=>i!==wolf);
+      const otherNets=others.map(i=>({pi:i,net:getNetForFlight(i,hi,r,flightPlayers)})).filter(x=>x.net!==null).sort((a,b)=>a.net-b.net);
       let wolfWins=null;
       if(wolfNet!==null&&otherNets.length){
         if(loneMode==='A'){wolfWins=wolfNet===otherNets[0].net?null:wolfNet<otherNets[0].net;}
@@ -7007,7 +7404,7 @@ function renderWolfBox(){
       const loneDot=`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#1D9E75;margin-right:4px;vertical-align:middle;flex-shrink:0"></span>`;
       html+=`<div class="mp-team-block"><div class="mp-team-letter">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">${wolfName}${wolfPill}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${wolfWins===true?loneDot:''}${wolfNet!==null?wolfNet:'-'}</span></div></div></div>`;
       html+=`<div class="mp-team-block"><div class="mp-team-letter">B</div><div class="mp-team-players">`;
-      others.forEach(pi=>{const n=getNet(pi,hi,r);const isBestB=loneMode==='A'&&otherNets.length&&n===otherNets[0].net;const showFieldDot=wolfWins===false&&(loneMode==='B'||isBestB);html+=`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showFieldDot?loneDot:''}${n!==null?n:'-'}</span></div>`;});
+      others.forEach(pi=>{const n=getNetForFlight(pi,hi,r,flightPlayers);const isBestB=loneMode==='A'&&otherNets.length&&n===otherNets[0].net;const showFieldDot=wolfWins===false&&(loneMode==='B'||isBestB);html+=`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showFieldDot?loneDot:''}${n!==null?n:'-'}</span></div>`;});
       html+=`</div></div>`;
       let resultStr='';
       let wolfWinsResult=null;
@@ -7022,19 +7419,19 @@ function renderWolfBox(){
       html+=`<div style="padding:8px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between"><div>${loneWinnerStr}</div><span style="font-size:11px;color:var(--color-text-tertiary);text-align:right">${resultStr}</span></div>`;
     }else{
       const partneri=pick.partner;
-      const others=WK.players.map((_,i)=>i).filter(i=>i!==wolf&&i!==partneri);
-      const wolfNet=getNet(wolf,hi,r);
-      const partnerNet=getNet(partneri,hi,r);
+      const others=flightPlayers.filter(i=>i!==wolf&&i!==partneri);
+      const wolfNet=getNetForFlight(wolf,hi,r,flightPlayers);
+      const partnerNet=getNetForFlight(partneri,hi,r,flightPlayers);
       const partnerMode=(WK.rounds[r]&&WK.rounds[r].wolfPartnerMode)||WK.wolfPartnerMode||'bestball';
       let sA,sB;
       if(partnerMode==='bestball'){
         sA=Math.min(wolfNet!==null?wolfNet:99,partnerNet!==null?partnerNet:99);
-        sB=Math.min(...others.map(i=>{const n=getNet(i,hi,r);return n!==null?n:99;}));
+        sB=Math.min(...others.map(i=>{const n=getNetForFlight(i,hi,r,flightPlayers);return n!==null?n:99;}));
       }else{
         sA=(wolfNet!==null?wolfNet:99)+(partnerNet!==null?partnerNet:99);
-        sB=others.reduce((s,i)=>{const n=getNet(i,hi,r);return s+(n!==null?n:99);},0);
+        sB=others.reduce((s,i)=>{const n=getNetForFlight(i,hi,r,flightPlayers);return s+(n!==null?n:99);},0);
       }
-      const scoresReady=wolfNet!==null&&partnerNet!==null&&others.every(i=>getNet(i,hi,r)!==null);
+      const scoresReady=wolfNet!==null&&partnerNet!==null&&others.every(i=>getNetForFlight(i,hi,r,flightPlayers)!==null);
       let aWins=null;
       if(scoresReady&&sA!==sB){aWins=sA<sB;}
       const winDot=`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#1D9E75;margin-right:4px;vertical-align:middle;flex-shrink:0"></span>`;
@@ -7045,10 +7442,10 @@ function renderWolfBox(){
       const showAWolfDot=aWins===true&&(partnerMode==='combined'||aWolfBest);
       const showAPartnerDot=aWins===true&&(partnerMode==='combined'||aPartnerBest);
       html+=`<div class="mp-team-block"><div class="mp-team-letter">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">${wolfName}${wolfPill}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showAWolfDot?winDot:''}${aWolfScore}</span></div><div class="mp-player-line"><span class="mp-player-name">${displayName(partneri)}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showAPartnerDot?winDot:''}${aPartnerScore}</span></div></div></div>`;
-      const bNets=others.map(i=>getNet(i,hi,r));
+      const bNets=others.map(i=>getNetForFlight(i,hi,r,flightPlayers));
       const bBestNet=bNets.every(n=>n!==null)?Math.min(...bNets):null;
       html+=`<div class="mp-team-block"><div class="mp-team-letter">B</div><div class="mp-team-players">`;
-      others.forEach(pi=>{const n=getNet(pi,hi,r);const isBest=partnerMode==='bestball'&&n!==null&&n===bBestNet;const showBDot=aWins===false&&(partnerMode==='combined'||isBest);html+=`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showBDot?winDot:''}${n!==null?n:'-'}</span></div>`;});
+      others.forEach(pi=>{const n=getNetForFlight(pi,hi,r,flightPlayers);const isBest=partnerMode==='bestball'&&n!==null&&n===bBestNet;const showBDot=aWins===false&&(partnerMode==='combined'||isBest);html+=`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showBDot?winDot:''}${n!==null?n:'-'}</span></div>`;});
       html+=`</div></div>`;
       const ptsWon=1;
       const ptsStr=`${ptsWon} pt`;
@@ -7057,8 +7454,8 @@ function renderWolfBox(){
       html+=`<div style="padding:8px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between"><div>${winnerStr}</div><span style="font-size:11px;color:var(--color-text-tertiary);text-align:right">${scoreStr}</span></div>`;
     }
   }
-  // Running totals strip
-  const runPts=calcWolfPoints(r,hi);
+  // Running totals strip: this foursome's players only (matches the approved mockup).
+  const runPts=calcWolfPoints(r,hi,fi);
   const anyPts=runPts.some(p=>p.pts!==0);
   if(anyPts){
     html+='<div style="display:flex;gap:6px;padding:8px 12px;flex-wrap:wrap;justify-content:center;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary)">';
@@ -7077,42 +7474,40 @@ function renderWolfBox(){
   wrap.innerHTML=html;
 }
 
-function renderWolfRound(){
-  const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
-  const el=document.getElementById('gamesContent');
-  if(!gameOn('wolf',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Wolf is off for this round</div>';return;}
-  if(WK.players.length<4){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Wolf requires 4 players.</div>';return;}
-  const wolfVal=roundVal('wolfVal',r,WK.wolfVal||1);
-  const pts=calcWolfPoints(r);
-  const picks=wolfPicksForRound(r);
+function _wolfViewFilterPick(sel){STATE.wolfViewFlight=sel;renderGamesContent();}
+// One foursome's grid + standings, exactly today's markup, scoped to flightPlayers.
+// labelHd, when set, prefixes a colored-dot "Foursome N" header above the pair
+// (Both mode); when null the header stays exactly as it is today (single view).
+function _renderWolfRoundBlock(r,fi,flightPlayers,wolfVal,labelHd){
+  const pts=calcWolfPoints(r,undefined,fi);
+  const picks=wolfPicksForRound(r,fi);
   const holePtsMatrix=[];
   const _off_wr=holeOffset(r),_n_wr=roundHoleCount(r);for(let hi=_off_wr;hi<_off_wr+_n_wr;hi++){
-    const prev=hi>_off_wr?calcWolfPoints(r,hi-1):WK.players.map((_,i)=>({pi:i,pts:0}));
-    const curr=calcWolfPoints(r,hi);
-    holePtsMatrix[hi]=WK.players.map((_,i)=>({pi:i,delta:curr[i].pts-prev[i].pts}));
+    const prev=hi>_off_wr?calcWolfPoints(r,hi-1,fi):flightPlayers.map(pi=>({pi,pts:0}));
+    const curr=calcWolfPoints(r,hi,fi);
+    holePtsMatrix[hi]=flightPlayers.map((pi,idx)=>({pi,delta:curr[idx].pts-prev[idx].pts}));
   }
-  const initials=WK.players.map(p=>{const parts=(p.name||p.last||'?').split(' ');return parts.length>1?parts[0][0]+parts[parts.length-1][0]:p.last?p.last.substring(0,2):'??';});
-  let html='<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">';
-  html+='<div style="padding:10px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="(function(){var b=document.getElementById(\'wgb_'+r+'\');var open=b.style.display===\'none\';b.style.display=open?\'\':\' none\';})()"><span style="font-size:14px;font-weight:500">Wolf - Rd '+(r+1)+'</span><span style="font-size:11px;color:#1D9E75">\u25bc</span></div>';
-  html+='<div id="wgb_'+r+'" style="display:none">';
+  const initials=flightPlayers.map(pi=>{const p=WK.players[pi];const parts=(p.name||p.last||'?').split(' ');return parts.length>1?parts[0][0]+parts[parts.length-1][0]:p.last?p.last.substring(0,2):'??';});
+  let html=labelHd?'<div style="display:flex;align-items:center;gap:7px;padding:2px 2px 8px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(fi+1)+'</span></div>':'';
+  html+='<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">';
+  html+='<div style="padding:10px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="(function(){var b=document.getElementById(\'wgb_'+r+'_'+fi+'\');var open=b.style.display===\'none\';b.style.display=open?\'\':\' none\';})()"><span style="font-size:14px;font-weight:500">Wolf - Rd '+(r+1)+'</span><span style="font-size:11px;color:#1D9E75">\u25bc</span></div>';
+  html+='<div id="wgb_'+r+'_'+fi+'" style="display:none">';
   html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;table-layout:fixed"><thead><tr style="border-bottom:0.5px solid var(--color-border-tertiary)">';
   html+='<th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:center;padding:6px 4px;width:44px;background:var(--color-background-secondary);border-right:0.5px solid var(--color-border-tertiary)">H</th>';
-  WK.players.forEach((p,i)=>{html+='<th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:center;padding:6px 4px;width:52px">'+initials[i]+'</th>';});
+  flightPlayers.forEach((pi,idx)=>{html+='<th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:center;padding:6px 4px;width:52px">'+initials[idx]+'</th>';});
   html+='</tr></thead><tbody>';
   let anyPicks=false;
   for(let hi=_off_wr;hi<_off_wr+_n_wr;hi++){
-    const wolf=wolfForHole(hi,r);
+    const wolf=wolfForHole(hi,r,fi);
     const pick=picks[hi];
     const deltas=holePtsMatrix[hi];
     const isPlayed=!!pick;
     if(isPlayed)anyPicks=true;
-    const isBlind=pick&&pick.type==='blind';
-    const isLone=pick&&(pick.type==='lone'||isBlind);
     html+='<tr style="border-bottom:0.5px solid var(--color-border-tertiary)'+(isPlayed?'':';opacity:0.35')+'">';
     html+='<td style="text-align:center;padding:6px 4px;background:var(--color-background-secondary);border-right:0.5px solid var(--color-border-tertiary)"><div style="font-size:20px;font-weight:500;color:var(--color-text-primary);line-height:1">'+(hi+1)+'</div></td>';
-    WK.players.forEach((p,pi)=>{
+    flightPlayers.forEach((pi,idx)=>{
       if(!isPlayed){html+='<td style="text-align:center;padding:8px 4px"><span style="font-size:14px;color:var(--color-text-tertiary)">·</span></td>';return;}
-      const d=deltas[pi].delta;
+      const d=deltas[idx].delta;
       const bg=d>0?'rgba(29,158,117,0.08)':d<0?'rgba(216,90,48,0.08)':'';
       const col=d>0?'#1D9E75':d<0?'#D85A30':'var(--color-text-tertiary)';
       const fw=d!==0?'500':'400';
@@ -7141,6 +7536,36 @@ function renderWolfRound(){
     html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;color:var(--color-text-primary)">'+displayName(p.pi)+'</span><div style="display:flex;gap:12px;align-items:baseline"><span style="font-size:13px;color:'+ptColor+'">'+ptStr+'</span><span style="font-size:12px;color:'+ptColor+';min-width:56px;text-align:right">'+dolStr+'</span></div></div>';
   });
   html+='</div></div>';
+  return html;
+}
+function renderWolfRound(){
+  const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
+  const el=document.getElementById('gamesContent');
+  if(!gameOn('wolf',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Wolf is off for this round</div>';return;}
+  const multi=isMultiFlight(r);
+  const fl=flightsForRound(r);
+  const wolfVal=roundVal('wolfVal',r,WK.wolfVal||1);
+  if(!multi){
+    if((fl[0]||[]).length<4){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Wolf requires 4 players.</div>';return;}
+    el.innerHTML=_renderWolfRoundBlock(r,0,fl[0],wolfVal,null);
+    return;
+  }
+  if(STATE.wolfViewFlight===undefined||STATE.wolfViewFlight===null)STATE.wolfViewFlight=0;
+  let sel=STATE.wolfViewFlight;
+  if(sel!==-1&&sel>=fl.length)sel=0;
+  let filterHtml='<div class="gf-filter" style="margin:0 0 10px">';
+  fl.forEach((g,i)=>{filterHtml+='<button class="'+(sel===i?'on':'')+'" onclick="_wolfViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});
+  filterHtml+='<button class="'+(sel===-1?'on':'')+'" onclick="_wolfViewFilterPick(-1)">Both</button></div>';
+  const toRender=sel===-1?fl.map((_,i)=>i):[sel];
+  let html=filterHtml;
+  toRender.forEach(fi=>{
+    const flightPlayers=fl[fi]||[];
+    if(flightPlayers.length<4){
+      html+='<div class="section-card" style="margin-bottom:10px;padding:14px"><div style="font-size:13px;color:var(--color-text-secondary)">Foursome '+(fi+1)+' requires 4 players.</div></div>';
+      return;
+    }
+    html+=_renderWolfRoundBlock(r,fi,flightPlayers,wolfVal,sel===-1);
+  });
   el.innerHTML=html;
 }
 
@@ -7149,11 +7574,74 @@ function setDropSkins(gameIdx,slot,pIdx,roundIdx){if(isReadOnly)return;if(_penci
 function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span style="display:inline-flex;align-items:center;gap:6px">Active players<button onclick="window._snapshotInfo()" aria-label="About these handicaps" style="background:transparent;border:none;padding:0;cursor:pointer;line-height:1;display:inline-flex;align-items:center"><i class="ti ti-info-circle" style="font-size:15px;color:#5f7385"></i></button></span></div>`;WK.players.forEach((p,i)=>{const eff=effHdcp(i,r);html+=`<div class="setup-row"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><input class="inline-edit" value="${p.name}" style="flex:1;min-width:60px" onchange="if(!canEditTrip())return;WK.players[${i}].name=this.value;WK.players[${i}].ini=this.value.substring(0,2).toUpperCase();renderPlayersPanel();renderScorecard();renderBanner();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin:0 3px">idx</span><input class="ie-num" type="text" inputmode="decimal" value="${sbHcpDisplay(p.idx)}" style="width:70px" onchange="if(!canEditTrip())return;WK.players[${i}].idx=idxFromInput(this.value,0);renderPlayersPanel();renderScorecard();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px;white-space:nowrap">→ ${chDisplay(eff)}</span>${WK.players.length>2?`<button class="btn-danger" onclick="removePlayer(${i})">✕</button>`:''}</div>`;});if(WK.players.length<12){html+=`<div style="border-top:0.5px solid var(--color-border-tertiary)"><div id="addPlayerRow" style="display:none;padding:10px 12px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><input class="text-input" id="apFirst" placeholder="First" style="flex:2;font-size:13px;padding:6px 8px"/><input class="text-input" id="apLast" placeholder="Last" style="flex:2;font-size:13px;padding:6px 8px"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0">Hdcp</span><input class="ie-num" id="apIdx" type="text" inputmode="decimal" placeholder="10" style="width:58px;flex-shrink:0"/></div><div style="display:flex;gap:8px"><button class="btn-primary" style="font-size:12px;padding:5px 12px" onclick="confirmAddPlayer()">Save</button><button class="btn-secondary" style="font-size:12px;padding:5px 12px" onclick="toggleAddPlayerRow()">Cancel</button></div></div><button class="btn-sm" id="addPlayerToggleBtn" onclick="toggleAddPlayerRow()" style="margin:8px 12px">+ Add player</button></div>`;}html+=`</div>`;
     document.getElementById('opt-panel-players').innerHTML=html;
 }
+
+function switchFlightsRound(r){STATE.flightsViewRound=r;renderFlightsPanel();}
+function _flightsAccent(i){return ['#3B82F6','#1D9E75','#F59E0B','#8B5CF6','#EC4899'][i%5];}
+function renderFlightsPanel(){
+  if(STATE.flightsViewRound===undefined)STATE.flightsViewRound=STATE.currentRound;
+  const r=STATE.flightsViewRound;
+  if(!STATE.roundFlights)STATE.roundFlights=WK.rounds.map(()=>defaultFlights(WK.players.length));
+  const fl=STATE.roundFlights[r]||defaultFlights(WK.players.length);
+  const assigned={};fl.forEach(g=>g.forEach(pi=>{if(pi>=0)assigned[pi]=1;}));
+  let html='<div id="flightsRdSel"></div>';
+  fl.forEach((grp,gi)=>{
+    html+='<div class="section-card" style="margin-top:12px;border-left:3px solid '+_flightsAccent(gi)+'">'
+      +'<div class="section-hd"><span>Foursome '+(gi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary)">'+grp.filter(pi=>pi>=0).length+' player'+(grp.filter(pi=>pi>=0).length===1?'':'s')+'</span></div>'
+      +'<div style="padding:10px 12px">';
+    grp.forEach((cur,si)=>{
+      const p=cur>=0?WK.players[cur]:null;
+      let opts=cur<0?'<option value="-1" selected>Select player...</option>':'';
+      WK.players.forEach((pp,pi)=>{
+        let elsewhereIdx=-1;
+        for(let ogi=0;ogi<fl.length;ogi++){if(ogi===gi)continue;if(fl[ogi].indexOf(pi)>=0){elsewhereIdx=ogi;break;}}
+        const dis=elsewhereIdx>=0;
+        opts+='<option value="'+pi+'"'+(cur===pi?' selected':'')+(dis?' disabled':'')+'>'+displayName(pi)+(dis?'  (F'+(elsewhereIdx+1)+')':'')+'</option>';
+      });
+      html+='<div class="fs-slot">'
+        +(p?('<div class="fs-slot-dot" style="background:'+p.bg+';color:'+p.fg+'">'+p.ini+'</div>'):'<div class="fs-slot-dot" style="background:var(--color-background-secondary);color:var(--color-text-secondary)">?</div>')
+        +'<select class="team-dropdown" onchange="_flightsReassign('+r+','+gi+','+si+',parseInt(this.value))">'+opts+'</select>'
+        +'<button class="fs-rm" onclick="_flightsRemoveSlot('+r+','+gi+','+si+')" title="Remove">&times;</button>'
+        +'</div>';
+    });
+    html+='<span class="fs-addp" onclick="_flightsAddPlayer('+r+','+gi+')">+ Add player</span>'
+      +'</div></div>';
+  });
+  html+='<div class="fs-addf" onclick="_flightsAddFoursome('+r+')">+ Add foursome</div>';
+  html+='<div style="font-size:11.5px;color:var(--color-text-secondary);line-height:1.5;margin:14px 2px 2px;padding:10px 12px">Dropdowns gray out players already assigned this round. The &times; frees a player. Each round keeps its own assignment.</div>';
+  document.getElementById('opt-panel-flights').innerHTML=html;
+  renderRdPicker('flightsRdSel',r,'switchFlightsRound');
+}
+function _flightsMutate(r,fn){
+  if(!canEditTrip())return;
+  if(!STATE.roundFlights)STATE.roundFlights=WK.rounds.map(()=>defaultFlights(WK.players.length));
+  while(STATE.roundFlights.length<WK.rounds.length)STATE.roundFlights.push(defaultFlights(WK.players.length));
+  fn(STATE.roundFlights[r]);
+  reconcileWolfOrder(r);
+  // Intentionally NOT re-running padFlights here: it strips empty non-first
+  // foursomes (e.g. one just added via + Add foursome, or a fresh "Select
+  // player..." slot), which would erase the very placeholder the user is
+  // about to populate. padFlights remains the hydrate/roster-resize
+  // safety net (see addPlayer/removePlayer); these editor mutators are
+  // already self-consistent and don't need re-derivation on every edit.
+  renderFlightsPanel();
+  autoSave();s2WriteActive();
+  if(typeof _fsPillRender==='function')_fsPillRender();
+}
+function _flightsReassign(r,gi,si,pIdx){_flightsMutate(r,fl=>{fl[gi][si]=pIdx;});}
+function _flightsRemoveSlot(r,gi,si){_flightsMutate(r,fl=>{fl[gi].splice(si,1);if(fl[gi].length===0&&fl.length>1)fl.splice(gi,1);});}
+function _flightsAddPlayer(r,gi){
+  _flightsMutate(r,fl=>{
+    const assigned={};fl.forEach(g=>g.forEach(pi=>{if(pi>=0)assigned[pi]=1;}));
+    let free=-1;for(let i=0;i<WK.players.length;i++){if(!assigned[i]){free=i;break;}}
+    fl[gi].push(free);
+  });
+}
+function _flightsAddFoursome(r){_flightsMutate(r,fl=>{fl.push([-1]);});}
 function toggleEditPanel(eid,btnId){const panel=document.getElementById(eid);const btn=document.getElementById(btnId);const display=document.getElementById(eid+'_display');if(!panel)return;const isOpen=panel.style.display!=='none';panel.style.display=isOpen?'none':'block';if(display)display.style.display=isOpen?'flex':'none';if(btn)btn.style.display=isOpen?'inline-block':'none';if(isOpen){const mc=eid.match(/^ce_(.+)$/);if(mc){const cname=mc[1].replace(/_/g,' ');if(CATALOG[cname])saveCourse(cname);}renderPlayersPanel();}}
 function toggleAddPlayerRow(){const row=document.getElementById('addPlayerRow');const btn=document.getElementById('addPlayerToggleBtn');if(!row)return;const opening=row.style.display==='none';row.style.display=opening?'block':'none';if(btn)btn.style.display=opening?'none':'inline-block';if(opening)setTimeout(function(){var el=document.getElementById('apFirst');if(el)el.focus();},50);}
 function confirmAddPlayer(){if(!canEditTrip())return;var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=idxFromInput(document.getElementById('apIdx')?document.getElementById('apIdx').value:'',10);if(!first){alert('Enter a first name.');return;}if(WK.players.length>=12)return;var c=pickColor();var newP={name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};var allPlayers=WK.players.concat([newP]);resolveDisplayNames(allPlayers);WK.players.push(newP);WK.rounds.forEach(function(_,r){STATE.scores[r].forEach(function(h){h.push(null);});sanitizeTeams(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();if(typeof renderGamesTab==='function'&&document.getElementById('view-games')&&document.getElementById('view-games').style.display!=='none')renderGamesTab();autoSave();}
-function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=12)return;const c=pickColor(),i=WK.players.length;WK.players.push({name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));sanitizeTeams(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();}
-function removePlayer(idx){if(!canEditTrip())return;if(WK.players.length<=2){alert('Need at least 2 players.');return;}WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=fixTeams(STATE.mpTeams);STATE.vegTeams=fixTeams(STATE.vegTeams);if(STATE.skinsTeams)STATE.skinsTeams=fixTeams(STATE.skinsTeams);if(STATE.hammerTeams)STATE.hammerTeams=fixTeams(STATE.hammerTeams);if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';WK.rounds.forEach((_,r)=>sanitizeTeams(r));renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
+function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=12)return;const c=pickColor(),i=WK.players.length;WK.players.push({name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));sanitizeTeams(r);});if(STATE)STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);if(STATE)WK.rounds.forEach((_,r)=>reconcileWolfOrder(r));if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();}
+function removePlayer(idx){if(!canEditTrip())return;if(WK.players.length<=2){alert('Need at least 2 players.');return;}WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=fixTeams(STATE.mpTeams);STATE.vegTeams=fixTeams(STATE.vegTeams);if(STATE.skinsTeams)STATE.skinsTeams=fixTeams(STATE.skinsTeams);if(STATE.hammerTeams)STATE.hammerTeams=fixTeams(STATE.hammerTeams);if(STATE.roundFlights)STATE.roundFlights=padFlights(STATE.roundFlights.map(function(fls){return fls.map(function(fl){return fl.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});}),WK.rounds.length,WK.players.length);if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';WK.rounds.forEach((_,r)=>{sanitizeTeams(r);reconcileWolfOrder(r);});renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
 // Trip admin management handlers
 var _tripAdminPickerMembers=[];
 window._tripAdminAdd=function(idx){
@@ -7535,7 +8023,7 @@ function renderWeekendPanel(){
   html+=`<div class="section-card"><div class="section-hd">Rounds</div>${orderedRounds.map(roundRow).join('')}<div style="padding:11px 14px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="launchE9()" style="width:100%;background:transparent;border:1px dashed #1D9E75;color:#1D9E75;padding:10px;border-radius:var(--border-radius-md);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">+ Add Round</button></div><div style="font-size:11px;color:var(--color-text-tertiary);padding:0 14px 12px;line-height:1.5">A round that does not count toward standings is labeled E9 or E18.</div></div>`;
 
   // --- Handicap ---
-  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Handicap</div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net off low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffLow?'checked':''} onchange="STATE.netOffLow=this.checked;renderWeekendPanel();renderScorecard();renderBanner()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px"><span style="font-size:12px;color:var(--color-text-secondary)">Handicap adjustment</span><div style="display:flex;align-items:center;gap:4px"><input class="ie-num" type="number" value="${(WK.hdcpPct*100).toFixed(0)}" style="width:56px" onchange="WK.hdcpPct=parseFloat(this.value)/100;renderWeekendPanel();renderScorecard()"/><span style="font-size:12px;color:var(--color-text-secondary)">%</span></div></div></div>`;
+  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Handicap</div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net off low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffLow?'checked':''} onchange="STATE.netOffLow=this.checked;renderWeekendPanel();renderScorecard();renderBanner()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net games off foursome low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffFlightLow?'checked':''} onchange="STATE.netOffFlightLow=this.checked;autoSave();s2WriteActive();renderScorecard();renderBanner();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px"><span style="font-size:12px;color:var(--color-text-secondary)">Handicap adjustment</span><div style="display:flex;align-items:center;gap:4px"><input class="ie-num" type="number" value="${(WK.hdcpPct*100).toFixed(0)}" style="width:56px" onchange="WK.hdcpPct=parseFloat(this.value)/100;renderWeekendPanel();renderScorecard()"/><span style="font-size:12px;color:var(--color-text-secondary)">%</span></div></div></div>`;
 
   // --- Weekend bet ---
   html+=(WK.isQuickRound?'':(`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Weekend bet</div><div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Buy-in per player</span>$<input class="ie-num" type="number" value="${WK.buyIn}" style="width:90px" onchange="WK.buyIn=parseFloat(this.value);autoSave()"/></div><div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Weekend winner</span><select class="ie-sel" onchange="WK.potMethod=this.value;renderWeekendPanel();renderBoard();renderMoney()"><option value="netstroke"${(WK.potMethod||'netstroke')==='netstroke'?' selected':''}>Net stroke play</option><option value="matchplay"${WK.potMethod==='matchplay'?' selected':''}>Match play points</option></select></div></div>`));
@@ -8764,11 +9252,25 @@ function _gsVegasSetupBody(r){
   return h;
 }
 function _gsWolfSetupBody(r){
-  if(!STATE.wolfOrder)STATE.wolfOrder=WK.rounds.map(()=>[0,1,2,3]);
-  const wOrd=wolfOrderForRound(r);
-  let h=`<div class="setup-row" style="display:block;padding-bottom:8px"><div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:2px">Tee order</div><div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:8px">Hitting order each hole. Wolf placement sets who hits last (wolf) or first.</div>`;
-  for(let pos=0;pos<4;pos++){h+=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-tertiary);width:40px">Pos ${pos+1}</span><select class="team-dropdown" onchange="setWolfOrder(${r},${pos},parseInt(this.value))">${pOpts(wOrd[pos])}</select></div>`;}
-  h+=`</div>`;
+  const fl=flightsForRound(r);
+  const multi=fl.length>1;
+  const needsFoursomes=fl.length===1&&(fl[0]||[]).length>4;
+  let h='';
+  if(needsFoursomes){
+    h+=_wolfNeedsFoursomesHtml(true);
+  }else{
+  h+=`<div class="setup-row" style="display:block;padding-bottom:4px"><div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:2px">Tee order</div><div style="font-size:11px;color:var(--color-text-tertiary)">Hitting order each hole. Wolf placement sets who hits last (wolf) or first.</div></div>`;
+  fl.forEach((flightPlayers,fi)=>{
+    const wOrd=_ensureWolfOrderSlot(r,fi);
+    if(multi){
+      h+=`<div style="display:flex;align-items:center;gap:7px;padding:8px 12px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${_flightsAccent0(fi)}"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome ${fi+1}</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">${flightMemberInitials(r,fi)}</span></div>`;
+    }
+    h+=`<div style="padding:0 0 8px">`;
+    for(let pos=0;pos<4;pos++){h+=`<div style="display:flex;align-items:center;gap:6px;margin:0 12px 4px"><span style="font-size:11px;color:var(--color-text-tertiary);width:40px">Pos ${pos+1}</span><select class="team-dropdown" onchange="setWolfOrder(${r},${pos},parseInt(this.value),${fi})">${pOptsForFlight(wOrd[pos],flightPlayers)}</select></div>`;}
+    h+=`</div>`;
+    if(multi&&fi<fl.length-1)h+=`<div style="height:0.5px;background:var(--color-border-tertiary)"></div>`;
+  });
+  }
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Wolf placement</span><select class="ie-sel" onchange="WK.rounds[${r}].wolfPlacement=this.value;renderScorecard();autoSave();s2WriteActive()"><option value="last"${((WK.rounds[r].wolfPlacement||WK.wolfPlacement||'last')==='last')?' selected':''}>Last to hit</option><option value="first"${((WK.rounds[r].wolfPlacement||WK.wolfPlacement)==='first')?' selected':''}>First to hit</option></select></div>`;
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per point</span>$<input class="ie-num" type="number" placeholder="${WK.wolfVal||1}" value="${WK.rounds[r].wolfVal!=null?WK.rounds[r].wolfVal:''}" step="0.25" style="width:80px" oninput="const v=this.value.trim();if(v===''){delete WK.rounds[${r}].wolfVal;}else{WK.rounds[${r}].wolfVal=parseFloat(v);}autoSave();s2WriteActive();"/></div>`;
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Blind wolf</span><select class="ie-sel" onchange="WK.rounds[${r}].wolfBlindMult=parseInt(this.value);autoSave();s2WriteActive()"><option value="2"${((WK.rounds[r].wolfBlindMult!=null?WK.rounds[r].wolfBlindMult:WK.wolfBlindMult)||2)===2?' selected':''}>2x points</option><option value="3"${((WK.rounds[r].wolfBlindMult!=null?WK.rounds[r].wolfBlindMult:WK.wolfBlindMult)||2)===3?' selected':''}>3x points</option><option value="1"${((WK.rounds[r].wolfBlindMult!=null?WK.rounds[r].wolfBlindMult:WK.wolfBlindMult)||2)===1?' selected':''}>Off</option></select></div>`;
@@ -9601,7 +10103,7 @@ function renderMoney(){
     const vegR=gameOn('vegas',r)?calcRoundVegas(r):{gameResults:[],net:Array(n).fill(0)};
     const skR=gameOn('skins',r)?calcRoundSkins(r):null;
     const razzleNetR=gameOn('razzle',r)?calcRazzleNet(r):Array(n).fill(0);
-    const wolfPtsR=gameOn('wolf',r)?calcWolfPoints(r):null;
+    const wolfPtsR=gameOn('wolf',r)?calcWolfPointsAllFlights(r):null;
     const wolfVal=roundVal('wolfVal',r,WK.wolfVal||1);
     const wolfNetR=wolfPtsR?wolfPtsR.map(p=>p.pts*wolfVal):Array(n).fill(0);
     const roundNet=Array(n).fill(0);
@@ -10621,7 +11123,7 @@ function renderSettle(){
       });
     }
     if(gameOn('wolf',r)){
-      const wPts=calcWolfPoints(r);
+      const wPts=calcWolfPointsAllFlights(r);
       const wVal=roundVal('wolfVal',r,WK.wolfVal||1);
       WK.players.forEach((_,pi)=>{
         const net=wPts[pi].pts*wVal;
@@ -10892,19 +11394,32 @@ function showRoundDetails(){
   const ratingVal=course.rating!=null?course.rating:(CATALOG[WK.rounds[r].courseName]?.rating??null);
   const hdcpPct=Math.round(WK.hdcpPct*100);
 
+  // View-aware: from the hole view, show the GAME handicaps for the active foursome
+  // (off foursome low), matching the hole-view stroke display. From the grid view (or
+  // when no foursome game is live), show the weekend breakdown. Display only.
+  const _fp=isMultiFlight(r)?getFlightPick(r):0;
+  const _gameView=_scViewMode==='hole'&&STATE.netOffFlightLow&&gameOn('wolf',r)&&isMultiFlight(r)&&_fp!==null;
+  const _fpPlayers=_gameView?(flightsForRound(r)[_fp]||[]):WK.players.map((_,pi)=>pi);
+  const _effOf=(pi)=>_gameView?effHdcpForFlight(pi,r,_fpPlayers):effHdcp(pi,r);
+  const _strokesOf=(pi,hi)=>_gameView?strokesForFlight(pi,hi,r,_fpPlayers):strokes(pi,hi,r);
+
   // Build player rows
-  const playerRows=WK.players.map((p,pi)=>{
+  const playerRows=_fpPlayers.map((pi)=>{
+    const p=WK.players[pi];
     const idx=p.idx;
     const wkndIdx=+(idx*WK.hdcpPct).toFixed(1);
     const ch=courseHdcp(pi,r);
-    const eff=effHdcp(pi,r);
-    // Find stroke holes (1-indexed for display) — uses effHdcp (net-off-low adjusted)
+    const eff=_effOf(pi);
+    // Find stroke holes (1-indexed for display). Uses game or weekend strokes per view.
     const strokeHoles=[];const giveHoles=[];
-    const _off_sh=holeOffset(r),_n_sh=roundHoleCount(r);for(let hi=_off_sh;hi<_off_sh+_n_sh;hi++){const _sh=strokes(pi,hi,r);if(_sh>0)strokeHoles.push(hi+1);else if(_sh<0)giveHoles.push(hi+1);}
+    const _off_sh=holeOffset(r),_n_sh=roundHoleCount(r);for(let hi=_off_sh;hi<_off_sh+_n_sh;hi++){const _sh=_strokesOf(pi,hi);if(_sh>0)strokeHoles.push(hi+1);else if(_sh<0)giveHoles.push(hi+1);}
     return{name:displayName(pi),bg:p.bg,fg:p.fg,ini:p.ini,idx:sbHcpDisplay(idx),wkndIdx:sbHcpDisplay(wkndIdx),ch:chDisplay(ch),eff:chDisplay(eff),strokeHoles,giveHoles};
   });
-  const netOffLowActive=STATE.netOffLow;
-  const lowMan=netOffLowActive?WK.players.reduce((a,_,pi)=>effHdcp(pi,r)<effHdcp(a,r)?pi:a,0):null;
+  const netOffLowActive=_gameView?true:STATE.netOffLow;
+  const lowMan=_gameView
+    ?_fpPlayers.reduce((a,pi)=>_effOf(pi)<_effOf(a)?pi:a,_fpPlayers[0])
+    :(STATE.netOffLow?WK.players.reduce((a,_,pi)=>effHdcp(pi,r)<effHdcp(a,r)?pi:a,0):null);
+  const _lowLabel=_gameView?'Wolf net off foursome low':'Net off low man active';
 
   const modal=document.createElement('div');
   modal.id='roundDetailsModal';
@@ -10931,7 +11446,7 @@ function showRoundDetails(){
 
       <div style="padding:12px 16px 8px">
         <div style="font-size:10px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Handicaps &nbsp;·&nbsp; ${hdcpPct}% adjustment</div>
-        ${netOffLowActive?`<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px;padding:6px 10px;background:var(--color-background-secondary);border-radius:6px">Net off low man active - strokes adjusted relative to ${displayName(lowMan)}</div>`:''}
+        ${netOffLowActive?`<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px;padding:6px 10px;background:var(--color-background-secondary);border-radius:6px">${_lowLabel} - strokes adjusted relative to ${displayName(lowMan)}</div>`:''}
       <div style="border:0.5px solid var(--color-border-tertiary);border-radius:8px;overflow:hidden">
           <div style="display:grid;grid-template-columns:1fr 52px 52px ${netOffLowActive?'48px ':''} 48px;background:var(--color-background-secondary);padding:6px 10px;font-size:10px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.05em">
             <span>Player</span><span style="text-align:right">USGA</span><span style="text-align:right">Wknd</span>${netOffLowActive?'<span style="text-align:right">CH</span>':''}<span style="text-align:right">${netOffLowActive?'Net':'Course'}</span>
