@@ -1492,6 +1492,9 @@ async function s2WriteActive(){
   // flat data; wolf_order/wolf_picks and flighted_games ride the same trip row, so
   // they cannot desync. Idempotent.
   markGameFlighted('wolf');
+  // Snake writes the per-foursome [r][fi][hole] shape into the same snake_holder jsonb
+  // column, so stamp its flag in the same trip upsert for the same flat-vs-nested signal.
+  markGameFlighted('snake');
   const tripId=s2TripId();
   if(!tripId)return;
 
@@ -1982,7 +1985,7 @@ async function s2ReadTrip(tripId){
       mpTeams:t.mp_teams||Array(nR).fill(null).map((_,r)=>defaultTeams(r)),
       vegTeams:t.vegas_teams||Array(nR).fill(null).map((_,r)=>defaultVegasTeams(r)),
       skinsTeams:t.skins_teams||Array(nR).fill(null).map((_,r=>{const g=skinsGamesForRound(r);return Array(g).fill(null).map(()=>JSON.parse(JSON.stringify([[0,1],[2,3]])));})),
-      snakeHolder:t.snake_holder||Array(nR).fill(null).map(()=>Array(18).fill(null)),
+      snakeHolder:hydrateFlightedGame(t.snake_holder,t.flighted_games,_flCounts,'snake',function(r,fi){return Array(18).fill(null);}),
       snakePot:t.snake_pot||Array(nR).fill(0),
       wolfOrder:hydrateFlightedGame(t.wolf_order,t.flighted_games,_flCounts,'wolf',function(r,fi){return (_rf[r][fi]||[]).slice();}),
       wolfPicks:hydrateFlightedGame(t.wolf_picks,t.flighted_games,_flCounts,'wolf',function(r,fi){return Array(18).fill(null);}),
@@ -4375,7 +4378,7 @@ function viewTrip(id){
 // open (viewTrip) AND by the device-sync poll's trip-row rebuild. Keeping this as one
 // function means sync reuses the exact verified load path instead of a parallel one.
 function _s2RehydrateLoadedTrip(){
-  if(!STATE.expenses)STATE.expenses=[];if(!STATE.moneyTab)STATE.moneyTab='golf';if(!STATE.skinsViewRound)STATE.skinsViewRound=0;if(!STATE.settledRounds)STATE.settledRounds=[];if(!STATE.roundSettleData)STATE.roundSettleData={};if(!STATE.lockedRounds)STATE.lockedRounds=[];if(WK&&WK.rounds&&typeof sanitizeTeams==='function'){WK.rounds.forEach((_,r)=>{sanitizeTeams(r);reconcileWolfOrder(r);});}
+  if(!STATE.expenses)STATE.expenses=[];if(!STATE.moneyTab)STATE.moneyTab='golf';if(!STATE.skinsViewRound)STATE.skinsViewRound=0;if(!STATE.settledRounds)STATE.settledRounds=[];if(!STATE.roundSettleData)STATE.roundSettleData={};if(!STATE.lockedRounds)STATE.lockedRounds=[];if(WK&&WK.rounds&&typeof sanitizeTeams==='function'){WK.rounds.forEach((_,r)=>{sanitizeTeams(r);reconcileWolfOrder(r);reconcileSnakeHolders(r);});}
   // Re-hydrate course objects: prefer live CATALOG (handles built-in + loaded custom courses)
   // Fall back to blob's own course data for custom courses not yet in CATALOG
   // Either way, ensure holes array exists
@@ -4407,8 +4410,10 @@ function _s2RehydrateLoadedTrip(){
     }
     // else: blob has valid course data, keep it as-is
   });
-  // Snake safety guards for trips saved before v59
-  if(!STATE.snakeHolder)STATE.snakeHolder=WK.rounds.map(()=>Array(18).fill(null));
+  // Snake safety guards for trips saved before v59. Seed the per-foursome nested shape
+  // (single foursome-0 per round); padGameFoursomes/reconcileSnakeHolders expand it to the
+  // flight count. Pre-v59 trips are inherently single-foursome, so [Array(18)] is correct.
+  if(!STATE.snakeHolder)STATE.snakeHolder=WK.rounds.map(()=>[Array(18).fill(null)]);
   if(!STATE.snakePot)STATE.snakePot=WK.rounds.map(()=>0);
   if(!STATE.pressState)STATE.pressState=WK.rounds.map(()=>[]);if(!STATE.autoPressToasts)STATE.autoPressToasts=[];
   // Pre-populate razzle state so toasts and team modal don't re-fire on existing scores
@@ -5572,8 +5577,8 @@ function initState(netOffLow){const nR=WK.rounds.length,nP=WK.players.length;con
   // Foursomes must exist before per-round game defaults that key off them (Wolf order).
   const _rf0=Array(nR).fill(null).map(()=>defaultFlights(nP));
   STATE={currentRound:0,currentHole:holeOffset(0),netOffLow:netOffLow||false,netOffFlightLow:false,mpViewRound:0,vegasViewRound:0,skinsViewRound:0,scRound:0,optPanel:'teams',teamsRound:0,roundRankOpen:false,emergencyRankOpen:false,moneyTab:'golf',expenses:[],settledRounds:[],roundSettleData:{},lockedRounds:[],scores:Array(nR).fill(null).map(()=>Array(18).fill(null).map(()=>Array(nP).fill(null))),mpTeams:Array(nR).fill(null).map((_,r)=>isHeadsUp(r)?defaultHUTeams(r):defaultTeams(r)),vegTeams:Array(nR).fill(null).map((_,r)=>defaultVegasTeams(r)),skinsTeams:Array(nR).fill(null).map((_,r)=>mkSkTeams(r)),
-    // Snake: per round, per hole holder index (null = no holder)
-    snakeHolder:Array(nR).fill(null).map(()=>Array(18).fill(null)),
+    // Snake: per round, per foursome. [r][fi] = 18-hole holder array (null = no holder).
+    snakeHolder:_rf0.map(fl=>fl.map(()=>Array(18).fill(null))),
     snakePot:Array(nR).fill(0),
     razzleOrder:Array(nR).fill(null).map(()=>[0,1,2,3]),
     razzleMatchTeams:Array(nR).fill(null).map(()=>[]),
@@ -5652,7 +5657,7 @@ window._actClear=function(){
   if(isRoundLocked(r))return;
   WK.players.forEach((_,pi)=>{STATE.scores[r][hi][pi]=null;});
   if(STATE.hammerState&&STATE.hammerState[r])STATE.hammerState[r][hi]=null;
-  if(STATE.snakeHolder&&STATE.snakeHolder[r])STATE.snakeHolder[r][hi]=undefined;
+  if(STATE.snakeHolder&&STATE.snakeHolder[r])STATE.snakeHolder[r].forEach(function(fp){if(fp)fp[hi]=null;});
   if(STATE.wolfPicks&&STATE.wolfPicks[r])STATE.wolfPicks[r].forEach(function(fp){if(fp)fp[hi]=null;});
   s2MarkDirty(['score'],r+':'+hi);
   autoSave();updateHoleUI();
@@ -5933,7 +5938,7 @@ function openRoundSheet(fnName,cur){
 }
 function closeRoundSheet(){const s=document.getElementById('roundSheet');if(s)s.remove();}
 function renderRdSel(cid,cur,fn){const el=document.getElementById(cid);if(!el)return;const isEntry=cid==='entryRdSel'||cid==='ctxRdSel';el.innerHTML=WK.rounds.map((rd,i)=>{const done=isRoundComplete(i);const lkd=(STATE.lockedRounds||[]).includes(i);const detailsLink=isEntry&&i===cur?`<div onclick="event.stopPropagation();showRoundDetails()" style="position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,0.5);color:rgba(255,255,255,0.8);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1">i</div>`:'';return`<div class="rd-btn${i===cur?' active':''}${done?' done':''}" onclick="${fn}(${i})">${roundLabel(i)}${lkd?' 🔒':''}<br><span style="font-size:9px;opacity:0.75">${rdLabel(i)}</span>${detailsLink}</div>`;}).join('');}
-function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=holeOffset(r);STATE.razzleToastOk=false;if(!STATE.razzleHWM)STATE.razzleHWM={};const _roundComplete=isRoundComplete(r);const _maxH=holeOffset(r)+roundHoleCount(r)-1;if(STATE.razzleHWM[r]===undefined)STATE.razzleHWM[r]=_roundComplete?_maxH:-1;renderRdSel('entryRdSel',r,'switchEntryRound');renderRdPicker('ctxRdSel',r,'switchEntryRound');STATE.scRound=r;updateHoleUI();if(_scViewMode==='card')renderSCGrid();}
+function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=_flightResumeHole(r,(getFlightPick(r)||0));STATE.razzleToastOk=false;if(!STATE.razzleHWM)STATE.razzleHWM={};const _roundComplete=isRoundComplete(r);const _maxH=holeOffset(r)+roundHoleCount(r)-1;if(STATE.razzleHWM[r]===undefined)STATE.razzleHWM[r]=_roundComplete?_maxH:-1;renderRdSel('entryRdSel',r,'switchEntryRound');_renderCtxRdSel('scores');STATE.scRound=r;updateHoleUI();if(_scViewMode==='card')renderSCGrid();}
 function switchCardRound(r){STATE.scRound=r;renderRdSel('cardRdSel',r,'switchCardRound');STATE.scGridFlightSel=-1;renderSCGrid();}
 function switchGamesRound(r){STATE.gamesViewRound=r;renderGamesTab();}
 function switchGamesGame(g){STATE.gamesViewGame=g;renderGamesTab();}
@@ -6069,8 +6074,6 @@ function renderScorecard(){
   if(!WK.rounds[r]||!WK.rounds[r].course||!WK.rounds[r].course.holes){console.error('renderScorecard: missing course data for round',r);return;}
   if(!STATE.scores||!STATE.scores[r]||!STATE.scores[r][hi]){console.error('renderScorecard: missing scores for round',r,'hole',hi);return;}
   const hole=WK.rounds[r].course.holes[hi]||{par:4,si:hi+1};
-  // Determine current snake holder (last set on or before this hole)
-  const snakeHolder=currentSnakeHolder(r,hi);
   // More than 4 players and not yet split into foursomes: Wolf's rotation cannot render
   // a meaningful card (it would show only 4 of the group). Guide to the Foursomes editor.
   if(gameOn('wolf',r)&&flightsForRound(r).length===1&&(flightsForRound(r)[0]||[]).length>4){
@@ -6096,13 +6099,16 @@ function renderScorecard(){
     const _flSet={};(flightsForRound(r)[_fp]||[]).forEach(pi=>{_flSet[pi]=1;});
     displayOrder=displayOrder.filter(i=>_flSet[i]);
   }
-  // Hole view shows GAME strokes/net (off foursome low) whenever a foursome-aware game is
-  // live with the toggle on, since the per-hole stroke is the wolf's partner-pick signal. The
-  // grid view keeps weekend net for standings. With the toggle off, strokesForFlight collapses
-  // to strokes, so this is a no-op for the common case; a lone foursome equals the field too.
-  const _gameNet=STATE.netOffFlightLow&&gameOn('wolf',r);
+  // Hole view shows foursome strokes/net (off the foursome low man) whenever the round is
+  // split into multiple foursomes and the toggle is on, regardless of which game is live, so
+  // each player sees their net relative to their own group. The grid view keeps weekend/field
+  // net for standings. With the toggle off, or on a single-foursome round, strokesForFlight
+  // collapses to strokes, so this is a no-op for the common case.
+  const _gameNet=STATE.netOffFlightLow&&isMultiFlight(r);
   const _flPlayers=(flightsForRound(r)[_fp]||WK.players.map((_,idx)=>idx));
-  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}</span>`:`<span class="stroke-tag stroke-no">no stroke</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&snakeHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r);const roStyle=_pvLock?'pointer-events:none':((isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'');const _rowDim=_pvLock?'opacity:0.42;':'';const _minusBtn=_pvLock?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_pvLock?'<i class="ti ti-lock" style="font-size:16px;color:var(--color-text-secondary);margin-left:2px" aria-hidden="true"></i>':'<button class="adj" onclick="adjScore('+i+',1)">+</button>';const wolfPiHere=wolfActive?wolfForHole(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';return topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('');
+  // Snake holder for the ACTIVE foursome at this hole (the card only shows that foursome).
+  const _snkHolder=gameOn('snake',r)?currentSnakeHolderForFlight(r,hi,_fp):null;
+  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}</span>`:`<span class="stroke-tag stroke-no">no stroke</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r);const roStyle=_pvLock?'pointer-events:none':((isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'');const _rowDim=_pvLock?'opacity:0.42;':'';const _minusBtn=_pvLock?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_pvLock?'<i class="ti ti-lock" style="font-size:16px;color:var(--color-text-secondary);margin-left:2px" aria-hidden="true"></i>':'<button class="adj" onclick="adjScore('+i+',1)">+</button>';const wolfPiHere=wolfActive?wolfForHole(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';return topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('');
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
   try{renderRazzleBox();}catch(re){console.error('renderRazzleBox error:',re);const w=document.getElementById('razzleBoxWrap');if(w)w.innerHTML='';}
@@ -6112,41 +6118,156 @@ const allScored=STATE.scores[r][hi].every(s=>s!==null);if(allScored&&gameOn('mp'
   _updateActionRow();
 }
 
-// Returns the snake holder index that is active at or before hole hi in round r
-function currentSnakeHolder(r,hi){
-  if(!STATE.snakeHolder||!STATE.snakeHolder[r])return null;
-  for(let h=hi;h>=0;h--){
-    if(STATE.snakeHolder[r][h]!==null)return STATE.snakeHolder[r][h];
-  }
+// ---- Snake, per foursome. STATE.snakeHolder[r][fi] is an 18-slot array of the GLOBAL
+// player index holding the snake at each hole (null = no change that hole). Holder indices
+// are always members of foursome fi. Each foursome runs its own independent snake: its own
+// reactive rotation, its own pot, and its own end-of-round payout among ITS members only.
+// A one-foursome round has the single foursome equal to the whole roster, so every path
+// below collapses to pre-flight Snake behavior by construction.
+
+// Safe accessor for one foursome's 18-slot holder array (null if absent).
+function snakeHolderArr(r,fi){
+  return (STATE.snakeHolder&&STATE.snakeHolder[r]&&STATE.snakeHolder[r][fi])||null;
+}
+// Active holder at or before hole hi within one foursome (null if none yet).
+function currentSnakeHolderForFlight(r,hi,fi){
+  const arr=snakeHolderArr(r,fi);
+  if(!arr)return null;
+  for(let h=hi;h>=0;h--){if(arr[h]!==null&&arr[h]!==undefined)return arr[h];}
   return null;
 }
-
-// Calculate current snake pot for a round
-function calcSnakePot(r){
+// End-of-round holder for one foursome (last non-null in the round's hole window), or null.
+// Uses holeOffset/roundHoleCount so 9-hole and E9 rounds scan the correct window (the old
+// flat settlement scans hardcoded h=17..0, a latent bug for sub-18 rounds; fixed here).
+function snakeFinalHolderForFlight(r,fi){
+  const arr=snakeHolderArr(r,fi);
+  if(!arr)return null;
+  const _off=holeOffset(r),_n=roundHoleCount(r);
+  for(let h=_off+_n-1;h>=_off;h--){if(arr[h]!==null&&arr[h]!==undefined)return arr[h];}
+  return null;
+}
+// Current pot for one foursome, derived from its holder transfers across the round window.
+function calcSnakePotForFlight(r,fi){
   if(!gameOn('snake',r))return 0;
-  if(!STATE.snakeHolder||!STATE.snakeHolder[r])return 0;
-  let pot=0,transfers=0;
-  let prevHolder=null;
-  const _off_csp=holeOffset(r),_n_csp=roundHoleCount(r);for(let h=_off_csp;h<_off_csp+_n_csp;h++){
-    const holder=STATE.snakeHolder[r][h];
-    if(holder===null)continue;
+  const arr=snakeHolderArr(r,fi);
+  if(!arr)return 0;
+  let pot=0,prevHolder=null;
+  const _off=holeOffset(r),_n=roundHoleCount(r);
+  for(let h=_off;h<_off+_n;h++){
+    const holder=arr[h];
+    if(holder===null||holder===undefined)continue;
     if(prevHolder===null){
-      // First assignment — set starting pot
+      // First assignment sets the starting pot.
       pot=roundVal('snakeBase',r,WK.snakeBase||1);
     } else if(holder!==prevHolder){
-      // Transfer — grow pot
-      transfers++;
-      if(WK.snakeGrowth==='double'){
-        pot=pot*2;
-      } else {
-        pot=pot+(WK.snakeIncrement||1);
-      }
+      // Transfer grows the pot: double or flat increment.
+      pot=WK.snakeGrowth==='double'?pot*2:pot+(WK.snakeIncrement||1);
     }
     prevHolder=holder;
   }
   return pot;
 }
-
+// Single derivation used by every snake money and display path: one entry per foursome,
+// each with its members, end-of-round holder, and pot. All consumers read from this so the
+// pot and holder are computed exactly once per foursome.
+function snakeFlightResults(r){
+  const fl=flightsForRound(r),out=[];
+  for(let fi=0;fi<fl.length;fi++){
+    const members=(fl[fi]||[]).filter(pi=>typeof pi==='number'&&pi>=0);
+    out.push({fi,members,holder:snakeFinalHolderForFlight(r,fi),pot:calcSnakePotForFlight(r,fi)});
+  }
+  return out;
+}
+// THE single snake money source. Merges every foursome's holder-pays-its-members payout
+// into one global-index net array. The divisor is the FOURSOME size, not the trip size, so
+// a split round settles within each foursome; per foursome it is zero-sum. A one-foursome
+// round has divisor == trip size, so this is byte-identical to pre-flight Snake settlement.
+// Called by settleRound (snapshot), renderMoney (per round), and the Recap audit, so the
+// three money sites never diverge.
+function calcSnakeNetAllFlights(r){
+  const net=Array(WK.players.length).fill(0);
+  if(!gameOn('snake',r))return net;
+  snakeFlightResults(r).forEach(({members,holder,pot})=>{
+    if(holder===null||pot<=0)return;
+    const others=members.length-1;
+    if(others<=0)return;
+    if(WK.snakePayout==='split'){
+      members.forEach(pi=>{net[pi]+=pi===holder?-pot*others:pot;});
+    } else {
+      members.forEach(pi=>{net[pi]+=pi===holder?-pot:pot/others;});
+    }
+  });
+  return net;
+}
+// Null any snake holder entry whose player is no longer a member of that foursome for round
+// r (after a re-split or roster edit), and match the foursome axis to the current flight
+// count. Prevents cross-foursome money leakage: a departed holder must not keep charging a
+// foursome they left. Snake has no rotation order, so this is a validity filter, not an
+// order rebuild (simpler than reconcileWolfOrder). Skipped on settled or locked rounds so
+// finalized money is never disturbed. padGameFoursomes fixes axis length on hydrate; this
+// fixes membership, the half padGameFoursomes cannot see.
+function reconcileSnakeHolders(r){
+  if((STATE.settledRounds||[]).includes(r)||isRoundLocked(r))return;
+  if(!STATE.snakeHolder)STATE.snakeHolder=WK.rounds.map(()=>[]);
+  if(!Array.isArray(STATE.snakeHolder[r]))STATE.snakeHolder[r]=[];
+  const fl=flightsForRound(r),out=[];
+  for(let fi=0;fi<fl.length;fi++){
+    const mset={};(fl[fi]||[]).forEach(pi=>{if(typeof pi==='number'&&pi>=0)mset[pi]=1;});
+    const stored=Array.isArray(STATE.snakeHolder[r][fi])?STATE.snakeHolder[r][fi]:[];
+    const cleaned=[];
+    for(let h=0;h<18;h++){const v=stored[h];cleaned.push((v!==null&&v!==undefined&&mset[v])?v:null);}
+    out[fi]=cleaned;
+  }
+  STATE.snakeHolder[r]=out;
+}
+// Games-screen history card for ONE foursome: current holder, transfer history, and the
+// end-of-round payout line. The payout divisor is the FOURSOME size (members.length-1), so a
+// split round shows the correct per-foursome collect amounts. Reused stacked per foursome.
+function _snakeGamesCardHtml(r,fi){
+  const _off=holeOffset(r),_n=roundHoleCount(r);
+  const arr=snakeHolderArr(r,fi);
+  const members=(flightsForRound(r)[fi]||WK.players.map((_,i)=>i)).filter(pi=>typeof pi==='number'&&pi>=0);
+  const others=Math.max(members.length-1,1);
+  let hist=[],prevH=null,pot=0;
+  if(arr){
+    for(let h=_off;h<_off+_n;h++){
+      const hv=arr[h];
+      if(hv===null||hv===undefined)continue;
+      if(prevH===null){pot=roundVal('snakeBase',r,WK.snakeBase||1);hist.push({hi:h,pi:hv,pot,first:true});}
+      else if(hv!==prevH){pot=WK.snakeGrowth==='double'?pot*2:pot+(WK.snakeIncrement||1);hist.push({hi:h,pi:hv,pot,first:false});}
+      prevH=hv;
+    }
+  }
+  const cur=prevH,curPot=pot;
+  let headerHtml;
+  if(cur===null||cur===undefined){
+    headerHtml=`<div style="font-size:13px;color:var(--color-text-secondary)">No holder yet</div>`;
+  } else {
+    headerHtml=`<div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:11px;color:var(--color-text-tertiary);letter-spacing:0.05em;margin-bottom:2px">CURRENT HOLDER</div><div style="font-size:15px;font-weight:500;color:#D85A30">${displayName(cur)} 🐍</div></div><div style="text-align:right"><div style="font-size:11px;color:var(--color-text-tertiary);letter-spacing:0.05em;margin-bottom:2px">POT</div><div style="font-size:15px;font-weight:500;color:var(--color-text-primary)">$${curPot.toFixed(2)}</div></div></div>`;
+  }
+  let histHtml='';
+  if(hist.length===0){
+    histHtml=`<div style="font-size:12px;color:var(--color-text-tertiary);padding:8px 0">No transfers yet</div>`;
+  } else {
+    histHtml=`<table style="width:100%;border-collapse:collapse;margin-top:2px">`;
+    histHtml+=`<tr><th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:left;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">Hole</th><th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:left;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">Player</th><th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:right;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">Pot</th></tr>`;
+    hist.forEach(e=>{
+      const _isLast=e===hist[hist.length-1];
+      const _rowClr=_isLast?'#D85A30':'var(--color-text-primary)';
+      histHtml+=`<tr><td style="font-size:12px;color:var(--color-text-secondary);padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)">H${e.hi+1}</td><td style="font-size:12px;font-weight:${_isLast?'500':'400'};color:${_rowClr};padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)">${displayName(e.pi)}${_isLast?' 🐍':''}</td><td style="font-size:12px;text-align:right;color:var(--color-text-primary);padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)">$${e.pot.toFixed(2)}</td></tr>`;
+    });
+    histHtml+=`</table>`;
+  }
+  let payoutHtml='';
+  if(cur!==null&&cur!==undefined&&curPot>0){
+    if(WK.snakePayout==='split'){
+      payoutHtml=`<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:10px;padding-top:8px;border-top:0.5px solid var(--color-border-tertiary)">Holder pays $${(curPot*others).toFixed(2)} · others collect $${curPot.toFixed(2)} each</div>`;
+    } else {
+      payoutHtml=`<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:10px;padding-top:8px;border-top:0.5px solid var(--color-border-tertiary)">Holder pays $${curPot.toFixed(2)} · others collect $${(curPot/others).toFixed(2)} each</div>`;
+    }
+  }
+  return `<div class="section-card" style="margin-bottom:10px;padding:14px">${headerHtml}</div><div class="section-card" style="margin-bottom:10px;padding:14px"><div style="font-size:11px;color:var(--color-text-tertiary);letter-spacing:0.05em;margin-bottom:8px">HISTORY</div>${histHtml}${payoutHtml}</div>`;
+}
 function razzleTeamsForMatch(r,mi){
   const ord=(STATE.razzleOrder&&STATE.razzleOrder[r])?STATE.razzleOrder[r]:[0,1,2,3];
   const rots=[[[ord[0],ord[1]],[ord[2],ord[3]]],[[ord[0],ord[2]],[ord[1],ord[3]]],[[ord[0],ord[3]],[ord[1],ord[2]]]];
@@ -6234,14 +6355,20 @@ function renderSnakeEntry(){
   if(!gameOn('snake',STATE.currentRound)){wrap.innerHTML='';return;}
   const r=STATE.currentRound,hi=STATE.currentHole;
   if(isReadOnly||isRoundLocked(r)){wrap.innerHTML='';return;}
-  // Ensure snake state exists (safety guard)
-  if(!STATE.snakeHolder)STATE.snakeHolder=WK.rounds.map(()=>Array(18).fill(null));
-  if(!STATE.snakeHolder[r])STATE.snakeHolder[r]=Array(18).fill(null);
-  const currentHolder=currentSnakeHolder(r,hi);
-  const pot=calcSnakePot(r);
+  // Resolve the active foursome. On a multi-flight round with no pick yet the scorecard
+  // shows the foursome picker, so render nothing here until one is chosen.
+  const _fp=isMultiFlight(r)?getFlightPick(r):0;
+  if(_fp===null){wrap.innerHTML='';return;}
+  // Ensure this foursome's holder slot exists (safety guard).
+  if(!STATE.snakeHolder)STATE.snakeHolder=WK.rounds.map(()=>[]);
+  if(!Array.isArray(STATE.snakeHolder[r]))STATE.snakeHolder[r]=[];
+  if(!Array.isArray(STATE.snakeHolder[r][_fp]))STATE.snakeHolder[r][_fp]=Array(18).fill(null);
+  const currentHolder=currentSnakeHolderForFlight(r,hi,_fp);
+  const pot=calcSnakePotForFlight(r,_fp);
   const potDisplay=pot>0?`<span style="font-size:11px;color:var(--color-text-secondary);margin-left:8px">Pot: <strong>$${pot.toFixed(2)}</strong></span>`:'';
-  const options=`<option value="">— No holder —</option>`+
-    WK.players.map((p,i)=>`<option value="${i}"${currentHolder===i?' selected':''}>${displayName(i)}</option>`).join('')+
+  const _snkMembers=(flightsForRound(r)[_fp]||WK.players.map((_,i)=>i)).filter(pi=>typeof pi==='number'&&pi>=0);
+  const options=`<option value="">No holder</option>`+
+    _snkMembers.map(i=>`<option value="${i}"${currentHolder===i?' selected':''}>${displayName(i)}</option>`).join('')+
     (currentHolder!==null?`<option value="clear">⬜ Clear snake</option>`:'');
   wrap.innerHTML=`<div style="margin:0.75rem 1rem 0;padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary)">
     <div style="display:flex;align-items:center;gap:8px">
@@ -6259,17 +6386,21 @@ function renderSnakeEntry(){
 
 function onSnakeChange(val){
   const r=STATE.currentRound,hi=STATE.currentHole;
-  if(!STATE.snakeHolder)STATE.snakeHolder=WK.rounds.map(()=>Array(18).fill(null));
-  if(!STATE.snakeHolder[r])STATE.snakeHolder[r]=Array(18).fill(null);
-  const currentHolder=currentSnakeHolder(r,hi);
+  const _fp=isMultiFlight(r)?getFlightPick(r):0;
+  if(_fp===null){renderSnakeEntry();return;}
+  if(!STATE.snakeHolder)STATE.snakeHolder=WK.rounds.map(()=>[]);
+  if(!Array.isArray(STATE.snakeHolder[r]))STATE.snakeHolder[r]=[];
+  if(!Array.isArray(STATE.snakeHolder[r][_fp]))STATE.snakeHolder[r][_fp]=Array(18).fill(null);
+  const _arr=STATE.snakeHolder[r][_fp];
+  const currentHolder=currentSnakeHolderForFlight(r,hi,_fp);
   if(val===''){renderSnakeEntry();return;}
   if(val==='clear'){
     showSnakeModal(
       'Clear the snake?',
-      'The pot will reset for this round.',
+      'The pot will reset for this foursome.',
       'Clear',
       ()=>{
-        {const _off_sr=holeOffset(r),_n_sr=roundHoleCount(r);for(let h=_off_sr;h<_off_sr+_n_sr;h++)STATE.snakeHolder[r][h]=null;}
+        {const _off_sr=holeOffset(r),_n_sr=roundHoleCount(r);for(let h=_off_sr;h<_off_sr+_n_sr;h++)_arr[h]=null;}
         autoSave();renderScorecard();
       },
       ()=>renderSnakeEntry()
@@ -6278,22 +6409,23 @@ function onSnakeChange(val){
   }
   const newHolder=parseInt(val);
   if(newHolder===currentHolder){renderSnakeEntry();return;}
-  const pot=calcSnakePot(r);
-  const isFirst=STATE.snakeHolder[r].every(h=>h===null);
+  const pot=calcSnakePotForFlight(r,_fp);
+  const isFirst=_arr.every(h=>h===null);
   let newPot;
   if(isFirst){
     newPot=roundVal('snakeBase',r,WK.snakeBase||1);
   } else if(currentHolder!==null){
     newPot=WK.snakeGrowth==='double'?(pot*2):(pot+(WK.snakeIncrement||1));
   } else {
-    // Picked up from no-holder state mid-round (first of round but pot already set — shouldn't happen, treat as first)
+    // Picked up from a no-holder state mid-round (first of round but pot already set;
+    // should not happen, treat as first).
     newPot=roundVal('snakeBase',r,WK.snakeBase||1);
   }
   const playerName=displayName(newHolder);
   const title=isFirst?`${playerName} picks up the 🐍`:`${playerName} takes the 🐍`;
   const body=isFirst?`Pot starts at $${newPot.toFixed(2)}.`:`Pot grows to $${newPot.toFixed(2)}.`;
   showSnakeModal(title,body,'Confirm',()=>{
-    STATE.snakeHolder[r][hi]=newHolder;
+    _arr[hi]=newHolder;
     autoSave();renderScorecard();
   },()=>renderSnakeEntry());
 }
@@ -6884,8 +7016,8 @@ function resetHole(){
   WK.players.forEach((_,pi)=>{STATE.scores[r][hi][pi]=null;});
   // Clear hammer state for this hole
   if(STATE.hammerState&&STATE.hammerState[r])STATE.hammerState[r][hi]=null;
-  // Clear snake for this hole
-  if(STATE.snakeHolder&&STATE.snakeHolder[r])STATE.snakeHolder[r][hi]=undefined;
+  // Clear snake for this hole across every foursome (holder is per foursome now).
+  if(STATE.snakeHolder&&STATE.snakeHolder[r])STATE.snakeHolder[r].forEach(function(fp){if(fp)fp[hi]=null;});
   // Clear wolf picks for this hole
   if(STATE.wolfPicks&&STATE.wolfPicks[r])STATE.wolfPicks[r].forEach(function(fp){if(fp)fp[hi]=null;});
   s2MarkDirty(['score'],r+':'+hi);
@@ -6945,7 +7077,7 @@ function renderSCGrid(){
         const hi=i+off;
         const g=STATE.scores[r][hi][pi],st=strokes(pi,hi,r);
         const dot=st>=2?`<div class="dot-row"><span class="stroke-dot"></span><span class="stroke-dot"></span></div>`:st===1?`<div class="dot-row"><span class="stroke-dot"></span></div>`:st<=-1?('<div class="dot-row">'+'<span class="stroke-dot stroke-dot-give"></span>'.repeat(Math.min(-st,2))+'</div>'):`<div class="dot-row"></div>`;
-        const snakeSet=gameOn('snake',r)&&STATE.snakeHolder&&STATE.snakeHolder[r]&&STATE.snakeHolder[r][hi]===pi;
+        const snakeSet=gameOn('snake',r)&&STATE.snakeHolder&&STATE.snakeHolder[r]&&STATE.snakeHolder[r].some(fp=>fp&&fp[hi]===pi);
         const snakeStyle=snakeSet?'border-top:2px solid #f59e0b;':'';
         if(g===null)return`<td><div style="display:flex;flex-direction:column;align-items:center;${snakeStyle}"><div class="dot-row"></div><div class="sc-cell"></div></div></td>`;
         return`<td><div style="display:flex;flex-direction:column;align-items:center;${snakeStyle}">${dot}<div class="sc-cell ${scoreClass(g,hole.par)}">${g}</div></div></td>`;
@@ -6985,7 +7117,7 @@ function renderSCGrid(){
   // Weekend-net caption, shown only when a foursome game with the toggle on makes the hole
   // view diverge. Mirrors the hole view's "Wolf net" caption so a mismatch reads as intended.
   let _gridNetCap='';
-  if(STATE.netOffFlightLow&&gameOn('wolf',r)&&isMultiFlight(r)){
+  if(STATE.netOffFlightLow&&isMultiFlight(r)){
     if(STATE.netOffLow){
       const _fLow=WK.players.reduce((a,_,pi)=>effHdcp(pi,r)<effHdcp(a,r)?pi:a,0);
       _gridNetCap='<div style="font-size:11px;color:var(--color-text-secondary);padding:0 1rem 0.35rem">Weekend net (off field low: '+displayName(_fLow)+')</div>';
@@ -7475,6 +7607,7 @@ function renderWolfBox(){
 }
 
 function _wolfViewFilterPick(sel){STATE.wolfViewFlight=sel;renderGamesContent();}
+function _snakeViewFilterPick(sel){STATE.snakeViewFlight=sel;renderGamesContent();}
 // One foursome's grid + standings, exactly today's markup, scoped to flightPlayers.
 // labelHd, when set, prefixes a colored-dot "Foursome N" header above the pair
 // (Both mode); when null the header stays exactly as it is today (single view).
@@ -7617,6 +7750,7 @@ function _flightsMutate(r,fn){
   while(STATE.roundFlights.length<WK.rounds.length)STATE.roundFlights.push(defaultFlights(WK.players.length));
   fn(STATE.roundFlights[r]);
   reconcileWolfOrder(r);
+  reconcileSnakeHolders(r);
   // Intentionally NOT re-running padFlights here: it strips empty non-first
   // foursomes (e.g. one just added via + Add foursome, or a fresh "Select
   // player..." slot), which would erase the very placeholder the user is
@@ -7640,8 +7774,8 @@ function _flightsAddFoursome(r){_flightsMutate(r,fl=>{fl.push([-1]);});}
 function toggleEditPanel(eid,btnId){const panel=document.getElementById(eid);const btn=document.getElementById(btnId);const display=document.getElementById(eid+'_display');if(!panel)return;const isOpen=panel.style.display!=='none';panel.style.display=isOpen?'none':'block';if(display)display.style.display=isOpen?'flex':'none';if(btn)btn.style.display=isOpen?'inline-block':'none';if(isOpen){const mc=eid.match(/^ce_(.+)$/);if(mc){const cname=mc[1].replace(/_/g,' ');if(CATALOG[cname])saveCourse(cname);}renderPlayersPanel();}}
 function toggleAddPlayerRow(){const row=document.getElementById('addPlayerRow');const btn=document.getElementById('addPlayerToggleBtn');if(!row)return;const opening=row.style.display==='none';row.style.display=opening?'block':'none';if(btn)btn.style.display=opening?'none':'inline-block';if(opening)setTimeout(function(){var el=document.getElementById('apFirst');if(el)el.focus();},50);}
 function confirmAddPlayer(){if(!canEditTrip())return;var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=idxFromInput(document.getElementById('apIdx')?document.getElementById('apIdx').value:'',10);if(!first){alert('Enter a first name.');return;}if(WK.players.length>=12)return;var c=pickColor();var newP={name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};var allPlayers=WK.players.concat([newP]);resolveDisplayNames(allPlayers);WK.players.push(newP);WK.rounds.forEach(function(_,r){STATE.scores[r].forEach(function(h){h.push(null);});sanitizeTeams(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();if(typeof renderGamesTab==='function'&&document.getElementById('view-games')&&document.getElementById('view-games').style.display!=='none')renderGamesTab();autoSave();}
-function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=12)return;const c=pickColor(),i=WK.players.length;WK.players.push({name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));sanitizeTeams(r);});if(STATE)STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);if(STATE)WK.rounds.forEach((_,r)=>reconcileWolfOrder(r));if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();}
-function removePlayer(idx){if(!canEditTrip())return;if(WK.players.length<=2){alert('Need at least 2 players.');return;}WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=fixTeams(STATE.mpTeams);STATE.vegTeams=fixTeams(STATE.vegTeams);if(STATE.skinsTeams)STATE.skinsTeams=fixTeams(STATE.skinsTeams);if(STATE.hammerTeams)STATE.hammerTeams=fixTeams(STATE.hammerTeams);if(STATE.roundFlights)STATE.roundFlights=padFlights(STATE.roundFlights.map(function(fls){return fls.map(function(fl){return fl.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});}),WK.rounds.length,WK.players.length);if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';WK.rounds.forEach((_,r)=>{sanitizeTeams(r);reconcileWolfOrder(r);});renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
+function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=12)return;const c=pickColor(),i=WK.players.length;WK.players.push({name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));sanitizeTeams(r);});if(STATE)STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);if(STATE)WK.rounds.forEach((_,r)=>{reconcileWolfOrder(r);reconcileSnakeHolders(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();}
+function removePlayer(idx){if(!canEditTrip())return;if(WK.players.length<=2){alert('Need at least 2 players.');return;}WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=fixTeams(STATE.mpTeams);STATE.vegTeams=fixTeams(STATE.vegTeams);if(STATE.skinsTeams)STATE.skinsTeams=fixTeams(STATE.skinsTeams);if(STATE.hammerTeams)STATE.hammerTeams=fixTeams(STATE.hammerTeams);if(STATE.roundFlights)STATE.roundFlights=padFlights(STATE.roundFlights.map(function(fls){return fls.map(function(fl){return fl.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});}),WK.rounds.length,WK.players.length);if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';WK.rounds.forEach((_,r)=>{sanitizeTeams(r);reconcileWolfOrder(r);reconcileSnakeHolders(r);});renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
 // Trip admin management handlers
 var _tripAdminPickerMembers=[];
 window._tripAdminAdd=function(idx){
@@ -9380,59 +9514,26 @@ function renderGamesContent(){
   else if(g==='razzle')renderRazzleRound();
   else if(g==='wolf')renderWolfRound();
   if(g==='snake'){
-    const _sr=r;
-    const _off_snk=holeOffset(_sr),_n_snk=roundHoleCount(_sr);
-    const _snkHolder=STATE.snakeHolder&&STATE.snakeHolder[_sr];
-    // Build history: walk holes, emit a row each time holder changes
-    let _snkHistory=[],_snkPrevH=null,_snkPot=0;
-    if(_snkHolder){
-      for(let _h=_off_snk;_h<_off_snk+_n_snk;_h++){
-        const _hv=_snkHolder[_h];
-        if(_hv===null||_hv===undefined)continue;
-        if(_snkPrevH===null){
-          _snkPot=roundVal('snakeBase',_sr,WK.snakeBase||1);
-          _snkHistory.push({hi:_h,pi:_hv,pot:_snkPot,first:true});
-        } else if(_hv!==_snkPrevH){
-          _snkPot=WK.snakeGrowth==='double'?_snkPot*2:_snkPot+(WK.snakeIncrement||1);
-          _snkHistory.push({hi:_h,pi:_hv,pot:_snkPot,first:false});
+    const _snkFl=flightsForRound(r);
+    const _snkEl=document.getElementById('gamesContent');
+    if(_snkFl.length<=1){
+      _snkEl.innerHTML=_snakeGamesCardHtml(r,0);
+    } else {
+      if(STATE.snakeViewFlight===undefined||STATE.snakeViewFlight===null)STATE.snakeViewFlight=0;
+      let _snkSel=STATE.snakeViewFlight;
+      if(_snkSel!==-1&&_snkSel>=_snkFl.length)_snkSel=0;
+      let _snkOut='<div class="gf-filter" style="margin:0 0 10px">';
+      _snkFl.forEach((_,i)=>{_snkOut+='<button class="'+(_snkSel===i?'on':'')+'" onclick="_snakeViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});
+      _snkOut+='<button class="'+(_snkSel===-1?'on':'')+'" onclick="_snakeViewFilterPick(-1)">Both</button></div>';
+      const _snkTo=_snkSel===-1?_snkFl.map((_,i)=>i):[_snkSel];
+      _snkTo.forEach(fi=>{
+        if(_snkSel===-1){
+          _snkOut+='<div style="display:flex;align-items:center;gap:7px;margin:4px 0 6px;font-size:12px;font-weight:600;color:var(--color-text-secondary)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(fi)+'"></span>Foursome '+(fi+1)+'<span style="font-size:11px;font-weight:400;color:var(--color-text-tertiary)">'+flightMemberInitials(r,fi)+'</span></div>';
         }
-        _snkPrevH=_hv;
-      }
-    }
-    const _snkCurrent=_snkPrevH;
-    const _snkCurrentPot=_snkPot;
-    // Header: current holder + pot
-    let _snkHeaderHtml;
-    if(_snkCurrent===null||_snkCurrent===undefined){
-      _snkHeaderHtml=`<div style="font-size:13px;color:var(--color-text-secondary)">No holder yet</div>`;
-    } else {
-      _snkHeaderHtml=`<div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:11px;color:var(--color-text-tertiary);letter-spacing:0.05em;margin-bottom:2px">CURRENT HOLDER</div><div style="font-size:15px;font-weight:500;color:#D85A30">${displayName(_snkCurrent)} 🐍</div></div><div style="text-align:right"><div style="font-size:11px;color:var(--color-text-tertiary);letter-spacing:0.05em;margin-bottom:2px">POT</div><div style="font-size:15px;font-weight:500;color:var(--color-text-primary)">$${_snkCurrentPot.toFixed(2)}</div></div></div>`;
-    }
-    // History table
-    let _snkHistHtml='';
-    if(_snkHistory.length===0){
-      _snkHistHtml=`<div style="font-size:12px;color:var(--color-text-tertiary);padding:8px 0">No transfers yet</div>`;
-    } else {
-      _snkHistHtml=`<table style="width:100%;border-collapse:collapse;margin-top:2px">`;
-      _snkHistHtml+=`<tr><th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:left;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">Hole</th><th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:left;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">Player</th><th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:right;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">Pot</th></tr>`;
-      _snkHistory.forEach(e=>{
-        const _isLast=e===_snkHistory[_snkHistory.length-1];
-        const _rowClr=_isLast?'#D85A30':'var(--color-text-primary)';
-        _snkHistHtml+=`<tr><td style="font-size:12px;color:var(--color-text-secondary);padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)">H${e.hi+1}</td><td style="font-size:12px;font-weight:${_isLast?'500':'400'};color:${_rowClr};padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)">${displayName(e.pi)}${_isLast?' 🐍':''}</td><td style="font-size:12px;text-align:right;color:var(--color-text-primary);padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)">$${e.pot.toFixed(2)}</td></tr>`;
+        _snkOut+=_snakeGamesCardHtml(r,fi);
       });
-      _snkHistHtml+=`</table>`;
+      _snkEl.innerHTML=_snkOut;
     }
-    // Payout line
-    let _snkPayoutHtml='';
-    if(_snkCurrent!==null&&_snkCurrent!==undefined&&_snkCurrentPot>0){
-      if(WK.snakePayout==='split'){
-        _snkPayoutHtml=`<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:10px;padding-top:8px;border-top:0.5px solid var(--color-border-tertiary)">Holder pays $${(_snkCurrentPot*(WK.players.length-1)).toFixed(2)} · others collect $${_snkCurrentPot.toFixed(2)} each</div>`;
-      } else {
-        const _snkOthers=WK.players.length-1;
-        _snkPayoutHtml=`<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:10px;padding-top:8px;border-top:0.5px solid var(--color-border-tertiary)">Holder pays $${_snkCurrentPot.toFixed(2)} · others collect $${(_snkCurrentPot/_snkOthers).toFixed(2)} each</div>`;
-      }
-    }
-    document.getElementById('gamesContent').innerHTML=`<div class="section-card" style="margin-bottom:10px;padding:14px">${_snkHeaderHtml}</div><div class="section-card" style="margin-bottom:10px;padding:14px"><div style="font-size:11px;color:var(--color-text-tertiary);letter-spacing:0.05em;margin-bottom:8px">HISTORY</div>${_snkHistHtml}${_snkPayoutHtml}</div>`;
   }
   if(g==='twos'){
     const _tr=r;
@@ -10010,7 +10111,7 @@ function settleRound(r){
       }
     }
   }
-  if(gameOn('snake',r)&&STATE.snakeHolder&&STATE.snakeHolder[r]){let _sfh=null;for(let _h=17;_h>=0;_h--){if(STATE.snakeHolder[r][_h]!==null){_sfh=STATE.snakeHolder[r][_h];break;}}if(_sfh!==null){const _sp=calcSnakePot(r);if(_sp>0){if(WK.snakePayout==='split'){WK.players.forEach((_,i)=>{snapNet[i]+=i===_sfh?-_sp*(WK.players.length-1):_sp;});}else{const _ot=WK.players.length-1;WK.players.forEach((_,i)=>{snapNet[i]+=i===_sfh?-_sp:_sp/_ot;})}}}}
+  if(gameOn('snake',r)){calcSnakeNetAllFlights(r).forEach((v,i)=>{snapNet[i]+=v;});}
   const snapVals={gameVal:roundVal('gameVal',r,WK.gameVal),vegasVal:roundVal('vegasVal',r,WK.vegasVal),skinsVal:roundVal('skinsVal',r,WK.skinsVal||5),snakeBase:roundVal('snakeBase',r,WK.snakeBase||1),razzleVal:roundVal('razzleVal',r,WK.razzleVal||5)};
   STATE.roundSettleData[r]={settledAt:new Date().toISOString(),scoreHash,snapNet,snapVals};
   STATE.settledRounds.push(r);
@@ -10074,23 +10175,7 @@ function renderMoney(){
 
   // Pre-compute snake net per round for use inside round cards and grand total
   const snakeNet=Array(n).fill(0);
-  const snakeNetByRound=WK.rounds.map((_,r)=>{
-    const rNet=Array(n).fill(0);
-    if(!gameOn('snake',r))return rNet;
-    if(!STATE.snakeHolder||!STATE.snakeHolder[r])return rNet;
-    let finalHolder=null;
-    for(let h=17;h>=0;h--){if(STATE.snakeHolder[r][h]!==null){finalHolder=STATE.snakeHolder[r][h];break;}}
-    if(finalHolder===null)return rNet;
-    const sPot=calcSnakePot(r);
-    if(sPot===0)return rNet;
-    if(WK.snakePayout==='split'){
-      WK.players.forEach((_,i)=>{if(i===finalHolder)rNet[i]-=sPot*(n-1);else rNet[i]+=sPot;});
-    } else {
-      const others=n-1;
-      WK.players.forEach((_,i)=>{if(i===finalHolder)rNet[i]-=sPot;else rNet[i]+=sPot/others;});
-    }
-    return rNet;
-  });
+  const snakeNetByRound=WK.rounds.map((_,r)=>calcSnakeNetAllFlights(r));
   snakeNetByRound.forEach(rNet=>rNet.forEach((v,i)=>snakeNet[i]+=v));
   // Snake is added to grandTotal per-round inside the loop below (via roundNet or snapNet)
   // Note: Razzle is added per-round inside the round loop below via roundNet/netForTotal
@@ -10287,16 +10372,23 @@ function renderMoney(){
         html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:1px 12px 6px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px;${boldB?'font-weight:700;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${namesB}</span>${boldB?`<span style="font-size:13px;font-weight:600;color:#1D9E75">${potStr}</span>`:''}</div>`;
       });
     }
-    // Snake — inside round card
+    // Snake - inside round card. Per foursome: each runs its own pot and holder.
     if(gameOn('snake',r)){
       const rNet=snakeNetByRound[r];
-      let finalHolder=null;
-      if(STATE.snakeHolder&&STATE.snakeHolder[r]){for(let h=17;h>=0;h--){if(STATE.snakeHolder[r][h]!==null){finalHolder=STATE.snakeHolder[r][h];break;}}}
-      const sPot=calcSnakePot(r);
-      const hasSnake=finalHolder!==null;
-      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">🐍 Snake${hasSnake?` - pot $${sPot.toFixed(2)} · ${displayName(finalHolder)} holds`:' - not set'}</div>`;
-      if(!hasSnake){html+=`<div class="pending-box">No snake assigned this round</div>`;}
-      else{WK.players.forEach((p,i)=>{html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(i)}${i===finalHolder?' 🐍':''}</span></div><div class="${rNet[i]>0?'money-pos':rNet[i]<0?'money-neg':'money-nil'}">${fmt(rNet[i])}</div></div>`;});}
+      const _snkRes=snakeFlightResults(r);
+      const _snkMulti=_snkRes.length>1;
+      const _snkAny=_snkRes.some(fr=>fr.holder!==null&&fr.pot>0);
+      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">🐍 Snake${(!_snkMulti&&_snkAny)?` - pot $${_snkRes[0].pot.toFixed(2)} · ${displayName(_snkRes[0].holder)} holds`:(!_snkAny?' - not set':'')}</div>`;
+      if(!_snkAny){html+=`<div class="pending-box">No snake assigned this round</div>`;}
+      else{
+        _snkRes.forEach(fr=>{
+          if(_snkMulti){
+            const _lbl=fr.holder!==null&&fr.pot>0?`pot $${fr.pot.toFixed(2)} · ${displayName(fr.holder)} holds`:'not set';
+            html+=`<div style="padding:6px 12px;font-size:10px;font-weight:600;letter-spacing:0.03em;color:var(--color-text-secondary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary)">Foursome ${fr.fi+1} - ${_lbl}</div>`;
+          }
+          fr.members.forEach(i=>{const p=WK.players[i];html+=`<div class="money-row"><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><span>${displayName(i)}${i===fr.holder?' 🐍':''}</span></div><div class="${rNet[i]>0?'money-pos':rNet[i]<0?'money-neg':'money-nil'}">${fmt(rNet[i])}</div></div>`;});
+        });
+      }
     }
     // Wolf
     if(gameOn('wolf',r)&&wolfPtsR){
@@ -11143,13 +11235,7 @@ function renderSettle(){
   if(gameOnAny('snake')){
     WK.rounds.forEach((_,r)=>{
       if((STATE.settledRounds||[]).includes(r))return;
-      if(!STATE.snakeHolder||!STATE.snakeHolder[r])return;
-      let finalHolder=null;
-      for(let h=17;h>=0;h--){if(STATE.snakeHolder[r][h]!==null){finalHolder=STATE.snakeHolder[r][h];break;}}
-      if(finalHolder===null)return;
-      const sPot=calcSnakePot(r);if(sPot===0)return;
-      if(WK.snakePayout==='split'){WK.players.forEach((_,i)=>{if(i===finalHolder)snakeNet[i]-=sPot*(n-1);else snakeNet[i]+=sPot;});}
-      else{const others=n-1;WK.players.forEach((_,i)=>{if(i===finalHolder)snakeNet[i]-=sPot;else snakeNet[i]+=sPot/others;});}
+      calcSnakeNetAllFlights(r).forEach((v,i)=>{snakeNet[i]+=v;});
     });
   }
   auditGolf.forEach((a,i)=>{a.total=a.pot+a.mp.reduce((s,x)=>s+x.val,0)+a.vegas.reduce((s,x)=>s+x.val,0)+a.skins.reduce((s,x)=>s+x.val,0)+a.razzle.reduce((s,x)=>s+x.val,0)+a.wolf.reduce((s,x)=>s+x.val,0)+a.hammer.reduce((s,x)=>s+x.val,0)+a.settled.reduce((s,x)=>s+x.val,0)+a.twos+snakeNet[i];});
@@ -11258,21 +11344,20 @@ function renderSettle(){
             a.vegas.forEach(x=>{html+=subRow(x.label,x.desc,x.val);});
       html+=`</div></div>`;
     }
-    // Snake — expandable, per-round breakdown
+    // Snake - expandable, per-round breakdown. Reads this player's OWN foursome result so a
+    // split round shows the pot and holder for the foursome pi actually played in.
     if(gameOnAny('snake')){
       html+=catHdr('Snake',snakeNet[pi]);
             WK.rounds.forEach((_,r)=>{
         if((STATE.settledRounds||[]).includes(r))return;
-        if(!STATE.snakeHolder||!STATE.snakeHolder[r])return;
-        let finalHolder=null;
-        for(let h=17;h>=0;h--){if(STATE.snakeHolder[r][h]!==null){finalHolder=STATE.snakeHolder[r][h];break;}}
-        if(finalHolder===null)return;
-        const sPot=calcSnakePot(r);if(sPot===0)return;
+        const _fr=snakeFlightResults(r).find(fr=>fr.members.indexOf(pi)>=0);
+        if(!_fr||_fr.holder===null||_fr.pot<=0)return;
+        const _others=_fr.members.length-1;if(_others<=0)return;
         let rNet=0;
-        if(WK.snakePayout==='split'){rNet=finalHolder===pi?-(sPot*(WK.players.length-1)):sPot;}
-        else{rNet=finalHolder===pi?-sPot:sPot/(WK.players.length-1);}
+        if(WK.snakePayout==='split'){rNet=_fr.holder===pi?-(_fr.pot*_others):_fr.pot;}
+        else{rNet=_fr.holder===pi?-_fr.pot:_fr.pot/_others;}
         if(rNet===0)return;
-        const desc=finalHolder===pi?'holds snake':`${displayName(finalHolder)} holds`;
+        const desc=_fr.holder===pi?'holds snake':`${displayName(_fr.holder)} holds`;
         html+=subRow(roundLabel(r),desc,rNet);
       });
       html+=`</div></div>`;
@@ -11398,7 +11483,7 @@ function showRoundDetails(){
   // (off foursome low), matching the hole-view stroke display. From the grid view (or
   // when no foursome game is live), show the weekend breakdown. Display only.
   const _fp=isMultiFlight(r)?getFlightPick(r):0;
-  const _gameView=_scViewMode==='hole'&&STATE.netOffFlightLow&&gameOn('wolf',r)&&isMultiFlight(r)&&_fp!==null;
+  const _gameView=_scViewMode==='hole'&&STATE.netOffFlightLow&&isMultiFlight(r)&&_fp!==null;
   const _fpPlayers=_gameView?(flightsForRound(r)[_fp]||[]):WK.players.map((_,pi)=>pi);
   const _effOf=(pi)=>_gameView?effHdcpForFlight(pi,r,_fpPlayers):effHdcp(pi,r);
   const _strokesOf=(pi,hi)=>_gameView?strokesForFlight(pi,hi,r,_fpPlayers):strokes(pi,hi,r);
@@ -11419,7 +11504,7 @@ function showRoundDetails(){
   const lowMan=_gameView
     ?_fpPlayers.reduce((a,pi)=>_effOf(pi)<_effOf(a)?pi:a,_fpPlayers[0])
     :(STATE.netOffLow?WK.players.reduce((a,_,pi)=>effHdcp(pi,r)<effHdcp(a,r)?pi:a,0):null);
-  const _lowLabel=_gameView?'Wolf net off foursome low':'Net off low man active';
+  const _lowLabel=_gameView?'Net off foursome low':'Net off low man active';
 
   const modal=document.createElement('div');
   modal.id='roundDetailsModal';
