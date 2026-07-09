@@ -915,10 +915,10 @@ body.force-light{
 .fs-slot .fs-rm{width:26px;height:26px;flex-shrink:0;border-radius:7px;border:0.5px solid var(--color-border-tertiary);background:transparent;color:var(--color-text-secondary);font-size:14px;cursor:pointer;}
 .fs-addp{margin-top:4px;font-size:12.5px;color:#1D9E75;cursor:pointer;padding:6px 2px;display:inline-block;}
 .fs-addf{margin-top:8px;border:1px dashed var(--color-border-secondary);border-radius:11px;text-align:center;padding:11px;font-size:13px;color:var(--color-text-secondary);cursor:pointer;}
-.gf-filter{display:flex;margin:8px 0 0;border:0.5px solid var(--color-border-tertiary);border-radius:10px;overflow:hidden;}
-.gf-filter button{flex:1;font-size:12px;font-weight:600;padding:8px 4px;border:0;background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;}
-.gf-filter button+button{border-left:0.5px solid var(--color-border-tertiary);}
-.gf-filter button.on{background:rgba(29,158,117,0.16);color:#1D9E75;}
+.gf-filter{position:relative;display:flex;gap:3px;margin:8px 0 0;background:var(--color-background-tertiary);border:0.5px solid var(--color-border-secondary);border-radius:9px;padding:3px;overflow:hidden;}
+.gf-filter button{flex:1;position:relative;z-index:1;font-size:12px;font-weight:600;padding:6px 4px;border:0;background:transparent;color:var(--color-text-secondary);cursor:pointer;border-radius:7px;transition:color .2s ease;-webkit-tap-highlight-color:transparent;}
+.gf-filter button.on{color:#fff;}
+.gf-pill{position:absolute;top:3px;bottom:3px;background:#178562;border-radius:7px;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:left .25s ease,width .25s ease;z-index:0;pointer-events:none;}
 .gf-blk-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-secondary);margin:14px 2px 4px;display:flex;align-items:center;gap:7px;}
 .gf-blk-lbl .bd{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .fs-pick-prompt{padding:22px 14px;text-align:center;}
@@ -1372,7 +1372,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v111.17';
+const APP_VERSION='v111.25';
 
 // ===== THEME =====
 (function(){
@@ -1499,6 +1499,16 @@ async function s2WriteActive(){
   // same mp_teams / press_state jsonb columns, so stamp its flag in the same trip upsert
   // for the same flat-vs-nested signal hydrate uses. Idempotent.
   markGameFlighted('mp');
+  // Vegas writes the per-foursome [r][fi][si] teams into the same vegas_teams jsonb
+  // column, so stamp its flag in the same trip upsert for the flat-vs-nested signal.
+  markGameFlighted('vegas');
+  // Hammer writes per-foursome [r][fi][si] teams and [r][fi][hole] throw-state into the
+  // same hammer_teams / hammer_state jsonb columns, so stamp its flag in the same upsert.
+  markGameFlighted('hammer');
+  // Skins writes per-foursome [r][fi][si] teams into the same skins_teams jsonb column.
+  markGameFlighted('skins');
+  // Razzle writes per-foursome [r][fi] rotation order and [r][fi][mi] match-team overrides.
+  markGameFlighted('razzle');
   const tripId=s2TripId();
   if(!tripId)return;
 
@@ -1987,15 +1997,15 @@ async function s2ReadTrip(tripId){
       moneyTab:'golf',
       scores:newScores,
       mpTeams:hydrateFlightedGame(t.mp_teams,t.flighted_games,_flCounts,'mp',function(r,fi){return [];}),
-      vegTeams:t.vegas_teams||Array(nR).fill(null).map((_,r)=>defaultVegasTeams(r)),
-      skinsTeams:t.skins_teams||Array(nR).fill(null).map((_,r=>{const g=skinsGamesForRound(r);return Array(g).fill(null).map(()=>JSON.parse(JSON.stringify([[0,1],[2,3]])));})),
+      vegTeams:hydrateFlightedGame(t.vegas_teams,t.flighted_games,_flCounts,'vegas',function(r,fi){return [];}),
+      skinsTeams:hydrateFlightedGame(t.skins_teams,t.flighted_games,_flCounts,'skins',function(r,fi){return [];}),
       snakeHolder:hydrateFlightedGame(t.snake_holder,t.flighted_games,_flCounts,'snake',function(r,fi){return Array(18).fill(null);}),
       snakePot:t.snake_pot||Array(nR).fill(0),
       wolfOrder:hydrateFlightedGame(t.wolf_order,t.flighted_games,_flCounts,'wolf',function(r,fi){return (_rf[r][fi]||[]).slice();}),
       wolfPicks:hydrateFlightedGame(t.wolf_picks,t.flighted_games,_flCounts,'wolf',function(r,fi){return Array(18).fill(null);}),
-      hammerTeams:t.hammer_teams||Array(nR).fill(null).map(()=>[[[0,1],[2,3]]]),hammerState:t.hammer_state||Array(nR).fill(null).map(()=>Array(18).fill(null)),pressState:hydrateFlightedGame(t.press_state,t.flighted_games,_flCounts,'mp',function(r,fi){return [];}),razzleOrder:t.razzle_order||Array(nR).fill(null).map(()=>[0,1,2,3]),
+      hammerTeams:hydrateFlightedGame(t.hammer_teams,t.flighted_games,_flCounts,'hammer',function(r,fi){return [];}),hammerState:hydrateFlightedGame(t.hammer_state,t.flighted_games,_flCounts,'hammer',function(r,fi){return Array(18).fill(null);}),pressState:hydrateFlightedGame(t.press_state,t.flighted_games,_flCounts,'mp',function(r,fi){return [];}),razzleOrder:hydrateFlightedGame(t.razzle_order,t.flighted_games,_flCounts,'razzle',function(r,fi){return (_rf[r][fi]||[]).slice();}),
       roundFlights:_rf,currentFlight:0,
-      razzleMatchTeams:t.razzle_match_teams||Array(nR).fill(null).map(()=>[]),
+      razzleMatchTeams:hydrateFlightedGame(t.razzle_match_teams,t.flighted_games,_flCounts,'razzle',function(r,fi){return [];}),
       razzleFiredToasts:t.razzle_fired_toasts||{},
       razzleHWM:t.razzle_hwm||{},
       settledRounds:t.settled_rounds||[],
@@ -4382,7 +4392,7 @@ function viewTrip(id){
 // open (viewTrip) AND by the device-sync poll's trip-row rebuild. Keeping this as one
 // function means sync reuses the exact verified load path instead of a parallel one.
 function _s2RehydrateLoadedTrip(){
-  if(!STATE.expenses)STATE.expenses=[];if(!STATE.moneyTab)STATE.moneyTab='golf';if(!STATE.skinsViewRound)STATE.skinsViewRound=0;if(!STATE.settledRounds)STATE.settledRounds=[];if(!STATE.roundSettleData)STATE.roundSettleData={};if(!STATE.lockedRounds)STATE.lockedRounds=[];if(WK&&WK.rounds&&typeof sanitizeTeams==='function'){WK.rounds.forEach((_,r)=>{sanitizeTeams(r);reconcileWolfOrder(r);reconcileSnakeHolders(r);reconcileMPTeams(r);});}
+  if(!STATE.expenses)STATE.expenses=[];if(!STATE.moneyTab)STATE.moneyTab='golf';if(!STATE.skinsViewRound)STATE.skinsViewRound=0;if(!STATE.settledRounds)STATE.settledRounds=[];if(!STATE.roundSettleData)STATE.roundSettleData={};if(!STATE.lockedRounds)STATE.lockedRounds=[];if(WK&&WK.rounds&&typeof sanitizeTeams==='function'){WK.rounds.forEach((_,r)=>{sanitizeTeams(r);reconcileWolfOrder(r);reconcileSnakeHolders(r);reconcileMPTeams(r);reconcileVegasTeams(r);reconcileHammerTeams(r);reconcileSkinsTeams(r);reconcileRazzleOrder(r);});}
   // Re-hydrate course objects: prefer live CATALOG (handles built-in + loaded custom courses)
   // Fall back to blob's own course data for custom courses not yet in CATALOG
   // Either way, ensure holes array exists
@@ -4425,22 +4435,23 @@ function _s2RehydrateLoadedTrip(){
   if(!STATE.razzleMatchTeams)STATE.razzleMatchTeams=WK.rounds.map(()=>[]);
   WK.rounds.forEach((_,r)=>{
     if(!gameOn('razzle',r))return;
-    if(!STATE.razzleMatchTeams[r])STATE.razzleMatchTeams[r]=[];
-    // Mark all birdie keys for holes that already have scores
-    const _off_rb=holeOffset(r),_n_rb=roundHoleCount(r);for(let hi=_off_rb;hi<_off_rb+_n_rb;hi++){
-      const allScored=STATE.scores[r][hi]&&STATE.scores[r][hi].every(s=>s!==null);
-      if(allScored)STATE.razzleFiredToasts['birdie:'+r+':'+hi]=true;
-    }
-    // For closed matches: mark toasts fired and pre-populate team overrides so modal doesn't re-fire
-    const matches=calcRazzle(r);
-    matches.forEach(m=>{
-      if(m.winner){
-        STATE.razzleFiredToasts['bonus:'+r+':'+m.mi]=true;
-        // If teams not already saved for this match, save them now from calcRazzle result
-        if(!STATE.razzleMatchTeams[r][m.mi]){
-          STATE.razzleMatchTeams[r][m.mi]={tA:m.tA,tB:m.tB};
-        }
+    if(!Array.isArray(STATE.razzleMatchTeams[r]))STATE.razzleMatchTeams[r]=[];
+    flightsForRound(r).forEach((_rzfp,fi)=>{
+      if(!Array.isArray(STATE.razzleMatchTeams[r][fi]))STATE.razzleMatchTeams[r][fi]=[];
+      // Mark birdie keys for holes where every foursome member already has a score
+      const _off_rb=holeOffset(r),_n_rb=roundHoleCount(r);for(let hi=_off_rb;hi<_off_rb+_n_rb;hi++){
+        const allScored=STATE.scores[r][hi]&&_rzfp.length>0&&_rzfp.every(pi=>STATE.scores[r][hi][pi]!==null);
+        if(allScored)STATE.razzleFiredToasts['birdie:'+r+':'+fi+':'+hi]=true;
       }
+      // Closed matches: mark toasts fired and pre-populate team overrides so modal doesn't re-fire
+      calcRazzle(r,fi).forEach(m=>{
+        if(m.winner){
+          STATE.razzleFiredToasts['bonus:'+r+':'+fi+':'+m.mi]=true;
+          if(!STATE.razzleMatchTeams[r][fi][m.mi]){
+            STATE.razzleMatchTeams[r][fi][m.mi]={tA:m.tA,tB:m.tB};
+          }
+        }
+      });
     });
   });
 }
@@ -5468,6 +5479,8 @@ const rots=[[[0,2],[1,3]],[[0,1],[2,3]],[[0,1],[3,2]]];return Array(g).fill(null
 function defaultTeamsForFlight(r,fi){const g=mpGamesForRound(r),m=(flightsForRound(r)[fi]||[]),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];return Array(g).fill(null).map((_,gi)=>{const rot=rots[gi%3]||rots[0];return [rot[0].map(k=>m[k]),rot[1].map(k=>m[k])];});}
 function defaultHUTeamsForFlight(r,fi){const g=mpGamesForRound(r),m=(flightsForRound(r)[fi]||[]);if(m.length<=2)return Array(g).fill(null).map(()=>[[m[0]],[m[1]]]);const rots=[[[0,2],[1,3]],[[0,1],[2,3]],[[0,1],[3,2]]];return Array(g).fill(null).map((_,gi)=>{const rot=rots[gi%3]||rots[0];return [rot[0].map(k=>m[k]),rot[1].map(k=>m[k])];});}
 function defaultVegasTeams(r){const g=vegasSegForRound(r),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));}
+function defaultVegasTeamsForFlight(r,fi){const g=vegasSegForRound(r),m=(flightsForRound(r)[fi]||[]).slice(0,4);if(m.length<4)return Array(g).fill(null).map(()=>[[],[]]);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];return Array(g).fill(null).map((_,gi)=>{const rot=rots[gi%3]||rots[0];return [rot[0].map(k=>m[k]),rot[1].map(k=>m[k])];});}
+function defaultSkinsTeamsForFlight(r,fi){const g=skinsGamesForRound(r),m=(flightsForRound(r)[fi]||[]).slice(0,4);if(m.length<4)return Array(g).fill(null).map(()=>[[],[]]);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];return Array(g).fill(null).map((_,gi)=>{const rot=rots[gi%3]||rots[0];return [rot[0].map(k=>m[k]),rot[1].map(k=>m[k])];});}
 function sanitizeTeams(r){
 const _vp=pi=>Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];
 function isValid(teams){if(!teams||!teams.length)return false;if(isHeadsUp(r)){
@@ -5476,17 +5489,6 @@ if(_np<=2)return teams.every(game=>{if(!game||!game[0]||!game[1])return false;re
 return teams.every(game=>{if(!game||!game[0]||!game[1])return false;if(game[0].length!==2||game[1].length!==2)return false;const all=[game[0][0],game[0][1],game[1][0],game[1][1]];return new Set(all).size===4&&all.every(_vp);});}return teams.every(game=>{if(!game||!game[0]||!game[1])return false;const all=[game[0][0],game[0][1],game[1][0],game[1][1]];return all.length===4&&new Set(all).size===4&&all.every(_vp);});}
 function isValidFlat(teams){if(!teams||!teams.length)return false;return teams.every(game=>{if(!game||!game[0]||!game[1])return false;const all=[game[0][0],game[0][1],game[1][0],game[1][1]];return all.length===4&&new Set(all).size===4&&all.every(_vp);});}
 if(!isValid(STATE.mpTeams[r]))STATE.mpTeams[r]=isHeadsUp(r)?defaultHUTeams(r):defaultTeams(r);
-if(!isValid(STATE.vegTeams[r]))STATE.vegTeams[r]=defaultVegasTeams(r);
-const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];
-if(STATE.skinsTeams&&STATE.skinsTeams[r]&&(STATE.skinsTeams[r].length!==skinsGamesForRound(r)||!isValidFlat(STATE.skinsTeams[r]))){
-  const sg=skinsGamesForRound(r);
-  STATE.skinsTeams[r]=Array(sg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));
-}
-if(STATE.hammerTeams&&STATE.hammerTeams[r]){
-  const _hHU=WK.players.length<4;
-  const _hOk=_hHU?STATE.hammerTeams[r].every(game=>game&&game[0]&&game[1]&&game[0].length===1&&game[1].length===1&&game[0][0]!==game[1][0]&&_vp(game[0][0])&&_vp(game[1][0])):isValidFlat(STATE.hammerTeams[r]);
-  if(STATE.hammerTeams[r].length!==hammerSegsForRound(r)||!_hOk){STATE.hammerTeams[r]=defaultHammerTeams(r);}
-}
 }
 function defaultFlights(nP){var a=[];for(var i=0;i<nP;i++)a.push(i);return [a];}
 function padFlights(raw,nR,nP){
@@ -5590,14 +5592,14 @@ function flightMemberInitials(r,fi){
 function initState(netOffLow){const nR=WK.rounds.length,nP=WK.players.length;const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];const mkSkTeams=r=>{const g=skinsGamesForRound(r);return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));};
   // Foursomes must exist before per-round game defaults that key off them (Wolf order).
   const _rf0=Array(nR).fill(null).map(()=>defaultFlights(nP));
-  STATE={currentRound:0,currentHole:holeOffset(0),netOffLow:netOffLow||false,netOffFlightLow:false,mpViewRound:0,vegasViewRound:0,skinsViewRound:0,scRound:0,optPanel:'teams',teamsRound:0,roundRankOpen:false,emergencyRankOpen:false,moneyTab:'golf',expenses:[],settledRounds:[],roundSettleData:{},lockedRounds:[],scores:Array(nR).fill(null).map(()=>Array(18).fill(null).map(()=>Array(nP).fill(null))),mpTeams:_rf0.map((fl,r)=>fl.map(()=>isHeadsUp(r)?defaultHUTeams(r):defaultTeams(r))),vegTeams:Array(nR).fill(null).map((_,r)=>defaultVegasTeams(r)),skinsTeams:Array(nR).fill(null).map((_,r)=>mkSkTeams(r)),
+  STATE={currentRound:0,currentHole:holeOffset(0),netOffLow:netOffLow||false,netOffFlightLow:false,mpViewRound:0,vegasViewRound:0,skinsViewRound:0,scRound:0,optPanel:'teams',teamsRound:0,roundRankOpen:false,emergencyRankOpen:false,moneyTab:'golf',expenses:[],settledRounds:[],roundSettleData:{},lockedRounds:[],scores:Array(nR).fill(null).map(()=>Array(18).fill(null).map(()=>Array(nP).fill(null))),mpTeams:_rf0.map((fl,r)=>fl.map(()=>isHeadsUp(r)?defaultHUTeams(r):defaultTeams(r))),vegTeams:_rf0.map((fl,r)=>fl.map((_,fi)=>defaultVegasTeamsForFlight(r,fi))),skinsTeams:_rf0.map((fl,r)=>fl.map((_,fi)=>defaultSkinsTeamsForFlight(r,fi))),
     // Snake: per round, per foursome. [r][fi] = 18-hole holder array (null = no holder).
     snakeHolder:_rf0.map(fl=>fl.map(()=>Array(18).fill(null))),
     snakePot:Array(nR).fill(0),
-    razzleOrder:Array(nR).fill(null).map(()=>[0,1,2,3]),
-    razzleMatchTeams:Array(nR).fill(null).map(()=>[]),
-    hammerTeams:Array(nR).fill(null).map((_,ri)=>defaultHammerTeams(ri)),
-    hammerState:Array(nR).fill(null).map(()=>Array(18).fill(null)),
+    razzleOrder:_rf0.map(function(flrow){return flrow.map(function(mem){return (mem||[]).slice();});}),
+    razzleMatchTeams:_rf0.map(function(flrow){return flrow.map(function(){return [];});}),
+    hammerTeams:_rf0.map((fl,r)=>fl.map((_,fi)=>defaultHammerTeamsForFlight(r,fi))),
+    hammerState:_rf0.map(fl=>fl.map(()=>Array(18).fill(null))),
     // Wolf: per round, per foursome. [r][fi] = tee order / 18-hole picks for that foursome.
     wolfOrder:_rf0.map(fl=>fl.map(g=>g.slice())),
     wolfPicks:_rf0.map(fl=>fl.map(()=>Array(18).fill(null))),
@@ -5653,7 +5655,7 @@ function _updateActionRow(){
   const clearBtn=document.getElementById('actClearBtn');
   if(clearBtn){
     const hasScores=STATE.scores[r][hi].some(s=>s!==null);
-    const hasHammer=!!(STATE.hammerState&&STATE.hammerState[r]&&STATE.hammerState[r][hi]&&(STATE.hammerState[r][hi].throws?.length>0||STATE.hammerState[r][hi].conceded||STATE.hammerState[r][hi].accepted));
+    const _arfi=isMultiFlight(r)?(getFlightPick(r)||0):0;const _arhs=STATE.hammerState&&STATE.hammerState[r]&&STATE.hammerState[r][_arfi]&&STATE.hammerState[r][_arfi][hi];const hasHammer=!!(_arhs&&(_arhs.throws?.length>0||_arhs.conceded||_arhs.accepted));
     const canClear=!isReadOnly&&!isRoundLocked(r)&&(hasScores||hasHammer);
     clearBtn.classList.toggle('active',canClear);
     clearBtn.disabled=!canClear;
@@ -5671,7 +5673,7 @@ window._actClear=function(){
   const r=STATE.currentRound,hi=STATE.currentHole;
   if(isRoundLocked(r))return;
   WK.players.forEach((_,pi)=>{STATE.scores[r][hi][pi]=null;});
-  if(STATE.hammerState&&STATE.hammerState[r])STATE.hammerState[r][hi]=null;
+  if(STATE.hammerState&&STATE.hammerState[r])STATE.hammerState[r].forEach(function(fp){if(fp)fp[hi]=null;});
   if(STATE.snakeHolder&&STATE.snakeHolder[r])STATE.snakeHolder[r].forEach(function(fp){if(fp)fp[hi]=null;});
   if(STATE.wolfPicks&&STATE.wolfPicks[r])STATE.wolfPicks[r].forEach(function(fp){if(fp)fp[hi]=null;});
   s2MarkDirty(['score'],r+':'+hi);
@@ -5954,7 +5956,7 @@ function openRoundSheet(fnName,cur){
 }
 function closeRoundSheet(){const s=document.getElementById('roundSheet');if(s)s.remove();}
 function renderRdSel(cid,cur,fn){const el=document.getElementById(cid);if(!el)return;const isEntry=cid==='entryRdSel'||cid==='ctxRdSel';el.innerHTML=WK.rounds.map((rd,i)=>{const done=isRoundComplete(i);const lkd=(STATE.lockedRounds||[]).includes(i);const detailsLink=isEntry&&i===cur?`<div onclick="event.stopPropagation();showRoundDetails()" style="position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,0.5);color:rgba(255,255,255,0.8);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1">i</div>`:'';return`<div class="rd-btn${i===cur?' active':''}${done?' done':''}" onclick="${fn}(${i})">${roundLabel(i)}${lkd?' 🔒':''}<br><span style="font-size:9px;opacity:0.75">${rdLabel(i)}</span>${detailsLink}</div>`;}).join('');}
-function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=_flightResumeHole(r,(getFlightPick(r)||0));STATE.razzleToastOk=false;if(!STATE.razzleHWM)STATE.razzleHWM={};const _roundComplete=isRoundComplete(r);const _maxH=holeOffset(r)+roundHoleCount(r)-1;if(STATE.razzleHWM[r]===undefined)STATE.razzleHWM[r]=_roundComplete?_maxH:-1;renderRdSel('entryRdSel',r,'switchEntryRound');_renderCtxRdSel('scores');STATE.scRound=r;updateHoleUI();if(_scViewMode==='card')renderSCGrid();}
+function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=_flightResumeHole(r,(getFlightPick(r)||0));STATE.razzleToastOk=false;if(!STATE.razzleHWM)STATE.razzleHWM={};const _seRfi=getFlightPick(r)||0;if(!STATE.razzleHWM[r]||typeof STATE.razzleHWM[r]!=='object')STATE.razzleHWM[r]={};const _roundComplete=isRoundComplete(r);const _maxH=holeOffset(r)+roundHoleCount(r)-1;if(STATE.razzleHWM[r][_seRfi]===undefined)STATE.razzleHWM[r][_seRfi]=_roundComplete?_maxH:-1;renderRdSel('entryRdSel',r,'switchEntryRound');_renderCtxRdSel('scores');STATE.scRound=r;updateHoleUI();if(_scViewMode==='card')renderSCGrid();}
 function switchCardRound(r){STATE.scRound=r;renderRdSel('cardRdSel',r,'switchCardRound');STATE.scGridFlightSel=-1;renderSCGrid();}
 function switchGamesRound(r){STATE.gamesViewRound=r;renderGamesTab();}
 function switchGamesGame(g){STATE.gamesViewGame=g;renderGamesTab();}
@@ -6002,17 +6004,18 @@ function getNetOffLow(pi,hi,r,lowPlayers){const g=STATE.scores[r][hi][pi];return
 function huNetOffMatchLow(r){return (WK.rounds[r]&&WK.rounds[r].mpHUNetOffMatchLow===false)?false:true;}
 function _huToggleSeg(si){var b=document.getElementById('huSeg'+si);var c=document.getElementById('huChev'+si);if(!b)return;var op=b.style.display==='none';b.style.display=op?'block':'none';if(c)c.innerHTML=op?String.fromCharCode(9650):String.fromCharCode(9660);}
 function scoreClass(g,par){const d=g-par;if(d<=-2)return'eagle';if(d===-1)return'birdie';if(d===0)return'par';if(d===1)return'bogey';return'double';}
-function bestBird(team,hi,r){const par=WK.rounds[r].course.holes[hi]?.par||4;let b=0;team.forEach(pi=>{const n=getNet(pi,hi,r);if(n===null)return;const d=par-n;if(d>=2)b=Math.max(b,2);else if(d===1)b=Math.max(b,1);});return b;}
-function teamBirdCount(team,hi,r){const par=WK.rounds[r].course.holes[hi]?.par||4;return team.filter(pi=>{const n=getNet(pi,hi,r);return n!==null&&(par-n)>=1;}).length;}
-function birdTriggers(team,hi,r){const par=WK.rounds[r].course.holes[hi]?.par||4;return team.reduce((a,pi,idx)=>{const n=getNet(pi,hi,r);if(n!==null&&(par-n)>=1)a.push(idx);return a;},[]);}
-function calcVegas(hi,r){
-  const vSeg=vegasSegForRound(r),si=segForHole(hi-holeOffset(r),vSeg,roundHoleCount(r)),tA=STATE.vegTeams[r]?.[si]?.[0],tB=STATE.vegTeams[r]?.[si]?.[1];
+function bestBird(team,hi,r,fp){const par=WK.rounds[r].course.holes[hi]?.par||4;let b=0;team.forEach(pi=>{const n=fp?getNetForFlight(pi,hi,r,fp):getNet(pi,hi,r);if(n===null)return;const d=par-n;if(d>=2)b=Math.max(b,2);else if(d===1)b=Math.max(b,1);});return b;}
+function teamBirdCount(team,hi,r,fp){const par=WK.rounds[r].course.holes[hi]?.par||4;return team.filter(pi=>{const n=fp?getNetForFlight(pi,hi,r,fp):getNet(pi,hi,r);return n!==null&&(par-n)>=1;}).length;}
+function birdTriggers(team,hi,r,fp){const par=WK.rounds[r].course.holes[hi]?.par||4;return team.reduce((a,pi,idx)=>{const n=fp?getNetForFlight(pi,hi,r,fp):getNet(pi,hi,r);if(n!==null&&(par-n)>=1)a.push(idx);return a;},[]);}
+function calcVegas(hi,r,fi){fi=fi||0;
+  const vSeg=vegasSegForRound(r),si=segForHole(hi-holeOffset(r),vSeg,roundHoleCount(r)),tA=STATE.vegTeams[r]?.[fi]?.[si]?.[0],tB=STATE.vegTeams[r]?.[fi]?.[si]?.[1];
   if(!tA||!tB||tA.length!==2||tB.length!==2)return null;
-  const nA=tA.map(pi=>getNet(pi,hi,r)),nB=tB.map(pi=>getNet(pi,hi,r));
+  const _fp=flightsForRound(r)[fi]||[];
+  const nA=tA.map(pi=>getNetForFlight(pi,hi,r,_fp)),nB=tB.map(pi=>getNetForFlight(pi,hi,r,_fp));
   if(nA.includes(null)||nB.includes(null))return null;
   const loA=Math.min(...nA),hiA=Math.max(...nA),loB=Math.min(...nB),hiB=Math.max(...nB);
-  const bA=bestBird(tA,hi,r),cA=teamBirdCount(tA,hi,r);
-  const bB=bestBird(tB,hi,r),cB=teamBirdCount(tB,hi,r);
+  const bA=bestBird(tA,hi,r,_fp),cA=teamBirdCount(tA,hi,r,_fp);
+  const bB=bestBird(tB,hi,r,_fp),cB=teamBirdCount(tB,hi,r,_fp);
   // Configurable power tiers
   const _vFlip=roundVal('vegasFlip',r,WK.vegasFlip||'birdie');
   const _vDbl=roundVal('vegasDouble',r,WK.vegasDouble!==undefined?WK.vegasDouble:true);
@@ -6038,8 +6041,8 @@ function calcVegas(hi,r){
   if(doubled)diff*=2;
   const tied=numA===numB;
   // Track which player indices triggered birdie/better for circle display
-  const trigA=birdTriggers(tA,hi,r);
-  const trigB=birdTriggers(tB,hi,r);
+  const trigA=birdTriggers(tA,hi,r,_fp);
+  const trigB=birdTriggers(tB,hi,r,_fp);
   return{numA,numB,diff,aWins:!tied&&numA<numB,tied,aFlip,bFlip,doubled,tA,tB,loA,hiA,loB,hiB,trigA,trigB};
 }
 function calcMP(hi,r,fi){fi=fi||0;const mpG=mpGamesForRound(r),_th_mp=roundHoleCount(r),si=segForHole(hi-holeOffset(r),mpG,_th_mp),tA=STATE.mpTeams[r]?.[fi]?.[si]?.[0],tB=STATE.mpTeams[r]?.[fi]?.[si]?.[1];if(!tA||!tB||tA.length!==2||tB.length!==2)return null;const _fp=flightsForRound(r)[fi]||[];const nA=tA.map(pi=>getNetForFlight(pi,hi,r,_fp)),nB=tB.map(pi=>getNetForFlight(pi,hi,r,_fp));if(nA.includes(null)||nB.includes(null))return null;const bestA=Math.min(...nA),bestB=Math.min(...nB),halved=bestA===bestB;return{bestA,bestB,aWins:!halved&&bestA<bestB,halved,tA,tB,nA,nB};}
@@ -6280,6 +6283,70 @@ function reconcileMPTeams(r){
   }
   STATE.mpTeams[r]=outT;STATE.pressState[r]=outP;
 }
+function reconcileVegasTeams(r){
+  if((STATE.settledRounds||[]).includes(r)||isRoundLocked(r))return;
+  if(!STATE.vegTeams)STATE.vegTeams=WK.rounds.map(()=>[]);
+  if(!Array.isArray(STATE.vegTeams[r]))STATE.vegTeams[r]=[];
+  const fl=flightsForRound(r),nSeg=vegasSegForRound(r);
+  const _vp=pi=>Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];
+  const outT=[];
+  for(let fi=0;fi<fl.length;fi++){
+    const mem=(fl[fi]||[]),mset={};mem.forEach(pi=>{if(_vp(pi))mset[pi]=1;});
+    if(mem.length<4){outT[fi]=Array(nSeg).fill(null).map(()=>[[],[]]);continue;}
+    const stored=Array.isArray(STATE.vegTeams[r][fi])?STATE.vegTeams[r][fi]:null;
+    const ok=!!stored&&stored.length===nSeg&&stored.every(game=>{
+      if(!game||!Array.isArray(game[0])||!Array.isArray(game[1]))return false;
+      const all=game[0].concat(game[1]);
+      if(all.length!==4)return false;
+      return new Set(all).size===all.length&&all.every(pi=>mset[pi]);
+    });
+    outT[fi]=ok?stored:defaultVegasTeamsForFlight(r,fi);
+  }
+  STATE.vegTeams[r]=outT;
+}
+function reconcileSkinsTeams(r){
+  if((STATE.settledRounds||[]).includes(r)||isRoundLocked(r))return;
+  if(!STATE.skinsTeams)STATE.skinsTeams=WK.rounds.map(()=>[]);
+  if(!Array.isArray(STATE.skinsTeams[r]))STATE.skinsTeams[r]=[];
+  const fl=flightsForRound(r),nSeg=skinsGamesForRound(r);
+  const _vp=pi=>Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];
+  const outT=[];
+  for(let fi=0;fi<fl.length;fi++){
+    const mem=(fl[fi]||[]),mset={};mem.forEach(pi=>{if(_vp(pi))mset[pi]=1;});
+    if(mem.length<4){outT[fi]=Array(nSeg).fill(null).map(()=>[[],[]]);continue;}
+    const stored=Array.isArray(STATE.skinsTeams[r][fi])?STATE.skinsTeams[r][fi]:null;
+    const ok=!!stored&&stored.length===nSeg&&stored.every(game=>{
+      if(!game||!Array.isArray(game[0])||!Array.isArray(game[1]))return false;
+      const all=game[0].concat(game[1]);
+      if(all.length!==4)return false;
+      return new Set(all).size===all.length&&all.every(pi=>mset[pi]);
+    });
+    outT[fi]=ok?stored:defaultSkinsTeamsForFlight(r,fi);
+  }
+  STATE.skinsTeams[r]=outT;
+}
+function reconcileRazzleOrder(r){
+  if((STATE.settledRounds||[]).includes(r)||isRoundLocked(r))return;
+  if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[]);
+  if(!Array.isArray(STATE.razzleOrder[r]))STATE.razzleOrder[r]=[];
+  if(!STATE.razzleMatchTeams)STATE.razzleMatchTeams=WK.rounds.map(()=>[]);
+  if(!Array.isArray(STATE.razzleMatchTeams[r]))STATE.razzleMatchTeams[r]=[];
+  var fl=flightsForRound(r),outO=[],outM=[];
+  for(var fi=0;fi<fl.length;fi++){
+    var members=(fl[fi]||[]).filter(function(pi){return typeof pi==='number'&&pi>=0;});
+    var mset={};members.forEach(function(pi){mset[pi]=1;});
+    var stored=Array.isArray(STATE.razzleOrder[r][fi])?STATE.razzleOrder[r][fi]:[];
+    var kept=stored.filter(function(pi){return mset[pi];});
+    var kset={};kept.forEach(function(pi){kset[pi]=1;});
+    members.forEach(function(pi){if(!kset[pi])kept.push(pi);});
+    outO[fi]=kept;
+    // Match-team overrides reference player indices; if the order/membership changed, drop them
+    // (they'll be recomputed from the rotation). Keep only when the order is unchanged.
+    var storedM=Array.isArray(STATE.razzleMatchTeams[r][fi])?STATE.razzleMatchTeams[r][fi]:[];
+    outM[fi]=(JSON.stringify(kept)===JSON.stringify(stored))?storedM:[];
+  }
+  STATE.razzleOrder[r]=outO;STATE.razzleMatchTeams[r]=outM;
+}
 function reconcileSnakeHolders(r){
   if((STATE.settledRounds||[]).includes(r)||isRoundLocked(r))return;
   if(!STATE.snakeHolder)STATE.snakeHolder=WK.rounds.map(()=>[]);
@@ -6342,27 +6409,29 @@ function _snakeGamesCardHtml(r,fi){
   }
   return `<div class="section-card" style="margin-bottom:10px;padding:14px">${headerHtml}</div><div class="section-card" style="margin-bottom:10px;padding:14px"><div style="font-size:11px;color:var(--color-text-tertiary);letter-spacing:0.05em;margin-bottom:8px">HISTORY</div>${histHtml}${payoutHtml}</div>`;
 }
-function razzleTeamsForMatch(r,mi){
-  const ord=(STATE.razzleOrder&&STATE.razzleOrder[r])?STATE.razzleOrder[r]:[0,1,2,3];
+function razzleTeamsForMatch(r,mi,fi){
+  fi=fi||0;
+  const ord=(STATE.razzleOrder&&STATE.razzleOrder[r]&&STATE.razzleOrder[r][fi]&&STATE.razzleOrder[r][fi].length)?STATE.razzleOrder[r][fi]:((flightsForRound(r)[fi]||[]).length>=4?flightsForRound(r)[fi]:[0,1,2,3]);
   const rots=[[[ord[0],ord[1]],[ord[2],ord[3]]],[[ord[0],ord[2]],[ord[1],ord[3]]],[[ord[0],ord[3]],[ord[1],ord[2]]]];
-  const overrides=(STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r])?STATE.razzleMatchTeams[r]:[];
+  const overrides=(STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r]&&STATE.razzleMatchTeams[r][fi])?STATE.razzleMatchTeams[r][fi]:[];
   if(overrides[mi])return[overrides[mi].tA,overrides[mi].tB];
   return rots[mi%3];
 }
-function calcRazzleHole(hi,r,tA,tB){
-  const nA=tA.map(pi=>getNet(pi,hi,r)),nB=tB.map(pi=>getNet(pi,hi,r));
+function calcRazzleHole(hi,r,tA,tB,fp){
+  const nA=tA.map(pi=>getNetForFlight(pi,hi,r,fp)),nB=tB.map(pi=>getNetForFlight(pi,hi,r,fp));
   if(nA.includes(null)||nB.includes(null))return null;
   const sumA=nA[0]+nA[1],sumB=nB[0]+nB[1],bestA=Math.min(...nA),bestB=Math.min(...nB);
   return{teamPt:sumA<sumB?'a':sumB<sumA?'b':null,indPt:bestA<bestB?'a':bestB<bestA?'b':null,nA,nB,sumA,sumB,bestA,bestB};
 }
-function razzleBirdies(team,hi,r){
+function razzleBirdies(team,hi,r,fp){
   const par=WK.rounds[r].course.holes[hi]?.par||4;
   if(roundVal('razzleBirdieGross',r,WK.razzleBirdieGross)){
     return team.filter(pi=>{const g=STATE.scores[r][hi][pi];return g!==null&&(par-g)>=1;}).length;
   }
-  return team.filter(pi=>{const n=getNet(pi,hi,r);return n!==null&&(par-n)>=1;}).length;
+  return team.filter(pi=>{const n=getNetForFlight(pi,hi,r,fp);return n!==null&&(par-n)>=1;}).length;
 }
-function calcRazzle(r){
+function calcRazzle(r,fi){
+  fi=fi||0;
   if(!gameOn('razzle',r))return[];
   if(WK.players.length<4)return[];
   if(!WK.razzleVal)WK.razzleVal=5;
@@ -6370,25 +6439,27 @@ function calcRazzle(r){
   if(!WK.razzleSweepBonus)WK.razzleSweepBonus=5;
   if(!WK.razzle5HoleBonus)WK.razzle5HoleBonus=5;
   if(!WK.razzleSettle)WK.razzleSettle='perplayer';
-  if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[0,1,2,3]);
+  if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[]);
   if(!STATE.razzleMatchTeams)STATE.razzleMatchTeams=WK.rounds.map(()=>[]);
-  if(!STATE.razzleOrder[r])STATE.razzleOrder[r]=[0,1,2,3];
-  if(!STATE.razzleMatchTeams[r])STATE.razzleMatchTeams[r]=[];
+  if(!Array.isArray(STATE.razzleOrder[r]))STATE.razzleOrder[r]=[];
+  if(!Array.isArray(STATE.razzleMatchTeams[r]))STATE.razzleMatchTeams[r]=[];
+  const _rzfp=flightsForRound(r)[fi]||[];
+  if(_rzfp.length<4)return[];
   const base=roundVal('razzleVal',r,WK.razzleVal),birdBonus=roundVal('razzleBirdieBonus',r,WK.razzleBirdieBonus),sweepBonus=roundVal('razzleSweepBonus',r,WK.razzleSweepBonus),fiveBonus=roundVal('razzle5HoleBonus',r,WK.razzle5HoleBonus),settle=roundVal('razzleSettle',r,WK.razzleSettle||'perplayer');
   const _off_rz=holeOffset(r),_end_rz=_off_rz+roundHoleCount(r);
   const matches=[];let mi=0,h=_off_rz;
   while(h<_end_rz){
-    const teams=razzleTeamsForMatch(r,mi);
+    const teams=razzleTeamsForMatch(r,mi,fi);
     const tA=teams[0],tB=teams[1];
     let runA=0,birdieCount=0,holeLog=[],matchStartHole=h,matchClosed=false,closedOnHole=-1;
     while(h<_end_rz){
-      const res=calcRazzleHole(h,r,tA,tB);
+      const res=calcRazzleHole(h,r,tA,tB,_rzfp);
       if(!res)break;
       let holePtsA=0,holePtsB=0;
       if(res.teamPt==='a')holePtsA++;else if(res.teamPt==='b')holePtsB++;
       if(res.indPt==='a')holePtsA++;else if(res.indPt==='b')holePtsB++;
       runA+=holePtsA-holePtsB;
-      birdieCount+=razzleBirdies(tA,h,r)+razzleBirdies(tB,h,r);
+      birdieCount+=razzleBirdies(tA,h,r,_rzfp)+razzleBirdies(tB,h,r,_rzfp);
       const runLead=Math.abs(runA),runLeader=runA>0?'A':runA<0?'B':null;
       holeLog.push({hi:h,holePtsA,holePtsB,runA,runLead,runLeader,holeResult:holePtsA>holePtsB?'a':holePtsB>holePtsA?'b':'tie',nA:res.nA,nB:res.nB,sumA:res.sumA,sumB:res.sumB,bestA:res.bestA,bestB:res.bestB,teamPt:res.teamPt,indPt:res.indPt});
       if(Math.abs(runA)>=3){matchClosed=true;closedOnHole=h;h++;break;}
@@ -6409,17 +6480,20 @@ function calcRazzle(r){
 }
 function calcRazzleNet(r){
   const n=WK.players.length,net=Array(n).fill(0);
-  calcRazzle(r).forEach(m=>{
+  flightsForRound(r).forEach((_rnfp,fi)=>{
+  calcRazzle(r,fi).forEach(m=>{
     if(!m.winner)return;
     const winTeam=m.winner==='a'?m.tA:m.tB,loseTeam=m.winner==='a'?m.tB:m.tA;
     winTeam.forEach(pi=>net[pi]+=m.sv);
     loseTeam.forEach(pi=>net[pi]-=m.sv);
   });
+  });
   return net;
 }
 function razzleMatchClosedOnHole(r,hi){
   if(!gameOn('razzle',r))return false;
-  const matches=calcRazzle(r);
+  const _rmfi=isMultiFlight(r)?(getFlightPick(r)||0):0;
+  const matches=calcRazzle(r,_rmfi);
   return matches.some(m=>m.closedOnHole===hi&&hi<holeOffset(STATE.currentRound)+roundHoleCount(STATE.currentRound)-1);
 }
 
@@ -6580,7 +6654,9 @@ function renderRazzleBox(){
   const r=STATE.currentRound,hi=STATE.currentHole;
   if(!gameOn('razzle',r)){wrap.innerHTML='';return;}
   if(WK.players.length<4){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Razzle Dazzle</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>';return;}
-  const matches=calcRazzle(r);
+  const _rbfi=isMultiFlight(r)?(getFlightPick(r)||0):0;const _rbfp=flightsForRound(r)[_rbfi]||[];
+  if(_rbfp.length<4){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Razzle Dazzle</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">This foursome needs 4 players.</div></div>';return;}
+  const matches=calcRazzle(r,_rbfi);
   // Sweep and 5-hole bonus toasts — fire once per match, persisted across reloads
   if(!STATE.razzleFiredToasts)STATE.razzleFiredToasts={};
   const _toastOk=STATE.razzleToastOk===true&&!isRoundLocked(r);STATE.razzleToastOk=false;
@@ -6588,7 +6664,7 @@ function renderRazzleBox(){
     if(!cm.winner)return;
     if(isRoundLocked(r))return;
     if(!_toastOk)return;
-    const matchKey='bonus:'+r+':'+cm.mi;
+    const matchKey='bonus:'+r+':'+_rbfi+':'+cm.mi;
     if(STATE.razzleFiredToasts[matchKey])return;
     const toastMsgs=[];
     if(cm.sweep&&(roundVal('razzleSweepBonus',r,WK.razzleSweepBonus)||0)>0)toastMsgs.push('Sweep bonus! +$'+(roundVal('razzleSweepBonus',r,WK.razzleSweepBonus)||5).toFixed(2)+' to pot');
@@ -6598,7 +6674,7 @@ function renderRazzleBox(){
     toastMsgs.forEach((msg,tidx)=>{setTimeout(()=>{const el=document.getElementById('razzleBonusToast'+tidx);if(el)el.remove();const t=document.createElement('div');t.id='razzleBonusToast'+tidx;t.style.cssText='position:fixed;bottom:'+(80+tidx*55)+'px;left:50%;transform:translateX(-50%);background:#185FA5;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3500);},150+tidx*200);});
   });
   if(!matches.length){
-    const teams=razzleTeamsForMatch(r,0);
+    const teams=razzleTeamsForMatch(r,0,_rbfi);
     const nA=teams[0].map(i=>displayName(i)).join(' & '),nB=teams[1].map(i=>displayName(i)).join(' & ');
     wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle · Match 1',nA+' vs '+nB)+'<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
     return;
@@ -6609,7 +6685,7 @@ function renderRazzleBox(){
     // Determine the next match index from closed matches
     const closedCount=matches.filter(m=>m.winner!==null).length;
     const nextMi=closedCount;
-    const nextTeams=razzleTeamsForMatch(r,nextMi);
+    const nextTeams=razzleTeamsForMatch(r,nextMi,_rbfi);
     const nA=nextTeams[0].map(i=>displayName(i)).join(' & '),nB=nextTeams[1].map(i=>displayName(i)).join(' & ');
     wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle · Match '+(nextMi+1),'H'+(hi+1))+'<div class="mp-team-block"><div class="mp-team-letter">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nA+'</span></div></div></div><div class="mp-team-block"><div class="mp-team-letter">B</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nB+'</span></div></div></div><div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
     return;
@@ -6631,16 +6707,16 @@ function renderRazzleBox(){
   else{scoreStr='All square';}
   const holeWinner=holePtsA>holePtsB?'A':holePtsB>holePtsA?'B':null;
   const holeSummary=holePtsA===0&&holePtsB===0?'Tied (both cancel)':holePtsA===holePtsB?'Split 1-1':(holeWinner+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB));
-  const res=calcRazzleHole(hi,r,tA,tB);
+  const res=calcRazzleHole(hi,r,tA,tB,_rbfp);
   // Birdie bonus notification
   if(res){
     const par=WK.rounds[r].course.holes[hi]?.par||4;
-    const birdies=[...tA,...tB].filter(pi=>{if(roundVal('razzleBirdieGross',r,WK.razzleBirdieGross)){const g=STATE.scores[r][hi][pi];return g!==null&&(par-g)>=1;}const n=getNet(pi,hi,r);return n!==null&&(par-n)>=1;});
+    const birdies=[...tA,...tB].filter(pi=>{if(roundVal('razzleBirdieGross',r,WK.razzleBirdieGross)){const g=STATE.scores[r][hi][pi];return g!==null&&(par-g)>=1;}const n=getNetForFlight(pi,hi,r,_rbfp);return n!==null&&(par-n)>=1;});
     if(birdies.length>0&&(WK.razzleBirdieBonus||5)>0){
       const names=birdies.map(pi=>displayName(pi)).join(', ');
       const bonus='$'+((birdies.length*(roundVal('razzleBirdieBonus',r,WK.razzleBirdieBonus||5))).toFixed(2));
       if(!STATE.razzleFiredToasts)STATE.razzleFiredToasts={};
-      const key='birdie:'+r+':'+hi;
+      const key='birdie:'+r+':'+_rbfi+':'+hi;
       if(!STATE.razzleFiredToasts[key]&&!isRoundLocked(r)&&!isRoundComplete(r)){STATE.razzleFiredToasts[key]=true;setTimeout(()=>{const el=document.getElementById('razzleBirdieToast');if(el)el.remove();const t=document.createElement('div');t.id='razzleBirdieToast';t.style.cssText='position:fixed;bottom:185px;left:50%;transform:translateX(-50%);background:#1D9E75;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';t.textContent='Birdie bonus! '+names+' · +'+bonus+' to pot';document.body.appendChild(t);setTimeout(()=>t.remove(),3000);},100);}
     }
   }
@@ -6671,23 +6747,24 @@ function renderRazzleBox(){
   else{wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+hdr+'<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';}
 }
 function showRazzleTeamModal(r,nextHole){
-  if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[0,1,2,3]);
+  if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[]);
   if(!STATE.razzleMatchTeams)STATE.razzleMatchTeams=WK.rounds.map(()=>[]);
-  // Find the match index by looking at closed matches — next match is closedMatch.mi + 1
-  // Don't rely on calcRazzle finding the next match (it won't exist if nextHole has no scores)
-  const matches=calcRazzle(r);
+  const _smfi=isMultiFlight(r)?(getFlightPick(r)||0):0;
+  const _smfp=flightsForRound(r)[_smfi]||[];
+  // Find the match index by looking at closed matches; next match is closedMatch.mi + 1
+  const matches=calcRazzle(r,_smfi);
   const closedMatch=matches.find(m=>m.closedOnHole===nextHole-1);
   const mi=closedMatch?closedMatch.mi+1:matches.length;
-  const ord=STATE.razzleOrder[r]||[0,1,2,3];
+  const ord=(STATE.razzleOrder[r]&&STATE.razzleOrder[r][_smfi]&&STATE.razzleOrder[r][_smfi].length)?STATE.razzleOrder[r][_smfi]:(_smfp.length>=4?_smfp:[0,1,2,3]);
   const rots=[[[ord[0],ord[1]],[ord[2],ord[3]]],[[ord[0],ord[2]],[ord[1],ord[3]]],[[ord[0],ord[3]],[ord[1],ord[2]]]];
   const defaultTeams=rots[mi%3];
-  const overrides=STATE.razzleMatchTeams[r]||[];
+  const overrides=(STATE.razzleMatchTeams[r]&&STATE.razzleMatchTeams[r][_smfi])||[];
   const curTeams=overrides[mi]?[overrides[mi].tA,overrides[mi].tB]:defaultTeams;
   const old=document.getElementById('razzleModal');if(old)old.remove();
   const modal=document.createElement('div');
   modal.id='razzleModal';
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem';
-  function pOptsM(sel){return WK.players.map((p,i)=>'<option value="'+i+'"'+(i===sel?' selected':'')+'>'+displayName(i)+'</option>').join('');}
+  function pOptsM(sel){return _smfp.map(i=>'<option value="'+i+'"'+(i===sel?' selected':'')+'>'+displayName(i)+'</option>').join('');}
   // onchange handler: auto-swap when a player is selected in another slot
   window._razzleSwap=function(changedId,newVal){
     const ids=['rdlA0','rdlA1','rdlB0','rdlB1'];
@@ -6702,22 +6779,24 @@ function showRazzleTeamModal(r,nextHole){
     });
     document.getElementById(changedId).dataset.prev=newVal;
   };
-  modal.innerHTML='<div style="background:var(--color-background-primary);border-radius:12px;padding:20px;max-width:340px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.3)"><div style="font-size:16px;font-weight:600;color:var(--color-text-primary);margin-bottom:4px">Razzle Dazzle · Match '+(mi+1)+'</div><div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:16px">Hole '+(nextHole+1)+' · confirm teams for this match</div><div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:var(--color-text-tertiary);margin-bottom:6px">TEAM A</div><div style="display:flex;gap:6px;margin-bottom:6px"><select id="rdlA0" data-prev="'+curTeams[0][0]+'" class="team-dropdown" style="flex:1" onchange="_razzleSwap(\'rdlA0\',this.value)">'+pOptsM(curTeams[0][0])+'</select><select id="rdlA1" data-prev="'+curTeams[0][1]+'" class="team-dropdown" style="flex:1" onchange="_razzleSwap(\'rdlA1\',this.value)">'+pOptsM(curTeams[0][1])+'</select></div><div style="font-size:11px;font-weight:600;color:var(--color-text-tertiary);margin-bottom:6px">TEAM B</div><div style="display:flex;gap:6px"><select id="rdlB0" data-prev="'+curTeams[1][0]+'" class="team-dropdown" style="flex:1" onchange="_razzleSwap(\'rdlB0\',this.value)">'+pOptsM(curTeams[1][0])+'</select><select id="rdlB1" data-prev="'+curTeams[1][1]+'" class="team-dropdown" style="flex:1" onchange="_razzleSwap(\'rdlB1\',this.value)">'+pOptsM(curTeams[1][1])+'</select></div></div><div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:16px">Default: '+defaultTeams[0].map(i=>displayName(i)).join(' & ')+' vs '+defaultTeams[1].map(i=>displayName(i)).join(' & ')+'</div><div style="display:flex;gap:10px"><button onclick="confirmRazzleModal('+r+','+mi+','+nextHole+',true)" style="flex:1;padding:10px;border:0.5px solid var(--color-border-tertiary);border-radius:8px;background:var(--color-background-secondary);color:var(--color-text-primary);font-size:14px;cursor:pointer">Use default</button><button onclick="confirmRazzleModal('+r+','+mi+','+nextHole+',false)" style="flex:1;padding:10px;border:none;border-radius:8px;background:#1D9E75;color:#fff;font-size:14px;font-weight:500;cursor:pointer">Confirm</button></div></div>';
+  modal.innerHTML='<div style="background:var(--color-background-primary);border-radius:12px;padding:20px;max-width:340px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.3)"><div style="font-size:16px;font-weight:600;color:var(--color-text-primary);margin-bottom:4px">Razzle Dazzle · Match '+(mi+1)+'</div><div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:16px">Hole '+(nextHole+1)+' · confirm teams for this match</div><div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:var(--color-text-tertiary);margin-bottom:6px">TEAM A</div><div style="display:flex;gap:6px;margin-bottom:6px"><select id="rdlA0" data-prev="'+curTeams[0][0]+'" class="team-dropdown" style="flex:1" onchange="_razzleSwap(\'rdlA0\',this.value)">'+pOptsM(curTeams[0][0])+'</select><select id="rdlA1" data-prev="'+curTeams[0][1]+'" class="team-dropdown" style="flex:1" onchange="_razzleSwap(\'rdlA1\',this.value)">'+pOptsM(curTeams[0][1])+'</select></div><div style="font-size:11px;font-weight:600;color:var(--color-text-tertiary);margin-bottom:6px">TEAM B</div><div style="display:flex;gap:6px"><select id="rdlB0" data-prev="'+curTeams[1][0]+'" class="team-dropdown" style="flex:1" onchange="_razzleSwap(\'rdlB0\',this.value)">'+pOptsM(curTeams[1][0])+'</select><select id="rdlB1" data-prev="'+curTeams[1][1]+'" class="team-dropdown" style="flex:1" onchange="_razzleSwap(\'rdlB1\',this.value)">'+pOptsM(curTeams[1][1])+'</select></div></div><div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:16px">Default: '+defaultTeams[0].map(i=>displayName(i)).join(' & ')+' vs '+defaultTeams[1].map(i=>displayName(i)).join(' & ')+'</div><div style="display:flex;gap:10px"><button onclick="confirmRazzleModal('+r+','+mi+','+nextHole+',true,'+_smfi+')" style="flex:1;padding:10px;border:0.5px solid var(--color-border-tertiary);border-radius:8px;background:var(--color-background-secondary);color:var(--color-text-primary);font-size:14px;cursor:pointer">Use default</button><button onclick="confirmRazzleModal('+r+','+mi+','+nextHole+',false,'+_smfi+')" style="flex:1;padding:10px;border:none;border-radius:8px;background:#1D9E75;color:#fff;font-size:14px;font-weight:500;cursor:pointer">Confirm</button></div></div>';
   document.body.appendChild(modal);
 }
-function confirmRazzleModal(r,mi,nextHole,useDefault){
-  const ord=STATE.razzleOrder&&STATE.razzleOrder[r]?STATE.razzleOrder[r]:[0,1,2,3];
+function confirmRazzleModal(r,mi,nextHole,useDefault,fi){
+  fi=fi||0;
+  const ord=(STATE.razzleOrder&&STATE.razzleOrder[r]&&STATE.razzleOrder[r][fi])?STATE.razzleOrder[r][fi]:(flightsForRound(r)[fi]||[0,1,2,3]);
   const rots=[[[ord[0],ord[1]],[ord[2],ord[3]]],[[ord[0],ord[2]],[ord[1],ord[3]]],[[ord[0],ord[3]],[ord[1],ord[2]]]];
   const defTeams=rots[mi%3];
   const tA=useDefault?defTeams[0]:[parseInt(document.getElementById('rdlA0').value),parseInt(document.getElementById('rdlA1').value)];
   const tB=useDefault?defTeams[1]:[parseInt(document.getElementById('rdlB0').value),parseInt(document.getElementById('rdlB1').value)];
   if(!STATE.razzleMatchTeams)STATE.razzleMatchTeams=WK.rounds.map(()=>[]);
   if(!STATE.razzleMatchTeams[r])STATE.razzleMatchTeams[r]=[];
-  STATE.razzleMatchTeams[r][mi]={tA,tB};
+  if(!Array.isArray(STATE.razzleMatchTeams[r][fi]))STATE.razzleMatchTeams[r][fi]=[];
+  STATE.razzleMatchTeams[r][fi][mi]={tA,tB};
   document.getElementById('razzleModal').remove();
   if(!STATE.razzleHWM)STATE.razzleHWM={};
-  const _crmHwm=STATE.razzleHWM[r]??-1;
-  if(nextHole>_crmHwm){STATE.razzleHWM[r]=nextHole-1;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}
+  const _crmHwm=(STATE.razzleHWM[r]&&STATE.razzleHWM[r][fi]!==undefined)?STATE.razzleHWM[r][fi]:-1;
+  if(nextHole>_crmHwm){if(!STATE.razzleHWM[r])STATE.razzleHWM[r]={};STATE.razzleHWM[r][fi]=nextHole-1;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}
   STATE.currentHole=nextHole;
   autoSave();updateHoleUI();
 }
@@ -6726,16 +6805,30 @@ function renderRazzleRound(){
   const el=document.getElementById('gamesContent');
   if(!gameOn('razzle',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Razzle Dazzle is off for this round</div>';return;}
   if(WK.players.length<4){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Razzle Dazzle requires 4 players.</div>';return;}
-  const matches=calcRazzle(r);
-  if(!matches.length){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">No scores yet</div>';return;}
+  const multi=isMultiFlight(r);const fl=flightsForRound(r);
+  if(!multi){el.innerHTML=_renderRazzleFlightBlock(r,0,null);return;}
+  if(STATE.razzleViewFlight===undefined||STATE.razzleViewFlight===null)STATE.razzleViewFlight=-1;
+  let sel=STATE.razzleViewFlight;if(sel!==-1&&sel>=fl.length)sel=0;
+  let fh='<div class="gf-filter" style="margin:0 0 10px">';
+  fl.forEach((g,i)=>{fh+='<button class="'+(sel===i?'on':'')+'" onclick="_razzleViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});
+  fh+='<button class="'+(sel===-1?'on':'')+'" onclick="_razzleViewFilterPick(-1)">Both</button></div>';
+  const toRender=sel===-1?fl.map((_,i)=>i):[sel];
+  let html=fh;
+  toRender.forEach(fi=>{const labelHd=(sel===-1)?'<div class="gf-blk-lbl"><span class="bd" style="background:'+_flightsAccent0(fi)+'"></span>Foursome '+(fi+1)+'</div>':null;html+=_renderRazzleFlightBlock(r,fi,labelHd);});
+  el.innerHTML=html;
+}
+function _renderRazzleFlightBlock(r,fi,labelHd){
+  const _rzfp=flightsForRound(r)[fi]||[];
+  const matches=calcRazzle(r,fi);
   const fmt=v=>v>=0?'+$'+v.toFixed(2):'-$'+Math.abs(v).toFixed(2);
   if(!STATE.razzleExpanded)STATE.razzleExpanded={};
-  let html='';
+  if(!matches.length)return (labelHd||'')+'<div style="text-align:center;color:var(--color-text-secondary);padding:1.2rem 0">No scores yet</div>';
+  let html=labelHd||'';
   matches.forEach(m=>{
     if(!m.tA||!m.tB)return;
     const nA=m.tA.map(i=>displayName(i)).join(' & '),nB=m.tB.map(i=>displayName(i)).join(' & ');
     const aWins=m.winner==='a',bWins=m.winner==='b';
-    const key='m'+m.mi;
+    const key='r'+r+'f'+fi+'m'+m.mi;
     const expanded=STATE.razzleExpanded[key]===true;// default collapsed
     // Header summary
     const totalHolesInRound=WK.rounds[r].course.holes.length;
@@ -6766,7 +6859,7 @@ function renderRazzleRound(){
         const fRunAG=m.holeLog.length?m.holeLog[m.holeLog.length-1].runA:0;const fLeadG=Math.abs(fRunAG);const scoreStr=isPost?'closed':isClosed?((m.winner==='a'?'A':'B')+' wins '+fLeadG+'-0'):(hl.runLeader?hl.runLeader+' '+hl.runLead+'-0':'A/S');
         // Bonus indicators inline on the hole row
         const par=WK.rounds[r].course.holes[h]?.par||4;
-        const birdCount=[...m.tA,...m.tB].filter(pi=>{if(roundVal('razzleBirdieGross',r,WK.razzleBirdieGross)){const g=STATE.scores[r][h][pi];return g!==null&&(par-g)>=1;}const n=getNet(pi,h,r);return n!==null&&(par-n)>=1;}).length;
+        const birdCount=[...m.tA,...m.tB].filter(pi=>{if(roundVal('razzleBirdieGross',r,WK.razzleBirdieGross)){const g=STATE.scores[r][h][pi];return g!==null&&(par-g)>=1;}const n=getNetForFlight(pi,h,r,_rzfp);return n!==null&&(par-n)>=1;}).length;
         const holeNumInMatch=h-m.startHole; // 0-based
         const bonusBits=[];
         if(m.sweep&&holeNumInMatch===1)bonusBits.push({lbl:'sweep',clr:'#1D9E75'}); // sweep = won in 2 holes (index 1)
@@ -6798,7 +6891,7 @@ function renderRazzleRound(){
     }
     html+='</div>';
   });
-  el.innerHTML=html;
+  return html;
 }
 
 function toggleRazzleMatch(key){
@@ -6811,13 +6904,16 @@ function toggleMPGame(key){if(!STATE.mpExpanded)STATE.mpExpanded={};STATE.mpExpa
 function toggleHammerGame(key){if(!STATE.hammerExpanded)STATE.hammerExpanded={};STATE.hammerExpanded[key]=!STATE.hammerExpanded[key];_gsRefreshAfterEdit();}
 function toggleVegasGame(key){if(!STATE.vegasExpanded)STATE.vegasExpanded={};STATE.vegasExpanded[key]=!STATE.vegasExpanded[key];_gsRefreshAfterEdit();}
 function toggleSkinsGame(key){if(!STATE.skinsExpanded)STATE.skinsExpanded={};STATE.skinsExpanded[key]=!STATE.skinsExpanded[key];_gsRefreshAfterEdit();}
-function setRazzleOrder(r,pos,pi){
-  if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[0,1,2,3]);
-  const ord=[...STATE.razzleOrder[r]];
+function setRazzleOrder(r,pos,pi,fi){
+  fi=fi||0;
+  if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[]);
+  if(!Array.isArray(STATE.razzleOrder[r]))STATE.razzleOrder[r]=[];
+  const _base=(STATE.razzleOrder[r][fi]&&STATE.razzleOrder[r][fi].length)?STATE.razzleOrder[r][fi]:(flightsForRound(r)[fi]||[]).slice();
+  const ord=[..._base];
   const existingPos=ord.indexOf(pi);
   if(existingPos>=0&&existingPos!==pos){const tmp=ord[pos];ord[pos]=pi;ord[existingPos]=tmp;}
   else{ord[pos]=pi;}
-  STATE.razzleOrder[r]=ord;
+  STATE.razzleOrder[r][fi]=ord;
   autoSave();s2WriteActive();_gsRefreshAfterEdit();
 }
 function renderMPHoleBox(){
@@ -6932,11 +7028,11 @@ function renderMPHoleBox(){
   const resultBar=`<div class="mp-result-bar"><span class="mp-result-text">${winnerTxt}</span><span class="mp-result-text" style="font-size:13px;color:#1D9E75">${scoreStr}</span></div>`;
   wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdr}${mpTeamBlock(tA,res.nA,res.bestA,res.aWins)}${mpTeamBlock(tB,res.nB,res.bestB,!res.aWins&&!res.halved)}${resultBar}${pressBtn}${pressCard}</div>`;
 }
-function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap'),r=STATE.currentRound,hi=STATE.currentHole;if(!gameOn('vegas',STATE.currentRound)){wrap.innerHTML='';return;}if(WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Vegas</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>`;return;}const vSeg=vegasSegForRound(r),si=segForHole(hi-holeOffset(r),vSeg,roundHoleCount(r)),tA=STATE.vegTeams[r][si][0],tB=STATE.vegTeams[r][si][1];
+function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap'),r=STATE.currentRound,hi=STATE.currentHole;if(!gameOn('vegas',STATE.currentRound)){wrap.innerHTML='';return;}if(WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Vegas</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>`;return;}const _vfi=isMultiFlight(r)?(getFlightPick(r)||0):0;const _vfp=flightsForRound(r)[_vfi]||[];if(_vfp.length<4){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Vegas</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">This foursome needs 4 players.</div></div>';return;}const vSeg=vegasSegForRound(r),si=segForHole(hi-holeOffset(r),vSeg,roundHoleCount(r)),_vtv=STATE.vegTeams[r]&&STATE.vegTeams[r][_vfi]&&STATE.vegTeams[r][_vfi][si];if(!_vtv||!Array.isArray(_vtv[0])||!Array.isArray(_vtv[1])||_vtv[0].length<2||_vtv[1].length<2){wrap.innerHTML='';return;}const tA=_vtv[0],tB=_vtv[1];
   const vTeamLabel=`${displayName(tA[0])} & ${displayName(tA[1])} vs ${displayName(tB[0])} & ${displayName(tB[1])}`;
   const vSeg2=vegasSegForRound(r),seg2=getSegments(vSeg2,roundHoleCount(r))[si];
   const hdr=gameBoxHeaderWithFmt(`Vegas · G${si+1} H${seg2.start+holeOffset(r)+1}-${seg2.end+holeOffset(r)}`,'');
-  const res=calcVegas(hi,r);
+  const res=calcVegas(hi,r,_vfi);
   // Pre-scores: show team blocks with dashes (mirrors Skins layout)
   function vegasTeamBlockEmpty(ltr,team){const rows=team.map(pi=>`<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:3px"><span style="font-size:13px;color:var(--color-text-secondary)">net —</span></div>`).join('');return `<div style="display:flex;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="flex:2;display:flex;align-items:center"><div class="mp-team-letter">${ltr}</div><div>${team.map(pi=>`<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:3px">${displayName(pi)}</div>`).join('')}</div></div><div style="flex:1;text-align:center">${rows}</div><div style="flex:1;text-align:right"><span class="vegas-num" style="color:var(--color-text-tertiary)">—</span></div></div>`;}
   let inner=!res?(vegasTeamBlockEmpty('A',tA)+vegasTeamBlockEmpty('B',tB)):'placeholder';
@@ -6972,8 +7068,8 @@ function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap')
         </div>
       </div>`;
     }
-    const nA=tA.map(pi=>getNet(pi,hi,r));
-    const nB=tB.map(pi=>getNet(pi,hi,r));
+    const nA=tA.map(pi=>getNetForFlight(pi,hi,r,_vfp));
+    const nB=tB.map(pi=>getNetForFlight(pi,hi,r,_vfp));
     inner=vegasTeamBlock('A',tA,nA,res.numA,`${res.loA}+${res.hiA}`,fA,res.trigA)+
           vegasTeamBlock('B',tB,nB,res.numB,`${res.loB}+${res.hiB}`,fB,res.trigB)+
           `<div class="mp-result-bar">
@@ -6984,7 +7080,7 @@ function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap')
   wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdr}${inner}</div>`;}
 function renderHoleDots(){const r=STATE.currentRound;const nHoles=roundHoleCount(r);const off=holeOffset(r);const _need=_flightNeedIdxs(r);const makeDot=(i)=>{const done=STATE.scores[r][i]&&_need.every(function(pi){return STATE.scores[r][i][pi]!==null;});return'<div class="hdot'+(done?' done':'')+(i===STATE.currentHole?' cur':'')+'" onclick="jumpHole('+i+')">'+(i+1)+'</div>';};let html='';if(nHoles<=9){html='<div class="hole-dots-row">'+Array.from({length:nHoles},(_,i)=>makeDot(i+off)).join('')+'</div>';}else{const front=Array.from({length:9},(_,i)=>makeDot(i)).join('');const back=Array.from({length:nHoles-9},(_,i)=>makeDot(i+9)).join('');html='<div class="hole-dots-row">'+front+'</div><div class="hole-dots-row">'+back+'</div>';}document.getElementById('holeDots').innerHTML=html;}
 function jumpHole(i){STATE.razzleToastOk=false;STATE.currentHole=i;updateHoleUI();}
-function changeHole(d){const r=STATE.currentRound,curHole=STATE.currentHole,_maxHi=holeOffset(r)+roundHoleCount(r)-1,nextHole=Math.max(holeOffset(r),Math.min(_maxHi,curHole+d));if(d>0&&gameOn('razzle',r)&&razzleMatchClosedOnHole(r,curHole)&&!isRoundLocked(r)){const _cms=calcRazzle(r);const _closedM=_cms.find(m=>m.closedOnHole===curHole);const _nextMi=_closedM?_closedM.mi+1:_cms.length;const _teamsSet=STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r]&&STATE.razzleMatchTeams[r][_nextMi];if(!_teamsSet){showRazzleTeamModal(r,nextHole);return;}}if(d>0){if(!STATE.razzleHWM)STATE.razzleHWM={};const hwm=STATE.razzleHWM[r]??-1;if(nextHole>hwm){STATE.razzleHWM[r]=nextHole;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}}else{STATE.razzleToastOk=false;}STATE.currentHole=nextHole;updateHoleUI();}
+function changeHole(d){const r=STATE.currentRound,curHole=STATE.currentHole,_maxHi=holeOffset(r)+roundHoleCount(r)-1,nextHole=Math.max(holeOffset(r),Math.min(_maxHi,curHole+d));const _chfi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(d>0&&gameOn('razzle',r)&&razzleMatchClosedOnHole(r,curHole)&&!isRoundLocked(r)){const _cms=calcRazzle(r,_chfi);const _closedM=_cms.find(m=>m.closedOnHole===curHole);const _nextMi=_closedM?_closedM.mi+1:_cms.length;const _teamsSet=STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r]&&STATE.razzleMatchTeams[r][_chfi]&&STATE.razzleMatchTeams[r][_chfi][_nextMi];if(!_teamsSet){showRazzleTeamModal(r,nextHole);return;}}if(d>0){if(!STATE.razzleHWM)STATE.razzleHWM={};const hwm=(STATE.razzleHWM[r]&&STATE.razzleHWM[r][_chfi]!==undefined)?STATE.razzleHWM[r][_chfi]:-1;if(nextHole>hwm){if(!STATE.razzleHWM[r])STATE.razzleHWM[r]={};STATE.razzleHWM[r][_chfi]=nextHole;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}}else{STATE.razzleToastOk=false;}STATE.currentHole=nextHole;updateHoleUI();}
 function _fsPillOutside(e){
   var p=document.getElementById('fsPill');
   if(p&&!p.contains(e.target)){p.classList.remove('open');document.removeEventListener('click',_fsPillOutside,true);}
@@ -7048,7 +7144,7 @@ function updateHoleUI(){
     }
   }
   if(!STATE.razzleHWM)STATE.razzleHWM={};
-  if(STATE.razzleHWM[r]===undefined){const _rc=isRoundComplete(r);const _maxH2=holeOffset(r)+roundHoleCount(r)-1;STATE.razzleHWM[r]=_rc?_maxH2:-1;}
+  {const _uhFi=getFlightPick(r)||0;if(!STATE.razzleHWM[r]||typeof STATE.razzleHWM[r]!=='object')STATE.razzleHWM[r]={};if(STATE.razzleHWM[r][_uhFi]===undefined){const _rc=isRoundComplete(r);const _maxH2=holeOffset(r)+roundHoleCount(r)-1;STATE.razzleHWM[r][_uhFi]=_rc?_maxH2:-1;}}
   if(!WK.rounds[r]||!WK.rounds[r].course){console.error('updateHoleUI: missing round/course for round',r);return;}
   const hole=WK.rounds[r].course.holes?.[hi]||{par:4,si:hi+1};
   const locked=isRoundLocked(r),complete=isRoundComplete(r);
@@ -7090,7 +7186,7 @@ function resetHole(){
   // Clear scores
   WK.players.forEach((_,pi)=>{STATE.scores[r][hi][pi]=null;});
   // Clear hammer state for this hole
-  if(STATE.hammerState&&STATE.hammerState[r])STATE.hammerState[r][hi]=null;
+  if(STATE.hammerState&&STATE.hammerState[r])STATE.hammerState[r].forEach(function(fp){if(fp)fp[hi]=null;});
   // Clear snake for this hole across every foursome (holder is per foursome now).
   if(STATE.snakeHolder&&STATE.snakeHolder[r])STATE.snakeHolder[r].forEach(function(fp){if(fp)fp[hi]=null;});
   // Clear wolf picks for this hole
@@ -7353,25 +7449,13 @@ function setWolfOrder(r,pos,newPi,fi){
   autoSave();s2WriteActive();
   _gsRefreshAfterEdit();
 }
-function setDrop(gameIdx,slot,pIdx,roundIdx,isVegas,fi){fi=fi||0;if(isReadOnly)return;if(_pencilViewerLocked(roundIdx))return;const teams=isVegas?STATE.vegTeams[roundIdx][gameIdx]:STATE.mpTeams[roundIdx][fi][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderScorecard();}
-function copySkinsToMP(r){
-  if(!STATE.skinsTeams||!STATE.skinsTeams[r])return;
-  const sG=skinsGamesForRound(r),mpG=mpGamesForRound(r);
-  STATE.mpTeams[r]=Array(mpG).fill(null).map((_,si)=>{const skSi=Math.min(si,sG-1);return JSON.parse(JSON.stringify(STATE.skinsTeams[r][skSi]));});
-  autoSave();s2WriteActive();_gsRefreshAfterEdit();
-}
-function copySkinsToVegas(r){
-  if(!STATE.skinsTeams||!STATE.skinsTeams[r])return;
-  const sG=skinsGamesForRound(r),vG=vegasSegForRound(r);
-  STATE.vegTeams[r]=Array(vG).fill(null).map((_,si)=>{const skSi=Math.min(si,sG-1);return JSON.parse(JSON.stringify(STATE.skinsTeams[r][skSi]));});
-  autoSave();s2WriteActive();_gsRefreshAfterEdit();
-}
+function setDrop(gameIdx,slot,pIdx,roundIdx,isVegas,fi){fi=fi||0;if(isReadOnly)return;if(_pencilViewerLocked(roundIdx))return;const teams=isVegas?STATE.vegTeams[roundIdx][fi][gameIdx]:STATE.mpTeams[roundIdx][fi][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderScorecard();}
 function setDropHU(si,teamIdx,playerIdx,pIdx,r,fi){fi=fi||0;if(isReadOnly)return;const teams=STATE.mpTeams[r][fi][si];const old=teams[teamIdx][playerIdx];for(let t=0;t<2;t++)for(let p=0;p<2;p++){if(teams[t][p]===pIdx&&!(t===teamIdx&&p===playerIdx)){teams[t][p]=old;break;}}teams[teamIdx][playerIdx]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderMPHoleBox();}
-function copyMPToVegas(r){const mpG=mpGamesForRound(r),vG=vegasSegForRound(r);const _cfi=isMultiFlight(r)?(getFlightPick(r)||0):0;STATE.vegTeams[r]=Array(vG).fill(null).map((_,si)=>{const mpSi=Math.min(si,mpG-1);return JSON.parse(JSON.stringify(STATE.mpTeams[r][_cfi][mpSi]));});autoSave();s2WriteActive();_gsRefreshAfterEdit();}
-function setHammerDrop(si,slot,pIdx,r){
+function setHammerDrop(si,slot,pIdx,r,fi){
+  fi=fi||0;
   if(isReadOnly)return;
-  if(!STATE.hammerTeams||!STATE.hammerTeams[r])return;
-  const teams=STATE.hammerTeams[r][si];if(!teams)return;
+  if(!STATE.hammerTeams||!STATE.hammerTeams[r]||!STATE.hammerTeams[r][fi])return;
+  const teams=STATE.hammerTeams[r][fi][si];if(!teams)return;
   const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);
   const oldPi=teams[tIdx][pos];
   if(oldPi===pIdx)return;
@@ -7380,10 +7464,9 @@ function setHammerDrop(si,slot,pIdx,r){
   autoSave();s2WriteActive();_gsRefreshAfterEdit();renderHammerBox();
 }
 function setMPGamesForRound(r,g){if(!canEditTrip())return;WK.mpGamesPerRound[r]=g;STATE.mpTeams[r]=flightsForRound(r).map((_,_ffi)=>isHeadsUp(r)?defaultHUTeamsForFlight(r,_ffi):defaultTeamsForFlight(r,_ffi));if(STATE.pressState)STATE.pressState[r]=flightsForRound(r).map(()=>[]);autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderMPHoleBox();}
-function setVegaSegsForRound(r,v){if(!canEditTrip())return;WK.vegasSegsPerRound[r]=v;const g=vegasSegForRound(r),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.vegTeams[r]=Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));autoSave();s2WriteActive();_gsRefreshAfterEdit();renderVegasBoxWrap();}
+function setVegaSegsForRound(r,v){if(!canEditTrip())return;WK.vegasSegsPerRound[r]=v;STATE.vegTeams[r]=flightsForRound(r).map((_,_ffi)=>defaultVegasTeamsForFlight(r,_ffi));autoSave();s2WriteActive();_gsRefreshAfterEdit();renderVegasBoxWrap();}
 function skinsGamesForRound(r){const ov=WK.skinsGamesPerRound?.[r];return(ov>0)?ov:(WK.skinsGamesDefault>0?WK.skinsGamesDefault:mpGamesForRound(r));}
-function copyMPToSkins(r){const mpG=mpGamesForRound(r),sG=skinsGamesForRound(r),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];const _cfi=isMultiFlight(r)?(getFlightPick(r)||0):0;STATE.skinsTeams[r]=Array(sG).fill(null).map((_,si)=>{const mpSi=Math.min(si,mpG-1);return JSON.parse(JSON.stringify(STATE.mpTeams[r][_cfi][mpSi]));});autoSave();s2WriteActive();_gsRefreshAfterEdit();}
-function setSkinsGamesForRound(r,v){if(!canEditTrip())return;if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=WK.rounds.map(()=>0);WK.skinsGamesPerRound[r]=v;const g=skinsGamesForRound(r),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];if(!STATE.skinsTeams)STATE.skinsTeams=[];STATE.skinsTeams[r]=Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));sanitizeTeams(r);autoSave();s2WriteActive();_gsRefreshAfterEdit();}
+function setSkinsGamesForRound(r,v){if(!canEditTrip())return;if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=WK.rounds.map(()=>0);WK.skinsGamesPerRound[r]=v;if(!STATE.skinsTeams)STATE.skinsTeams=[];STATE.skinsTeams[r]=flightsForRound(r).map((_,_ffi)=>defaultSkinsTeamsForFlight(r,_ffi));reconcileSkinsTeams(r);autoSave();s2WriteActive();_gsRefreshAfterEdit();}
 
 function wolfOrderForRound(r,fi){const stored=STATE.wolfOrder&&STATE.wolfOrder[r]&&STATE.wolfOrder[r][fi];if(stored&&stored.length)return stored;const fl=flightsForRound(r)[fi];return (fl&&fl.length)?fl:[0,1,2,3];}
 function wolfPicksForRound(r,fi){return(STATE.wolfPicks&&STATE.wolfPicks[r]&&STATE.wolfPicks[r][fi])||Array(18).fill(null);}
@@ -7684,6 +7767,62 @@ function renderWolfBox(){
 function _wolfViewFilterPick(sel){STATE.wolfViewFlight=sel;renderGamesContent();}
 function _snakeViewFilterPick(sel){STATE.snakeViewFlight=sel;renderGamesContent();}
 function _mpViewFilterPick(sel){STATE.mpViewFlight=sel;renderGamesContent();}
+function _skinsViewFilterPick(sel){STATE.skinsViewFlight=sel;renderGamesContent();}
+function _razzleViewFilterPick(sel){STATE.razzleViewFlight=sel;renderGamesContent();}
+// Shared sliding-pill positioner for every .gf-filter bar (games, setup, scorecard grid).
+// Auto-injects a .gf-pill and animates it under the active button. Because the filter
+// handlers re-render the bar DOM, we remember the last geometry per bar signature and
+// animate from it, so the pill slides across the re-render instead of jumping.
+var _gfLastPos={};
+function _gfSlide(){
+  var bars=document.querySelectorAll('.gf-filter');
+  if(!bars.length)return;
+  Array.prototype.forEach.call(bars,function(bar){
+    var pill=bar.querySelector('.gf-pill');
+    if(!pill){pill=document.createElement('div');pill.className='gf-pill';bar.insertBefore(pill,bar.firstChild);}
+    var on=bar.querySelector('button.on')||bar.querySelector('button');
+    if(!on){pill.style.display='none';return;}
+    pill.style.display='';
+    var btns=bar.querySelectorAll('button');
+    var sig=Array.prototype.map.call(btns,function(b){return b.textContent;}).join('|');
+    var tl=on.offsetLeft,tw=on.offsetWidth;
+    if(!tw){return;}
+    var stored=_gfLastPos[sig];
+    if(!stored){
+      // First appearance: place instantly.
+      pill.style.transition='none';pill.style.left=tl+'px';pill.style.width=tw+'px';
+      void pill.offsetWidth;pill.style.transition='';
+      _gfLastPos[sig]={l:tl,w:tw};
+    }else if(stored.l!==tl||stored.w!==tw){
+      // Selection (or size) changed: seed at the old spot, then glide to the new one.
+      // The pill is usually a fresh element after the bar re-rendered, so we seed from
+      // the remembered position rather than its (empty) inline style.
+      pill.style.transition='none';pill.style.left=stored.l+'px';pill.style.width=stored.w+'px';
+      void pill.offsetWidth;pill.style.transition='';
+      requestAnimationFrame(function(){pill.style.left=tl+'px';pill.style.width=tw+'px';});
+      _gfLastPos[sig]={l:tl,w:tw};
+    }else if(!pill.style.left){
+      // Same selection, freshly injected pill: seed it. Never touch an already-placed
+      // or mid-animation pill here, or we'd snap and kill the glide.
+      pill.style.transition='none';pill.style.left=tl+'px';pill.style.width=tw+'px';
+      void pill.offsetWidth;pill.style.transition='';
+    }
+  });
+}
+var _gfRaf=null;
+function _gfScheduleSlide(){if(_gfRaf)return;_gfRaf=requestAnimationFrame(function(){_gfRaf=null;_gfSlide();});}
+(function _gfInitObserver(){
+  function _start(){
+    try{
+      new MutationObserver(_gfScheduleSlide).observe(document.body,{childList:true,subtree:true});
+      window.addEventListener('resize',_gfScheduleSlide);
+      _gfSlide();
+    }catch(e){}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',_start);else _start();
+})();
+function _hammerViewFilterPick(sel){STATE.hammerViewFlight=sel;renderGamesContent();}
+function _vegViewFilterPick(sel){STATE.vegasViewFlight=sel;renderGamesContent();}
 // One foursome's grid + standings, exactly today's markup, scoped to flightPlayers.
 // labelHd, when set, prefixes a colored-dot "Foursome N" header above the pair
 // (Both mode); when null the header stays exactly as it is today (single view).
@@ -7779,7 +7918,7 @@ function renderWolfRound(){
 }
 
 function renderTeamsPanel(){/* Stage 3: Game Setup tab eliminated. Scoring config + Weekend bet moved into renderWeekendPanel(). Per-game setup is migrating into the Games tab. This stub remains so any stray legacy caller does not throw. */}
-function setDropSkins(gameIdx,slot,pIdx,roundIdx){if(isReadOnly)return;if(_pencilViewerLocked(roundIdx))return;if(!STATE.skinsTeams)return;const teams=STATE.skinsTeams[roundIdx][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();}
+function setDropSkins(gameIdx,slot,pIdx,roundIdx,fi){fi=fi||0;if(isReadOnly)return;if(_pencilViewerLocked(roundIdx))return;if(!STATE.skinsTeams||!STATE.skinsTeams[roundIdx]||!STATE.skinsTeams[roundIdx][fi])return;const teams=STATE.skinsTeams[roundIdx][fi][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();}
 function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span style="display:inline-flex;align-items:center;gap:6px">Active players<button onclick="window._snapshotInfo()" aria-label="About these handicaps" style="background:transparent;border:none;padding:0;cursor:pointer;line-height:1;display:inline-flex;align-items:center"><i class="ti ti-info-circle" style="font-size:15px;color:#5f7385"></i></button></span></div>`;WK.players.forEach((p,i)=>{const eff=effHdcp(i,r);html+=`<div class="setup-row"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><input class="inline-edit" value="${p.name}" style="flex:1;min-width:60px" onchange="if(!canEditTrip())return;WK.players[${i}].name=this.value;WK.players[${i}].ini=this.value.substring(0,2).toUpperCase();renderPlayersPanel();renderScorecard();renderBanner();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin:0 3px">idx</span><input class="ie-num" type="text" inputmode="decimal" value="${sbHcpDisplay(p.idx)}" style="width:70px" onchange="if(!canEditTrip())return;WK.players[${i}].idx=idxFromInput(this.value,0);renderPlayersPanel();renderScorecard();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px;white-space:nowrap">→ ${chDisplay(eff)}</span>${WK.players.length>2?`<button class="btn-danger" onclick="removePlayer(${i})">✕</button>`:''}</div>`;});if(WK.players.length<12){html+=`<div style="border-top:0.5px solid var(--color-border-tertiary)"><div id="addPlayerRow" style="display:none;padding:10px 12px"><div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><input class="text-input" id="apFirst" placeholder="First" style="flex:2;font-size:13px;padding:6px 8px"/><input class="text-input" id="apLast" placeholder="Last" style="flex:2;font-size:13px;padding:6px 8px"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0">Hdcp</span><input class="ie-num" id="apIdx" type="text" inputmode="decimal" placeholder="10" style="width:58px;flex-shrink:0"/></div><div style="display:flex;gap:8px"><button class="btn-primary" style="font-size:12px;padding:5px 12px" onclick="confirmAddPlayer()">Save</button><button class="btn-secondary" style="font-size:12px;padding:5px 12px" onclick="toggleAddPlayerRow()">Cancel</button></div></div><button class="btn-sm" id="addPlayerToggleBtn" onclick="toggleAddPlayerRow()" style="margin:8px 12px">+ Add player</button></div>`;}html+=`</div>`;
     document.getElementById('opt-panel-players').innerHTML=html;
 }
@@ -7826,7 +7965,7 @@ function _flightsMutate(r,fn){
   while(STATE.roundFlights.length<WK.rounds.length)STATE.roundFlights.push(defaultFlights(WK.players.length));
   fn(STATE.roundFlights[r]);
   reconcileWolfOrder(r);
-  reconcileSnakeHolders(r);reconcileMPTeams(r);
+  reconcileSnakeHolders(r);reconcileMPTeams(r);reconcileVegasTeams(r);reconcileHammerTeams(r);reconcileSkinsTeams(r);reconcileRazzleOrder(r);
   // Intentionally NOT re-running padFlights here: it strips empty non-first
   // foursomes (e.g. one just added via + Add foursome, or a fresh "Select
   // player..." slot), which would erase the very placeholder the user is
@@ -7850,8 +7989,8 @@ function _flightsAddFoursome(r){_flightsMutate(r,fl=>{fl.push([-1]);});}
 function toggleEditPanel(eid,btnId){const panel=document.getElementById(eid);const btn=document.getElementById(btnId);const display=document.getElementById(eid+'_display');if(!panel)return;const isOpen=panel.style.display!=='none';panel.style.display=isOpen?'none':'block';if(display)display.style.display=isOpen?'flex':'none';if(btn)btn.style.display=isOpen?'inline-block':'none';if(isOpen){const mc=eid.match(/^ce_(.+)$/);if(mc){const cname=mc[1].replace(/_/g,' ');if(CATALOG[cname])saveCourse(cname);}renderPlayersPanel();}}
 function toggleAddPlayerRow(){const row=document.getElementById('addPlayerRow');const btn=document.getElementById('addPlayerToggleBtn');if(!row)return;const opening=row.style.display==='none';row.style.display=opening?'block':'none';if(btn)btn.style.display=opening?'none':'inline-block';if(opening)setTimeout(function(){var el=document.getElementById('apFirst');if(el)el.focus();},50);}
 function confirmAddPlayer(){if(!canEditTrip())return;var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=idxFromInput(document.getElementById('apIdx')?document.getElementById('apIdx').value:'',10);if(!first){alert('Enter a first name.');return;}if(WK.players.length>=12)return;var c=pickColor();var newP={name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};var allPlayers=WK.players.concat([newP]);resolveDisplayNames(allPlayers);WK.players.push(newP);WK.rounds.forEach(function(_,r){STATE.scores[r].forEach(function(h){h.push(null);});sanitizeTeams(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();if(typeof renderGamesTab==='function'&&document.getElementById('view-games')&&document.getElementById('view-games').style.display!=='none')renderGamesTab();autoSave();}
-function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=12)return;const c=pickColor(),i=WK.players.length;WK.players.push({name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));sanitizeTeams(r);});if(STATE)STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);if(STATE)WK.rounds.forEach((_,r)=>{reconcileWolfOrder(r);reconcileSnakeHolders(r);reconcileMPTeams(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();}
-function removePlayer(idx){if(!canEditTrip())return;if(WK.players.length<=2){alert('Need at least 2 players.');return;}WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=STATE.mpTeams.map(function(rd){return fixTeams(rd);});STATE.vegTeams=fixTeams(STATE.vegTeams);if(STATE.skinsTeams)STATE.skinsTeams=fixTeams(STATE.skinsTeams);if(STATE.hammerTeams)STATE.hammerTeams=fixTeams(STATE.hammerTeams);if(STATE.roundFlights)STATE.roundFlights=padFlights(STATE.roundFlights.map(function(fls){return fls.map(function(fl){return fl.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});}),WK.rounds.length,WK.players.length);if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';WK.rounds.forEach((_,r)=>{sanitizeTeams(r);reconcileWolfOrder(r);reconcileSnakeHolders(r);reconcileMPTeams(r);});renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
+function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=12)return;const c=pickColor(),i=WK.players.length;WK.players.push({name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));sanitizeTeams(r);});if(STATE)STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);if(STATE)WK.rounds.forEach((_,r)=>{reconcileWolfOrder(r);reconcileSnakeHolders(r);reconcileMPTeams(r);reconcileVegasTeams(r);reconcileHammerTeams(r);reconcileSkinsTeams(r);reconcileRazzleOrder(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();}
+function removePlayer(idx){if(!canEditTrip())return;if(WK.players.length<=2){alert('Need at least 2 players.');return;}WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=STATE.mpTeams.map(function(rd){return fixTeams(rd);});STATE.vegTeams=STATE.vegTeams.map(function(rd){return fixTeams(rd);});if(STATE.skinsTeams)STATE.skinsTeams=STATE.skinsTeams.map(function(rd){return fixTeams(rd);});if(STATE.hammerTeams)STATE.hammerTeams=STATE.hammerTeams.map(function(rd){return fixTeams(rd);});if(STATE.roundFlights)STATE.roundFlights=padFlights(STATE.roundFlights.map(function(fls){return fls.map(function(fl){return fl.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});}),WK.rounds.length,WK.players.length);if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';WK.rounds.forEach((_,r)=>{sanitizeTeams(r);reconcileWolfOrder(r);reconcileSnakeHolders(r);reconcileMPTeams(r);reconcileVegasTeams(r);reconcileHammerTeams(r);reconcileSkinsTeams(r);reconcileRazzleOrder(r);});renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
 // Trip admin management handlers
 var _tripAdminPickerMembers=[];
 window._tripAdminAdd=function(idx){
@@ -8328,7 +8467,7 @@ window._wkSetCourse=function(ri,cn){
   }
   s2MarkDirty(['trip']);autoSave();s2WriteActive();renderWeekendPanel();
 };
-function addRound(){if(!canEditTrip())return;const cn=document.getElementById('newRoundCourse')?.value||Object.keys(CATALOG)[0];WK.rounds.push({courseName:cn,course:CATALOG[cn]});const nP=WK.players.length;STATE.scores.push(Array(18).fill(null).map(()=>Array(nP).fill(null)));const g=WK.mpGamesDefault;WK.mpGamesPerRound.push(g);WK.vegasSegsPerRound.push(WK.vegasSegsDefault);if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=[];WK.skinsGamesPerRound.push(0);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams.push([Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);const vg=vegasSegForRound(WK.rounds.length-1);STATE.vegTeams.push(Array(vg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));if(!STATE.hammerTeams)STATE.hammerTeams=[];STATE.hammerTeams.push(defaultHammerTeams(WK.rounds.length-1));if(!STATE.hammerState)STATE.hammerState=[];STATE.hammerState.push(Array(18).fill(null));if(!WK.hammerSegsPerRound)WK.hammerSegsPerRound=[];WK.hammerSegsPerRound.push(WK.hammerSegsDefault||1);if(!STATE.pressState)STATE.pressState=[];STATE.pressState.push([[]]);if(!STATE.skinsTeams)STATE.skinsTeams=[];const sg=skinsGamesForRound(WK.rounds.length-1);STATE.skinsTeams.push(Array(sg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0]))));STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);const _newR=WK.rounds.length-1;if(_newR>0&&STATE.roundFlights[_newR-1]&&STATE.roundFlights[_newR-1].length>1){STATE.roundFlights[_newR]=JSON.parse(JSON.stringify(STATE.roundFlights[_newR-1]));}reconcileWolfOrder(_newR);reconcileSnakeHolders(_newR);reconcileMPTeams(_newR);renderWeekendPanel();}
+function addRound(){if(!canEditTrip())return;const cn=document.getElementById('newRoundCourse')?.value||Object.keys(CATALOG)[0];WK.rounds.push({courseName:cn,course:CATALOG[cn]});const nP=WK.players.length;STATE.scores.push(Array(18).fill(null).map(()=>Array(nP).fill(null)));const g=WK.mpGamesDefault;WK.mpGamesPerRound.push(g);WK.vegasSegsPerRound.push(WK.vegasSegsDefault);if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=[];WK.skinsGamesPerRound.push(0);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams.push([Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);const vg=vegasSegForRound(WK.rounds.length-1);STATE.vegTeams.push([Array(vg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);if(!STATE.hammerTeams)STATE.hammerTeams=[];STATE.hammerTeams.push([defaultHammerTeams(WK.rounds.length-1)]);if(!STATE.hammerState)STATE.hammerState=[];STATE.hammerState.push([Array(18).fill(null)]);if(!WK.hammerSegsPerRound)WK.hammerSegsPerRound=[];WK.hammerSegsPerRound.push(WK.hammerSegsDefault||1);if(!STATE.pressState)STATE.pressState=[];STATE.pressState.push([[]]);if(!STATE.skinsTeams)STATE.skinsTeams=[];const sg=skinsGamesForRound(WK.rounds.length-1);STATE.skinsTeams.push([Array(sg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);const _newR=WK.rounds.length-1;if(_newR>0&&STATE.roundFlights[_newR-1]&&STATE.roundFlights[_newR-1].length>1){STATE.roundFlights[_newR]=JSON.parse(JSON.stringify(STATE.roundFlights[_newR-1]));}reconcileWolfOrder(_newR);reconcileSnakeHolders(_newR);reconcileMPTeams(_newR);reconcileVegasTeams(_newR);reconcileHammerTeams(_newR);reconcileSkinsTeams(_newR);reconcileRazzleOrder(_newR);renderWeekendPanel();}
 function launchE9(){
   _e9State={step:1,cn:null,nineHole:null,inStandings:false,tee:null,pendingCn:null};
   _showE9Modal();
@@ -8594,24 +8733,24 @@ function addE9Round(){
   if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=[];
   WK.skinsGamesPerRound.splice(insertAt,0,nineHole?1:3);
   STATE.mpTeams.splice(insertAt,0,[Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);
-  STATE.vegTeams.splice(insertAt,0,Array(1).fill(null).map(()=>JSON.parse(JSON.stringify(rots[0]))));
+  STATE.vegTeams.splice(insertAt,0,[Array(1).fill(null).map(()=>JSON.parse(JSON.stringify(rots[0])))]);
   if(!STATE.hammerTeams)STATE.hammerTeams=[];
-  STATE.hammerTeams.splice(insertAt,0,defaultHammerTeams(insertAt));
+  STATE.hammerTeams.splice(insertAt,0,[defaultHammerTeams(insertAt)]);
   if(!STATE.hammerState)STATE.hammerState=[];
-  STATE.hammerState.splice(insertAt,0,Array(18).fill(null));
+  STATE.hammerState.splice(insertAt,0,[Array(18).fill(null)]);
   if(!WK.hammerSegsPerRound)WK.hammerSegsPerRound=[];
   WK.hammerSegsPerRound.splice(insertAt,0,1);
   if(!STATE.pressState)STATE.pressState=[];
   STATE.pressState.splice(insertAt,0,[[]]);
   if(!STATE.skinsTeams)STATE.skinsTeams=[];
-  STATE.skinsTeams.splice(insertAt,0,Array(1).fill(null).map(()=>JSON.parse(JSON.stringify(rots[0]))));
+  STATE.skinsTeams.splice(insertAt,0,[Array(1).fill(null).map(()=>JSON.parse(JSON.stringify(rots[0])))]);
   // Foursomes: inherit the prior round's split (or default to a single foursome, which then
   // prompts on the Scores screen). Mirrors addRound so added rounds are not left unsplit.
   if(!STATE.roundFlights)STATE.roundFlights=[];
   const _inhF=(insertAt>0&&STATE.roundFlights[insertAt-1]&&STATE.roundFlights[insertAt-1].length>1)?JSON.parse(JSON.stringify(STATE.roundFlights[insertAt-1])):defaultFlights(WK.players.length);
   STATE.roundFlights.splice(insertAt,0,_inhF);
   STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);
-  reconcileWolfOrder(insertAt);reconcileSnakeHolders(insertAt);reconcileMPTeams(insertAt);
+  reconcileWolfOrder(insertAt);reconcileSnakeHolders(insertAt);reconcileMPTeams(insertAt);reconcileVegasTeams(insertAt);reconcileHammerTeams(insertAt);reconcileSkinsTeams(insertAt);reconcileRazzleOrder(insertAt);
   const _gg=_gsGames;
   if(_gg['Wolf']){WK.wolfOn=true;WK.wolfVal=parseFloat(_gg['Wolf'].wolfVal)||WK.wolfVal||1;}
   if(_gg['Snake']){WK.snakeOn=true;WK.snakeBase=parseFloat(_gg['Snake'].snakeBase)||WK.snakeBase||1;}
@@ -9311,7 +9450,7 @@ function _gsSetOn(def,r,on){
   if(def.tripLevel){WK[def.onField]=on;}
   else{WK.rounds[r][def.onField]=on;}
   if(on&&def.team)sanitizeTeams(r);
-  if(on&&def.id==='hammer'){if(!STATE.hammerTeams)STATE.hammerTeams=WK.rounds.map((_,ri)=>defaultHammerTeams(ri));if(!STATE.hammerTeams[r])STATE.hammerTeams[r]=defaultHammerTeams(r);}
+  if(on&&def.id==='hammer'){if(!STATE.hammerTeams)STATE.hammerTeams=WK.rounds.map((_,ri)=>flightsForRound(ri).map((_f,fi)=>defaultHammerTeamsForFlight(ri,fi)));if(!STATE.hammerTeams[r])STATE.hammerTeams[r]=flightsForRound(r).map((_f,fi)=>defaultHammerTeamsForFlight(r,fi));if(!STATE.hammerState)STATE.hammerState=WK.rounds.map((_,ri)=>flightsForRound(ri).map(()=>Array(18).fill(null)));if(!STATE.hammerState[r])STATE.hammerState[r]=flightsForRound(r).map(()=>Array(18).fill(null));}
 }
 function _gameMinNote(id,n){const k={'Match Play':'mp','Vegas':'vegas','Skins':'skins','Razzle Dazzle':'razzle','Wolf':'wolf','Hammer':'hammer',"Two's Club":'twos','Snake':'snake'}[id]||id;if(k==='hammer')return(n===2||n>=4)?null:'Needs 2 or 4 players';if(k==='wolf'||k==='vegas'||k==='razzle')return n>=4?null:'Needs 4 players';if(k==='mp')return n>=2?null:'Needs 2 players';return null;}
 window._gsOpenAddPicker=function(){
@@ -9415,8 +9554,16 @@ function _gsSkinsSetupBody(r){
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per skin</span>$<input class="ie-num" type="number" placeholder="${WK.skinsVal||5}" value="${WK.rounds[r].skinsVal!=null?WK.rounds[r].skinsVal:''}" style="width:80px" oninput="const v=this.value.trim();if(v===''){delete WK.rounds[${r}].skinsVal;}else{WK.rounds[${r}].skinsVal=parseFloat(v);}autoSave();s2WriteActive();"/></div>`;
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Format</span><select class="ie-sel" onchange="WK.skinsFmt=this.value;WK._skinsFmtManual=true;autoSave();s2WriteActive();_gsRefreshAfterEdit()"><option value="team"${WK.skinsFmt==='team'?' selected':''}>Team 2v2</option><option value="individual"${WK.skinsFmt==='individual'?' selected':''}>Individual</option></select></div>`;
   if(WK.skinsFmt==='team'){
-    if(!STATE.skinsTeams)STATE.skinsTeams=WK.rounds.map((_,ri)=>{const g=skinsGamesForRound(ri);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));});
-    h+=skSegs.map((seg,si)=>{const sk=STATE.skinsTeams[r]?.[si];if(!sk)return'';const[a0,a1]=sk[0],[b0,b1]=sk[1];return`<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDropSkins(${si},'a0',parseInt(this.value),${r})">${pOpts(a0)}</select><select class="team-dropdown" onchange="setDropSkins(${si},'a1',parseInt(this.value),${r})">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDropSkins(${si},'b0',parseInt(this.value),${r})">${pOpts(b0)}</select><select class="team-dropdown" onchange="setDropSkins(${si},'b1',parseInt(this.value),${r})">${pOpts(b1)}</select></div></div></div>`;}).join('');
+    if(!STATE.skinsTeams)STATE.skinsTeams=WK.rounds.map((_,ri)=>flightsForRound(ri).map((_f,fi)=>defaultSkinsTeamsForFlight(ri,fi)));
+    {let _skFl=flightsForRound(r);let _skMulti=_skFl.length>1;let _skSel=(STATE.skinsViewFlight===undefined||STATE.skinsViewFlight===null?-1:STATE.skinsViewFlight);
+    if(_skMulti){h+='<div class="gf-filter" style="margin:8px 0 4px">';_skFl.forEach((_,i)=>{h+='<button class="'+(_skSel===i?'on':'')+'" onclick="_skinsViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});h+='<button class="'+(_skSel===-1?'on':'')+'" onclick="_skinsViewFilterPick(-1)">Both</button></div>';}
+    for(let _fi=0;_fi<_skFl.length;_fi++){
+      if(_skMulti&&_skSel!==-1&&_skSel!==_fi)continue;
+      const _mem=_skFl[_fi]||[];
+      if(_skMulti){h+='<div style="display:flex;align-items:center;gap:7px;padding:6px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,_fi)+'</span></div>';}
+      if(_mem.length<4){h+='<div style="padding:8px 2px;font-size:12px;color:var(--color-text-secondary)">Needs 4 players for team Skins.</div>';continue;}
+      h+=skSegs.map((seg,si)=>{const sk=STATE.skinsTeams[r]?.[_fi]?.[si];if(!sk||!Array.isArray(sk[0])||!Array.isArray(sk[1])||sk[0].length<2||sk[1].length<2)return'';const[a0,a1]=sk[0],[b0,b1]=sk[1];return `<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDropSkins(${si},'a0',parseInt(this.value),${r},${_fi})">${pOpts(a0,_mem)}</select><select class="team-dropdown" onchange="setDropSkins(${si},'a1',parseInt(this.value),${r},${_fi})">${pOpts(a1,_mem)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDropSkins(${si},'b0',parseInt(this.value),${r},${_fi})">${pOpts(b0,_mem)}</select><select class="team-dropdown" onchange="setDropSkins(${si},'b1',parseInt(this.value),${r},${_fi})">${pOpts(b1,_mem)}</select></div></div></div>`;}).join('');
+    }}
   } else {
     h+=`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Individual - all players compete for each skin</div>`;
   }
@@ -9424,16 +9571,26 @@ function _gsSkinsSetupBody(r){
   return h;
 }
 function _gsRazzleSetupBody(r){
-  if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[0,1,2,3]);
+  if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[]);
   if(!STATE.razzleMatchTeams)STATE.razzleMatchTeams=WK.rounds.map(()=>[]);
-  const ord=STATE.razzleOrder[r]||[0,1,2,3];
-  const rots=[[[ord[0],ord[1]],[ord[2],ord[3]]],[[ord[0],ord[2]],[ord[1],ord[3]]],[[ord[0],ord[3]],[ord[1],ord[2]]]];
-  let h=`<div class="setup-row" style="display:block;padding-bottom:8px"><div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:6px">Rotation order</div>`;
-  for(let pos=0;pos<4;pos++){h+=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-tertiary);width:40px">Pos ${pos+1}</span><select class="team-dropdown" onchange="setRazzleOrder(${r},${pos},parseInt(this.value))">${pOpts(ord[pos])}</select></div>`;}
-  h+=`</div>`;
-  h+=`<div class="setup-row" style="display:block;padding-bottom:8px"><div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:6px">Team rotation</div>`;
-  rots.forEach((rot,ri)=>{const nA=rot[0].map(i=>displayName(i)).join(' & '),nB=rot[1].map(i=>displayName(i)).join(' & ');h+=`<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:3px"><span style="color:var(--color-text-tertiary)">Match ${ri+1},${ri+4},${ri+7}:</span> ${nA} vs ${nB}</div>`;});
-  h+=`</div>`;
+  const _rzFl=flightsForRound(r);const _rzMulti=_rzFl.length>1;
+  let _rzSel=(STATE.razzleViewFlight===undefined||STATE.razzleViewFlight===null?-1:STATE.razzleViewFlight);
+  let h='';
+  if(_rzMulti){h+='<div class="gf-filter" style="margin:2px 0 8px">';_rzFl.forEach((_,i)=>{h+='<button class="'+(_rzSel===i?'on':'')+'" onclick="_razzleViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});h+='<button class="'+(_rzSel===-1?'on':'')+'" onclick="_razzleViewFilterPick(-1)">Both</button></div>';}
+  for(let _fi=0;_fi<_rzFl.length;_fi++){
+    if(_rzMulti&&_rzSel!==-1&&_rzSel!==_fi)continue;
+    const _mem=_rzFl[_fi]||[];
+    if(_rzMulti){h+='<div style="display:flex;align-items:center;gap:7px;padding:6px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,_fi)+'</span></div>';}
+    if(_mem.length<4){h+='<div style="padding:8px 2px;font-size:12px;color:var(--color-text-secondary)">Needs 4 players for Razzle.</div>';continue;}
+    const ord=(STATE.razzleOrder[r]&&STATE.razzleOrder[r][_fi]&&STATE.razzleOrder[r][_fi].length>=4)?STATE.razzleOrder[r][_fi]:_mem.slice();
+    const rots=[[[ord[0],ord[1]],[ord[2],ord[3]]],[[ord[0],ord[2]],[ord[1],ord[3]]],[[ord[0],ord[3]],[ord[1],ord[2]]]];
+    h+=`<div class="setup-row" style="display:block;padding-bottom:8px"><div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:6px">Rotation order</div>`;
+    for(let pos=0;pos<4;pos++){h+=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-tertiary);width:40px">Pos ${pos+1}</span><select class="team-dropdown" onchange="setRazzleOrder(${r},${pos},parseInt(this.value),${_fi})">${pOpts(ord[pos],_mem)}</select></div>`;}
+    h+=`</div>`;
+    h+=`<div class="setup-row" style="display:block;padding-bottom:8px"><div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:6px">Team rotation</div>`;
+    rots.forEach((rot,ri)=>{const nA=rot[0].map(i=>displayName(i)).join(' & '),nB=rot[1].map(i=>displayName(i)).join(' & ');h+=`<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:3px"><span style="color:var(--color-text-tertiary)">Match ${ri+1},${ri+4},${ri+7}:</span> ${nA} vs ${nB}</div>`;});
+    h+=`</div>`;
+  }
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per match</span>$<input class="ie-num" type="number" placeholder="${WK.razzleVal||5}" value="${WK.rounds[r].razzleVal!=null?WK.rounds[r].razzleVal:''}" style="width:80px" oninput="const v=this.value.trim();if(v===''){delete WK.rounds[${r}].razzleVal;}else{WK.rounds[${r}].razzleVal=parseFloat(v);}autoSave();s2WriteActive();"/></div>`;
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ birdie bonus</span>$<input class="ie-num" type="number" placeholder="${WK.razzleBirdieBonus||5}" value="${WK.rounds[r].razzleBirdieBonus!=null?WK.rounds[r].razzleBirdieBonus:''}" style="width:80px" oninput="const v=this.value.trim();if(v===''){delete WK.rounds[${r}].razzleBirdieBonus;}else{WK.rounds[${r}].razzleBirdieBonus=parseFloat(v);}autoSave();s2WriteActive();"/></div>`;
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ sweep bonus</span>$<input class="ie-num" type="number" placeholder="${WK.razzleSweepBonus||5}" value="${WK.rounds[r].razzleSweepBonus!=null?WK.rounds[r].razzleSweepBonus:''}" style="width:80px" oninput="const v=this.value.trim();if(v===''){delete WK.rounds[${r}].razzleSweepBonus;}else{WK.rounds[${r}].razzleSweepBonus=parseFloat(v);}autoSave();s2WriteActive();"/></div>`;
@@ -9447,7 +9604,15 @@ function _gsVegasSetupBody(r){
   const vG=vegasSegForRound(r),_th_vg=roundHoleCount(r),vegSegs=getSegments(vG,_th_vg);
   let h=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Segments</span><select class="ie-sel" onchange="setVegaSegsForRound(${r},parseInt(this.value))">${segOptionHtml(roundHoleCount(r),vegOv||3)}</select></div>`;
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per point</span>$<input class="ie-num" type="number" placeholder="${WK.vegasVal.toFixed(2)}" value="${WK.rounds[r].vegasVal!=null?WK.rounds[r].vegasVal:''}" step="0.25" style="width:80px" oninput="const v=this.value.trim();if(v===''){delete WK.rounds[${r}].vegasVal;}else{WK.rounds[${r}].vegasVal=parseFloat(v);}autoSave();s2WriteActive();"/></div>`;
-  h+=vegSegs.map((seg,si)=>{const tv=STATE.vegTeams[r]?.[si];if(!tv)return'';const[a0,a1]=tv[0],[b0,b1]=tv[1];return`<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},true)">${pOpts(a0)}</select><select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},true)">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},true)">${pOpts(b0)}</select><select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},true)">${pOpts(b1)}</select></div></div></div>`;}).join('');
+  {let _vgFl=flightsForRound(r);let _vgMulti=_vgFl.length>1;let _vgSel=(STATE.vegasViewFlight===undefined||STATE.vegasViewFlight===null?-1:STATE.vegasViewFlight);
+  if(_vgMulti){h+='<div class="gf-filter" style="margin:8px 0 4px">';_vgFl.forEach((_,i)=>{h+='<button class="'+(_vgSel===i?'on':'')+'" onclick="_vegViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});h+='<button class="'+(_vgSel===-1?'on':'')+'" onclick="_vegViewFilterPick(-1)">Both</button></div>';}
+  for(let _fi=0;_fi<_vgFl.length;_fi++){
+    if(_vgMulti&&_vgSel!==-1&&_vgSel!==_fi)continue;
+    const _mem=_vgFl[_fi]||[];
+    if(_vgMulti){h+='<div style="display:flex;align-items:center;gap:7px;padding:6px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,_fi)+'</span></div>';}
+    if(_mem.length<4){h+='<div style="padding:8px 2px;font-size:12px;color:var(--color-text-secondary)">Needs 4 players for Vegas.</div>';continue;}
+    h+=vegSegs.map((seg,si)=>{const tv=STATE.vegTeams[r]?.[_fi]?.[si];if(!tv||!Array.isArray(tv[0])||!Array.isArray(tv[1])||tv[0].length<2||tv[1].length<2)return'';const[a0,a1]=tv[0],[b0,b1]=tv[1];return `<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},true,${_fi})">${pOpts(a0,_mem)}</select><select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},true,${_fi})">${pOpts(a1,_mem)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},true,${_fi})">${pOpts(b0,_mem)}</select><select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},true,${_fi})">${pOpts(b1,_mem)}</select></div></div></div>`;}).join('');
+  }}
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Settlement</span><select class="ie-sel" onchange="WK.vegasSettle=this.value;autoSave();s2WriteActive()"><option value="perplayer"${(WK.vegasSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.vegasSettle==='perteam'?' selected':''}>Per team</option></select></div>`;
   const _vf=roundVal('vegasFlip',r,WK.vegasFlip||'birdie');
   const _vd=roundVal('vegasDouble',r,WK.vegasDouble!==undefined?WK.vegasDouble:true);
@@ -9533,12 +9698,19 @@ function _hammerFlip(){
   setTimeout(()=>{if(t&&t.parentNode)t.remove();},2000);
 }
 function _gsHammerSetupBody(r){
-  if(!STATE.hammerTeams)STATE.hammerTeams=WK.rounds.map((_,ri)=>defaultHammerTeams(ri));
-  if(!STATE.hammerTeams[r])STATE.hammerTeams[r]=defaultHammerTeams(r);
+  if(!STATE.hammerTeams)STATE.hammerTeams=WK.rounds.map((_,ri)=>flightsForRound(ri).map((_f,fi)=>defaultHammerTeamsForFlight(ri,fi)));
+  if(!STATE.hammerTeams[r])STATE.hammerTeams[r]=flightsForRound(r).map((_f,fi)=>defaultHammerTeamsForFlight(r,fi));
   const hSegs=hammerSegsForRound(r),segs=getSegments(hSegs);
   let h=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Segments</span><select class="ie-sel" onchange="setHammerSegsForRound(${r},parseInt(this.value))">${segOptionHtml(roundHoleCount(r),hammerSegsForRound(r))}</select></div>`;
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per hole</span>$<input class="ie-num" type="number" placeholder="${WK.hammerVal||2}" value="${WK.rounds[r].hammerVal!=null?WK.rounds[r].hammerVal:''}" step="0.25" style="width:80px" oninput="const v=this.value.trim();if(v===''){delete WK.rounds[${r}].hammerVal;}else{WK.rounds[${r}].hammerVal=parseFloat(v);}autoSave();s2WriteActive();"/></div>`;
-  h+=segs.map((seg,si)=>{const tm=STATE.hammerTeams?.[r]?.[si]||[[0,1],[2,3]];if(WK.players.length<4){return`<div class="team-game-row"><div class="team-game-label">Game ${si+1}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</div></div><div style="flex:1;display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:var(--color-text-primary)">${displayName(0)}</span><span style="font-size:11px;color:var(--color-text-tertiary)">vs</span><span style="font-size:13px;color:var(--color-text-primary)">${displayName(1)}</span></div></div>`;}const[a0,a1]=tm[0],[b0,b1]=tm[1];return`<div class="team-game-row"><div class="team-game-label">Game ${si+1}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setHammerDrop(${si},'a0',parseInt(this.value),${r})">${pOpts(a0)}</select><select class="team-dropdown" onchange="setHammerDrop(${si},'a1',parseInt(this.value),${r})">${pOpts(a1)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setHammerDrop(${si},'b0',parseInt(this.value),${r})">${pOpts(b0)}</select><select class="team-dropdown" onchange="setHammerDrop(${si},'b1',parseInt(this.value),${r})">${pOpts(b1)}</select></div></div></div>`;}).join('');
+  {let _hgFl=flightsForRound(r);let _hgMulti=_hgFl.length>1;let _hgSel=(STATE.hammerViewFlight===undefined||STATE.hammerViewFlight===null?-1:STATE.hammerViewFlight);
+  if(_hgMulti){h+='<div class="gf-filter" style="margin:8px 0 4px">';_hgFl.forEach((_,i)=>{h+='<button class="'+(_hgSel===i?'on':'')+'" onclick="_hammerViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});h+='<button class="'+(_hgSel===-1?'on':'')+'" onclick="_hammerViewFilterPick(-1)">Both</button></div>';}
+  for(let _fi=0;_fi<_hgFl.length;_fi++){
+    if(_hgMulti&&_hgSel!==-1&&_hgSel!==_fi)continue;
+    const _mem=_hgFl[_fi]||[];
+    if(_hgMulti){h+='<div style="display:flex;align-items:center;gap:7px;padding:6px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,_fi)+'</span></div>';}
+    h+=segs.map((seg,si)=>{const tm=STATE.hammerTeams?.[r]?.[_fi]?.[si];if(_mem.length<4){return `<div class="team-game-row"><div class="team-game-label">Game ${si+1}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</div></div><div style="flex:1;display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:var(--color-text-primary)">${displayName(_mem[0])}</span><span style="font-size:11px;color:var(--color-text-tertiary)">vs</span><span style="font-size:13px;color:var(--color-text-primary)">${displayName(_mem[1])}</span></div></div>`;}if(!tm||!Array.isArray(tm[0])||!Array.isArray(tm[1]))return'';const[a0,a1]=tm[0],[b0,b1]=tm[1];return `<div class="team-game-row"><div class="team-game-label">Game ${si+1}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setHammerDrop(${si},'a0',parseInt(this.value),${r},${_fi})">${pOpts(a0,_mem)}</select><select class="team-dropdown" onchange="setHammerDrop(${si},'a1',parseInt(this.value),${r},${_fi})">${pOpts(a1,_mem)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setHammerDrop(${si},'b0',parseInt(this.value),${r},${_fi})">${pOpts(b0,_mem)}</select><select class="team-dropdown" onchange="setHammerDrop(${si},'b1',parseInt(this.value),${r},${_fi})">${pOpts(b1,_mem)}</select></div></div></div>`;}).join('');
+  }}
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Scoring</span><select class="ie-sel" onchange="WK.rounds[${r}].hammerScoring=this.value;autoSave();s2WriteActive()"><option value="bestball"${roundVal('hammerScoring',r,WK.hammerScoring||'bestball')==='bestball'?' selected':''}>Better ball</option><option value="combined"${roundVal('hammerScoring',r,WK.hammerScoring||'bestball')==='combined'?' selected':''}>Combined net</option></select></div>`;
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Hammer mode</span><select class="ie-sel" onchange="WK.rounds[${r}].hammerMode=this.value;autoSave();s2WriteActive();_gsRefreshAfterEdit()"><option value="any"${roundVal('hammerMode',r,WK.hammerMode||'any')==='any'?' selected':''}>Anyone anytime</option><option value="alt"${roundVal('hammerMode',r,WK.hammerMode||'any')==='alt'?' selected':''}>Alternating</option></select></div>`;
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Max hammers / hole</span><select class="ie-sel" onchange="WK.rounds[${r}].hammerMax=parseInt(this.value);autoSave();s2WriteActive()"><option value="0"${roundVal('hammerMax',r,WK.hammerMax!=null?WK.hammerMax:0)===0?' selected':''}>Unlimited</option><option value="1"${roundVal('hammerMax',r,WK.hammerMax!=null?WK.hammerMax:0)===1?' selected':''}>1</option><option value="2"${roundVal('hammerMax',r,WK.hammerMax!=null?WK.hammerMax:0)===2?' selected':''}>2</option></select></div>`;
@@ -10004,22 +10176,34 @@ function renderVegasRound(){
   const el=document.getElementById('gamesContent');
   if(!gameOn('vegas',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Vegas is off for this round</div>';return;}
   if(WK.players.length<4){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Vegas requires 4 players.</div>';return;}
+  const multi=isMultiFlight(r);const fl=flightsForRound(r);
+  if(!multi){el.innerHTML=_renderVegasFlightBlock(r,0,null);return;}
+  if(STATE.vegasViewFlight===undefined||STATE.vegasViewFlight===null)STATE.vegasViewFlight=-1;
+  let sel=STATE.vegasViewFlight;if(sel!==-1&&sel>=fl.length)sel=0;
+  let fh='<div class="gf-filter" style="margin:0 0 10px">';
+  fl.forEach((g,i)=>{fh+='<button class="'+(sel===i?'on':'')+'" onclick="_vegViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});
+  fh+='<button class="'+(sel===-1?'on':'')+'" onclick="_vegViewFilterPick(-1)">Both</button></div>';
+  const toRender=sel===-1?fl.map((_,i)=>i):[sel];
+  let html=fh;
+  toRender.forEach(fi=>{const labelHd=(sel===-1)?'<div class="gf-blk-lbl"><span class="bd" style="background:'+_flightsAccent0(fi)+'"></span>Foursome '+(fi+1)+'</div>':null;html+=_renderVegasFlightBlock(r,fi,labelHd);});
+  el.innerHTML=html;
+}
+function _renderVegasFlightBlock(r,fi,labelHd){
   const vG=vegasSegForRound(r),_th_vr=roundHoleCount(r),_off_vr=holeOffset(r),segs=getSegments(vG,_th_vr);
   if(!STATE.vegasExpanded)STATE.vegasExpanded={};
-  // Ensure vegTeams[r] has enough segments (may be short if loaded before segs were set)
-  const rots_vr=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];
-  if(!STATE.vegTeams[r])STATE.vegTeams[r]=[];
-  while(STATE.vegTeams[r].length<vG)STATE.vegTeams[r].push(JSON.parse(JSON.stringify(rots_vr[STATE.vegTeams[r].length%3]||rots_vr[0])));
-  let html=``;
+  const _vf=(STATE.vegTeams[r]&&STATE.vegTeams[r][fi])||[];
+  const _vmem=(flightsForRound(r)[fi]||[]);
+  if(_vmem.length<4)return (labelHd||'')+'<div class="section-card" style="margin-bottom:10px;padding:14px;text-align:center;color:var(--color-text-secondary);font-size:13px">This foursome needs 4 players for Vegas.</div>';
+  let html=labelHd||'';
   segs.forEach((seg,si)=>{
-    const tv=STATE.vegTeams[r][si];if(!tv)return;
+    const tv=_vf[si];if(!tv||!Array.isArray(tv[0])||!Array.isArray(tv[1])||!tv[0].length||!tv[1].length)return;
     const tA=tv[0],tB=tv[1];
     const nameA=tA.map(i=>displayName(i)).join(' & ');
     const nameB=tB.map(i=>displayName(i)).join(' & ');
-    const key='r'+r+'g'+si;
+    const key='r'+r+'f'+fi+'g'+si;
     const expanded=STATE.vegasExpanded[key]===true;
     let totA=0,totB=0;
-    for(let h=seg.start;h<seg.end;h++){const res=calcVegas(h+_off_vr,r);if(!res||res.tied)continue;if(res.aWins)totA+=res.diff;else totB+=res.diff;}
+    for(let h=seg.start;h<seg.end;h++){const res=calcVegas(h+_off_vr,r,fi);if(!res||res.tied)continue;if(res.aWins)totA+=res.diff;else totB+=res.diff;}
     const net=totA-totB;
     let summaryHtml;
     if(totA===0&&totB===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
@@ -10036,7 +10220,7 @@ function renderVegasRound(){
     if(expanded){
       let rows='';
       for(let h=seg.start;h<seg.end;h++){
-        const res=calcVegas(h+_off_vr,r);
+        const res=calcVegas(h+_off_vr,r,fi);
         const isFlip=res&&(res.aFlip||res.bFlip);
         const holeLabel=isFlip
           ?`<span style="display:inline-block;background:#1e3d52;color:#5bb8e8;border-radius:5px;font-size:10px;font-weight:700;padding:2px 5px;letter-spacing:0.03em">H${h+1}</span>`
@@ -10050,7 +10234,7 @@ function renderVegasRound(){
         const resultHtml=`<div style="width:60px;flex-shrink:0;text-align:right"><span style="color:${winClr};font-size:12px;font-weight:600">${winLtr} +${res.diff}${dblBadge}</span></div>`;
         rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div>${scoresHtml}${resultHtml}</div>`;
       }
-      let totA2=0,totB2=0;for(let h=seg.start;h<seg.end;h++){const res=calcVegas(h+_off_vr,r);if(!res||res.tied)continue;if(res.aWins)totA2+=res.diff;else totB2+=res.diff;}
+      let totA2=0,totB2=0;for(let h=seg.start;h<seg.end;h++){const res=calcVegas(h+_off_vr,r,fi);if(!res||res.tied)continue;if(res.aWins)totA2+=res.diff;else totB2+=res.diff;}
       const net2=totA2-totB2;
       const netLabel2=net2===0?'No Blood':net2>0?`A wins · +${Math.abs(net2)} pts`:`B wins · +${Math.abs(net2)} pts`;
       const netClr2=net2>0?'#1D9E75':net2<0?'#185FA5':'var(--color-text-secondary)';
@@ -10059,7 +10243,7 @@ function renderVegasRound(){
       html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Match Result</span><span style="font-size:12px;font-weight:600;color:${netClr2}">${netLabel2}</span></div>`;
     }html+=`</div>`;
   });
-  el.innerHTML=html;
+  return html;
 }
 // Settlement helper — returns per-player value based on settle setting
 function settleVal(val,teamSize,settle){return settle==='perteam'?val/teamSize:val;}
@@ -10105,14 +10289,17 @@ function calcRoundVegas(r){
   const n=WK.players.length,net=Array(n).fill(0);
   const _th_v=roundHoleCount(r);const _off_v=holeOffset(r);
   const gameResults=[];
-  getSegments(vegasSegForRound(r),_th_v).forEach((seg,si)=>{
-    const tv=STATE.vegTeams[r][si];if(!tv)return;
-    let vA=0,vB=0;
-    for(let h=seg.start;h<seg.end;h++){const res=calcVegas(h+_off_v,r);if(!res||res.tied)continue;if(res.aWins)vA+=res.diff;else vB+=res.diff;}
-    const d=(vA-vB)*roundVal('vegasVal',r,WK.vegasVal);
-    const vegSv=settleVal(d,tv[0].length,WK.vegasSettle||'perplayer');
-    tv[0].forEach(pi=>net[pi]+=vegSv);tv[1].forEach(pi=>net[pi]-=vegSv);
-    gameResults.push({seg,si,tA:tv[0],tB:tv[1],ptsA:vA,ptsB:vB,dollarA:d});
+  flightsForRound(r).forEach((_fp,fi)=>{
+    const _vf=STATE.vegTeams[r]?.[fi];if(!Array.isArray(_vf))return;
+    getSegments(vegasSegForRound(r),_th_v).forEach((seg,si)=>{
+      const tv=_vf[si];if(!tv||!Array.isArray(tv[0])||!Array.isArray(tv[1])||!tv[0].length||!tv[1].length)return;
+      let vA=0,vB=0;
+      for(let h=seg.start;h<seg.end;h++){const res=calcVegas(h+_off_v,r,fi);if(!res||res.tied)continue;if(res.aWins)vA+=res.diff;else vB+=res.diff;}
+      const d=(vA-vB)*roundVal('vegasVal',r,WK.vegasVal);
+      const vegSv=settleVal(d,tv[0].length,WK.vegasSettle||'perplayer');
+      tv[0].forEach(pi=>net[pi]+=vegSv);tv[1].forEach(pi=>net[pi]-=vegSv);
+      gameResults.push({fi,seg,si,tA:tv[0],tB:tv[1],ptsA:vA,ptsB:vB,dollarA:d});
+    });
   });
   return{gameResults,net};
 }
@@ -10121,18 +10308,20 @@ function calcRoundSkins(r){
   const _th_sk=roundHoleCount(r);const _off_sk=holeOffset(r);
   const gameResults=[];
   const sG=skinsGamesForRound(r);
+  const _indiv=WK.skinsFmt==='individual';
+  flightsForRound(r).forEach((_skfp,fi)=>{
   getSegments(sG,_th_sk).forEach((seg,si)=>{
-    const sk=STATE.skinsTeams?.[r]?.[si];if(!sk)return;
+    const sk=STATE.skinsTeams?.[r]?.[fi]?.[si];if(!_indiv&&!sk)return;
     let carry=1,skinsA=0,skinsB=0;
     const skinsByPlayer=Array(n).fill(0);
     for(let h=seg.start;h<seg.end;h++){
-      const res=skinHoleWinner(h+_off_sk,r);
+      const res=skinHoleWinner(h+_off_sk,r,fi);
       if(!res||res.tied){carry++;continue;}
       const val=(roundVal('skinsVal',r,WK.skinsVal||5))*carry;
-      if(WK.skinsFmt==='individual'){
+      if(_indiv){
         const wi=res.winner;
-        net[wi]+=val*(n-1);
-        WK.players.forEach((_,pi)=>{if(pi!==wi)net[pi]-=val;});
+        net[wi]+=val*(_skfp.length-1);
+        _skfp.forEach(pi=>{if(pi!==wi)net[pi]-=val;});
         skinsByPlayer[wi]+=carry;
       } else {
         const winT=res.winner==='a'?sk[0]:sk[1];
@@ -10144,11 +10333,12 @@ function calcRoundSkins(r){
       }
       carry=1;
     }
-    if(WK.skinsFmt==='individual'){
-      gameResults.push({seg,si,individual:true,skinsByPlayer});
+    if(_indiv){
+      gameResults.push({seg,si,fi,individual:true,skinsByPlayer});
     } else {
-      gameResults.push({seg,si,tA:sk[0],tB:sk[1],skinsA,skinsB});
+      gameResults.push({seg,si,fi,tA:sk[0],tB:sk[1],skinsA,skinsB});
     }
+  });
   });
   return{gameResults,net};
 }
@@ -10182,9 +10372,10 @@ function settleRound(r){
   if(rzR)rzR.forEach((v,i)=>snapNet[i]+=v);
   if(gameOn('hammer',r)){
     const _hSegs=hammerSegsForRound(r);
+    flightsForRound(r).forEach((_hfpS,_hfi)=>{
     for(let _hsi=0;_hsi<_hSegs;_hsi++){
-      const _hr=calcHammerSegResult(r,_hsi);if(!_hr)continue;
-      const _hTm=STATE.hammerTeams?.[r]?.[_hsi];if(!_hTm)continue;
+      const _hr=calcHammerSegResult(r,_hsi,_hfi);if(!_hr)continue;
+      const _hTm=STATE.hammerTeams?.[r]?.[_hfi]?.[_hsi];if(!_hTm)continue;
       const _hPay=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');
       const _hA=_hTm[0],_hB=_hTm[1];
       // net from A's perspective; B gets the negative
@@ -10198,6 +10389,7 @@ function settleRound(r){
         _hA.forEach(pi=>snapNet[pi]-=_hPer);
       }
     }
+    });
   }
   if(gameOn('snake',r)){calcSnakeNetAllFlights(r).forEach((v,i)=>{snapNet[i]+=v;});}
   const snapVals={gameVal:roundVal('gameVal',r,WK.gameVal),vegasVal:roundVal('vegasVal',r,WK.vegasVal),skinsVal:roundVal('skinsVal',r,WK.skinsVal||5),snakeBase:roundVal('snakeBase',r,WK.snakeBase||1),razzleVal:roundVal('razzleVal',r,WK.razzleVal||5)};
@@ -10286,7 +10478,7 @@ function renderMoney(){
     razzleNetR.forEach((v,i)=>roundNet[i]+=v);
     snakeNetByRound[r].forEach((v,i)=>roundNet[i]+=v);
     wolfNetR.forEach((v,i)=>roundNet[i]+=v);
-    if(gameOn('hammer',r)){const hSegA2=hammerSegsForRound(r);getSegments(hSegA2).forEach((_,si)=>{const res=calcHammerSegResult(r,si);if(!res)return;const tm=STATE.hammerTeams?.[r]?.[si];if(!tm)return;const payout=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');const sv=payout==='perteam'?0.5:1;const nv=(res.netA-res.netB)*sv;tm[0].forEach(pi=>{roundNet[pi]+=nv;});tm[1].forEach(pi=>{roundNet[pi]-=nv;});});}
+    if(gameOn('hammer',r)){const hSegA2=hammerSegsForRound(r);flightsForRound(r).forEach((_hfpR,fi)=>{getSegments(hSegA2).forEach((_,si)=>{const res=calcHammerSegResult(r,si,fi);if(!res)return;const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;const payout=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');const sv=payout==='perteam'?0.5:1;const nv=(res.netA-res.netB)*sv;tm[0].forEach(pi=>{roundNet[pi]+=nv;});tm[1].forEach(pi=>{roundNet[pi]-=nv;});});});}
     // Use snapshotted amounts for settled rounds so mid-weekend payouts don't double-count
     const snapNet=settled&&STATE.roundSettleData?.[r]?.snapNet;
     const netForTotal=snapNet||roundNet;
@@ -10408,7 +10600,7 @@ function renderMoney(){
         </div>${pressHtml}`;
       });
     }
-    if(gameOn('razzle',r)){const rzMatches=calcRazzle(r).filter(m=>m.winner);if(rzMatches.length){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Razzle Dazzle - $${roundVal('razzleVal',r,WK.razzleVal||5).toFixed(2)}/match · ${(roundVal('razzleSettle',r,WK.razzleSettle||'perplayer'))==='perplayer'?'per player':'per team'}</div>`;rzMatches.forEach(m=>{if(!m.tA||!m.tB)return;const aWins=m.winner==='a',bWins=m.winner==='b';const nameA=m.tA.map(i=>displayName(i)).join(' & ');const nameB=m.tB.map(i=>displayName(i)).join(' & ');const dollarStr='+$'+m.sv.toFixed(2);const bonusBits=[];if(m.sweep)bonusBits.push('sweep');if(m.fiveHole)bonusBits.push('5-hole');if(m.birdieCount>0)bonusBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const bonusNote=bonusBits.length?` <span style="font-size:10px;color:var(--color-text-tertiary)">(${bonusBits.join(', ')})</span>`:'';const gcol='display:grid;grid-template-columns:1fr 64px;align-items:center;gap:8px;padding:2px 0';const winBits=[];if(m.sweep)winBits.push('sweep');else if(m.fiveHole)winBits.push('5-hole');if(m.birdieCount>0)winBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const winNote=winBits.length?' · '+winBits.join(', '):'';html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">Match ${m.mi+1} · H${m.startHole+1}-${m.endHole+1} · pot $${m.pot.toFixed(2)}</div><div style="${gcol}"><span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}${aWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${aWins?dollarStr:''}</span></div><div style="${gcol}"><span style="font-size:13px;${bWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameB}${bWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${bWins?dollarStr:''}</span></div></div>`;});}}
+    if(gameOn('razzle',r)){const _rzAny=flightsForRound(r).some((_,_zfi)=>calcRazzle(r,_zfi).some(m=>m.winner));if(_rzAny){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Razzle Dazzle - $${roundVal('razzleVal',r,WK.razzleVal||5).toFixed(2)}/match · ${(roundVal('razzleSettle',r,WK.razzleSettle||'perplayer'))==='perplayer'?'per player':'per team'}</div>`;flightsForRound(r).forEach((_rfp,_zfi)=>{const rzMatches=calcRazzle(r,_zfi).filter(m=>m.winner);if(!rzMatches.length)return;if(isMultiFlight(r))html+=`<div style="padding:4px 12px;font-size:10px;font-weight:600;color:var(--color-text-tertiary);background:var(--color-background-secondary)">Foursome ${_zfi+1}</div>`;rzMatches.forEach(m=>{if(!m.tA||!m.tB)return;const aWins=m.winner==='a',bWins=m.winner==='b';const nameA=m.tA.map(i=>displayName(i)).join(' & ');const nameB=m.tB.map(i=>displayName(i)).join(' & ');const dollarStr='+$'+m.sv.toFixed(2);const bonusBits=[];if(m.sweep)bonusBits.push('sweep');if(m.fiveHole)bonusBits.push('5-hole');if(m.birdieCount>0)bonusBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const bonusNote=bonusBits.length?` <span style="font-size:10px;color:var(--color-text-tertiary)">(${bonusBits.join(', ')})</span>`:'';const gcol='display:grid;grid-template-columns:1fr 64px;align-items:center;gap:8px;padding:2px 0';const winBits=[];if(m.sweep)winBits.push('sweep');else if(m.fiveHole)winBits.push('5-hole');if(m.birdieCount>0)winBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const winNote=winBits.length?' · '+winBits.join(', '):'';html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">Match ${m.mi+1} · H${m.startHole+1}-${m.endHole+1} · pot $${m.pot.toFixed(2)}</div><div style="${gcol}"><span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}${aWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${aWins?dollarStr:''}</span></div><div style="${gcol}"><span style="font-size:13px;${bWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameB}${bWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${bWins?dollarStr:''}</span></div></div>`;});});}}
     if(gameOn('vegas',r)&&vegR.gameResults.length){
       const _vfL=roundVal('vegasFlip',r,WK.vegasFlip||'birdie');
       const _vdL=roundVal('vegasDouble',r,WK.vegasDouble!==undefined?WK.vegasDouble:true);
@@ -10444,9 +10636,10 @@ function renderMoney(){
       const hamPayoutM=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');
       const hamSvM=hamPayoutM==='perteam'?0.5:1;
       html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Hammer - $${roundVal('hammerVal',r,WK.hammerVal||2)}/hole · ${hamPayoutM==='perteam'?'per team':'per player'}</div>`;
+      flightsForRound(r).forEach((_hfpM,fi)=>{
       getSegments(hSegsMoney).forEach((_seg2,si2)=>{
-        const resM=calcHammerSegResult(r,si2);if(!resM)return;
-        const tmM=STATE.hammerTeams?.[r]?.[si2];if(!tmM)return;
+        const resM=calcHammerSegResult(r,si2,fi);if(!resM)return;
+        const tmM=STATE.hammerTeams?.[r]?.[fi]?.[si2];if(!tmM)return;
         const netVM=(resM.netA-resM.netB)*hamSvM;
         const winTeam=netVM>0?0:netVM<0?1:null;
         const namesA=tmM[0].map(pi=>displayName(pi)).join(' & ');
@@ -10458,6 +10651,7 @@ function renderMoney(){
         html+=`<div style="padding:6px 12px 2px;font-size:10px;color:var(--color-text-tertiary)">Game ${si2+1}</div>`;
         html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 12px 1px"><span style="font-size:13px;${boldA?'font-weight:700;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${namesA}</span>${boldA?`<span style="font-size:13px;font-weight:600;color:#1D9E75">${potStr}</span>`:''}</div>`;
         html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:1px 12px 6px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px;${boldB?'font-weight:700;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${namesB}</span>${boldB?`<span style="font-size:13px;font-weight:600;color:#1D9E75">${potStr}</span>`:''}</div>`;
+      });
       });
     }
     // Snake - inside round card. Per foursome: each runs its own pot and holder.
@@ -10554,52 +10748,58 @@ function renderMoney(){
 }
 
 // ===== SKINS ENGINE =====
-function skinNet(pi,hi,r){const g=STATE.scores[r][hi][pi];return g===null?null:g-strokes(pi,hi,r);}
-function skinHoleWinner(hi,r){
+function skinNet(pi,hi,r,fp){const g=STATE.scores[r][hi][pi];return g===null?null:g-(fp?strokesForFlight(pi,hi,r,fp):strokes(pi,hi,r));}
+function skinHoleWinner(hi,r,fi){
+  fi=fi||0;
   const sG=skinsGamesForRound(r),_th_sk4=roundHoleCount(r),si=segForHole(hi-holeOffset(r),sG,_th_sk4);
+  const _skfp=flightsForRound(r)[fi]||[];
   if(WK.skinsFmt==='individual'){
-    const nets=WK.players.map((_,pi)=>skinNet(pi,hi,r));
+    const nets=_skfp.map(pi=>skinNet(pi,hi,r,_skfp));
     if(nets.some(x=>x===null))return null;
-    const mn=Math.min(...nets),winners=nets.reduce((a,v,i)=>{if(v===mn)a.push(i);return a;},[]);
-    return winners.length===1?{winner:winners[0],type:'individual'}:{tied:true};
+    const mn=Math.min(...nets),winIdxs=_skfp.filter((pi,k)=>nets[k]===mn);
+    return winIdxs.length===1?{winner:winIdxs[0],type:'individual'}:{tied:true};
   } else {
-    const sk=STATE.skinsTeams?.[r]?.[si];if(!sk)return null;
-    const bA=sk[0].map(pi=>skinNet(pi,hi,r)).filter(x=>x!==null);
-    const bB=sk[1].map(pi=>skinNet(pi,hi,r)).filter(x=>x!==null);
+    const sk=STATE.skinsTeams?.[r]?.[fi]?.[si];if(!sk)return null;
+    const bA=sk[0].map(pi=>skinNet(pi,hi,r,_skfp)).filter(x=>x!==null);
+    const bB=sk[1].map(pi=>skinNet(pi,hi,r,_skfp)).filter(x=>x!==null);
     if(!bA.length||!bB.length)return null;
     const a=Math.min(...bA),b=Math.min(...bB);
     if(a===b)return{tied:true};
     return{winner:a<b?'a':'b',type:'team',teams:sk};
   }
 }
-function skinsCarryAt(r,hi){
+function skinsCarryAt(r,hi,fi){
+  fi=fi||0;
   const sG=skinsGamesForRound(r),_th_sca=roundHoleCount(r),_off_sca=holeOffset(r),segs=getSegments(sG,_th_sca),si=segForHole(hi-_off_sca,sG,_th_sca),seg=segs[si];
   let carry=1;
-  for(let h=seg.start;h<hi-_off_sca;h++){const res=skinHoleWinner(h+_off_sca,r);if(!res||res.tied)carry++;else carry=1;}
+  for(let h=seg.start;h<hi-_off_sca;h++){const res=skinHoleWinner(h+_off_sca,r,fi);if(!res||res.tied)carry++;else carry=1;}
   return carry;
 }
-function calcSkinsRound(r){
+function calcSkinsRound(r,fi){
+  fi=fi||0;
   const sG=skinsGamesForRound(r),_th_csr=roundHoleCount(r),_off_csr=holeOffset(r),segs=getSegments(sG,_th_csr);
   return segs.map((seg,si)=>{
     let carry=1;const holes=[];
     for(let h=seg.start;h<seg.end;h++){
-      const res=skinHoleWinner(h+_off_csr,r);
+      const res=skinHoleWinner(h+_off_csr,r,fi);
       if(!res){holes.push({h:h+_off_csr,pending:true,carry});continue;}
       if(res.tied){holes.push({h:h+_off_csr,tied:true,carry});carry++;continue;}
       holes.push({h:h+_off_csr,winner:res.winner,type:res.type,teams:res.teams,skinsWon:carry,carry});
       carry=1;
     }
-    return{seg,si,holes,teams:STATE.skinsTeams?.[r]?.[si]};
+    return{seg,si,fi,holes,teams:STATE.skinsTeams?.[r]?.[fi]?.[si]};
   });
 }
 function calcSkinsTally(r){
   const tally=Array(WK.players.length).fill(0);
-  calcSkinsRound(r).forEach(({holes,teams})=>{
+  flightsForRound(r).forEach((_stfp,fi)=>{
+  calcSkinsRound(r,fi).forEach(({holes,teams})=>{
     holes.forEach(({winner,skinsWon,type})=>{
       if(!skinsWon||winner===undefined)return;
       if(type==='individual')tally[winner]+=skinsWon;
       else{const w=winner==='a'?teams[0]:teams[1];w.forEach(pi=>tally[pi]+=skinsWon);}
     });
+  });
   });
   return tally;
 }
@@ -10607,18 +10807,19 @@ function renderSkinsBoxWrap(){
   const wrap=document.getElementById('skinsBoxWrap');if(!wrap)return;
   if(!gameOn('skins',STATE.currentRound)){wrap.innerHTML='';return;}
   const r=STATE.currentRound,hi=STATE.currentHole,sG=skinsGamesForRound(r),_th_sk5=roundHoleCount(r),si=segForHole(hi-holeOffset(r),sG,_th_sk5),seg=getSegments(sG,_th_sk5)[si];
+  const _sbfi=isMultiFlight(r)?(getFlightPick(r)||0):0;const _sbfp=flightsForRound(r)[_sbfi]||[];
   if(WK.skinsFmt==='team'&&WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Skins</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Team Skins requires 4 players. For 2-player games, use Individual Skins format (Options \u2192 Skins \u2192 Format).</div></div>`;return;}
-  const skTeam=STATE.skinsTeams?.[r]?.[si];
-  if(WK.skinsFmt==='team'&&(!skTeam||!skTeam[0]||!skTeam[1])){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Skins</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Set teams in the Games tab to calculate skins.</div></div>`;return;}
-  const carry=skinsCarryAt(r,hi);
-  const res=skinHoleWinner(hi,r);
+  const skTeam=STATE.skinsTeams?.[r]?.[_sbfi]?.[si];
+  if(WK.skinsFmt==='team'&&(!skTeam||!skTeam[0]||!skTeam[1])||WK.skinsFmt==='team'&&(skTeam&&(!skTeam[0].length||!skTeam[1].length))){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Skins</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Set teams in the Games tab to calculate skins.</div></div>`;return;}
+  const carry=skinsCarryAt(r,hi,_sbfi);
+  const res=skinHoleWinner(hi,r,_sbfi);
   const skinsFmtLabel=WK.skinsFmt==='individual'?'Individual':'2v2 best ball';
   const hdr=gameBoxHeaderWithFmt(`Skins · G${si+1} H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}`,skinsFmtLabel);
   const carryTxt=`${carry} skin${carry>1?'s':''} · $${(roundVal('skinsVal',STATE.currentRound,WK.skinsVal)*carry).toFixed(2)}`;
   let body='';
   if(WK.skinsFmt==='team'&&skTeam){
-    const netsA=skTeam[0].map(pi=>getNet(pi,hi,r));
-    const netsB=skTeam[1].map(pi=>getNet(pi,hi,r));
+    const netsA=skTeam[0].map(pi=>getNetForFlight(pi,hi,r,_sbfp));
+    const netsB=skTeam[1].map(pi=>getNetForFlight(pi,hi,r,_sbfp));
     const bestA=netsA.every(n=>n!==null)?Math.min(...netsA):null;
     const bestB=netsB.every(n=>n!==null)?Math.min(...netsB):null;
     const aWins=res&&!res.tied&&res.winner==='a';
@@ -10652,14 +10853,28 @@ function renderSkinsRound(){
   const el=document.getElementById('gamesContent');
   if(!gameOn('skins',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Skins is off for this round</div>';return;}
   if(WK.skinsFmt==='team'&&WK.players.length<4){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Team Skins requires 4 players. Switch to Individual format in Setup for smaller groups.</div>';return;}
-  const sG=skinsGamesForRound(r),games=calcSkinsRound(r);
+  const multi=isMultiFlight(r);const fl=flightsForRound(r);
+  if(!multi){el.innerHTML=_renderSkinsFlightBlock(r,0,null);return;}
+  if(STATE.skinsViewFlight===undefined||STATE.skinsViewFlight===null)STATE.skinsViewFlight=-1;
+  let sel=STATE.skinsViewFlight;if(sel!==-1&&sel>=fl.length)sel=0;
+  let fh='<div class="gf-filter" style="margin:0 0 10px">';
+  fl.forEach((g,i)=>{fh+='<button class="'+(sel===i?'on':'')+'" onclick="_skinsViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});
+  fh+='<button class="'+(sel===-1?'on':'')+'" onclick="_skinsViewFilterPick(-1)">Both</button></div>';
+  const toRender=sel===-1?fl.map((_,i)=>i):[sel];
+  let html=fh;
+  toRender.forEach(fi=>{const labelHd=(sel===-1)?'<div class="gf-blk-lbl"><span class="bd" style="background:'+_flightsAccent0(fi)+'"></span>Foursome '+(fi+1)+'</div>':null;html+=_renderSkinsFlightBlock(r,fi,labelHd);});
+  el.innerHTML=html;
+}
+function _renderSkinsFlightBlock(r,fi,labelHd){
+  const sG=skinsGamesForRound(r),games=calcSkinsRound(r,fi);
   const isIndiv=WK.skinsFmt==='individual';
+  const _srfp=flightsForRound(r)[fi]||[];
   if(!STATE.skinsExpanded)STATE.skinsExpanded={};
-  let html=``;
+  let html=labelHd||'';
   const PLAYER_COLORS=['#1D9E75','#185FA5','#D85A30','#9333EA','#CA8A04'];
   const colorA='#1D9E75', colorB='#185FA5';
   games.forEach(({seg,holes,teams},gi)=>{
-    const key='r'+r+'g'+gi;
+    const key='r'+r+'f'+fi+'g'+gi;
     const expanded=STATE.skinsExpanded[key]===true;
     // Compute totals for summary
     let skinsA=0,skinsB=0;
@@ -10709,14 +10924,14 @@ function renderSkinsRound(){
           if(isIndiv){const pi=winner;playerTally[pi]=(playerTally[pi]||0)+skinsWon;winColor=PLAYER_COLORS[pi%PLAYER_COLORS.length];midTxt=`<span style="color:${winColor};font-weight:500;font-size:12px">${skinsWon} skin${skinsWon!==1?'s':''}</span>`;winTxt=`<span style="font-size:12px;font-weight:700;color:${winColor}">${displayName(pi)}</span>`;}
           else{const teamColor=winner==='a'?colorA:colorB;if(winner==='a')skinsA2+=skinsWon;else skinsB2+=skinsWon;midTxt=`<span style="color:${teamColor};font-weight:500;font-size:12px">${skinsWon} skin${skinsWon!==1?'s':''}</span>`;winColor=teamColor;winTxt=`<span style="font-size:12px;font-weight:700;color:${teamColor}">${winner==='a'?'A':'B'}</span>`;}
         } else {midTxt='-';}
-        const bA2=!isIndiv&&teams?teams[0].map(pi=>skinNet(pi,h,r)).filter(x=>x!==null):[];
-        const bB2=!isIndiv&&teams?teams[1].map(pi=>skinNet(pi,h,r)).filter(x=>x!==null):[];
+        const bA2=!isIndiv&&teams?teams[0].map(pi=>skinNet(pi,h,r,_srfp)).filter(x=>x!==null):[];
+        const bB2=!isIndiv&&teams?teams[1].map(pi=>skinNet(pi,h,r,_srfp)).filter(x=>x!==null):[];
         const scoresPair=(!isIndiv&&bA2.length&&bB2.length)?`<span style="font-size:12px;font-weight:500"><span style="color:#1D9E75">${Math.min(...bA2)}</span><span style="color:var(--color-text-tertiary);margin:0 3px;font-weight:400">vs</span><span style="color:#185FA5">${Math.min(...bB2)}</span></span>`:`<span></span>`;
         rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-top:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0"><span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span></div><div style="width:52px;flex-shrink:0">${scoresPair}</div><div style="flex:1;padding-left:16px">${midTxt}</div><div style="flex-shrink:0;text-align:right">${winTxt}</div></div>`;
       });
       let footer='';
       if(isIndiv){
-        const parts=WK.players.map((p,pi)=>{const s=playerTally[pi]||0;const c=PLAYER_COLORS[pi%PLAYER_COLORS.length];return`<span style="color:${s>0?c:'var(--color-text-secondary)'}">${displayName(pi)}: ${s}</span>`;}).join('<span style="margin:0 4px;color:var(--color-text-tertiary)">\xb7</span>');
+        const parts=_srfp.map(pi=>{const s=playerTally[pi]||0;const c=PLAYER_COLORS[pi%PLAYER_COLORS.length];return`<span style="color:${s>0?c:'var(--color-text-secondary)'}">${displayName(pi)}: ${s}</span>`;}).join('<span style="margin:0 4px;color:var(--color-text-tertiary)">\xb7</span>');
         footer=`<div class="seg-total" style="flex-wrap:wrap;gap:4px">${parts}</div>`;
       } else {
         const skNet=skinsA2-skinsB2;
@@ -10728,7 +10943,7 @@ function renderSkinsRound(){
     }
     html+=`</div>`;
   });
-  el.innerHTML=html;
+  return html;
 }
 
 // ===== MONEY SUB-TABS =====
@@ -10893,27 +11108,62 @@ function defaultHammerTeams(r){
   const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];
   return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));
 }
+function defaultHammerTeamsForFlight(r,fi){
+  const g=hammerSegsForRound(r)||1;
+  const m=(flightsForRound(r)[fi]||[]);
+  if(m.length<4){return Array(g).fill(null).map(()=>[[m[0]],[m[1]]]);}
+  const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];
+  return Array(g).fill(null).map((_,gi)=>{const rot=rots[gi%3]||rots[0];return [rot[0].map(k=>m[k]),rot[1].map(k=>m[k])];});
+}
+function reconcileHammerTeams(r){
+  if((STATE.settledRounds||[]).includes(r)||isRoundLocked(r))return;
+  if(!STATE.hammerTeams)STATE.hammerTeams=WK.rounds.map(()=>[]);
+  if(!Array.isArray(STATE.hammerTeams[r]))STATE.hammerTeams[r]=[];
+  const fl=flightsForRound(r),nSeg=hammerSegsForRound(r)||1;
+  const _vp=pi=>Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];
+  const outT=[];
+  for(let fi=0;fi<fl.length;fi++){
+    const mem=(fl[fi]||[]),mset={};mem.forEach(pi=>{if(_vp(pi))mset[pi]=1;});
+    const need=mem.length<4?2:4;
+    const stored=Array.isArray(STATE.hammerTeams[r][fi])?STATE.hammerTeams[r][fi]:null;
+    const ok=!!stored&&stored.length===nSeg&&stored.every(game=>{
+      if(!game||!Array.isArray(game[0])||!Array.isArray(game[1]))return false;
+      const all=game[0].concat(game[1]);
+      if(all.length!==need)return false;
+      return new Set(all).size===all.length&&all.every(pi=>mset[pi]);
+    });
+    outT[fi]=ok?stored:defaultHammerTeamsForFlight(r,fi);
+  }
+  STATE.hammerTeams[r]=outT;
+  // keep hammerState foursome-count in sync (throw data, not validated, just padded)
+  if(!STATE.hammerState)STATE.hammerState=WK.rounds.map(()=>[]);
+  if(!Array.isArray(STATE.hammerState[r]))STATE.hammerState[r]=[];
+  const hsOut=[];for(let fi=0;fi<fl.length;fi++){hsOut[fi]=Array.isArray(STATE.hammerState[r][fi])?STATE.hammerState[r][fi]:Array(18).fill(null);}
+  STATE.hammerState[r]=hsOut;
+}
 function hammerSegsForRound(r){const ov=WK.hammerSegsPerRound?.[r];return(ov>0)?ov:(WK.hammerSegsDefault>0?WK.hammerSegsDefault:1);}
-function setHammerSegsForRound(r,v){if(!WK.hammerSegsPerRound)WK.hammerSegsPerRound=WK.rounds.map(()=>1);WK.hammerSegsPerRound[r]=v;WK.rounds[r].hammerSegs=v;if(!STATE.hammerTeams)STATE.hammerTeams=[];const g=hammerSegsForRound(r);STATE.hammerTeams[r]=Array(g).fill(null).map((_,gi)=>{const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];return JSON.parse(JSON.stringify(rots[gi%3]||rots[0]));});autoSave();s2WriteActive();_gsRefreshAfterEdit();}
-function calcHammerCarry(r,si,upToHole){
+function setHammerSegsForRound(r,v){if(!WK.hammerSegsPerRound)WK.hammerSegsPerRound=WK.rounds.map(()=>1);WK.hammerSegsPerRound[r]=v;WK.rounds[r].hammerSegs=v;if(!STATE.hammerTeams)STATE.hammerTeams=[];STATE.hammerTeams[r]=flightsForRound(r).map((_f,fi)=>defaultHammerTeamsForFlight(r,fi));autoSave();s2WriteActive();_gsRefreshAfterEdit();}
+function calcHammerCarry(r,si,upToHole,fi){
+  fi=fi||0;
   // Compute carry pot accumulated from start of segment up to (not including) upToHole
   // Does NOT rely on stored .carried - computes from scores directly
   const hSeg=hammerSegsForRound(r),seg=getSegments(hSeg)[si];
   const baseVal=roundVal('hammerVal',r,WK.hammerVal||2);
   const halveCarry=roundVal('hammerHalve',r,WK.hammerHalve||'carry');
   const scoring=roundVal('hammerScoring',r,WK.hammerScoring||'bestball');
-  const tm=STATE.hammerTeams?.[r]?.[si];
+  const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];
   if(!tm)return 0;
+  const _hfp=flightsForRound(r)[fi]||[];
   const clampedTo=Math.min(upToHole,seg.end);
   let carry=0;
   for(let h=seg.start;h<clampedTo;h++){
-    const hs=STATE.hammerState?.[r]?.[h]||{throws:[],conceded:false,concedeVal:0};
+    const hs=STATE.hammerState?.[r]?.[fi]?.[h]||{throws:[],conceded:false,concedeVal:0};
     let pot=baseVal+carry;
     hs.throws.forEach(()=>{pot*=2;});
     if(hs.conceded){carry=0;}
     else {
       const tA=tm[0],tB=tm[1];
-      const nA=tA.map(pi=>getNet(pi,h,r)),nB=tB.map(pi=>getNet(pi,h,r));
+      const nA=tA.map(pi=>getNetForFlight(pi,h,r,_hfp)),nB=tB.map(pi=>getNetForFlight(pi,h,r,_hfp));
       if([...nA,...nB].some(v=>v===null)){carry+=pot;continue;}
       const sA=scoring==='bestball'?Math.min(...nA):nA.reduce((s,v)=>s+v,0);
       const sB=scoring==='bestball'?Math.min(...nB):nB.reduce((s,v)=>s+v,0);
@@ -10923,42 +11173,46 @@ function calcHammerCarry(r,si,upToHole){
   }
   return carry;
 }
-function calcHammerHole(hi,r){
+function calcHammerHole(hi,r,fi){
+  fi=fi||0;
   if(!gameOn('hammer',r))return null;
   const hSeg=hammerSegsForRound(r),si=segForHole(hi,hSeg);
-  const tm=STATE.hammerTeams?.[r]?.[si];if(!tm||!tm[0]||!tm[1])return null;
+  const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm||!tm[0]||!tm[1])return null;
   const tA=tm[0],tB=tm[1];
+  const _hfp=flightsForRound(r)[fi]||[];
   const scoring=roundVal('hammerScoring',r,WK.hammerScoring||'bestball');
-  const nA=tA.map(pi=>getNet(pi,hi,r)),nB=tB.map(pi=>getNet(pi,hi,r));
+  const nA=tA.map(pi=>getNetForFlight(pi,hi,r,_hfp)),nB=tB.map(pi=>getNetForFlight(pi,hi,r,_hfp));
   const allIn=[...nA,...nB].every(v=>v!==null);
   const scoreA=scoring==='bestball'?Math.min(...nA.filter(v=>v!==null)):nA.reduce((s,v)=>s+(v||0),0);
   const scoreB=scoring==='bestball'?Math.min(...nB.filter(v=>v!==null)):nB.reduce((s,v)=>s+(v||0),0);
-  const hs=STATE.hammerState?.[r]?.[hi]||{throws:[],conceded:false,concedeVal:0};
+  const hs=STATE.hammerState?.[r]?.[fi]?.[hi]||{throws:[],conceded:false,concedeVal:0};
   const baseVal=roundVal('hammerVal',r,WK.hammerVal||2);
-  const carry=calcHammerCarry(r,si,hi);
+  const carry=calcHammerCarry(r,si,hi,fi);
   let potVal=baseVal+carry;
   hs.throws.forEach(()=>{potVal*=2;});
   return{tA,tB,nA,nB,scoreA,scoreB,allIn,hs,potVal,si,baseVal,scoring,carry};
 }
-function calcHammerSegResult(r,si){
+function calcHammerSegResult(r,si,fi){
+  fi=fi||0;
   if(!gameOn('hammer',r))return null;
   const hSeg=hammerSegsForRound(r),seg=getSegments(hSeg)[si];
   const baseVal=roundVal('hammerVal',r,WK.hammerVal||2);
   const halveCarry=roundVal('hammerHalve',r,WK.hammerHalve||'carry');
   const scoring=roundVal('hammerScoring',r,WK.hammerScoring||'bestball');
-  const tm=STATE.hammerTeams?.[r]?.[si];if(!tm)return null;
+  const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return null;
   const tA=tm[0],tB=tm[1];
+  const _hfp=flightsForRound(r)[fi]||[];
   let netA=0,netB=0;
   for(let h=seg.start;h<seg.end;h++){
-    const hs=STATE.hammerState?.[r]?.[h]||{throws:[],conceded:false,concedeVal:0};
-    const carry=calcHammerCarry(r,si,h);
+    const hs=STATE.hammerState?.[r]?.[fi]?.[h]||{throws:[],conceded:false,concedeVal:0};
+    const carry=calcHammerCarry(r,si,h,fi);
     let pot=baseVal+carry;
     hs.throws.forEach(()=>{pot*=2;});
     if(hs.conceded){
       const winTeam=hs.concededBy===0?1:0;
       if(winTeam===0)netA+=hs.concedeVal;else netB+=hs.concedeVal;
     } else {
-      const nA=tA.map(pi=>getNet(pi,h,r)),nB=tB.map(pi=>getNet(pi,h,r));
+      const nA=tA.map(pi=>getNetForFlight(pi,h,r,_hfp)),nB=tB.map(pi=>getNetForFlight(pi,h,r,_hfp));
       if([...nA,...nB].some(v=>v===null))continue;
       const sA=scoring==='bestball'?Math.min(...nA):nA.reduce((s,v)=>s+v,0);
       const sB=scoring==='bestball'?Math.min(...nB):nB.reduce((s,v)=>s+v,0);
@@ -10970,8 +11224,9 @@ function calcHammerSegResult(r,si){
 }
 function undoHammer(r,hi){
   if(isReadOnly||isRoundLocked(r))return;
-  if(!STATE.hammerState||!STATE.hammerState[r]||!STATE.hammerState[r][hi])return;
-  const hs=STATE.hammerState[r][hi];
+  const fi=isMultiFlight(r)?(getFlightPick(r)||0):0;
+  if(!STATE.hammerState||!STATE.hammerState[r]||!STATE.hammerState[r][fi]||!STATE.hammerState[r][fi][hi])return;
+  const hs=STATE.hammerState[r][fi][hi];
   if(hs.conceded||hs.accepted){
     if(!confirm('Clear this result and return to hammer state?'))return;
     hs.conceded=false;hs.concedeVal=0;hs.concededBy=undefined;hs.accepted=false;
@@ -10984,9 +11239,12 @@ function undoHammer(r,hi){
 }
 function throwHammer(teamIdx,r,hi){
   if(isReadOnly||isRoundLocked(r))return;
-  if(!STATE.hammerState)STATE.hammerState=WK.rounds.map(()=>Array(18).fill(null));
-  if(!STATE.hammerState[r][hi])STATE.hammerState[r][hi]={throws:[],conceded:false,concedeVal:0};
-  const hs=STATE.hammerState[r][hi];
+  const fi=isMultiFlight(r)?(getFlightPick(r)||0):0;
+  if(!STATE.hammerState)STATE.hammerState=WK.rounds.map((_,rr)=>flightsForRound(rr).map(()=>Array(18).fill(null)));
+  if(!STATE.hammerState[r])STATE.hammerState[r]=flightsForRound(r).map(()=>Array(18).fill(null));
+  if(!STATE.hammerState[r][fi])STATE.hammerState[r][fi]=Array(18).fill(null);
+  if(!STATE.hammerState[r][fi][hi])STATE.hammerState[r][fi][hi]={throws:[],conceded:false,concedeVal:0};
+  const hs=STATE.hammerState[r][fi][hi];
   const maxH=roundVal('hammerMax',r,WK.hammerMax!=null?WK.hammerMax:0);
   if(maxH>0&&hs.throws.length>=maxH)return;
   const mode=roundVal('hammerMode',r,WK.hammerMode||'any');
@@ -11000,19 +11258,17 @@ function throwHammer(teamIdx,r,hi){
 }
 function resolveHammer(action,r,hi){
   if(isReadOnly||isRoundLocked(r))return;
-  if(!STATE.hammerState||!STATE.hammerState[r][hi])return;
-  const hs=STATE.hammerState[r][hi];
+  const fi=isMultiFlight(r)?(getFlightPick(r)||0):0;
+  if(!STATE.hammerState||!STATE.hammerState[r]||!STATE.hammerState[r][fi]||!STATE.hammerState[r][fi][hi])return;
+  const hs=STATE.hammerState[r][fi][hi];
   if(action==='accept'){
     hs.accepted=true;
   } else if(action==='concede'){
-    const hc=calcHammerHole(hi,r);
+    const hc=calcHammerHole(hi,r,fi);
     if(!hc)return;
     const lastThrower=hs.throws[hs.throws.length-1];
-    let preVal=roundVal('hammerVal',r,WK.hammerVal||2);
-    let carry=0;
-    const hSeg=hammerSegsForRound(r),si=segForHole(hi,hSeg),seg=getSegments(hSeg)[si];
-    for(let h=seg.start;h<hi;h++){const ph=STATE.hammerState?.[r]?.[h];if(ph&&ph.carried)carry+=ph.carried;}
-    preVal+=carry;
+    const hSeg=hammerSegsForRound(r),si=segForHole(hi,hSeg);
+    let preVal=roundVal('hammerVal',r,WK.hammerVal||2)+calcHammerCarry(r,si,hi,fi);
     for(let i=0;i<hs.throws.length-1;i++)preVal*=2;
     hs.conceded=true;hs.concedeVal=preVal;hs.concededBy=lastThrower===0?1:0;
   }
@@ -11023,7 +11279,7 @@ function renderHammerBox(){
   const r=STATE.currentRound,hi=STATE.currentHole;
   if(!gameOn('hammer',r)){wrap.innerHTML='';return;}
   {const _hn=_gameMinNote('hammer',WK.players.length);if(_hn){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Hammer</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">'+_hn+'.</div></div>';return;}}
-  const hc=calcHammerHole(hi,r);if(!hc){wrap.innerHTML='';return;}
+  const _hbfi=isMultiFlight(r)?(getFlightPick(r)||0):0;const hc=calcHammerHole(hi,r,_hbfi);if(!hc){wrap.innerHTML='';return;}
   const{tA,tB,nA,nB,scoreA,scoreB,allIn,hs,potVal,si}=hc;
   const locked=isRoundLocked(r);
   const nameA=tA.map(i=>displayName(i));const nameB=tB.map(i=>displayName(i));
@@ -11037,7 +11293,7 @@ function renderHammerBox(){
   const canThrowB=!locked&&!hs.conceded&&!pendingResponse&&(maxH===0||hs.throws.length<maxH)&&(mode!=='alt'||lastThrower!==1);
   const fmt=v=>'$'+v.toFixed(2);
   // Pre-doubling pot for concede label
-  let preDoubleVal=roundVal('hammerVal',r,WK.hammerVal||2)+calcHammerCarry(r,si,hi);
+  let preDoubleVal=roundVal('hammerVal',r,WK.hammerVal||2)+calcHammerCarry(r,si,hi,_hbfi);
   for(let i=0;i<hs.throws.length-1;i++)preDoubleVal*=2;
   // Determine winner for "best" display (only show best on winning team)
   const aWins=allIn&&scoreA<scoreB;
@@ -11105,19 +11361,33 @@ function renderHammerRound(){
   const el=document.getElementById('gamesContent');
   if(!gameOn('hammer',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Hammer is off for this round</div>';return;}
   {const _hn=_gameMinNote('hammer',WK.players.length);if(_hn){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">'+_hn+'.</div>';return;}}
+  const multi=isMultiFlight(r);const fl=flightsForRound(r);
+  if(!multi){el.innerHTML=_renderHammerFlightBlock(r,0,null);return;}
+  if(STATE.hammerViewFlight===undefined||STATE.hammerViewFlight===null)STATE.hammerViewFlight=-1;
+  let sel=STATE.hammerViewFlight;if(sel!==-1&&sel>=fl.length)sel=0;
+  let fh='<div class="gf-filter" style="margin:0 0 10px">';
+  fl.forEach((g,i)=>{fh+='<button class="'+(sel===i?'on':'')+'" onclick="_hammerViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});
+  fh+='<button class="'+(sel===-1?'on':'')+'" onclick="_hammerViewFilterPick(-1)">Both</button></div>';
+  const toRender=sel===-1?fl.map((_,i)=>i):[sel];
+  let html=fh;
+  toRender.forEach(fi=>{const labelHd=(sel===-1)?'<div class="gf-blk-lbl"><span class="bd" style="background:'+_flightsAccent0(fi)+'"></span>Foursome '+(fi+1)+'</div>':null;html+=_renderHammerFlightBlock(r,fi,labelHd);});
+  el.innerHTML=html;
+}
+function _renderHammerFlightBlock(r,fi,labelHd){
   const hSeg=hammerSegsForRound(r),segs=getSegments(hSeg);
   const baseVal=roundVal('hammerVal',r,WK.hammerVal||2);
   const payout=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');
-  let html='';
+  const _hfp=flightsForRound(r)[fi]||[];
+  let html=labelHd||'';
   segs.forEach((seg,si)=>{
-    const tm=STATE.hammerTeams?.[r]?.[si];if(!tm)return;
+    const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;
     const tA=tm[0],tB=tm[1];
     const nameA=tA.map(i=>displayName(i)).join(' & ');
     const nameB=tB.map(i=>displayName(i)).join(' & ');
-    const res=calcHammerSegResult(r,si);
+    const res=calcHammerSegResult(r,si,fi);
     const _sv2=payout==='perteam'?0.5:1;const _netA=(res.netA-res.netB)*_sv2,_netB=-_netA;const lead=res?((_netA>0?nameA+' +$'+_netA.toFixed(2)+' each':_netB>0?nameB+' +$'+_netB.toFixed(2)+' each':'All square')+(res.carryPot>0?' · $'+res.carryPot.toFixed(2)+' carries':'')):'In progress';
     html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
-    const hammerKey='r'+r+'g'+si;
+    const hammerKey='r'+r+'f'+fi+'g'+si;
     if(!STATE.hammerExpanded)STATE.hammerExpanded={};
     const hammerExp=STATE.hammerExpanded[hammerKey]===true;
     const hammerNetA=res?(res.netA-res.netB)*_sv2:0;
@@ -11131,7 +11401,7 @@ function renderHammerRound(){
     if(hammerExp){
     let carryPot=0;
     for(let h=seg.start;h<seg.end;h++){
-      const hs=STATE.hammerState?.[r]?.[h]||{throws:[],conceded:false,concedeVal:0};
+      const hs=STATE.hammerState?.[r]?.[fi]?.[h]||{throws:[],conceded:false,concedeVal:0};
       let pot=baseVal+carryPot;
       hs.throws.forEach(()=>{pot*=2;});
       const throwIcons=hs.throws.length>0?' '+hs.throws.map(t=>'🔨'+(t===0?'A':'B')).join(' '):'';
@@ -11143,7 +11413,7 @@ function renderHammerRound(){
         carryPot=0;
       } else {
         const scoring=roundVal('hammerScoring',r,WK.hammerScoring||'bestball');
-        const nA2=tA.map(pi=>getNet(pi,h,r)),nB2=tB.map(pi=>getNet(pi,h,r));
+        const nA2=tA.map(pi=>getNetForFlight(pi,h,r,_hfp)),nB2=tB.map(pi=>getNetForFlight(pi,h,r,_hfp));
         if([...nA2,...nB2].some(v=>v===null)){
           winnerHtml=`<span style="font-size:12px;color:var(--color-text-tertiary)">-</span>`;
           carryPot=pot;
@@ -11171,7 +11441,7 @@ function renderHammerRound(){
     } // end hammerExp
     html+=`</div>`;
   });
-  el.innerHTML=html;
+  return html;
 }
 function calcGolfNetPerPlayer(){
   const n=WK.players.length,pot=WK.buyIn*n;
@@ -11183,41 +11453,13 @@ function calcGolfNetPerPlayer(){
   if(gameOnAny('mp')){WK.rounds.forEach((_,r)=>{const _mpRN=calcRoundMP(r).net;for(let _pi=0;_pi<n;_pi++)mpNet[_pi]+=_mpRN[_pi];});}
   // Vegas net
   const vegNet=Array(n).fill(0);
-  if(gameOnAny('vegas')){WK.rounds.forEach((_,r)=>{const _th_av=roundHoleCount(r);const _off_av=holeOffset(r);getSegments(vegasSegForRound(r),_th_av).forEach((seg,si)=>{const tv=STATE.vegTeams[r][si];if(!tv)return;let vA=0,vB=0;for(let h=seg.start;h<seg.end;h++){const res=calcVegas(h+_off_av,r);if(!res||res.tied)continue;if(res.aWins)vA+=res.diff;else vB+=res.diff;}const d=(vA-vB)*roundVal('vegasVal',r,WK.vegasVal);const cgVegSv=settleVal(d,tv[0].length,WK.vegasSettle||'perplayer');tv[0].forEach(pi=>vegNet[pi]+=cgVegSv);tv[1].forEach(pi=>vegNet[pi]-=cgVegSv);});});}
+  if(gameOnAny('vegas')){WK.rounds.forEach((_,r)=>{const _rvn=calcRoundVegas(r).net;for(let _pi=0;_pi<n;_pi++)vegNet[_pi]+=_rvn[_pi];});}
   // Skins net — zero-sum: each skin = direct transfer from losing team to winning team
   const skNet=Array(n).fill(0);
-  if(gameOnAny('skins')){
-    WK.rounds.forEach((_,r)=>{
-      const sG=WK.skinsGamesPerRound?.[r]>0?WK.skinsGamesPerRound[r]:mpGamesForRound(r);
-      const _th_as=roundHoleCount(r);const _off_as=holeOffset(r);
-      getSegments(sG,_th_as).forEach((seg,si)=>{
-        const sk=STATE.skinsTeams?.[r]?.[si];if(!sk)return;
-        let carry=1;
-        for(let h=seg.start;h<seg.end;h++){
-          const sres=skinHoleWinner(h+_off_as,r);
-          if(!sres||sres.tied){carry++;continue;}
-          const val=(roundVal('skinsVal',r,WK.skinsVal||5))*carry;
-          if(WK.skinsFmt==='individual'){
-            // individual: winner gets val from each other player equally
-            const wi=sres.winner;
-            skNet[wi]+=val*(n-1);
-            WK.players.forEach((_,pi)=>{if(pi!==wi)skNet[pi]-=val;});
-          } else {
-            // team: winning team each get val/teamSize from each losing team member
-            const winT=sres.winner==='a'?sk[0]:sk[1];
-            const loseT=sres.winner==='a'?sk[1]:sk[0];
-            const cgSkSv=settleVal(val,winT.length,WK.skinsSettle||'perplayer');
-            winT.forEach(pi=>skNet[pi]+=cgSkSv);
-            loseT.forEach(pi=>skNet[pi]-=cgSkSv);
-          }
-          carry=1;
-        }
-      });
-    });
-  }
+  if(gameOnAny('skins')){WK.rounds.forEach((_,r)=>{const _srn=calcRoundSkins(r).net;for(let _pi=0;_pi<n;_pi++)skNet[_pi]+=_srn[_pi];});}
   // Hammer net
   const hammNet=Array(n).fill(0);
-  if(gameOnAny('hammer')){WK.rounds.forEach((_,r)=>{const hSeg=hammerSegsForRound(r);getSegments(hSeg).forEach((seg,si)=>{const res=calcHammerSegResult(r,si);if(!res)return;const tm=STATE.hammerTeams?.[r]?.[si];if(!tm)return;const payout=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');const sv=payout==='perteam'?0.5:1;tm[0].forEach(pi=>hammNet[pi]+=res.netA*sv);tm[1].forEach(pi=>hammNet[pi]+=res.netB*sv);});});}
+  if(gameOnAny('hammer')){WK.rounds.forEach((_,r)=>{const hSeg=hammerSegsForRound(r);flightsForRound(r).forEach((_hfp,fi)=>{getSegments(hSeg).forEach((seg,si)=>{const res=calcHammerSegResult(r,si,fi);if(!res)return;const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;const payout=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');const sv=payout==='perteam'?0.5:1;const _hd=(res.netA-res.netB)*sv;tm[0].forEach(pi=>hammNet[pi]+=_hd);tm[1].forEach(pi=>hammNet[pi]-=_hd);});});});}
   // Two's net
   const twosNet=Array(n).fill(0);
   if(gameOn('twos',0)){let totTwos=0;const twos=Array(n).fill(0);STATE.scores.forEach((rd,r)=>{rd.forEach((h,hi)=>{h.forEach((g,pi)=>{if(g===2){twos[pi]++;totTwos++;}});});});const tp=WK.twosAmt*n;if(totTwos>0)twos.forEach((c,i)=>{twosNet[i]+=(c/totTwos)*tp-WK.twosAmt;});}// else: no 2s, no blood
@@ -11261,7 +11503,7 @@ function renderSettle(){
       return;
     }
     const mpR=gameOn('mp',r)?calcRoundMP(r):{gameResults:[],net:[]};
-    if(gameOn('razzle',r)){calcRazzle(r).forEach(m=>{if(!m.winner)return;const winTeam=m.winner==='a'?m.tA:m.tB,loseTeam=m.winner==='a'?m.tB:m.tA;const bonusBits=[];if(m.sweep)bonusBits.push('sweep');if(m.fiveHole)bonusBits.push('5-hole');if(m.birdieCount>0)bonusBits.push(m.birdieCount+(m.birdieCount>1?' birdies':' birdie'));const bonusSuffix=bonusBits.length?' · '+bonusBits.join(', '):'';winTeam.forEach(pi=>{auditGolf[pi].razzle.push({label:roundLabel(r)+' Match '+(m.mi+1),val:m.sv,desc:'Won'+bonusSuffix});});loseTeam.forEach(pi=>{auditGolf[pi].razzle.push({label:roundLabel(r)+' Match '+(m.mi+1),val:-m.sv,desc:'Lost'+bonusSuffix});});});}
+    if(gameOn('razzle',r)){flightsForRound(r).forEach((_afp,_afi)=>{calcRazzle(r,_afi).forEach(m=>{if(!m.winner)return;const winTeam=m.winner==='a'?m.tA:m.tB,loseTeam=m.winner==='a'?m.tB:m.tA;const bonusBits=[];if(m.sweep)bonusBits.push('sweep');if(m.fiveHole)bonusBits.push('5-hole');if(m.birdieCount>0)bonusBits.push(m.birdieCount+(m.birdieCount>1?' birdies':' birdie'));const bonusSuffix=bonusBits.length?' · '+bonusBits.join(', '):'';winTeam.forEach(pi=>{auditGolf[pi].razzle.push({label:roundLabel(r)+' Match '+(m.mi+1),val:m.sv,desc:'Won'+bonusSuffix});});loseTeam.forEach(pi=>{auditGolf[pi].razzle.push({label:roundLabel(r)+' Match '+(m.mi+1),val:-m.sv,desc:'Lost'+bonusSuffix});});});});}
     mpR.gameResults.forEach(({seg,si,tA,tB,pA,pB,winner,mi,fi})=>{
       const _mem=(flightsForRound(r)[fi]||[]);const _segDone=_mem.length>0&&STATE.scores[r].slice(seg.start,seg.end).every(h=>_mem.every(pi=>h[pi]!==null));const _baseMs=isHeadsUp(r)?calcMPMatchScoreHU(r,fi,si,mi||0,seg.end-1):calcMPMatchScore(r,fi,si,seg.end-1);
       if(!(_baseMs&&(_baseMs.closed||_segDone)))return;
@@ -11289,9 +11531,10 @@ function renderSettle(){
     });
     if(gameOn('hammer',r)){
       const hSegA=hammerSegsForRound(r);
+      flightsForRound(r).forEach((_hfpA,fi)=>{
       getSegments(hSegA).forEach((_seg,si)=>{
-        const res=calcHammerSegResult(r,si);if(!res)return;
-        const tm=STATE.hammerTeams?.[r]?.[si];if(!tm)return;
+        const res=calcHammerSegResult(r,si,fi);if(!res)return;
+        const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;
         const payout=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');
         const sv=payout==='perteam'?0.5:1;
         const seg2=getSegments(hSegA)[si];
@@ -11301,6 +11544,7 @@ function renderSettle(){
           tm[0].forEach(pi=>{auditGolf[pi].hammer.push({label:`${roundLabel(r)} ${segLabel}`,val:netVal});});
           tm[1].forEach(pi=>{auditGolf[pi].hammer.push({label:`${roundLabel(r)} ${segLabel}`,val:-netVal});});
         }
+      });
       });
     }
     if(gameOn('wolf',r)){
