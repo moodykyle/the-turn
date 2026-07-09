@@ -1424,7 +1424,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v112.11';
+const APP_VERSION='v112.12';
 
 // ===== THEME =====
 (function(){
@@ -5662,7 +5662,7 @@ function padFlights(raw,nR,nP){
   }
   return out;
 }
-function flightsForRound(r){return (STATE.roundFlights&&STATE.roundFlights[r])||[WK.players.map((_,i)=>i)];}
+function flightsForRound(r){return (STATE&&STATE.roundFlights&&STATE.roundFlights[r])||[WK.players.map((_,i)=>i)];}
 function isMultiFlight(r){return flightsForRound(r).length>1;}
 
 // ---- per-foursome games machinery (step 1). No game uses these yet. ----
