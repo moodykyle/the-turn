@@ -12,10 +12,7 @@
 (function(){
   var base='https://moodykyle.github.io/the-turn/';
   function injectIcons(){
-    ['apple-touch-icon','pwa-manifest'].forEach(function(id){var o=document.getElementById(id);if(o)o.remove();});
-    var ati=document.createElement('link');
-    ati.id='apple-touch-icon';ati.rel='apple-touch-icon';ati.sizes='180x180';ati.href='the-turn-icon-180.png';
-    document.head.appendChild(ati);
+    ['pwa-manifest'].forEach(function(id){var o=document.getElementById(id);if(o)o.remove();});
     var manifest={name:'The Turn',short_name:'The Turn',description:'Golf weekend scoring',start_url:'/',display:'standalone',background_color:'#0a1826',theme_color:'#0a1826',icons:[{src:base+'the-turn-icon-192.png',sizes:'192x192',type:'image/png'},{src:base+'the-turn-icon-512.png',sizes:'512x512',type:'image/png'}]};
     var blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
     var mlink=document.createElement('link');
@@ -25,6 +22,7 @@
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',injectIcons);}else{injectIcons();}
 })();
 </script>
+<link rel="apple-touch-icon" sizes="180x180" href="https://moodykyle.github.io/the-turn/the-turn-icon-180.png">
 <title>The Turn</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300&display=swap">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css">
@@ -1433,7 +1431,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v112.6';
+const APP_VERSION='v112.6.1';
 
 // ===== THEME =====
 (function(){
