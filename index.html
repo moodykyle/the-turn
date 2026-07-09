@@ -7,49 +7,18 @@
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="The Turn"/>
-<meta name="theme-color" content="#0f2419"/>
+<meta name="theme-color" content="#0a1826"/>
 <script>
 (function(){
-  function makeIcon(size){
-    const c=document.createElement('canvas');
-    c.width=size;c.height=size;
-    const ctx=c.getContext('2d');
-    const r=size*0.18;
-    ctx.beginPath();
-    ctx.moveTo(r,0);ctx.lineTo(size-r,0);ctx.quadraticCurveTo(size,0,size,r);
-    ctx.lineTo(size,size-r);ctx.quadraticCurveTo(size,size,size-r,size);
-    ctx.lineTo(r,size);ctx.quadraticCurveTo(0,size,0,size-r);
-    ctx.lineTo(0,r);ctx.quadraticCurveTo(0,0,r,0);
-    ctx.closePath();
-    const grad=ctx.createLinearGradient(0,0,size,size);
-    grad.addColorStop(0,'#0f2419');grad.addColorStop(1,'#1a3a28');
-    ctx.fillStyle=grad;ctx.fill();
-    const s=size/192;
-    const cx=72*s,staffTop=18*s,staffBot=168*s;
-    // ground shadow ellipse
-    ctx.save();
-    ctx.beginPath();
-    ctx.ellipse(cx,staffBot,32*s,10*s,0,0,Math.PI*2);
-    ctx.fillStyle='rgba(29,158,117,0.3)';
-    ctx.fill();
-    ctx.restore();
-    // pole
-    ctx.strokeStyle='#1D9E75';ctx.lineWidth=6*s;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(cx,staffBot);ctx.lineTo(cx,staffTop);ctx.stroke();
-    // flag triangle
-    ctx.fillStyle='#1D9E75';
-    ctx.beginPath();ctx.moveTo(cx,staffTop);ctx.lineTo(cx+72*s,staffTop+28*s);ctx.lineTo(cx,staffTop+56*s);ctx.closePath();ctx.fill();
-    return c.toDataURL('image/png');
-  }
+  var base='https://moodykyle.github.io/the-turn/';
   function injectIcons(){
-    const s192=makeIcon(192),s512=makeIcon(512),s180=makeIcon(180);
-    ['apple-touch-icon','icon-192','icon-512','pwa-manifest'].forEach(id=>{const old=document.getElementById(id);if(old)old.remove();});
-    const ati=document.createElement('link');
-    ati.id='apple-touch-icon';ati.rel='apple-touch-icon';ati.sizes='180x180';ati.href=s180;
+    ['apple-touch-icon','pwa-manifest'].forEach(function(id){var o=document.getElementById(id);if(o)o.remove();});
+    var ati=document.createElement('link');
+    ati.id='apple-touch-icon';ati.rel='apple-touch-icon';ati.sizes='180x180';ati.href='the-turn-icon-180.png';
     document.head.appendChild(ati);
-    const manifest={name:'The Turn',short_name:'The Turn',description:'Golf weekend scoring',start_url:'/',display:'standalone',background_color:'#0f2419',theme_color:'#0f2419',icons:[{src:s192,sizes:'192x192',type:'image/png'},{src:s512,sizes:'512x512',type:'image/png'}]};
-    const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
-    const mlink=document.createElement('link');
+    var manifest={name:'The Turn',short_name:'The Turn',description:'Golf weekend scoring',start_url:'/',display:'standalone',background_color:'#0a1826',theme_color:'#0a1826',icons:[{src:base+'the-turn-icon-192.png',sizes:'192x192',type:'image/png'},{src:base+'the-turn-icon-512.png',sizes:'512x512',type:'image/png'}]};
+    var blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
+    var mlink=document.createElement('link');
     mlink.id='pwa-manifest';mlink.rel='manifest';mlink.href=URL.createObjectURL(blob);
     document.head.appendChild(mlink);
   }
@@ -370,7 +339,7 @@ select.course-select,select.ie-sel,select.inline-edit,select.team-dropdown,selec
 .collapsible-hd.open{border-radius:var(--border-radius-md) var(--border-radius-md) 0 0;margin-bottom:0;}
 .collapsible-body{border:0.5px solid var(--color-border-tertiary);border-top:none;border-radius:0 0 var(--border-radius-md) var(--border-radius-md);overflow:hidden;margin-bottom:14px;}
 .home{padding:0 0 2rem;}
-.home-hero{padding:1.4rem 1.5rem 1.2rem;background:linear-gradient(160deg,#0f2419 0%,#1a3a28 100%);position:relative;overflow:hidden;}
+.home-hero{position:relative;height:220px;background:#0a1826 url('the-turn-hero.jpg') center 50%/cover no-repeat;overflow:hidden;}
 .home-dash{padding:8px 14px 80px;}
 .home-dash-sec{margin-top:12px;}
 .home-dash-sec-label{font-size:11px;font-weight:700;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:10px;}
@@ -440,13 +409,12 @@ select.course-select,select.ie-sel,select.inline-edit,select.team-dropdown,selec
 .grp-sheet-row-ic.ic-group{background:rgba(29,158,117,0.14);}
 .grp-sheet-row-mid{flex:1;min-width:0;}
 .grp-sheet-grp-sub{font-size:12px;color:var(--color-text-tertiary);margin-top:2px;}
-.home-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(29,158,117,0.2) 0%,transparent 70%);pointer-events:none;}
-.home-logo-mark{display:flex;align-items:center;gap:16px;margin-bottom:10px;}
-.home-wordmark{display:flex;flex-direction:column;line-height:1;}
-.home-wm-the{font-family:'DM Sans',sans-serif;font-weight:300;font-size:13px;color:#1D9E75;letter-spacing:0.32em;text-transform:uppercase;}
-.home-wm-turn{font-family:'Bebas Neue',sans-serif;font-size:52px;color:#ffffff;letter-spacing:0.05em;line-height:0.9;margin-top:1px;}
-.home-wm-rule{height:1px;background:#1D9E75;margin-top:6px;opacity:0.6;}
-.home-tagline{font-size:13px;color:rgba(255,255,255,0.55);letter-spacing:0.02em;}
+.home-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:120px;background:linear-gradient(180deg,rgba(4,10,18,0.32),rgba(4,10,18,0));pointer-events:none;z-index:1;}
+.home-hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:78px;background:linear-gradient(0deg,rgba(4,10,18,0.62),rgba(4,10,18,0));pointer-events:none;z-index:1;}
+.home-wm{position:absolute;top:40px;left:0;right:0;text-align:center;line-height:1;z-index:2;}
+.home-wm-the{font-family:'DM Sans',sans-serif;font-weight:400;font-size:17px;letter-spacing:0.42em;text-indent:0.42em;color:#EAD79A;}
+.home-wm-turn{display:block;font-family:'Bebas Neue',sans-serif;font-size:64px;letter-spacing:0.05em;line-height:0.86;margin-top:4px;background:linear-gradient(180deg,#F8E29A,#EFC456 46%,#DB9E28);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 10px rgba(0,0,0,0.4));}
+.home-tagline{position:absolute;bottom:17px;left:0;right:0;text-align:center;z-index:2;font-family:'DM Sans',sans-serif;font-weight:500;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#EBDBAB;text-shadow:0 1px 9px rgba(0,0,0,0.9);}
 .home-hero-footer{display:flex;align-items:center;justify-content:space-between;margin-top:16px;}
 .home-theme-btn{background:rgba(255,255,255,0.12);border:0.5px solid rgba(255,255,255,0.25);border-radius:20px;cursor:pointer;padding:5px 11px;color:rgba(255,255,255,0.85);font-size:12px;font-weight:500;line-height:1;flex-shrink:0;display:flex;align-items:center;gap:5px;letter-spacing:0.01em;}
 .home-theme-btn:active{background:rgba(255,255,255,0.2);}
@@ -1197,21 +1165,11 @@ body.force-light{
   <div id="homeScreen">
     <div class="home">
       <div class="home-hero">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between">
-          <div class="home-logo-mark">
-            <svg width="46" height="72" viewBox="0 0 46 72" xmlns="http://www.w3.org/2000/svg">
-              <ellipse cx="17" cy="66" rx="16" ry="6" fill="#1D9E75" opacity="0.3"/>
-              <line x1="17" y1="66" x2="17" y2="5" stroke="#1D9E75" stroke-width="3" stroke-linecap="round"/>
-              <path d="M17 5 L46 19 L17 33 Z" fill="#1D9E75"/>
-            </svg>
-            <div class="home-wordmark">
-              <span class="home-wm-the">The</span>
-              <span class="home-wm-turn">TURN</span>
-              <div class="home-wm-rule"></div>
-            </div>
-          </div>
+        <div class="home-wm">
+          <div class="home-wm-the">THE</div>
+          <div class="home-wm-turn">TURN</div>
         </div>
-        <div class="home-tagline">Track the weekend. Skip the bro math.</div>
+        <div class="home-tagline">Track the weekend &nbsp;&middot;&nbsp; Skip the bro math</div>
       </div>
       <div class="home-dash" id="homeDashboard"></div>
     </div>
@@ -1475,7 +1433,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v112.5';
+const APP_VERSION='v112.6';
 
 // ===== THEME =====
 (function(){
