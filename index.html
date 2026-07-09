@@ -794,6 +794,8 @@ body.force-light .gs-setup-toggle,body.force-light .gs-setup-body{box-shadow:0 2
   --tint-bd:#b7dbcb;
   --green-soft:#0e6b4a;
   --tab-bar-h:58px;
+  --brand:#1D9E75;
+  --brand-weak:rgba(29,158,117,0.14);
 }
 @media(prefers-color-scheme:dark){
   :root{
@@ -851,6 +853,89 @@ body.force-light{
 .tab-btn.active{color:#1D9E75;}
 .tab-btn svg{width:22px;height:22px;display:block;}
 .tab-btn .tab-icon-ti{font-size:22px;line-height:1;}
+
+/* Home-context bottom nav */
+.home-nav{position:fixed;bottom:0;left:0;right:0;height:var(--tab-bar-h);background:var(--color-background-primary);border-top:0.5px solid var(--color-border-tertiary);box-shadow:0 -2px 8px rgba(0,0,0,0.06);display:none;align-items:stretch;z-index:200;padding-bottom:env(safe-area-inset-bottom);}
+.home-nav.visible{display:flex;}
+.hn-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;border:none;background:transparent;color:var(--color-text-tertiary);font-size:10px;font-weight:500;font-family:inherit;padding:0;-webkit-tap-highlight-color:transparent;transition:color 0.15s;}
+.hn-btn .ti{font-size:22px;line-height:1;}
+.hn-btn.active{color:var(--brand);}
+.hn-plus-wrap{flex:0 0 auto;width:64px;}
+.hn-plus{width:48px;height:48px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;margin-top:-16px;border:4px solid var(--color-background-primary);box-shadow:0 2px 8px rgba(0,0,0,0.18);}
+.hn-plus .ti{font-size:24px;color:#fff;}
+#homeScreen{padding-bottom:calc(var(--tab-bar-h) + 1rem + env(safe-area-inset-bottom));}
+
+/* Me/Groups/Rounds screen chrome */
+.scr-titlebar{padding:16px 1.25rem;background:var(--color-background-page);}
+.scr-title{font-size:20px;font-weight:600;color:var(--color-text-primary);}
+.scr-body{padding:0 1.25rem calc(var(--tab-bar-h) + 1.5rem + env(safe-area-inset-bottom));}
+
+/* + create sheet */
+.hmcs-hd{font-size:16px;font-weight:600;color:var(--color-text-primary);padding:6px 18px 2px;}
+.hmcs-sub{font-size:12.5px;color:var(--color-text-secondary);padding:0 18px 12px;}
+.hmcs-opt{display:flex;align-items:center;gap:12px;width:calc(100% - 28px);margin:0 14px 9px;padding:13px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;cursor:pointer;text-align:left;font-family:inherit;}
+.hmcs-ic{width:34px;height:34px;border-radius:9px;background:var(--brand-weak);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hmcs-ic .ti{font-size:19px;color:var(--brand);}
+.hmcs-tx{flex:1;display:flex;flex-direction:column;}
+.hmcs-t{font-size:14px;font-weight:600;color:var(--color-text-primary);}
+.hmcs-d{font-size:11.5px;color:var(--color-text-secondary);margin-top:1px;}
+.hmcs-chev{color:var(--color-text-tertiary);font-size:16px;}
+
+/* Me screen */
+.me-idcard{display:flex;align-items:center;gap:14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:14px;padding:18px;margin-bottom:20px;}
+.me-av{width:52px;height:52px;border-radius:50%;background:var(--brand-weak);border:2px solid var(--brand);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;flex-shrink:0;}
+.me-idmeta{flex:1;min-width:0;}
+.me-idname{font-size:16px;font-weight:600;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.me-idsub{font-size:12px;color:var(--color-text-secondary);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.me-pencil{background:none;border:none;cursor:pointer;color:var(--color-text-secondary);font-size:18px;padding:6px;flex-shrink:0;}
+.me-seclbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-secondary);font-weight:600;margin:0 2px 8px;}
+.me-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:14px;overflow:hidden;margin-bottom:20px;}
+.me-row{display:flex;align-items:center;gap:12px;padding:14px;border-top:0.5px solid var(--color-border-tertiary);border-left:none;border-right:none;border-bottom:none;cursor:pointer;background:none;width:100%;font-family:inherit;text-align:left;}
+.me-row:first-child{border-top:none;}
+.me-row .lead{font-size:19px;color:var(--brand);flex-shrink:0;width:22px;text-align:center;}
+.me-row .rlbl{flex:1;font-size:14px;color:var(--color-text-primary);}
+.me-row .rval{font-size:13px;color:var(--color-text-secondary);}
+.me-row .rval.act{color:var(--brand);}
+.me-row .chev{color:var(--color-text-tertiary);font-size:16px;}
+.me-signout .rlbl,.me-signout .lead{color:#d9534f;}
+
+/* Home empty state */
+.hm-empty{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:14px;padding:30px 20px;text-align:center;}
+.hm-empty-ic{width:52px;height:52px;border-radius:50%;background:var(--brand-weak);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+.hm-empty-ic .ti{font-size:26px;color:var(--brand);}
+.hm-empty-t{font-size:15px;font-weight:600;color:var(--color-text-primary);margin-bottom:5px;}
+.hm-empty-d{font-size:12.5px;color:var(--color-text-secondary);line-height:1.5;margin-bottom:18px;}
+.hm-empty-btn{display:block;width:100%;padding:11px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:9px;border:0.5px solid var(--brand);background:none;color:var(--brand);}
+.hm-empty-btn.primary{background:var(--brand);color:#fff;border-color:var(--brand);}
+.hm-empty-link{background:none;border:none;color:var(--color-text-tertiary);font-size:12px;cursor:pointer;font-family:inherit;margin-top:8px;}
+
+/* Groups screen */
+.grp-intro{font-size:12px;color:var(--color-text-secondary);margin:0 2px 16px;}
+.grp-actions2{display:flex;flex-direction:column;gap:10px;}
+.grp-act2{display:flex;align-items:center;gap:12px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:13px 14px;cursor:pointer;font-family:inherit;text-align:left;width:100%;}
+.grp-act2-ic{width:38px;height:38px;border-radius:10px;background:var(--brand-weak);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.grp-act2-ic .ti{font-size:20px;color:var(--brand);}
+.grp-act2-tx{flex:1;min-width:0;display:flex;flex-direction:column;}
+.grp-act2-t{font-size:14px;font-weight:600;color:var(--color-text-primary);}
+.grp-act2-d{font-size:12px;color:var(--color-text-secondary);margin-top:2px;}
+.grp-act2-chev{font-size:18px;color:var(--color-text-tertiary);}
+.gcard{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:14px;margin-bottom:12px;cursor:pointer;}
+.gcard-top{display:flex;align-items:center;justify-content:space-between;}
+.gcard-role{font-size:11px;font-weight:600;color:var(--color-text-secondary);background:var(--color-background-secondary);border-radius:6px;padding:3px 8px;}
+.gcard-role.admin{color:var(--brand);background:var(--brand-weak);}
+.gcard-name{font-size:15px;font-weight:600;color:var(--color-text-primary);margin-top:11px;}
+.gcard-meta{font-size:12px;color:var(--color-text-secondary);margin-top:2px;}
+.gcard-code{display:flex;align-items:center;gap:9px;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--color-border-tertiary);}
+.gcard-code-k{font-size:11px;color:var(--color-text-secondary);}
+.gcard-code-v{font-family:var(--font-mono,monospace);font-size:13px;font-weight:600;letter-spacing:0.12em;color:var(--color-text-primary);background:var(--color-background-secondary);border-radius:6px;padding:3px 9px;}
+.gcard-copy{margin-left:auto;display:flex;align-items:center;gap:5px;background:var(--brand-weak);border:none;border-radius:7px;padding:6px 11px;color:var(--brand);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+.gcard-copy .ti{font-size:15px;}
+.gp-roster-bar{display:flex;align-items:center;gap:10px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:11px 14px;margin-bottom:14px;cursor:pointer;}
+.gp-roster-avs{display:flex;}
+.gp-roster-count{font-size:13px;color:var(--color-text-primary);font-weight:600;}
+.gp-roster-chev{font-size:18px;color:var(--color-text-tertiary);margin-left:auto;}
+.gp-roster-panel{margin-bottom:14px;}
+.gp-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;}
 
 /* ── Header gear (Options) ── */
 .hdr-gear{
@@ -1040,6 +1125,8 @@ body.force-light{
         <div style="display:flex;align-items:center;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);margin-bottom:14px;padding:0 12px;"><span style="color:var(--color-text-secondary);font-size:14px;user-select:none;flex-shrink:0">@</span><input id="editProfVenmo" style="border:none;background:transparent;outline:none;width:100%;padding:10px 0 10px 4px;font-size:14px;color:var(--color-text-primary);" type="text" placeholder="yourhandle" autocapitalize="none"/></div>
         <label class="prof-label">Handicap Index <span class="req">*</span></label>
         <input id="editProfHcp" class="prof-input" type="text" inputmode="decimal" placeholder="e.g. 9.3 or +2.4"/>
+        <label class="prof-label">GHIN Number <span class="opt">(optional)</span></label>
+        <input id="editProfGhin" class="prof-input" type="text" inputmode="numeric" placeholder="e.g. 1234567"/>
         <div style="display:flex;gap:10px;margin-top:2px;">
           <button class="login-btn" style="flex:1;background:transparent;color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);" onclick="window.sbCloseEditProfile()">Cancel</button>
           <button id="editProfBtn" class="login-btn" style="flex:1;" onclick="window.sbSaveEditProfile()">Save Changes</button>
@@ -1123,16 +1210,6 @@ body.force-light{
               <div class="home-wm-rule"></div>
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-          <button onclick="toggleTheme()" id="heroThemeBtn" title="Toggle theme" style="background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.15);border-radius:8px;padding:6px 9px;cursor:pointer;font-size:16px;line-height:1;flex-shrink:0"></button>
-          <div id="homeUserAvatar" onclick="window.sbShowUserMenu()" title="Account" style="display:none;width:32px;height:32px;border-radius:50%;background:rgba(29,158,117,0.2);border:1px solid rgba(29,158,117,0.4);align-items:center;justify-content:center;cursor:pointer;font-size:11px;font-weight:500;color:#1D9E75;flex-shrink:0;user-select:none;"></div>
-        </div>
-        <!-- User menu -->
-        <div id="userMenu" style="display:none;position:absolute;top:60px;right:16px;z-index:500;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:4px 0;min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,0.15);">
-          <div id="userMenuEmail" style="padding:10px 14px 8px;font-size:12px;color:var(--color-text-tertiary);border-bottom:0.5px solid var(--color-border-tertiary);"></div>
-          <div onclick="window.sbOpenEditProfile()" style="padding:10px 14px;font-size:14px;color:var(--color-text-primary);cursor:pointer;border-bottom:0.5px solid var(--color-border-tertiary);">Edit Profile</div>
-          <div onclick="window.sbSignOut()" style="padding:10px 14px;font-size:14px;color:var(--color-text-primary);cursor:pointer;">Sign Out</div>
-        </div>
         </div>
         <div class="home-tagline">Track the weekend. Skip the bro math.</div>
       </div>
@@ -1140,10 +1217,36 @@ body.force-light{
     </div>
   </div>
 
+  <!-- ME SCREEN -->
+  <div id="meScreen" style="display:none">
+    <div class="scr-titlebar"><span class="scr-title">Me</span></div>
+    <div id="meBody" class="scr-body"></div>
+  </div>
+
+  <!-- GROUPS SCREEN -->
+  <div id="groupsScreen" style="display:none">
+    <div class="scr-titlebar"><span class="scr-title">Groups</span></div>
+    <div id="groupsBody" class="scr-body"></div>
+  </div>
+
+  <!-- ROUNDS SCREEN -->
+  <div id="roundsScreen" style="display:none">
+    <div class="scr-titlebar"><span class="scr-title">Rounds</span></div>
+    <div id="roundsBody" class="scr-body"></div>
+  </div>
+
+  <!-- HOME-CONTEXT BOTTOM NAV -->
+  <div class="home-nav" id="homeNav">
+    <button class="hn-btn" id="hnb-home" onclick="window.homeNavGo('home')"><i class="ti ti-home"></i><span>Home</span></button>
+    <button class="hn-btn" id="hnb-rounds" onclick="window.homeNavGo('rounds')"><i class="ti ti-flag-3"></i><span>Rounds</span></button>
+    <button class="hn-btn hn-plus-wrap" onclick="window.homeNavGo('plus')" aria-label="Start something"><span class="hn-plus"><i class="ti ti-plus"></i></span></button>
+    <button class="hn-btn" id="hnb-groups" onclick="window.homeNavGo('groups')"><i class="ti ti-users"></i><span>Groups</span></button>
+    <button class="hn-btn" id="hnb-me" onclick="window.homeNavGo('me')"><i class="ti ti-user"></i><span>Me</span></button>
+  </div>
+
   <!-- HOME GROUP PAGE SCREEN -->
   <div id="homeGroupScreen" style="display:none;padding-bottom:3rem">
     <div class="hm-gp-head">
-      <button class="hm-gp-back" onclick="window.closeGroupPage()" aria-label="Home"><i class="ti ti-home" style="font-size:22px"></i></button>
       <div class="hm-gp-title" id="gpTitle"></div>
       <div class="hm-gear" id="gpGear"></div>
     </div>
@@ -1372,7 +1475,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v111.25';
+const APP_VERSION='v112.5';
 
 // ===== THEME =====
 (function(){
@@ -2347,6 +2450,7 @@ window.sbOpenEditProfile = function(){
   document.getElementById('editProfPhone').value = window.fmtPhoneVal(meta.phone || '');
   document.getElementById('editProfVenmo').value = (meta.venmo||'').replace(/^@+/,'');
   document.getElementById('editProfHcp').value = (meta.hcp != null && meta.hcp !== '') ? sbHcpDisplay(meta.hcp) : '';
+  var _gEl=document.getElementById('editProfGhin');if(_gEl)_gEl.value=meta.ghin||'';
   document.getElementById('editProfError').style.display = 'none';
   document.getElementById('editProfOverlay').style.display = 'flex';
 };
@@ -2360,6 +2464,7 @@ window.sbSaveEditProfile = async function(){
   const phone = document.getElementById('editProfPhone').value.trim();
   const venmo = document.getElementById('editProfVenmo').value.trim().replace(/^@+/,'');
   const hcpRaw = document.getElementById('editProfHcp').value;
+  const ghin = (document.getElementById('editProfGhin')?document.getElementById('editProfGhin').value:'').replace(/[^0-9]/g,'');
   const errEl = document.getElementById('editProfError');
   errEl.style.display = 'none';
   if (!name) {
@@ -2377,10 +2482,11 @@ window.sbSaveEditProfile = async function(){
   const btn = document.getElementById('editProfBtn');
   btn.disabled = true; btn.textContent = 'Saving...';
   try {
-    await sbUpdateUser({ full_name: name, phone, venmo, hcp: hcpParsed.value });
+    await sbUpdateUser({ full_name: name, phone, venmo, hcp: hcpParsed.value, ghin: ghin });
     try{const _pu=sbCurrentUser();if(_pu){const _pt=_sbSession?.access_token||SB_KEY;await fetch(SB_URL+'/rest/v1/group_members?user_id=eq.'+encodeURIComponent(_pu.id),{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+_pt,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({display_name:name,venmo:venmo,hcp_index:hcpParsed.value!=null?hcpParsed.value:null})});Object.keys(_groupCache).forEach(gid=>{if(_groupCache[gid]._members){const _mi=_groupCache[gid]._members.findIndex(m=>m.user_id===_pu.id);if(_mi>=0){_groupCache[gid]._members[_mi].display_name=name;_groupCache[gid]._members[_mi].venmo=venmo;_groupCache[gid]._members[_mi].hcp_index=hcpParsed.value!=null?hcpParsed.value:null;}}});}}catch(_pe){}
     document.getElementById('editProfOverlay').style.display = 'none';
     sbUpdateAvatar();
+    try{var _ms=document.getElementById('meScreen');if(_ms&&_ms.style.display!=='none'&&window.renderMeScreen)window.renderMeScreen();}catch(e){}
     btn.disabled = false; btn.textContent = 'Save Changes';
   } catch(e) {
     errEl.textContent = e.message || 'Something went wrong.';
@@ -2394,6 +2500,8 @@ function sbShowLogin(){
   document.getElementById('homeScreen').style.display = 'none';
   document.getElementById('wizardScreen').style.display = 'none';
   document.getElementById('mainScreen').style.display = 'none';
+  ['meScreen','groupsScreen','roundsScreen'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+  if(typeof homeNavHide==='function')homeNavHide();
   sbShowLoginForm();
 }
 
@@ -3149,10 +3257,113 @@ function showHome(){
   document.getElementById('wizardScreen').style.display='none';
   document.getElementById('mainScreen').style.display='none';
   document.getElementById('loginScreen').style.display='none';
-  ['groupSetupScreen','groupCreateScreen','groupJoinScreen','groupPickerScreen','homeGroupScreen'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  ['groupSetupScreen','groupCreateScreen','groupJoinScreen','groupPickerScreen','homeGroupScreen','meScreen','groupsScreen','roundsScreen'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   sbUpdateAvatar();
   renderGroupList();
+  try{homeNavSet('home');}catch(e){}
 }
+
+/* Home-context bottom nav (nav redesign) */
+function _hideHomeCtx(){['homeScreen','meScreen','groupsScreen','roundsScreen','homeGroupScreen'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});}
+function homeNavSet(active){var bar=document.getElementById('homeNav');if(!bar)return;bar.classList.add('visible');['home','rounds','groups','me'].forEach(function(t){var b=document.getElementById('hnb-'+t);if(b)b.classList.toggle('active',t===active);});}
+function homeNavHide(){var bar=document.getElementById('homeNav');if(bar)bar.classList.remove('visible');}
+window.homeNavGo=function(tab){if(tab==='home'){showHome();}else if(tab==='plus'){_hmOpenCreateSheet();}else if(tab==='rounds'){showRoundsScreen();}else if(tab==='groups'){showGroupsScreen();}else if(tab==='me'){showMeScreen();}};
+function showMeScreen(){_hideHomeCtx();var w=document.getElementById('wizardScreen');if(w)w.style.display='none';var m=document.getElementById('mainScreen');if(m)m.style.display='none';var el=document.getElementById('meScreen');if(el)el.style.display='block';homeNavSet('me');try{renderMeScreen();}catch(e){}}
+function showGroupsScreen(){_hideHomeCtx();var w=document.getElementById('wizardScreen');if(w)w.style.display='none';var m=document.getElementById('mainScreen');if(m)m.style.display='none';var el=document.getElementById('groupsScreen');if(el)el.style.display='block';homeNavSet('groups');try{renderGroupsScreen();}catch(e){}}
+function showRoundsScreen(){_hideHomeCtx();var w=document.getElementById('wizardScreen');if(w)w.style.display='none';var m=document.getElementById('mainScreen');if(m)m.style.display='none';var el=document.getElementById('roundsScreen');if(el)el.style.display='block';homeNavSet('rounds');try{renderRoundsScreen();}catch(e){}}
+window.showMeScreen=showMeScreen;window.showGroupsScreen=showGroupsScreen;window.showRoundsScreen=showRoundsScreen;
+function _hmOpenCreateSheet(){
+  var old=document.getElementById('hmCreateSheet');if(old)old.remove();
+  var bd=document.createElement('div');bd.id='hmCreateSheet';bd.className='rdsheet-backdrop';
+  bd.addEventListener('click',function(e){if(e.target===bd)bd.remove();});
+  bd.innerHTML='<div class="rdsheet"><div class="rdsheet-grab"></div>'
+    +'<div class="hmcs-hd">Start something</div>'
+    +'<div class="hmcs-sub">Pick up a game or plan the weekend.</div>'
+    +'<button class="hmcs-opt" id="hmcsRound"><span class="hmcs-ic"><i class="ti ti-flag-3"></i></span><span class="hmcs-tx"><span class="hmcs-t">New round</span><span class="hmcs-d">Track a single round</span></span><i class="ti ti-chevron-right hmcs-chev"></i></button>'
+    +'<button class="hmcs-opt" id="hmcsTrip"><span class="hmcs-ic"><i class="ti ti-calendar"></i></span><span class="hmcs-tx"><span class="hmcs-t">New trip</span><span class="hmcs-d">Plan a full weekend</span></span><i class="ti ti-chevron-right hmcs-chev"></i></button>'
+    +'</div>';
+  document.body.appendChild(bd);
+  var br=document.getElementById('hmcsRound');if(br)br.onclick=function(){bd.remove();if(window._hmShowGrpRoundSheet)window._hmShowGrpRoundSheet();};
+  var bt=document.getElementById('hmcsTrip');if(bt)bt.onclick=function(){bd.remove();if(window._hmShowNewTripSheet)window._hmShowNewTripSheet();};
+}
+window._hmOpenCreateSheet=_hmOpenCreateSheet;
+function renderMeScreen(){
+  var body=document.getElementById('meBody');if(!body)return;
+  var user=(typeof sbCurrentUser==='function')?sbCurrentUser():null;
+  var meta=(user&&user.user_metadata)||{};
+  var email=(user&&user.email)||'';
+  var name=meta.full_name||'Your profile';
+  var initials=(typeof sbInitialsFrom==='function')?sbInitialsFrom(meta.full_name,email):'';
+  var hcp=(meta.hcp!=null&&meta.hcp!=='')?((typeof sbHcpDisplay==='function')?sbHcpDisplay(meta.hcp):String(meta.hcp)):'Not set';
+  var ghin=meta.ghin?String(meta.ghin):'';
+  var ts=(typeof getThemeState==='function')?getThemeState():'system';
+  var tl=ts==='dark'?'Dark':ts==='light'?'Light':'Auto';
+  var h='';
+  h+='<div class="me-idcard"><div class="me-av">'+initials+'</div>'
+    +'<div class="me-idmeta"><div class="me-idname">'+name+'</div><div class="me-idsub">'+(hcp==='Not set'?email:(hcp+' handicap'))+'</div></div>'
+    +'<button class="me-pencil" aria-label="Edit profile" onclick="window.sbOpenEditProfile()"><i class="ti ti-edit"></i></button></div>';
+  h+='<div class="me-seclbl">Profile</div><div class="me-card">'
+    +'<button class="me-row" onclick="window.sbOpenEditProfile()"><i class="ti ti-golf lead"></i><span class="rlbl">GHIN number</span><span class="rval'+(ghin?'':' act')+'">'+(ghin||'Add')+'</span></button>'
+    +'<button class="me-row" onclick="window.sbOpenEditProfile()"><i class="ti ti-flag-3 lead"></i><span class="rlbl">Handicap index</span><span class="rval">'+hcp+'</span></button></div>';
+  h+='<div class="me-seclbl">Preferences</div><div class="me-card">'
+    +'<button class="me-row" onclick="toggleTheme();window.renderMeScreen()"><i class="ti ti-moon lead"></i><span class="rlbl">Appearance</span><span class="rval">'+tl+'</span><i class="ti ti-chevron-right chev"></i></button>'
+    +'<button class="me-row" onclick="showHowToPlay()"><i class="ti ti-help-circle lead"></i><span class="rlbl">How it works</span><i class="ti ti-chevron-right chev"></i></button>'
+    +'<div class="me-row" style="cursor:default"><i class="ti ti-info-square-rounded lead"></i><span class="rlbl">App version</span><span class="rval">'+(typeof APP_VERSION!=='undefined'?APP_VERSION:'')+'</span></div></div>';
+  h+='<div class="me-card"><button class="me-row me-signout" onclick="window.sbSignOut()"><i class="ti ti-logout lead"></i><span class="rlbl">Sign out</span></button></div>';
+  body.innerHTML=h;
+}
+window.renderMeScreen=renderMeScreen;
+async function renderGroupsScreen(){
+  var body=document.getElementById('groupsBody');if(!body)return;
+  var h='<div class="grp-actions2">'
+    +'<button class="grp-act2" id="grpActCreate"><span class="grp-act2-ic"><i class="ti ti-plus"></i></span><span class="grp-act2-tx"><span class="grp-act2-t">Create a group</span><span class="grp-act2-d">Start a crew for your trips</span></span><i class="ti ti-chevron-right grp-act2-chev"></i></button>'
+    +'<button class="grp-act2" id="grpActJoin"><span class="grp-act2-ic"><i class="ti ti-user-plus"></i></span><span class="grp-act2-tx"><span class="grp-act2-t">Join a group</span><span class="grp-act2-d">Enter a 6-character code</span></span><i class="ti ti-chevron-right grp-act2-chev"></i></button>'
+    +'</div>';
+  var groups=[];
+  try{groups=await sbGetUserGroups();}catch(e){groups=[];}
+  var trips=(typeof loadTrips==='function')?loadTrips():[];
+  if(groups.length){
+    h+='<div class="me-seclbl" style="margin-top:20px">Your groups</div>';
+    groups.forEach(function(g){
+      var tc=trips.filter(function(t){return t.group_id===g.group_id;}).length;
+      var isAdmin=(typeof _amGroupAdmin==='function')?_amGroupAdmin(g):(g&&g.role==='admin');
+      var roleCls=isAdmin?'gcard-role admin':'gcard-role';
+      var roleTxt=isAdmin?'Admin':'Member';
+      h+='<div class="gcard" data-gid="'+g.group_id+'">'
+        +'<div class="gcard-top">'
+        +'<div class="home-grp-avs" id="gs-davs-'+g.group_id+'"><div style="width:26px;height:26px;border-radius:50%;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary)"></div></div>'
+        +'<span class="'+roleCls+'">'+roleTxt+'</span></div>'
+        +'<div class="gcard-name">'+g.name+'</div>'
+        +'<div class="gcard-meta" id="gs-dmeta-'+g.group_id+'">'+tc+' trip'+(tc!==1?'s':'')+'</div>'
+        +'</div>';
+    });
+  } else {
+    h+='<div class="hm-empty"><div class="hm-empty-ic"><i class="ti ti-users"></i></div>'
+      +'<div class="hm-empty-t">No groups yet</div>'
+      +'<div class="hm-empty-d">Create a group for your crew, or join one with a code.</div></div>';
+  }
+  body.innerHTML=h;
+  var bc=document.getElementById('grpActCreate');if(bc)bc.onclick=function(){window.sbShowCreateGroup();};
+  var bj=document.getElementById('grpActJoin');if(bj)bj.onclick=function(){window.sbShowJoinGroup();};
+  body.querySelectorAll('.gcard[data-gid]').forEach(function(el){el.onclick=function(){window.openGroupPage(el.getAttribute('data-gid'));};});
+  if(groups.length){groups.forEach(function(g){try{_loadGroupMembersIntoDoor(g.group_id,'gs-');}catch(e){}});}
+}
+window.renderGroupsScreen=renderGroupsScreen;
+function renderRoundsScreen(){
+  var body=document.getElementById('roundsBody');if(!body)return;
+  var rounds=(typeof _indivRoundsFromLocal==='function')?_indivRoundsFromLocal():[];
+  if(!rounds.length){
+    body.innerHTML='<div class="hm-empty"><div class="hm-empty-ic"><i class="ti ti-flag-3"></i></div>'
+      +'<div class="hm-empty-t">No rounds yet</div>'
+      +'<div class="hm-empty-d">Tap the plus button to track a new round or plan a trip.</div>'
+      +'<button class="hm-empty-btn primary" id="rndStartBtn">Start something</button></div>';
+    var b=document.getElementById('rndStartBtn');if(b)b.onclick=function(){_hmOpenCreateSheet();};
+    return;
+  }
+  body.innerHTML='<div class="home-dash-sec-label">Individual Rounds</div>'
+    +rounds.map(function(t){return _buildHomeTripCard(t);}).join('');
+}
+window.renderRoundsScreen=renderRoundsScreen;
 
 window.sbShowUserMenu = function(){
   const menu = document.getElementById('userMenu');
@@ -3235,28 +3446,6 @@ async function renderHomeDashboard(){
   // CONTINUE PLAYING - rendered by _renderContinueSection so a delete/undo can refresh it in place.
   html+='<div class="home-dash-sec" id="homeContinueSec"></div>';
 
-  // START SOMETHING
-  html+='<div class="home-dash-sec">'
-    +'<div class="home-dash-sec-label">Start Something</div>'
-    +'<div class="home-start-grid">'
-    +'<button class="home-start-card home-elev" onclick="window._hmShowGrpRoundSheet()">'
-    +'<div class="home-start-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2" width="18" height="18"><path d="M6 21V5" stroke-linecap="round"/><path d="M6 5.5h11l-3 3.5 3 4H6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'
-    +'<div class="home-start-title">New Round</div>'
-    +'<div class="home-start-desc">Track a single round.</div>'
-    +'</button>'
-    +'<button class="home-start-card home-elev" onclick="window._hmShowNewTripSheet()">'
-    +'<div class="home-start-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2" width="18" height="18"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg></div>'
-    +'<div class="home-start-title">New Trip</div>'
-    +'<div class="home-start-desc">Plan a full weekend.</div>'
-    +'</button>'
-    +'</div>'
-    +'<div class="home-sec-links">'
-    +'<button onclick="window.sbShowCreateGroup()">Create Group</button><span class="dot">&#183;</span>'
-    +'<button onclick="window.sbShowJoinGroup()">Join Group</button><span class="dot">&#183;</span>'
-    +'<button onclick="showHowToPlay()">How It Works</button>'
-    +'</div>'
-    +'</div>';
-
   // YOUR GROUPS
   if(groups.length){
     html+='<div class="home-dash-sec"><div class="home-dash-sec-label">Your Groups</div>';
@@ -3274,6 +3463,16 @@ async function renderHomeDashboard(){
       _loadGroupMembersIntoDoor(g.group_id);
     });
     html+='</div>';
+  } else {
+    html+='<div class="home-dash-sec">'
+      +'<div class="hm-empty">'
+      +'<div class="hm-empty-ic"><i class="ti ti-users"></i></div>'
+      +'<div class="hm-empty-t">No groups yet</div>'
+      +'<div class="hm-empty-d">Start a group for your crew, or join an existing one with a code.</div>'
+      +'<button class="hm-empty-btn primary" onclick="window.sbShowCreateGroup()">Create group</button>'
+      +'<button class="hm-empty-btn" onclick="window.sbShowJoinGroup()">Join with a code</button>'
+      +'<button class="hm-empty-link" onclick="showHowToPlay()"><i class="ti ti-info-circle"></i> New here? See how it works</button>'
+      +'</div></div>';
   }
 
   html+='<div class="home-dash-sec" id="homeIndivSec"></div>';
@@ -3341,7 +3540,7 @@ window.toggleTripSection = function(id){
 };
 
 // Stage 5: async member loader for doorway cards
-async function _loadGroupMembersIntoDoor(gid){
+async function _loadGroupMembersIntoDoor(gid,idPrefix){idPrefix=idPrefix||'hm-';
   if(!navigator.onLine)return;
   try{
     const tok=_sbSession?.access_token||SB_KEY;
@@ -3351,7 +3550,7 @@ async function _loadGroupMembersIntoDoor(gid){
     if(!r.ok)return;
     const members=await r.json();
     if(_groupCache[gid])_groupCache[gid]._members=members;
-    const avEl=document.getElementById('hm-davs-'+gid);
+    const avEl=document.getElementById(idPrefix+'davs-'+gid);
     if(avEl){
       avEl.innerHTML=members.slice(0,4).map(function(m,i){
         const ini=(m.display_name||'??').split(' ').map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
@@ -3360,7 +3559,7 @@ async function _loadGroupMembersIntoDoor(gid){
         return'<div class="avatar'+(isManaged?' managed':'')+'" style="width:26px;height:26px;font-size:10px;background:'+c.bg+';color:'+c.fg+';border:2px solid var(--color-background-primary);">'+ini+'</div>';
       }).join('');
     }
-    const metaEl=document.getElementById('hm-dmeta-'+gid);
+    const metaEl=document.getElementById(idPrefix+'dmeta-'+gid);
     if(metaEl){
       const groupTrips=loadTrips().filter(function(t){return t.group_id===gid;});
       metaEl.textContent=members.length+' member'+(members.length!==1?'s':'')+' · '+groupTrips.length+' trip'+(groupTrips.length!==1?'s':'');
@@ -3513,8 +3712,9 @@ window.openGroupPage = function(gid){
   gearEl.innerHTML=_gearSvgStr();
   gearEl.onclick=function(){window.openGroupSettings(gid);};
 
-  document.getElementById('homeScreen').style.display='none';
+  ['homeScreen','meScreen','groupsScreen','roundsScreen'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
   document.getElementById('homeGroupScreen').style.display='block';
+  try{homeNavSet('groups');}catch(e){}
   window.scrollTo(0,0);
   renderGroupPage(gid);
 };
@@ -3548,7 +3748,7 @@ async function renderGroupPage(gid){
 
   const trips=loadTrips().filter(t=>t.group_id===gid);
   trips.forEach(t=>{if(t.totalHoles>0&&t.holesPlayed>=t.totalHoles)t.complete=true;});
-  const tripCards=_buildTripSections(trips,gid+'_page',false,gid);
+  const tripCards=_buildTripSections(trips,gid+'_page',true,gid);
 
   const memberRows=members.map((m,i)=>{
     const ini=(m.display_name||'??').split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
@@ -3564,19 +3764,14 @@ async function renderGroupPage(gid){
     </div>`;
   }).join('');
 
-  const codeHtml='';
-
-  body.innerHTML=codeHtml
-    +`<div class="hm-sec-label">Members (${members.length})</div>`
-    +`<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:0 14px;margin-bottom:10px">${memberRows||'<div style="padding:12px;font-size:13px;color:var(--color-text-secondary)">No members found.</div>'}</div>`
-    +(isAdmin?`<button class="hm-cta-soft home-elev" style="width:100%;margin-bottom:16px" onclick="window._openAddGuestSheet('${gid}')">+ Add Guest</button>`:'')
-    +`<div class="hm-sec-label">Trips (${trips.length})</div>`
-    +tripCards
-    +`<div style="height:0.5px;background:var(--color-border-tertiary);margin:10px 0 8px"></div>`
-    +`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button class="hm-cta-primary home-elev" onclick="window._pendingGroupId='${gid}';startNewWeekend()">New Trip</button>
-      <button class="hm-cta-soft home-elev" onclick="window.startGroupQuickRound('${gid}')">Group Round</button>
-    </div>`;
+  const clusterMax=5;
+  const _avCluster=members.slice(0,clusterMax).map(function(m,i){var ini=(m.display_name||'??').split(' ').map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();var cc=AVATAR_PALETTE[i%AVATAR_PALETTE.length];return `<div class="avatar" style="width:28px;height:28px;font-size:11px;background:${cc.bg};color:${cc.fg};border:2px solid var(--color-background-primary);${i>0?'margin-left:-8px;':''}">${ini}</div>`;}).join('')+(members.length>clusterMax?`<div class="avatar" style="width:28px;height:28px;font-size:11px;background:var(--color-background-secondary);color:var(--color-text-secondary);border:2px solid var(--color-background-primary);margin-left:-8px;">+${members.length-clusterMax}</div>`:'');
+  const _rosterBar=`<div class="gp-roster-bar" onclick="window._toggleGpRoster()"><div class="gp-roster-avs">${_avCluster}</div><span class="gp-roster-count">${members.length} member${members.length!==1?'s':''}</span><i class="ti ti-chevron-down gp-roster-chev" id="gpRosterChev" aria-hidden="true"></i></div>`;
+  const _memberBox=`<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:0 14px">${memberRows||'<div style="padding:12px;font-size:13px;color:var(--color-text-secondary)">No members found.</div>'}</div>`;
+  const _addGuest=isAdmin?`<button class="hm-cta-soft home-elev" style="width:100%;margin-top:10px" onclick="window._openAddGuestSheet('${gid}')">+ Add Guest</button>`:'';
+  const _rosterPanel=`<div class="gp-roster-panel" id="gpRosterPanel" style="display:none">${_memberBox}${_addGuest}</div>`;
+  const _actions=`<div class="gp-actions"><button class="hm-cta-primary home-elev" onclick="window._pendingGroupId='${gid}';startNewWeekend()">New Trip</button><button class="hm-cta-soft home-elev" onclick="window.startGroupQuickRound('${gid}')">Group Round</button></div>`;
+  body.innerHTML=_rosterBar+_rosterPanel+_actions+tripCards;
 }
 
 window._copyGroupCode = function(code,btn){
@@ -3584,6 +3779,8 @@ window._copyGroupCode = function(code,btn){
   if(navigator.clipboard){navigator.clipboard.writeText(code).then(function(){_fb();}).catch(function(){_showSaveIndicator('Code: '+code);});}
   else{_showSaveIndicator('Code: '+code);}
 };
+
+window._toggleGpRoster=function(){var p=document.getElementById('gpRosterPanel');var chev=document.getElementById('gpRosterChev');if(!p)return;var open=p.style.display!=='none';p.style.display=open?'none':'block';if(chev)chev.className='ti ti-chevron-'+(open?'down':'up')+' gp-roster-chev';};
 
 window.openMemberSheet = function(gid,idx){
   const g=_groupCache[gid];
@@ -5607,7 +5804,7 @@ function initState(netOffLow){const nR=WK.rounds.length,nP=WK.players.length;con
     roundFlights:_rf0,
     currentFlight:0
   };}
-function launchMainApp(){window._qrNineHole=null;_isQuickRoundWizard=false;document.getElementById('wizardScreen')?.classList.remove('qr-mode');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';['homeGroupScreen','groupSetupScreen','groupCreateScreen','groupJoinScreen','groupPickerScreen'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;const _fmtDate=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' · '+_fmtDate(WK.date)):WK.region||_fmtDate(WK.date)||'';updateTabDimming();setView('scores');document.getElementById('mainTabBar')?.classList.add('visible');_syncStart();}
+function launchMainApp(){homeNavHide();window._qrNineHole=null;_isQuickRoundWizard=false;document.getElementById('wizardScreen')?.classList.remove('qr-mode');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';['homeGroupScreen','groupSetupScreen','groupCreateScreen','groupJoinScreen','groupPickerScreen'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;const _fmtDate=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' · '+_fmtDate(WK.date)):WK.region||_fmtDate(WK.date)||'';updateTabDimming();setView('scores');document.getElementById('mainTabBar')?.classList.add('visible');_syncStart();}
 // Stage 2: Scores tab view mode
 let _scViewMode='hole';
 
