@@ -1424,7 +1424,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v112.12';
+const APP_VERSION='v112.13';
 
 // ===== THEME =====
 (function(){
@@ -3172,7 +3172,7 @@ async function saveCourse(name){
   try{
     // Upsert (merge-duplicates on courses.name) so editing a course that
     // has no DB row yet REGISTERS it rather than no-op PATCHing zero rows.
-    const _res=await sbApiFetch(SB_URL+'/rest/v1/courses',{
+    const _res=await sbApiFetch(SB_URL+'/rest/v1/courses?on_conflict=name',{
       method:'POST',
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer(),'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
       body:JSON.stringify({name,slope:c.slope,rating:c.rating||null,holes:c.holes,is_custom:c.source==='custom',tees:c.tees||null,source:c.source||'custom',external_id:c.external_id||null,api_fetched_at:c.api_fetched_at||null,display_name:c.displayName||null,location:c.location||null})
@@ -3186,7 +3186,7 @@ async function saveNewCourse(name){
   if(!c)return;
   try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}
   try{
-    await sbApiFetch(SB_URL+'/rest/v1/courses',{
+    await sbApiFetch(SB_URL+'/rest/v1/courses?on_conflict=name',{
       method:'POST',
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer(),'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
       body:JSON.stringify({name,slope:c.slope,rating:c.rating||null,holes:c.holes,is_custom:c.source==='custom',tees:c.tees||null,source:c.source||'custom',external_id:c.external_id||null,display_name:c.displayName||null,api_fetched_at:c.api_fetched_at||null,location:c.location||null})
