@@ -1457,7 +1457,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v113.26';
+const APP_VERSION='v113.27';
 
 // ===== THEME =====
 (function(){
@@ -1526,8 +1526,48 @@ function s2MarkDirty(types,scoreKey){
 
 // Deterministic IDs — stable, no UUID generation needed
 function s2TripId(){return WK._id||'';}
-function s2RoundId(r){return WK._id+':round:'+r;}
-function s2PlayerId(pi){return WK._id+':player:'+pi;}
+
+// STABLE, NON-POSITIONAL IDENTITY (v113.27).
+// Rounds and players are keyed by an opaque token stamped at creation, NOT by array
+// index. addE9Round / removeRound / removePlayer all SPLICE their arrays, and an
+// index-keyed id silently re-points rows already written to Supabase at a different
+// logical round or player. Tokens do not move when the array does.
+//
+// Legacy trips (and any pre-token blob) ADOPT their current index as their token on
+// load, so every id string regenerates byte-identical to what is already stored in
+// scores.round_id / scores.player_id / players.player_id. No migration of data, no
+// dual-format read path. The adoption freezes identity at the moment of upgrade.
+//
+// Fresh tokens always begin with a letter, so they can never collide with an adopted
+// numeric one inside the same trip.
+function s2NewTok(){
+  return 'a'+Math.random().toString(36).slice(2,8)+Date.now().toString(36).slice(-4);
+}
+// Idempotent. Safe to call on every load and after every trip construction.
+function s2AdoptIds(wk){
+  if(!wk)return;
+  (wk.rounds||[]).forEach(function(rd,r){if(rd&&!rd.rid)rd.rid=String(r);});
+  (wk.players||[]).forEach(function(p,pi){if(p&&!p.pid)p.pid=String(pi);});
+}
+// The String(...) fallbacks are a safety net only. If adoption has run (it runs on
+// every load and every trip build) they are never reached.
+function s2RoundTok(r){var rd=WK&&WK.rounds&&WK.rounds[r];return rd&&rd.rid?rd.rid:String(r);}
+function s2PlayerTok(pi){var p=WK&&WK.players&&WK.players[pi];return p&&p.pid?p.pid:String(pi);}
+function s2RoundId(r){return WK._id+':round:'+s2RoundTok(r);}
+function s2PlayerId(pi){return WK._id+':player:'+s2PlayerTok(pi);}
+
+// Precise orphan delete. Only safe because the id is a stable token: deleting by an
+// index that has ALREADY shifted would take out the wrong row.
+async function s2DeleteWhere(table,filter){
+  try{
+    const res=await sbApiFetch(SB_URL+'/rest/v1/'+table+'?'+filter,{
+      method:'DELETE',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer(),'Prefer':'return=minimal'}
+    });
+    if(!res.ok)console.warn('[s2DeleteWhere] '+table+' failed '+res.status);
+    return res.ok;
+  }catch(e){console.warn('[s2DeleteWhere] '+table+' threw',e);return false;}
+}
 
 async function s2Upsert(table,rows,onConflict,returnSelect){
   if(!rows||!rows.length)return true;
@@ -1669,6 +1709,7 @@ async function s2WriteActive(){
         game_net_off_flight_low:!!STATE.netOffFlightLow,
         staged_courses:(WK.stagedCourses||[]).map(n=>({name:n,defaultTee:(WK.stagedCourseTees||{})[n]||null}))||null,
         rounds_data:WK.rounds.map(rd=>({
+          ...(rd.rid&&{rid:rd.rid}),
           courseName:rd.courseName,
           course:rd.course,
           mpOn:!!rd.mpOn,
@@ -1759,7 +1800,7 @@ async function s2WriteActive(){
         player_index:pi,
         library_id:p.lid||null
       }));
-      const _playersOk=await s2Upsert('players',rows,'trip_id,player_index');
+      const _playersOk=await s2Upsert('players',rows,'player_id');
       if(!_playersOk)_s2Dirty.players=true;
     }
 
@@ -1780,7 +1821,7 @@ async function s2WriteActive(){
           const strokes=STATE.scores[r][hi][pi];
           if(strokes===null)return; // only write entered scores
           scoreRows.push({
-            score_id:WK._id+':score:'+r+':'+hi+':'+pi,
+            score_id:WK._id+':score:'+s2RoundTok(r)+':'+hi+':'+s2PlayerTok(pi),
             round_id:s2RoundId(r),
             player_id:s2PlayerId(pi),
             hole_index:hi,
@@ -1975,6 +2016,9 @@ async function s2ReadTrip(tripId){
       razzleSettle:t.razzle_settle||'perplayer',
       razzleBirdieGross:!!t.razzle_birdie_gross,
       players:playerRows.map(p=>({
+        // Adopt the token straight off the stored player_id, so identity is whatever
+        // the DB row already says it is. Falls back to index adoption in s2AdoptIds.
+        pid:(String(p.player_id||'').split(':player:')[1]||''),
         name:((p.first_name||'')+(p.last_name?' '+p.last_name:'')).trim(),
         first:p.first_name||'',
         last:p.last_name||'',
@@ -1985,6 +2029,7 @@ async function s2ReadTrip(tripId){
         ini:p.ini||'?'
       })),
       rounds:t.rounds_data.map(rd=>({
+        ...(rd.rid&&{rid:rd.rid}),
         courseName:rd.courseName,
         course:rd.course||(CATALOG[rd.courseName])||{slope:113,holes:Array.from({length:18},(_,i)=>({par:4,si:i+1}))},
         // Per-round flags: use value from rounds_data if present (v70+), else fall back to trip-level (pre-v70)
@@ -2032,6 +2077,11 @@ async function s2ReadTrip(tripId){
         ...(rd.inStandings!=null&&{inStandings:rd.inStandings})
       }))
     };
+    // Freeze identity BEFORE anything reads it. Any round or player without a token
+    // adopts its current index, so every id regenerates byte-identical to the stored
+    // rows and the token maps below resolve correctly for legacy trips.
+    s2AdoptIds(newWK);
+
     // staged_courses may be [{name,defaultTee}] objects or legacy [string]
     const _sc=Array.isArray(t.staged_courses)?t.staged_courses:[];
     newWK.stagedCourses=_sc.map(x=>typeof x==='string'?x:(x.name||'')).filter(Boolean);
@@ -2059,14 +2109,25 @@ async function s2ReadTrip(tripId){
 
     // Reconstruct STATE scores 3D array
     const newScores=Array(nR).fill(null).map(()=>Array(18).fill(null).map(()=>Array(nP).fill(null)));
+    // Token -> index maps. A row whose token is not in the map belongs to a round or a
+    // player that has since been DELETED. It is ignored rather than resurrected into
+    // whatever now occupies that array slot. This is what kills the two silent
+    // corruptions: a deleted player reappearing on reload, and a re-added round
+    // inheriting the dead round's scores.
+    const _rTok={};newWK.rounds.forEach((rd,r)=>{if(rd&&rd.rid!=null)_rTok[rd.rid]=r;});
+    const _pTok={};newWK.players.forEach((p,pi)=>{if(p&&p.pid!=null&&p.pid!=='')_pTok[p.pid]=pi;});
     scoreRows.forEach(s=>{
-      // round_id format: tripId:round:r
-      const rIdx=parseInt((s.round_id||'').split(':round:')[1]);
+      // round_id format: tripId:round:<rid>   player_id format: tripId:player:<pid>
+      const rIdx=_rTok[(s.round_id||'').split(':round:')[1]];
       const hi=s.hole_index;
-      // player_id format: tripId:player:pi
-      const pi=parseInt((s.player_id||'').split(':player:')[1]);
-      if(!isNaN(rIdx)&&!isNaN(hi)&&!isNaN(pi)&&newScores[rIdx]&&newScores[rIdx][hi])
-        newScores[rIdx][hi][pi]=s.strokes;
+      const pi=_pTok[(s.player_id||'').split(':player:')[1]];
+      if(rIdx===undefined||pi===undefined)return; // deleted round/player — drop the row
+      if(typeof hi!=='number'||!newScores[rIdx]||!newScores[rIdx][hi])return;
+      // Bound-check pi EXPLICITLY. An out-of-range NUMBER slips past an undefined check
+      // and would EXTEND the hole row past the player count, poisoning the .every()
+      // completeness scan. Same bug class as i3 and i6.
+      if(pi<0||pi>=newScores[rIdx][hi].length)return;
+      newScores[rIdx][hi][pi]=s.strokes;
     });
 
     // Reconstruct STATE — resume at first unplayed hole of first incomplete round,
@@ -4566,6 +4627,7 @@ function viewTrip(id){
       const trips=loadTrips();const trip=trips.find(t=>t.id===id);
       if(trip&&trip.WK&&trip.STATE){
         WK=JSON.parse(JSON.stringify(trip.WK));STATE=JSON.parse(JSON.stringify(trip.STATE));
+        s2AdoptIds(WK); // legacy blob trips carry no tokens — freeze identity at current index
         console.log('[viewTrip] Loaded trip from blob (fallback)');
       } else if(s2data===S2_ABSENT){
         // Confirmed deleted: server answered cleanly with no row, and nothing local.
@@ -5800,7 +5862,11 @@ function flightMemberInitials(r,fi){
   var fl=flightsForRound(r)[fi]||[];
   return fl.map(function(pi){return WK.players[pi]?WK.players[pi].ini:'?';}).join(', ');
 }
-function initState(netOffLow){const nR=WK.rounds.length,nP=WK.players.length;const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];const mkSkTeams=r=>{const g=skinsGamesForRound(r);return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));};
+function initState(netOffLow){
+  // Stamp identity tokens on the freshly built trip before any id is derived from it.
+  // Idempotent: a round or player that already carries a token is left alone.
+  s2AdoptIds(WK);
+const nR=WK.rounds.length,nP=WK.players.length;const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];const mkSkTeams=r=>{const g=skinsGamesForRound(r);return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));};
   // Foursomes must exist before per-round game defaults that key off them (Wolf order).
   const _rf0=Array(nR).fill(null).map(()=>defaultFlights(nP));
   STATE={currentRound:0,currentHole:holeOffset(0),netOffLow:netOffLow||false,netOffFlightLow:false,mpViewRound:0,vegasViewRound:0,skinsViewRound:0,scRound:0,optPanel:'teams',teamsRound:0,roundRankOpen:false,emergencyRankOpen:false,moneyTab:'golf',expenses:[],settledRounds:[],roundSettleData:{},lockedRounds:[],scores:Array(nR).fill(null).map(()=>Array(18).fill(null).map(()=>Array(nP).fill(null))),mpTeams:_rf0.map((fl,r)=>fl.map(()=>isHeadsUp(r)?defaultHUTeams(r):defaultTeams(r))),vegTeams:_rf0.map((fl,r)=>fl.map((_,fi)=>defaultVegasTeamsForFlight(r,fi))),skinsTeams:_rf0.map((fl,r)=>fl.map((_,fi)=>defaultSkinsTeamsForFlight(r,fi))),
@@ -8203,9 +8269,17 @@ function _flightsAddPlayer(r,gi){
 function _flightsAddFoursome(r){_flightsMutate(r,fl=>{fl.push([-1]);});}
 function toggleEditPanel(eid,btnId){const panel=document.getElementById(eid);const btn=document.getElementById(btnId);const display=document.getElementById(eid+'_display');if(!panel)return;const isOpen=panel.style.display!=='none';panel.style.display=isOpen?'none':'block';if(display)display.style.display=isOpen?'flex':'none';if(btn)btn.style.display=isOpen?'inline-block':'none';if(isOpen){const mc=eid.match(/^ce_(.+)$/);if(mc){const cname=mc[1].replace(/_/g,' ');if(CATALOG[cname])saveCourse(cname);}renderPlayersPanel();}}
 function toggleAddPlayerRow(){const row=document.getElementById('addPlayerRow');const btn=document.getElementById('addPlayerToggleBtn');if(!row)return;const opening=row.style.display==='none';row.style.display=opening?'block':'none';if(btn)btn.style.display=opening?'none':'inline-block';if(opening)setTimeout(function(){var el=document.getElementById('apFirst');if(el)el.focus();},50);}
-function confirmAddPlayer(){if(!canEditTrip())return;var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=idxFromInput(document.getElementById('apIdx')?document.getElementById('apIdx').value:'',10);if(!first){alert('Enter a first name.');return;}if(WK.players.length>=12)return;var c=pickColor();var newP={name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};var allPlayers=WK.players.concat([newP]);resolveDisplayNames(allPlayers);WK.players.push(newP);WK.rounds.forEach(function(_,r){STATE.scores[r].forEach(function(h){h.push(null);});sanitizeTeams(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();if(typeof renderGamesTab==='function'&&document.getElementById('view-games')&&document.getElementById('view-games').style.display!=='none')renderGamesTab();autoSave();}
-function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=12)return;const c=pickColor(),i=WK.players.length;WK.players.push({name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));sanitizeTeams(r);});if(STATE)STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);if(STATE)WK.rounds.forEach((_,r)=>{reconcileWolfOrder(r);reconcileSnakeHolders(r);reconcileMPTeams(r);reconcileVegasTeams(r);reconcileHammerTeams(r);reconcileSkinsTeams(r);reconcileRazzleOrder(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();}
-function removePlayer(idx){if(!canEditTrip())return;if(WK.players.length<=2){alert('Need at least 2 players.');return;}WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=STATE.mpTeams.map(function(rd){return fixTeams(rd);});STATE.vegTeams=STATE.vegTeams.map(function(rd){return fixTeams(rd);});if(STATE.skinsTeams)STATE.skinsTeams=STATE.skinsTeams.map(function(rd){return fixTeams(rd);});if(STATE.hammerTeams)STATE.hammerTeams=STATE.hammerTeams.map(function(rd){return fixTeams(rd);});if(STATE.roundFlights)STATE.roundFlights=padFlights(STATE.roundFlights.map(function(fls){return fls.map(function(fl){return fl.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});}),WK.rounds.length,WK.players.length);if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';WK.rounds.forEach((_,r)=>{sanitizeTeams(r);reconcileWolfOrder(r);reconcileSnakeHolders(r);reconcileMPTeams(r);reconcileVegasTeams(r);reconcileHammerTeams(r);reconcileSkinsTeams(r);reconcileRazzleOrder(r);});renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
+function confirmAddPlayer(){if(!canEditTrip())return;var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=idxFromInput(document.getElementById('apIdx')?document.getElementById('apIdx').value:'',10);if(!first){alert('Enter a first name.');return;}if(WK.players.length>=12)return;var c=pickColor();var newP={pid:s2NewTok(),name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};var allPlayers=WK.players.concat([newP]);resolveDisplayNames(allPlayers);WK.players.push(newP);WK.rounds.forEach(function(_,r){STATE.scores[r].forEach(function(h){h.push(null);});sanitizeTeams(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();if(typeof renderGamesTab==='function'&&document.getElementById('view-games')&&document.getElementById('view-games').style.display!=='none')renderGamesTab();autoSave();}
+function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=12)return;const c=pickColor(),i=WK.players.length;WK.players.push({pid:s2NewTok(),name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));sanitizeTeams(r);});if(STATE)STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);if(STATE)WK.rounds.forEach((_,r)=>{reconcileWolfOrder(r);reconcileSnakeHolders(r);reconcileMPTeams(r);reconcileVegasTeams(r);reconcileHammerTeams(r);reconcileSkinsTeams(r);reconcileRazzleOrder(r);});if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();}
+function removePlayer(idx){if(!canEditTrip())return;if(WK.players.length<=2){alert('Need at least 2 players.');return;}
+// Capture BEFORE the splice. The players row MUST be deleted too: s2ReadTrip sizes the
+// roster from playerRows.length, so a surviving row resurrects the player on reload.
+const _deadPid=(WK.players[idx]&&WK.players[idx].pid)?(WK._id+':player:'+WK.players[idx].pid):null;
+if(_deadPid){
+  s2DeleteWhere('scores','player_id=eq.'+encodeURIComponent(_deadPid));
+  s2DeleteWhere('players','player_id=eq.'+encodeURIComponent(_deadPid));
+}
+WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=STATE.mpTeams.map(function(rd){return fixTeams(rd);});STATE.vegTeams=STATE.vegTeams.map(function(rd){return fixTeams(rd);});if(STATE.skinsTeams)STATE.skinsTeams=STATE.skinsTeams.map(function(rd){return fixTeams(rd);});if(STATE.hammerTeams)STATE.hammerTeams=STATE.hammerTeams.map(function(rd){return fixTeams(rd);});if(STATE.roundFlights)STATE.roundFlights=padFlights(STATE.roundFlights.map(function(fls){return fls.map(function(fl){return fl.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});}),WK.rounds.length,WK.players.length);if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';WK.rounds.forEach((_,r)=>{sanitizeTeams(r);reconcileWolfOrder(r);reconcileSnakeHolders(r);reconcileMPTeams(r);reconcileVegasTeams(r);reconcileHammerTeams(r);reconcileSkinsTeams(r);reconcileRazzleOrder(r);});renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
 // Trip admin management handlers
 var _tripAdminPickerMembers=[];
 window._tripAdminAdd=function(idx){
@@ -8456,11 +8530,19 @@ async function _syncApplyScoreDelta(tripId){
     // updated_at — the watermark must never cross a blocked row's timestamp, or its
     // same-timestamp siblings would be skipped forever.
     let _firstBlockedTs=null;
+    // Live token -> index maps, same contract as the s2ReadTrip hydrate.
+    const _rTok={};(WK.rounds||[]).forEach((rd,r)=>{if(rd&&rd.rid!=null)_rTok[rd.rid]=r;});
+    const _pTok={};(WK.players||[]).forEach((p,pi)=>{if(p&&p.pid!=null&&p.pid!=='')_pTok[p.pid]=pi;});
     rows.forEach(s=>{
-      const rIdx=parseInt((s.round_id||'').split(':round:')[1]);
+      const rIdx=_rTok[(s.round_id||'').split(':round:')[1]];
       const hi=s.hole_index;
-      const pi=parseInt((s.player_id||'').split(':player:')[1]);
-      if(isNaN(rIdx)||isNaN(hi)||isNaN(pi))return; // malformed id — never appliable, ignore
+      const pi=_pTok[(s.player_id||'').split(':player:')[1]];
+      // Unknown token: an orphan from a deleted round/player. IGNORE it — do not treat it
+      // as blocked. Blocking would stall the score watermark forever behind a row that is
+      // never coming back. A genuinely NEW remote round or player cannot arrive without a
+      // trips-row write, and that triggers a full rebuild whose s2ReadTrip re-pulls EVERY
+      // score row with no watermark, so nothing is lost by ignoring it here.
+      if(rIdx===undefined||pi===undefined||typeof hi!=='number')return;
       if(!STATE.scores[rIdx]||!STATE.scores[rIdx][hi]||pi>=STATE.scores[rIdx][hi].length){
         if(!_firstBlockedTs||s.updated_at<_firstBlockedTs)_firstBlockedTs=s.updated_at;
         return; // trip rebuild (this tick or a later one) resizes the grid; re-pull then
@@ -8682,7 +8764,7 @@ window._wkSetCourse=function(ri,cn){
   }
   s2MarkDirty(['trip']);autoSave();s2WriteActive();renderWeekendPanel();
 };
-function addRound(){if(!canEditTrip())return;const cn=document.getElementById('newRoundCourse')?.value||Object.keys(CATALOG)[0];WK.rounds.push({courseName:cn,course:CATALOG[cn]});const nP=WK.players.length;STATE.scores.push(Array(18).fill(null).map(()=>Array(nP).fill(null)));const g=WK.mpGamesDefault;WK.mpGamesPerRound.push(g);WK.vegasSegsPerRound.push(WK.vegasSegsDefault);if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=[];WK.skinsGamesPerRound.push(0);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams.push([Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);const vg=vegasSegForRound(WK.rounds.length-1);STATE.vegTeams.push([Array(vg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);if(!STATE.hammerTeams)STATE.hammerTeams=[];STATE.hammerTeams.push([defaultHammerTeams(WK.rounds.length-1)]);if(!STATE.hammerState)STATE.hammerState=[];STATE.hammerState.push([Array(18).fill(null)]);if(!WK.hammerSegsPerRound)WK.hammerSegsPerRound=[];WK.hammerSegsPerRound.push(WK.hammerSegsDefault||1);if(!STATE.pressState)STATE.pressState=[];STATE.pressState.push([[]]);if(!STATE.skinsTeams)STATE.skinsTeams=[];const sg=skinsGamesForRound(WK.rounds.length-1);STATE.skinsTeams.push([Array(sg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);const _newR=WK.rounds.length-1;if(_newR>0&&STATE.roundFlights[_newR-1]&&STATE.roundFlights[_newR-1].length>1){STATE.roundFlights[_newR]=JSON.parse(JSON.stringify(STATE.roundFlights[_newR-1]));}reconcileWolfOrder(_newR);reconcileSnakeHolders(_newR);reconcileMPTeams(_newR);reconcileVegasTeams(_newR);reconcileHammerTeams(_newR);reconcileSkinsTeams(_newR);reconcileRazzleOrder(_newR);renderWeekendPanel();}
+function addRound(){if(!canEditTrip())return;const cn=document.getElementById('newRoundCourse')?.value||Object.keys(CATALOG)[0];WK.rounds.push({rid:s2NewTok(),courseName:cn,course:CATALOG[cn]});const nP=WK.players.length;STATE.scores.push(Array(18).fill(null).map(()=>Array(nP).fill(null)));const g=WK.mpGamesDefault;WK.mpGamesPerRound.push(g);WK.vegasSegsPerRound.push(WK.vegasSegsDefault);if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=[];WK.skinsGamesPerRound.push(0);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams.push([Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);const vg=vegasSegForRound(WK.rounds.length-1);STATE.vegTeams.push([Array(vg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);if(!STATE.hammerTeams)STATE.hammerTeams=[];STATE.hammerTeams.push([defaultHammerTeams(WK.rounds.length-1)]);if(!STATE.hammerState)STATE.hammerState=[];STATE.hammerState.push([Array(18).fill(null)]);if(!WK.hammerSegsPerRound)WK.hammerSegsPerRound=[];WK.hammerSegsPerRound.push(WK.hammerSegsDefault||1);if(!STATE.pressState)STATE.pressState=[];STATE.pressState.push([[]]);if(!STATE.skinsTeams)STATE.skinsTeams=[];const sg=skinsGamesForRound(WK.rounds.length-1);STATE.skinsTeams.push([Array(sg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);const _newR=WK.rounds.length-1;if(_newR>0&&STATE.roundFlights[_newR-1]&&STATE.roundFlights[_newR-1].length>1){STATE.roundFlights[_newR]=JSON.parse(JSON.stringify(STATE.roundFlights[_newR-1]));}reconcileWolfOrder(_newR);reconcileSnakeHolders(_newR);reconcileMPTeams(_newR);reconcileVegasTeams(_newR);reconcileHammerTeams(_newR);reconcileSkinsTeams(_newR);reconcileRazzleOrder(_newR);renderWeekendPanel();}
 function launchE9(){
   _e9State={step:1,cn:null,nineHole:null,inStandings:false,tee:null,pendingCn:null};
   _showE9Modal();
@@ -8931,7 +9013,7 @@ function addE9Round(){
   const nP=WK.players.length;
   const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];
   const _e9T=_e9State.tee;
-  const newRound={courseName:cn,course:_resolveCourseObj(cn,_e9T),...(nineHole&&{nineHole}),isE9:_isE9,inStandings,mpOn:false,vegasOn:false,skinsOn:false,snakeOn:false,razzleOn:false,hammerOn:false,hammerSegs:1};
+  const newRound={rid:s2NewTok(),courseName:cn,course:_resolveCourseObj(cn,_e9T),...(nineHole&&{nineHole}),isE9:_isE9,inStandings,mpOn:false,vegasOn:false,skinsOn:false,snakeOn:false,razzleOn:false,hammerOn:false,hammerSegs:1};
   _gsApplyToRound(newRound);
   // Insert after last standings round; append E-rounds at end
   let insertAt=WK.rounds.length;
@@ -8983,7 +9065,11 @@ function addE9Round(){
   updateHoleUI();
   renderHoleDots();
 }
-function removeRound(idx){if(WK.rounds.length<=1){alert('Need at least 1 round.');return;}WK.rounds.splice(idx,1);STATE.scores.splice(idx,1);WK.mpGamesPerRound.splice(idx,1);WK.vegasSegsPerRound.splice(idx,1);WK.skinsGamesPerRound?.splice(idx,1);STATE.mpTeams.splice(idx,1);STATE.vegTeams.splice(idx,1);STATE.hammerTeams?.splice(idx,1);STATE.hammerState?.splice(idx,1);WK.hammerSegsPerRound?.splice(idx,1);STATE.skinsTeams?.splice(idx,1);if(STATE.currentRound>=WK.rounds.length)STATE.currentRound=WK.rounds.length-1;if(STATE.teamsRound>=WK.rounds.length)STATE.teamsRound=WK.rounds.length-1;if(STATE.mpViewRound>=WK.rounds.length)STATE.mpViewRound=WK.rounds.length-1;if(STATE.vegasViewRound>=WK.rounds.length)STATE.vegasViewRound=WK.rounds.length-1;if((STATE.skinsViewRound||0)>=WK.rounds.length)STATE.skinsViewRound=WK.rounds.length-1;if(STATE.scRound>=WK.rounds.length)STATE.scRound=WK.rounds.length-1;renderWeekendPanel();}
+function removeRound(idx){if(WK.rounds.length<=1){alert('Need at least 1 round.');return;}
+// Capture the id BEFORE the splice — after it, index idx names a different round.
+const _deadRid=(WK.rounds[idx]&&WK.rounds[idx].rid)?(WK._id+':round:'+WK.rounds[idx].rid):null;
+if(_deadRid)s2DeleteWhere('scores','round_id=eq.'+encodeURIComponent(_deadRid));
+WK.rounds.splice(idx,1);STATE.scores.splice(idx,1);WK.mpGamesPerRound.splice(idx,1);WK.vegasSegsPerRound.splice(idx,1);WK.skinsGamesPerRound?.splice(idx,1);STATE.mpTeams.splice(idx,1);STATE.vegTeams.splice(idx,1);STATE.hammerTeams?.splice(idx,1);STATE.hammerState?.splice(idx,1);WK.hammerSegsPerRound?.splice(idx,1);STATE.skinsTeams?.splice(idx,1);if(STATE.currentRound>=WK.rounds.length)STATE.currentRound=WK.rounds.length-1;if(STATE.teamsRound>=WK.rounds.length)STATE.teamsRound=WK.rounds.length-1;if(STATE.mpViewRound>=WK.rounds.length)STATE.mpViewRound=WK.rounds.length-1;if(STATE.vegasViewRound>=WK.rounds.length)STATE.vegasViewRound=WK.rounds.length-1;if((STATE.skinsViewRound||0)>=WK.rounds.length)STATE.skinsViewRound=WK.rounds.length-1;if(STATE.scRound>=WK.rounds.length)STATE.scRound=WK.rounds.length-1;renderWeekendPanel();}
 // --- GolfCourseAPI import helpers ---
 window._gcaLastQuery='';
 function _gcaFetchedAgo(ts){
