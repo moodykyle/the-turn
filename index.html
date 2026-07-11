@@ -1457,7 +1457,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v113.25';
+const APP_VERSION='v113.26';
 
 // ===== THEME =====
 (function(){
@@ -1570,8 +1570,13 @@ async function s2Upsert(table,rows,onConflict,returnSelect){
 }
 
 let _s2WriteInFlight=false; // sync poll must never rebuild over a write that hasn't landed yet
+let _s2WritePending=false;  // a write arrived while one was in flight; flush once the current one lands
 async function s2WriteActive(){
   if(!WK||!STATE)return;
+  // Re-entrancy guard: two overlapping writes would rebuild the same dirty score rows
+  // (the dirty set only clears after the await) and POST them concurrently, which
+  // surfaces as a 409 on the non-arbiter unique index. Coalesce instead.
+  if(_s2WriteInFlight){_s2WritePending=true;return;}
   // Wolf writes the per-foursome [r][fi] shape, so stamp the flag in the same trip
   // upsert. This is the authoritative signal hydrate uses to tell nested from old
   // flat data; wolf_order/wolf_picks and flighted_games ride the same trip row, so
@@ -1601,6 +1606,8 @@ async function s2WriteActive(){
   try{
     // 1. Trip upsert
     if(_s2Dirty.trip){
+      // Cleared BEFORE the await so an edit made during the write stays dirty.
+      _s2Dirty.trip=false;
       const _tripRes=await s2Upsert('trips',[{
         trip_id:tripId,
         name:WK.name||'',
@@ -1719,7 +1726,7 @@ async function s2WriteActive(){
         },
         updated_at:new Date().toISOString()
       }],undefined,'updated_at');
-      if(_tripRes)_s2Dirty.trip=false;
+      if(!_tripRes)_s2Dirty.trip=true;
       // Self-echo suppression. autoSave marks the trip dirty every hole, so this write
       // bumps the server-stamped trips.updated_at every hole. The beacon watermark was
       // only advanced when the SYNC applied a rebuild, never when WE wrote, so the next
@@ -1738,6 +1745,8 @@ async function s2WriteActive(){
 
     // 2. Players upsert
     if(_s2Dirty.players){
+      // Cleared BEFORE the await so an edit made during the write stays dirty.
+      _s2Dirty.players=false;
       const rows=WK.players.map((p,pi)=>({
         player_id:s2PlayerId(pi),
         trip_id:tripId,
@@ -1751,13 +1760,20 @@ async function s2WriteActive(){
         library_id:p.lid||null
       }));
       const _playersOk=await s2Upsert('players',rows,'trip_id,player_index');
-      if(_playersOk)_s2Dirty.players=false;
+      if(!_playersOk)_s2Dirty.players=true;
     }
 
     // 3. Scores upsert — only dirty holes
     if(_s2Dirty.scores.size>0){
       const scoreRows=[];
-      _s2Dirty.scores.forEach(key=>{
+      // Dequeue the keys we are about to send BEFORE the await. A dirty key is the
+      // whole hole ("r:hi"), so if another player's score lands on that same hole while
+      // this POST is in flight, s2MarkDirty re-adds the key and the coalesced flush
+      // picks it up. Deleting after the await would wipe that fresh mark and lose the
+      // score. Requeued below if the write fails.
+      const _sentScoreKeys=[..._s2Dirty.scores];
+      _sentScoreKeys.forEach(k=>_s2Dirty.scores.delete(k));
+      _sentScoreKeys.forEach(key=>{
         const[r,hi]=[parseInt(key.split(':')[0]),parseInt(key.split(':')[1])];
         if(!STATE.scores[r]||!STATE.scores[r][hi])return;
         WK.players.forEach((_,pi)=>{
@@ -1773,12 +1789,16 @@ async function s2WriteActive(){
           });
         });
       });
-      if(scoreRows.length)await s2Upsert('scores',scoreRows,'score_id');
-      _s2Dirty.scores.clear();
+      if(scoreRows.length){
+        const _scoresOk=await s2Upsert('scores',scoreRows,'score_id');
+        if(!_scoresOk)_sentScoreKeys.forEach(k=>_s2Dirty.scores.add(k));
+      }
     }
 
     // 4. Expenses upsert
     if(_s2Dirty.expenses){
+      // Cleared BEFORE the await so an edit made during the write stays dirty.
+      _s2Dirty.expenses=false;
       const exps=(STATE.expenses||[]).map(e=>({
         expense_id:e.id,
         trip_id:tripId,
@@ -1790,12 +1810,12 @@ async function s2WriteActive(){
         custom_split:!!e.customSplit
       }));
       if(exps.length)await s2Upsert('expenses',exps);
-      _s2Dirty.expenses=false;
     }
 
   }catch(e){
   }finally{
     _s2WriteInFlight=false;
+    if(_s2WritePending){_s2WritePending=false;s2WriteActive();}
   }
 }
 
@@ -3742,7 +3762,8 @@ async function renderGroupPage(gid){
     const c=AVATAR_PALETTE[idx];
     const isManaged=!m.user_id;
     const chip=isManaged?`<span class="hm-chip hm-chip-managed">Managed</span>`:(m.role==='admin'?`<span class="hm-chip hm-chip-admin">Admin</span>`:'');
-    const sub=isManaged?`No account · Hdcp ${m.hcp_index!=null?m.hcp_index:'--'}`:`Hdcp ${m.hcp_index!=null?m.hcp_index:'--'}`;
+    const _hd=m.hcp_index!=null?sbHcpDisplay(m.hcp_index):'--';
+    const sub=isManaged?`No account · Hdcp ${_hd}`:`Hdcp ${_hd}`;
     return`<div class="hm-mlist-row" onclick="window.openMemberSheet('${gid}',${i})">
       <div class="avatar${isManaged?' managed':''}" style="width:38px;height:38px;font-size:13px;background:${c.bg};color:${c.fg};flex-shrink:0;${isManaged?'border:1.5px dashed '+c.fg+';':''}">${ini}</div>
       <div style="flex:1;min-width:0"><div class="hm-mlist-ml">${m.display_name||'Unknown'}${chip}</div><div class="hm-mlist-sub">${sub}</div></div>
@@ -3795,7 +3816,7 @@ window.openMemberSheet = function(gid,idx){
      `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><div style="font-size:16px;font-weight:600;color:var(--color-text-primary)">Member</div><button style="width:28px;height:28px;border-radius:50%;background:var(--color-background-secondary);color:var(--color-text-secondary);border:none;font-size:14px;cursor:pointer" onclick="window.closeHmMemberSheet()">&#10005;</button></div>`
     +`<div style="display:flex;align-items:center;gap:13px;margin-bottom:6px"><div class="avatar${isManaged?' managed':''}" style="width:50px;height:50px;font-size:17px;background:${c.bg};color:${c.fg};${isManaged?'border:1.5px dashed '+c.fg+';':''}">${ini}</div><div><div style="font-size:17px;font-weight:600;color:var(--color-text-primary)">${m.display_name||'Unknown'}</div>${chip}</div></div>`
     +fld('Venmo',m.venmo?`@${m.venmo}`:'Not set',!m.venmo)
-    +fld('Handicap',m.hcp_index!=null?m.hcp_index:'--',m.hcp_index==null)
+    +fld('Handicap',m.hcp_index!=null?sbHcpDisplay(m.hcp_index):'--',m.hcp_index==null)
     +action;
   const ov=document.getElementById('hmMemberSheetOverlay');
   ov.style.display='flex';
@@ -4101,9 +4122,10 @@ function _qrStepHtml(){
         const c=AVATAR_PALETTE[midx%AVATAR_PALETTE.length];
         const selBg=sel?'rgba(29,158,117,0.07)':'transparent';
         const hcpVal=sel?((_qrS.selectedMembers||[]).find(function(s){return s.member_id===m.member_id;})||{}).hcp_index||m.hcp_index||'':m.hcp_index!=null?m.hcp_index:'';
+        const hcpDisp=(hcpVal===''||hcpVal==null)?'':(hcpVal<0?'+'+Math.abs(hcpVal):(''+hcpVal));
         const hcpEl=sel
-          ?'<input id="qrhcp_'+m.member_id+'" type="number" step="0.1" min="0" max="54" value="'+hcpVal+'" onclick="event.stopPropagation()" style="width:52px;padding:5px 6px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;text-align:center;background:var(--color-background-primary);color:var(--color-text-primary)"/>'
-          :'<span style="font-size:13px;color:var(--color-text-tertiary);min-width:52px;text-align:center;display:inline-block">'+(m.hcp_index!=null?m.hcp_index:'-')+'</span>';
+          ?'<input id="qrhcp_'+m.member_id+'" type="text" value="'+hcpDisp+'" onclick="event.stopPropagation()" style="width:52px;padding:5px 6px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;text-align:center;background:var(--color-background-primary);color:var(--color-text-primary)"/>'
+          :'<span style="font-size:13px;color:var(--color-text-tertiary);min-width:52px;text-align:center;display:inline-block">'+(m.hcp_index==null?'-':(m.hcp_index<0?'+'+Math.abs(m.hcp_index):m.hcp_index))+'</span>';
         const checkEl=sel
           ?'<span style="width:22px;height:22px;border-radius:50%;background:#1D9E75;display:flex;align-items:center;justify-content:center;flex-shrink:0">&#10003;</span>'
           :'<span style="width:22px;height:22px;border-radius:50%;border:1.5px solid var(--color-border-secondary);flex-shrink:0;box-sizing:border-box"></span>';
@@ -4310,7 +4332,7 @@ window._qrToggleMember=function(memberId){
   if(!m)return;
   (_qrS.selectedMembers||[]).forEach(function(s){
     const el=document.getElementById('qrhcp_'+s.member_id);
-    if(el)s.hcp_index=parseFloat(el.value)||s.hcp_index||0;
+    if(el)s.hcp_index=idxFromInput(el.value,(s.hcp_index!=null?s.hcp_index:0));
   });
   if(!_qrS.selectedMembers)_qrS.selectedMembers=[];
   const idx=_qrS.selectedMembers.findIndex(function(s){return s.member_id===memberId;});
@@ -4324,7 +4346,7 @@ window._qrNext=function(){
     const grp=gid?_groupCache[gid]:null;
     const members=(grp?._members)||[];
     if(gid&&members.length>0){
-      (_qrS.selectedMembers||[]).forEach(function(s){const el=document.getElementById('qrhcp_'+s.member_id);if(el)s.hcp_index=parseFloat(el.value)||s.hcp_index||0;});
+      (_qrS.selectedMembers||[]).forEach(function(s){const el=document.getElementById('qrhcp_'+s.member_id);if(el)s.hcp_index=idxFromInput(el.value,(s.hcp_index!=null?s.hcp_index:0));});
       if(!_qrS.selectedMembers||_qrS.selectedMembers.length<2){alert('Please select at least 2 players.');return;}
       _qrS.n=_qrS.selectedMembers.length;
     } else {
@@ -4780,7 +4802,15 @@ function _tripDeleteTap(id,btn,gid){
       onOk:function(){_commitDeleteTrip(id,btn,gid);}
     });
   }else{
-    _deleteRoundWithUndo(id,btn);
+    const rt=loadTrips().find(function(x){return x.id===id;});
+    const rnm=rt&&rt.name?rt.name:'This round';
+    _confirmSheet({
+      icon:'ti-trash',
+      title:'Delete this round?',
+      body:'"'+rnm+'" and its scores and games will be permanently deleted. This cannot be undone.',
+      okLabel:'Delete Round',
+      onOk:function(){_commitRoundDelete(id);}
+    });
   }
 }
 window.deleteTrip=_tripDeleteTap;
@@ -5015,9 +5045,10 @@ function _twStep2Html(){
     const c=AVATAR_PALETTE[idx%AVATAR_PALETTE.length];
     const selBg=sel?'rgba(29,158,117,0.07)':'transparent';
     const hcpVal=sel?(_twS.selectedMembers.find(s=>s.member_id===m.member_id)?.hcp_index??m.hcp_index??''):( m.hcp_index!=null?m.hcp_index:'');
+    const hcpDisp=(hcpVal===''||hcpVal==null)?'':(hcpVal<0?'+'+Math.abs(hcpVal):(''+hcpVal));
     const hcpInput=sel
-      ?`<input id="tw_hcp_${m.member_id}" type="number" step="0.1" min="0" max="54" value="${hcpVal}" style="width:52px;padding:5px 6px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;text-align:center;" onclick="event.stopPropagation()"/>`
-      :`<span style="font-size:13px;color:var(--color-text-tertiary);min-width:52px;text-align:center;display:inline-block;">${m.hcp_index!=null?m.hcp_index:'-'}</span>`;
+      ?`<input id="tw_hcp_${m.member_id}" type="text" value="${hcpDisp}" style="width:52px;padding:5px 6px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;text-align:center;" onclick="event.stopPropagation()"/>`
+      :`<span style="font-size:13px;color:var(--color-text-tertiary);min-width:52px;text-align:center;display:inline-block;">${m.hcp_index==null?'-':(m.hcp_index<0?'+'+Math.abs(m.hcp_index):m.hcp_index)}</span>`;
     const checkEl=sel
       ?`<span style="width:22px;height:22px;border-radius:50%;background:#1D9E75;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ti-check" style="font-size:14px;color:#fff;"></i></span>`
       :`<span style="width:22px;height:22px;border-radius:50%;border:1.5px solid var(--color-border-secondary);flex-shrink:0;box-sizing:border-box;"></span>`;
@@ -5187,7 +5218,7 @@ window._twNext=function(){
     // Capture any edited hcp values before advancing
     _twS.selectedMembers.forEach(m=>{
       const el=document.getElementById('tw_hcp_'+m.member_id);
-      if(el)m.hcp_index=parseFloat(el.value)||m.hcp_index||0;
+      if(el)m.hcp_index=idxFromInput(el.value,(m.hcp_index!=null?m.hcp_index:0));
     });
     if(_twS.selectedMembers.length<2){alert('Please select at least 2 players.');return;}
     if(_twS.selectedMembers.length>TW_MAX_PLAYERS){alert('Maximum '+TW_MAX_PLAYERS+' players for a trip.');return;}
@@ -5392,7 +5423,7 @@ window._twToggleMember=function(memberId){
   // Capture any in-flight hcp edits before re-render
   _twS.selectedMembers.forEach(s=>{
     const el=document.getElementById('tw_hcp_'+s.member_id);
-    if(el)s.hcp_index=parseFloat(el.value)||s.hcp_index||0;
+    if(el)s.hcp_index=idxFromInput(el.value,(s.hcp_index!=null?s.hcp_index:0));
   });
   const idx=_twS.selectedMembers.findIndex(s=>s.member_id===memberId);
   if(idx>=0){
@@ -5516,7 +5547,7 @@ window._confirmAddGuest=async function(gid){
   var name=(document.getElementById('agName')?.value||'').trim();
   if(!name){window._grpShowErr('Enter a name.');return;}
   var hcpRaw=(document.getElementById('agHcp')?.value||'').trim();
-  var hcp_index=hcpRaw===''?null:parseFloat(hcpRaw);
+  var _hcpP=sbParseHcp(hcpRaw);var hcp_index=_hcpP.ok?_hcpP.value:null;
   var venmo=(document.getElementById('agVenmo')?.value||'').trim()||null;
   var btn=document.getElementById('agSaveBtn');
   if(btn){btn.disabled=true;btn.textContent='Adding...';}
@@ -5540,7 +5571,7 @@ window.createManagedPlayer=async function(gid,{name,hcp_index,venmo}){
   const r=await fetch(SB_URL+'/rest/v1/group_members',{
     method:'POST',
     headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json','Prefer':'return=representation'},
-    body:JSON.stringify({group_id:gid,user_id:null,role:'member',display_name:displayName,hcp_index:parseFloat(hcp_index),venmo:(venmo||'').replace(/^@/,'')})
+    body:JSON.stringify({group_id:gid,user_id:null,role:'member',display_name:displayName,hcp_index:hcp_index,venmo:(venmo||'').replace(/^@/,'')})
   });
   if(!r.ok){const e=await r.json();throw new Error(e.message||'Failed to add guest');}
   const rows=await r.json();
@@ -5550,7 +5581,7 @@ window.createManagedPlayer=async function(gid,{name,hcp_index,venmo}){
 window._twAddGuestSubmit=async function(gid){
   const name=(document.getElementById('twg_name')?.value||'').trim();
   const hcpRaw=document.getElementById('twg_hcp')?.value;
-  const hcp_index=hcpRaw!==''?parseFloat(hcpRaw):null;
+  const _hcpP=sbParseHcp(hcpRaw);const hcp_index=_hcpP.ok?_hcpP.value:null;
   const venmo=(document.getElementById('twg_venmo')?.value||'').trim();
   if(!name){alert('Please enter a name.');return;}
   if(hcp_index==null||isNaN(hcp_index)){alert('Please enter a handicap index.');return;}
@@ -5647,12 +5678,12 @@ function resolveDisplayNames(players){
     p.ini=fi&&li?fi+li:(fi||li||(p.name||'').substring(0,2).toUpperCase());
   });
 }
-function defaultTeams(r){const g=mpGamesForRound(r),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));}
-function calcMPHU(hi,r,fi,mi){fi=fi||0;const mpG=mpGamesForRound(r),_th=roundHoleCount(r),gi=segForHole(hi-holeOffset(r),mpG,_th);const tm=STATE.mpTeams[r]?.[fi]?.[gi];if(!tm||!tm[0]||!tm[1])return null;const piA=tm[0][mi],piB=tm[1][mi];if(piA===undefined||piB===undefined)return null;const _pair=[piA,piB],_huLow=huNetOffMatchLow(r);const nA=_huLow?getNetOffLow(piA,hi,r,_pair):getNet(piA,hi,r),nB=_huLow?getNetOffLow(piB,hi,r,_pair):getNet(piB,hi,r);if(nA===null||nB===null)return null;const halved=nA===nB;return{bestA:nA,bestB:nB,aWins:!halved&&nA<nB,halved,tA:[piA],tB:[piB],nA:[nA],nB:[nB]};}
+function defaultTeams(r){const g=mpGamesForRound(r),n=WK.players.length,rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];const _s=k=>k<n?k:undefined;return Array(g).fill(null).map((_,gi)=>{const rot=rots[gi%3]||rots[0];return [rot[0].map(_s),rot[1].map(_s)];});}
+function calcMPHU(hi,r,fi,mi){fi=fi||0;const mpG=mpGamesForRound(r),_th=roundHoleCount(r),gi=segForHole(hi-holeOffset(r),mpG,_th);const tm=STATE.mpTeams[r]?.[fi]?.[gi];if(!tm||!tm[0]||!tm[1])return null;const piA=tm[0][mi],piB=tm[1][mi];if(piA===undefined||piB===undefined)return null;const _vpHU=pi=>Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];if(!_vpHU(piA)||!_vpHU(piB))return null;const _pair=[piA,piB],_huLow=huNetOffMatchLow(r);const nA=_huLow?getNetOffLow(piA,hi,r,_pair):getNet(piA,hi,r),nB=_huLow?getNetOffLow(piB,hi,r,_pair):getNet(piB,hi,r);if(nA===null||nB===null)return null;const halved=nA===nB;return{bestA:nA,bestB:nB,aWins:!halved&&nA<nB,halved,tA:[piA],tB:[piB],nA:[nA],nB:[nB]};}
 function isHeadsUp(r){return WK.players.length===2||(WK.rounds[r]&&WK.rounds[r].mpFormat==='headsup');}
 function defaultHUTeams(r){const g=mpGamesForRound(r),n=WK.players.length;
 if(n<=2)return Array(g).fill(null).map(()=>[[0],[1]]);
-const rots=[[[0,2],[1,3]],[[0,1],[2,3]],[[0,1],[3,2]]];return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));}
+const rots=[[[0,2],[1,3]],[[0,1],[2,3]],[[0,1],[3,2]]];const _s=k=>k<n?k:undefined;return Array(g).fill(null).map((_,gi)=>{const rot=rots[gi%3]||rots[0];return [rot[0].map(_s),rot[1].map(_s)];});}
 // Per-foursome MP defaults: rotate THIS foursome's own members onto the slot pattern
 // (defaultTeams/defaultHUTeams hardcode indices 0-3; flighted must use the foursome's
 // global player indices). Single foursome -> members are all players -> identical output.
@@ -5787,7 +5818,7 @@ function initState(netOffLow){const nR=WK.rounds.length,nP=WK.players.length;con
     roundFlights:_rf0,
     currentFlight:0
   };}
-function launchMainApp(){homeNavHide();window._qrNineHole=null;_isQuickRoundWizard=false;document.getElementById('wizardScreen')?.classList.remove('qr-mode');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';['homeGroupScreen','groupSetupScreen','groupCreateScreen','groupJoinScreen','groupPickerScreen'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;const _fmtDate=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' · '+_fmtDate(WK.date)):WK.region||_fmtDate(WK.date)||'';updateTabDimming();setView('scores');document.getElementById('mainTabBar')?.classList.add('visible');_syncStart();}
+function launchMainApp(){homeNavHide();window._qrNineHole=null;_isQuickRoundWizard=false;document.getElementById('wizardScreen')?.classList.remove('qr-mode');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';['homeGroupScreen','groupSetupScreen','groupCreateScreen','groupJoinScreen','groupPickerScreen','roundsScreen','meScreen','groupsScreen'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;const _fmtDate=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' · '+_fmtDate(WK.date)):WK.region||_fmtDate(WK.date)||'';updateTabDimming();setView('scores');document.getElementById('mainTabBar')?.classList.add('visible');_syncStart();}
 // Stage 2: Scores tab view mode
 let _scViewMode='hole';
 
@@ -6229,7 +6260,7 @@ function calcVegas(hi,r,fi){fi=fi||0;
   const trigB=birdTriggers(tB,hi,r,_fp);
   return{numA,numB,diff,aWins:!tied&&numA<numB,tied,aFlip,bFlip,doubled,tA,tB,loA,hiA,loB,hiB,trigA,trigB};
 }
-function calcMP(hi,r,fi){fi=fi||0;const mpG=mpGamesForRound(r),_th_mp=roundHoleCount(r),si=segForHole(hi-holeOffset(r),mpG,_th_mp),tA=STATE.mpTeams[r]?.[fi]?.[si]?.[0],tB=STATE.mpTeams[r]?.[fi]?.[si]?.[1];if(!tA||!tB||tA.length!==2||tB.length!==2)return null;const _fp=flightsForRound(r)[fi]||[];const nA=tA.map(pi=>getNetForFlight(pi,hi,r,_fp)),nB=tB.map(pi=>getNetForFlight(pi,hi,r,_fp));if(nA.includes(null)||nB.includes(null))return null;const bestA=Math.min(...nA),bestB=Math.min(...nB),halved=bestA===bestB;return{bestA,bestB,aWins:!halved&&bestA<bestB,halved,tA,tB,nA,nB};}
+function calcMP(hi,r,fi){fi=fi||0;const mpG=mpGamesForRound(r),_th_mp=roundHoleCount(r),si=segForHole(hi-holeOffset(r),mpG,_th_mp),tA=STATE.mpTeams[r]?.[fi]?.[si]?.[0],tB=STATE.mpTeams[r]?.[fi]?.[si]?.[1];if(!tA||!tB||tA.length!==2||tB.length!==2)return null;const _vpMP=pi=>Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];if(!tA.every(_vpMP)||!tB.every(_vpMP))return null;const _fp=flightsForRound(r)[fi]||[];const nA=tA.map(pi=>getNetForFlight(pi,hi,r,_fp)),nB=tB.map(pi=>getNetForFlight(pi,hi,r,_fp));if(nA.includes(null)||nB.includes(null))return null;const bestA=Math.min(...nA),bestB=Math.min(...nB),halved=bestA===bestB;return{bestA,bestB,aWins:!halved&&bestA<bestB,halved,tA,tB,nA,nB};}
 function calcTwos(){return WK.players.map((_,pi)=>{let c=0;WK.rounds.forEach((_,r)=>{const _off_t=holeOffset(r),_n_t=roundHoleCount(r);for(let h=_off_t;h<_off_t+_n_t;h++)if(STATE.scores[r][h]&&STATE.scores[r][h][pi]===2)c++;});return c;});}
 function calcTwosDetail(){return WK.players.map((_,pi)=>{const hits=[];WK.rounds.forEach((_,r)=>{const _off_td=holeOffset(r),_n_td=roundHoleCount(r);for(let h=_off_td;h<_off_td+_n_td;h++)if(STATE.scores[r][h]&&STATE.scores[r][h][pi]===2)hits.push(roundLabel(r)+' H'+(h+1));});return hits;});}
 function renderBanner(){document.getElementById('banner').innerHTML='';}
@@ -9638,7 +9669,7 @@ function _gsSetOn(def,r,on,lane){
   if(on&&def.team)sanitizeTeams(r);
   if(on&&def.id==='hammer'){if(!STATE.hammerTeams)STATE.hammerTeams=WK.rounds.map((_,ri)=>flightsForRound(ri).map((_f,fi)=>defaultHammerTeamsForFlight(ri,fi)));if(!STATE.hammerTeams[r])STATE.hammerTeams[r]=flightsForRound(r).map((_f,fi)=>defaultHammerTeamsForFlight(r,fi));if(!STATE.hammerState)STATE.hammerState=WK.rounds.map((_,ri)=>flightsForRound(ri).map(()=>Array(18).fill(null)));if(!STATE.hammerState[r])STATE.hammerState[r]=flightsForRound(r).map(()=>Array(18).fill(null));}
 }
-function _gameMinNote(id,n){const k={'Match Play':'mp','Vegas':'vegas','Skins':'skins','Razzle Dazzle':'razzle','Wolf':'wolf','Hammer':'hammer',"Two's Club":'twos','Snake':'snake'}[id]||id;if(k==='hammer')return(n===2||n>=4)?null:'Needs 2 or 4 players';if(k==='wolf'||k==='vegas'||k==='razzle')return n>=4?null:'Needs 4 players';if(k==='mp')return n>=2?null:'Needs 2 players';return null;}
+function _gameMinNote(id,n){const k={'Match Play':'mp','Vegas':'vegas','Skins':'skins','Razzle Dazzle':'razzle','Wolf':'wolf','Hammer':'hammer',"Two's Club":'twos','Snake':'snake'}[id]||id;if(k==='hammer')return(n===2||n>=4)?null:'Needs 2 or 4 players';if(k==='wolf'||k==='vegas'||k==='razzle')return n>=4?null:'Needs 4 players';if(k==='mp')return(n===2||n>=4)?null:'Needs 2 or 4 players';return null;}
 function _gsLane(){return STATE.gamesLane===undefined?'both':STATE.gamesLane;}
 function _gsEnsureFs(r){const rd=WK.rounds[r];const nf=flightsForRound(r).length;if(!Array.isArray(rd.fsGames))rd.fsGames=[];while(rd.fsGames.length<nf)rd.fsGames.push({});for(let i=0;i<rd.fsGames.length;i++){if(!rd.fsGames[i]||typeof rd.fsGames[i]!=='object')rd.fsGames[i]={};}return rd.fsGames;}
 function _gsIsShared(def,r){return def.tripLevel?!!WK[def.onField]:!!(WK.rounds[r]&&WK.rounds[r][def.onField]);}
