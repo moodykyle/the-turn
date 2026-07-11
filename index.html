@@ -1457,7 +1457,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v113.27';
+const APP_VERSION='v113.28';
 
 // ===== THEME =====
 (function(){
@@ -4500,6 +4500,9 @@ function _qrLaunchRound(){
 }
 
 function startQuickRound(){
+  // Clear the previous trip the way startNewWeekend does. goHome()/showHome() leave WK
+  // and STATE populated, so without this a quick round starts on top of the last trip.
+  WK=null;STATE=null;isReadOnly=false;viewingTripId=null;
   _qrS={step:1,n:4,holes:'18',course:null,tee:null,players:[],selectedMembers:[],hdcpPct:0.8,netOffLow:false};
   _gsGames={};
   let modal=document.getElementById('qrModal');
@@ -5866,24 +5869,42 @@ function initState(netOffLow){
   // Stamp identity tokens on the freshly built trip before any id is derived from it.
   // Idempotent: a round or player that already carries a token is left alone.
   s2AdoptIds(WK);
-const nR=WK.rounds.length,nP=WK.players.length;const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];const mkSkTeams=r=>{const g=skinsGamesForRound(r);return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));};
+const nR=WK.rounds.length,nP=WK.players.length;
   // Foursomes must exist before per-round game defaults that key off them (Wolf order).
   const _rf0=Array(nR).fill(null).map(()=>defaultFlights(nP));
-  STATE={currentRound:0,currentHole:holeOffset(0),netOffLow:netOffLow||false,netOffFlightLow:false,mpViewRound:0,vegasViewRound:0,skinsViewRound:0,scRound:0,optPanel:'teams',teamsRound:0,roundRankOpen:false,emergencyRankOpen:false,moneyTab:'golf',expenses:[],settledRounds:[],roundSettleData:{},lockedRounds:[],scores:Array(nR).fill(null).map(()=>Array(18).fill(null).map(()=>Array(nP).fill(null))),mpTeams:_rf0.map((fl,r)=>fl.map(()=>isHeadsUp(r)?defaultHUTeams(r):defaultTeams(r))),vegTeams:_rf0.map((fl,r)=>fl.map((_,fi)=>defaultVegasTeamsForFlight(r,fi))),skinsTeams:_rf0.map((fl,r)=>fl.map((_,fi)=>defaultSkinsTeamsForFlight(r,fi))),
+  // ORDER MATTERS. STATE is assigned with roundFlights ALREADY IN IT, and the team
+  // builders run afterwards, against the live STATE. The *ForFlight builders resolve
+  // their members via flightsForRound(), which reads STATE.roundFlights; run them
+  // inside this object literal and they read whatever STATE the PREVIOUS trip left
+  // behind. startNewWeekend() nulls STATE, so the trip wizard escaped it by accident,
+  // but startQuickRound() did not, and a quick round seeded its Vegas/Skins/Hammer
+  // teams from the previous trip's foursomes. Do not fold these back into the literal.
+  STATE={currentRound:0,currentHole:holeOffset(0),netOffLow:netOffLow||false,netOffFlightLow:false,mpViewRound:0,vegasViewRound:0,skinsViewRound:0,scRound:0,optPanel:'teams',teamsRound:0,roundRankOpen:false,emergencyRankOpen:false,moneyTab:'golf',expenses:[],settledRounds:[],roundSettleData:{},lockedRounds:[],scores:Array(nR).fill(null).map(()=>Array(18).fill(null).map(()=>Array(nP).fill(null))),
+    roundFlights:_rf0,
+    currentFlight:0,
     // Snake: per round, per foursome. [r][fi] = 18-hole holder array (null = no holder).
     snakeHolder:_rf0.map(fl=>fl.map(()=>Array(18).fill(null))),
     snakePot:Array(nR).fill(0),
     razzleOrder:_rf0.map(function(flrow){return flrow.map(function(mem){return (mem||[]).slice();});}),
     razzleMatchTeams:_rf0.map(function(flrow){return flrow.map(function(){return [];});}),
-    hammerTeams:_rf0.map((fl,r)=>fl.map((_,fi)=>defaultHammerTeamsForFlight(r,fi))),
     hammerState:_rf0.map(fl=>fl.map(()=>Array(18).fill(null))),
     // Wolf: per round, per foursome. [r][fi] = tee order / 18-hole picks for that foursome.
     wolfOrder:_rf0.map(fl=>fl.map(g=>g.slice())),
     wolfPicks:_rf0.map(fl=>fl.map(()=>Array(18).fill(null))),
     pressState:_rf0.map(fl=>fl.map(()=>[])),
-    roundFlights:_rf0,
-    currentFlight:0
-  };}
+    mpTeams:[],vegTeams:[],skinsTeams:[],hammerTeams:[]
+  };
+  // STATE.roundFlights is live now, so these resolve against THIS trip's foursomes.
+  // mpTeams uses the flight-aware builders like every sibling; defaultTeams/defaultHUTeams
+  // hardcode slots 0-3 and were the last creation-path caller.
+  STATE.mpTeams=_rf0.map((fl,r)=>fl.map((_,fi)=>isHeadsUp(r)?defaultHUTeamsForFlight(r,fi):defaultTeamsForFlight(r,fi)));
+  STATE.vegTeams=_rf0.map((fl,r)=>fl.map((_,fi)=>defaultVegasTeamsForFlight(r,fi)));
+  STATE.skinsTeams=_rf0.map((fl,r)=>fl.map((_,fi)=>defaultSkinsTeamsForFlight(r,fi)));
+  STATE.hammerTeams=_rf0.map((fl,r)=>fl.map((_,fi)=>defaultHammerTeamsForFlight(r,fi)));
+  // Safety net, matching _s2RehydrateLoadedTrip / addRound / addE9Round / confirmAddPlayer /
+  // removePlayer / the flight editor. initState was the only creation path without one.
+  WK.rounds.forEach((_,r)=>{sanitizeTeams(r);reconcileWolfOrder(r);reconcileSnakeHolders(r);reconcileMPTeams(r);reconcileVegasTeams(r);reconcileHammerTeams(r);reconcileSkinsTeams(r);reconcileRazzleOrder(r);});
+}
 function launchMainApp(){homeNavHide();window._qrNineHole=null;_isQuickRoundWizard=false;document.getElementById('wizardScreen')?.classList.remove('qr-mode');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';['homeGroupScreen','groupSetupScreen','groupCreateScreen','groupJoinScreen','groupPickerScreen','roundsScreen','meScreen','groupsScreen'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;const _fmtDate=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' · '+_fmtDate(WK.date)):WK.region||_fmtDate(WK.date)||'';updateTabDimming();setView('scores');document.getElementById('mainTabBar')?.classList.add('visible');_syncStart();}
 // Stage 2: Scores tab view mode
 let _scViewMode='hole';
