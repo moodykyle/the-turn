@@ -660,6 +660,29 @@ body.force-light .gs-setup-toggle,body.force-light .gs-setup-body{box-shadow:0 2
   text-align:center;color:var(--color-text-secondary);
   padding:2rem 1rem;
 }
+@keyframes goldFlash{
+  0%{box-shadow:0 0 0 0 rgba(239,196,86,0)}
+  12%{box-shadow:0 0 0 3px #DB9E28, 0 0 22px rgba(239,196,86,.5)}
+  68%{box-shadow:0 0 0 3px #DB9E28, 0 0 22px rgba(239,196,86,.5)}
+  100%{box-shadow:0 0 0 0 rgba(239,196,86,0)}
+}
+.flash{border-color:#DB9E28 !important;animation:goldFlash 1.8s ease-out}
+.section-card{transition:border-color .25s ease}
+.gs-net{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary);
+  border-left:2px solid var(--brand);border-radius:8px;padding:9px 11px;margin-bottom:0.75rem}
+.gs-net .t{font-size:11.5px;line-height:1.45;color:var(--color-text-secondary)}
+.gs-net .t b{color:var(--color-text-primary);font-weight:600}
+.gs-net .c{font-size:11px;color:var(--brand);font-weight:600;white-space:nowrap;border:1px solid var(--tint-bd);
+  background:var(--tint);border-radius:999px;padding:4px 10px;cursor:pointer}
+.gs-net.warn{border-left-color:#D8862F}
+.gs-net.warn .t b{color:#E0A45C}
+#appToast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab-bar-h) + 62px);z-index:900;
+  background:#2A1F14;border:1px solid #5C4423;border-radius:10px;padding:11px 13px;
+  display:none;gap:9px;align-items:flex-start;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+#appToast.show{display:flex}
+#appToast .ti{color:#E0A45C;font-size:14px;line-height:1.35;flex-shrink:0}
+#appToast .tt{font-size:12.5px;line-height:1.45;color:#F0DFC6}
 
 /* ── Stage 2: Scores tab action row + card fold-in ── */
 
@@ -1030,6 +1053,7 @@ body.force-light{
 </head>
 <body>
 <div class="save-indicator" id="saveIndicator">✓ Saved</div>
+<div id="appToast"><span class="ti">&#9888;</span><span class="tt" id="appToastMsg"></span></div>
 <div id="syncStatus" style="display:none;position:fixed;top:12px;left:50%;transform:translateX(-50%);background:var(--color-text-primary);color:var(--color-background-primary);font-size:11px;padding:4px 12px;border-radius:20px;z-index:9999;opacity:0.85">Syncing…</div>
 <div id="connWarning" style="display:none;position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#D97706;color:#ffffff;font-size:12px;font-weight:500;padding:6px 14px;border-radius:20px;z-index:9999;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3)">⚠ Connection lost - use paper backup</div>
 <div id="sessionWarning" style="display:none;position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#B91C1C;color:#ffffff;font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;z-index:10001;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:pointer">Session expired - tap to reconnect</div>
@@ -1379,7 +1403,8 @@ body.force-light{
       <div id="gamesRdSel" class="rd-sel" style="display:none"></div>
       <div id="gamesLaneBar" style="margin-bottom:0.6rem"></div>
       <div id="gamesGameSel" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0.75rem"></div>
-      <div id="gamesContent"></div>
+      <div id="gamesNetNote"></div>
+<div id="gamesContent"></div>
     </div>
     <div id="gsAddPicker" class="gs-add-picker" onclick="if(event.target===this)window._gsCloseAddPicker()">
       <div class="gs-add-picker-inner">
@@ -1503,7 +1528,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v116.3';
+const APP_VERSION='v116.9';
 
 // ===== THEME =====
 (function(){
@@ -3403,6 +3428,115 @@ function loadTripsLocal(){try{const d=localStorage.getItem(LS_TRIPS);return d?JS
 function loadTrips(){return loadTripsLocal();}
 function saveTrips(trips){try{localStorage.setItem(LS_TRIPS,JSON.stringify(trips));}catch(e){}scheduleSbSave();}
 function autoSave(silent){if(!WK||!STATE||isReadOnly)return;s2MarkDirty(['trip','players','expenses']);const trips=loadTrips();const holesPlayed=totalHolesPlayed(),totalH=totalHoles(),complete=holesPlayed>=totalH;const potData=calcPotRankings();const winner=potData[0]?WK.players[potData[0].pi]?.name:'';const snapshot={id:WK._id||(WK._id=Date.now()+''),name:WK.name,is_quick_round:!!WK.isQuickRound,group_id:WK._groupId||null,date:WK.date,playerNames:WK.players.map((p,i)=>displayName(i)),playerInis:WK.players.map(p=>p.ini),playerColors:WK.players.map(p=>({bg:p.bg,fg:p.fg})),courses:WK.rounds.map(r=>r.courseName),holesPlayed,totalHoles:totalH,complete,winner,savedAt:new Date().toISOString()};const idx=trips.findIndex(t=>t.id===snapshot.id);if(idx>=0)trips[idx]=snapshot;else trips.unshift(snapshot);saveTrips(trips);if(!silent)showSaveToast();}
+// In-app message. The two things you hit MID-ROUND with a phone in one hand went through
+// alert(), which on a phone is a system dialog reading "localhost:8080 says" that has to be
+// dismissed. The other 24 alerts live in setup and wizard flows where a native dialog is fine.
+let _appToastT=null;
+function showMsg(m){
+  const el=document.getElementById('appToast'),tx=document.getElementById('appToastMsg');
+  if(!el||!tx){alert(m);return;}
+  tx.textContent=m;el.classList.add('show');
+  if(_appToastT)clearTimeout(_appToastT);
+  _appToastT=setTimeout(function(){el.classList.remove('show');},3200);
+}
+
+// THE STROKE BASELINE, PER GAME, IN WORDS.
+//
+// This app runs up to FOUR different low men at the same time, and until now the only place
+// that fact appeared anywhere was a two-character tag on the Scores tab:
+//
+//   flight games (wolf/vegas/skins/razzle/hammer/team mp) -> strokesForFlight -> effHdcpForFlight
+//       netOffFlightLow ON  -> the FOURSOME's low man
+//       netOffFlightLow OFF -> effHdcp: the FIELD's low man if netOffLow, else full handicap
+//   fourball -> fbNet -> ALWAYS its own POOL's low man. A Field-scope pot spans both foursomes.
+//       The toggles only decide WHETHER to net off a low man, never WHICH one. Four-Ball
+//       therefore CANNOT be caught by the stale-baseline trap the flight games can.
+//   heads-up mp -> strokesOffLow off the two men in the match. Independent of both toggles.
+//   snake, twos -> no netting at all. No note.
+//
+// netOffFlightLow does NOTHING until a round has two foursomes, which is exactly why it is
+// always off: nobody has ever had a reason to touch it. Then you split into groups and it
+// quietly becomes load-bearing. Hence the amber: it fires only on multi-foursome + field low,
+// the one combination nobody picks on purpose.
+//
+// This does NOT change any calculation. It states what the calculation already does.
+function gameNetNote(gid,r,fi){
+  if(!WK||!WK.rounds||!WK.rounds[r])return null;
+  if(gid==='snake'||gid==='twos')return null;
+  const netting=!!(STATE.netOffFlightLow||STATE.netOffLow);
+  const multi=isMultiFlight(r);
+  const full={html:'Everyone plays their <b>full handicap</b>. No strokes come off a low man.',warn:false,change:true};
+
+  if(gid==='fourball'){
+    if(!netting)return{html:full.html,warn:false,change:true};
+    const pools=fbPools(r);
+    if(!pools.length)return null;
+    const mem=(multi&&fi!=null)?(flightsForRound(r)[fi]||[]):null;
+    const pool=mem?pools.find(function(p){return p.players.some(function(pi){return mem.indexOf(pi)>=0;});}):pools[0];
+    if(!pool||!pool.players.length)return null;
+    const low=pool.players.reduce(function(a,pi){return courseHdcp(pi,r)<courseHdcp(a,r)?pi:a;},pool.players[0]);
+    const wide=mem?pool.players.length>mem.length:false;
+    // No change link: Four-Ball always nets off its pot. There is nothing to decide.
+    return{html:'Strokes off <b>the Four-Ball pot\'s low man</b> ('+displayName(low)+'). '
+      +(wide?('All '+pool.players.length+' players, across foursomes.'):'Your foursome.'),warn:false,change:false};
+  }
+
+  if(gid==='mp'&&isHeadsUp(r)){
+    return huNetOffMatchLow(r)
+      ?{html:'Strokes off <b>the low man in each match</b>. Set per match, not per foursome.',warn:false,change:false}
+      :{html:'Everyone plays their <b>full handicap</b>.',warn:false,change:false};
+  }
+
+  if(STATE.netOffFlightLow){
+    const mem=(multi&&fi!=null?(flightsForRound(r)[fi]||[]):WK.players.map(function(_,pi){return pi;})).filter(_vpi);
+    if(!mem.length)return null;
+    const low=mem.reduce(function(a,pi){return effHdcpForFlight(pi,r,mem)<effHdcpForFlight(a,r,mem)?pi:a;},mem[0]);
+    return{html:multi
+      ?('Strokes off <b>Foursome '+((fi!=null?fi:0)+1)+'\'s low man</b> ('+displayName(low)+').')
+      :('Strokes off <b>the low man</b> ('+displayName(low)+').'),warn:false,change:true};
+  }
+  if(STATE.netOffLow){
+    const all=WK.players.map(function(_,pi){return pi;}).filter(_vpi);
+    if(!all.length)return null;
+    const low=all.reduce(function(a,pi){return effHdcp(pi,r)<effHdcp(a,r)?pi:a;},all[0]);
+    // THE amber. Multi-foursome and still stroking off the whole FIELD is the combination
+    // nobody chooses on purpose; they just never knew the second toggle existed.
+    //
+    // But warn ONLY when it actually CHANGES anything. If the field's low man happens to sit
+    // in THIS foursome, then the foursome low IS the field low and every stroke is identical.
+    // Warning there is crying wolf, and a warning that fires when nothing is wrong is how
+    // people learn to ignore warnings. Name both men when they really do differ; "Foursome 2's
+    // low man" is an abstraction you have to resolve, "(A. Sporck)" is a fact you can check.
+    const mem=(multi&&fi!=null)?(flightsForRound(r)[fi]||[]).filter(_vpi):[];
+    if(multi&&mem.length&&mem.indexOf(low)<0){
+      const fLow=mem.reduce(function(a,pi){return effHdcp(pi,r)<effHdcp(a,r)?pi:a;},mem[0]);
+      return{html:'Strokes off <b>the whole field\'s low man</b> ('+displayName(low)+'), not Foursome '
+        +(fi+1)+'\'s ('+displayName(fLow)+').',warn:true,change:true};
+    }
+    return{html:'Strokes off <b>the low man</b> ('+displayName(low)+').',warn:false,change:true};
+  }
+  return full;
+}
+// Land ON the toggle, not on the Settings menu. Dumping someone at a menu and leaving them to
+// find it is the same "go hunt for it" problem this whole line exists to kill. setOptPanel
+// ('weekend') IS Trip Setup; renderWeekendPanel draws the Handicap card, so scroll to it and
+// flash it. The timeout lets the panel render before we look for the element.
+// Scroll to an element and flash it gold. Reusable: any "take me to that setting" link should
+// land ON the control, not on a menu you then have to search. Safe to call for an id that is
+// not on screen (no-op). The delay lets a freshly rendered panel exist before we look for it.
+function flashTo(elId,delay){
+  setTimeout(function(){
+    const el=document.getElementById(elId);
+    if(!el)return;
+    try{el.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){el.scrollIntoView();}
+    el.classList.remove('flash');
+    void el.offsetWidth;            // reflow, so a second call re-triggers the animation
+    el.classList.add('flash');
+    setTimeout(function(){el.classList.remove('flash');},1800);
+  },delay||0);
+}
+// setOptPanel('weekend') IS Trip Setup; renderWeekendPanel draws the Handicap card.
+function _gsNetJump(){setView('setup');setOptPanel('weekend');flashTo('hdcpCard',80);}
 function showSaveToast(){const el=document.getElementById('saveIndicator');el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1500);}
 function showHome(){
   dismissSplash();
@@ -5985,7 +6119,7 @@ const nR=WK.rounds.length,nP=WK.players.length;
   // behind. startNewWeekend() nulls STATE, so the trip wizard escaped it by accident,
   // but startQuickRound() did not, and a quick round seeded its Vegas/Skins/Hammer
   // teams from the previous trip's foursomes. Do not fold these back into the literal.
-  STATE={currentRound:0,currentHole:holeOffset(0),netOffLow:netOffLow||false,netOffFlightLow:false,mpViewRound:0,vegasViewRound:0,skinsViewRound:0,scRound:0,optPanel:'teams',teamsRound:0,roundRankOpen:false,emergencyRankOpen:false,moneyTab:'golf',expenses:[],settledRounds:[],roundSettleData:{},lockedRounds:[],scores:Array(nR).fill(null).map(()=>Array(18).fill(null).map(()=>Array(nP).fill(null))),
+  STATE={currentRound:0,currentHole:holeOffset(0),netOffLow:netOffLow||false,netOffFlightLow:netOffLow||false,mpViewRound:0,vegasViewRound:0,skinsViewRound:0,scRound:0,optPanel:'teams',teamsRound:0,roundRankOpen:false,emergencyRankOpen:false,moneyTab:'golf',expenses:[],settledRounds:[],roundSettleData:{},lockedRounds:[],scores:Array(nR).fill(null).map(()=>Array(18).fill(null).map(()=>Array(nP).fill(null))),
     roundFlights:_rf0,
     currentFlight:0,
     // Snake: per round, per foursome. [r][fi] = 18-hole holder array (null = no holder).
@@ -7867,7 +8001,7 @@ function _flightNeedIdxs(r){
   }
   return WK.players.map(function(_,pi){return pi;});
 }
-function saveHole(){if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRound))return;const r=STATE.currentRound,hi=STATE.currentHole;if(!_flightNeedIdxs(r).every(function(pi){return STATE.scores[r][hi][pi]!==null;})){alert('Enter all scores first.');return;}autoSave();s2WriteActive();if(hi<holeOffset(r)+roundHoleCount(r)-1)changeHole(1);else setView('board');}
+function saveHole(){if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRound))return;const r=STATE.currentRound,hi=STATE.currentHole;if(!_flightNeedIdxs(r).every(function(pi){return STATE.scores[r][hi][pi]!==null;})){showMsg('Enter all scores first.');return;}if(gameOn('wolf',r)){const _wfi=isMultiFlight(r)?getFlightPick(r):0;if(_wfi!==null&&gameOnFs('wolf',r,_wfi)&&(flightsForRound(r)[_wfi]||[]).length>=4&&!wolfPicksForRound(r,_wfi)[hi]){showMsg('Wolf still needs a pick for this hole. Choose a partner, go lone, or go blind.');return;}}autoSave();s2WriteActive();if(hi<holeOffset(r)+roundHoleCount(r)-1)changeHole(1);else setView('board');}
 // ONE clear path. _actClear and resetHole held byte-identical copies of this logic, and
 // BOTH cleared the whole roster and EVERY foursome's per-hole game state. In a multi-foursome
 // round that wiped the other group's scores, hammer throw, wolf pick and snake holder out of
@@ -8488,7 +8622,8 @@ function renderWolfBox(){
       const loneMult=(pick.type==='blind')?blindMult:1;
       const lonePtsWon=3*loneMult;
       const lonePtsStr=`${lonePtsWon} pts`;
-      const loneWinnerStr=wolfWinsResult===true?`<span style="color:#1D9E75;font-weight:500">Wolf wins · ${lonePtsStr}</span>`:wolfWinsResult===false?`<span style="color:#D85A30;font-weight:500">Field wins · ${lonePtsStr}</span>`:`<span style="color:var(--color-text-tertiary)">Push</span>`;
+      // Not ready is not a Push. See wolfHoleReady.
+      const loneWinnerStr=!_wReady?`<span style="color:var(--color-text-tertiary)">Waiting on scores</span>`:wolfWinsResult===true?`<span style="color:#1D9E75;font-weight:500">Wolf wins · ${lonePtsStr}</span>`:wolfWinsResult===false?`<span style="color:#D85A30;font-weight:500">Field wins · ${lonePtsStr}</span>`:`<span style="color:var(--color-text-tertiary)">Push</span>`;
       html+=`<div style="padding:8px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between"><div>${loneWinnerStr}</div><span style="font-size:11px;color:var(--color-text-tertiary);text-align:right">${resultStr}</span></div>`;
     }else{
       const partneri=pick.partner;
@@ -8528,7 +8663,8 @@ function renderWolfBox(){
       html+=`</div></div>`;
       const ptsWon=1;
       const ptsStr=`${ptsWon} pt`;
-      const winnerStr=aWins===true?`<span style="color:#1D9E75;font-weight:500">Team A wins · ${ptsStr}</span>`:aWins===false?`<span style="color:#1D9E75;font-weight:500">Team B wins · ${ptsStr}</span>`:`<span style="color:var(--color-text-tertiary)">Push</span>`;
+      // Not ready is not a Push. scoresReady already carries wolfHoleReady plus pick validity.
+      const winnerStr=!scoresReady?`<span style="color:var(--color-text-tertiary)">Waiting on scores</span>`:aWins===true?`<span style="color:#1D9E75;font-weight:500">Team A wins · ${ptsStr}</span>`:aWins===false?`<span style="color:#1D9E75;font-weight:500">Team B wins · ${ptsStr}</span>`:`<span style="color:var(--color-text-tertiary)">Push</span>`;
       const scoreStr=scoresReady?`A: ${sA} &nbsp;&nbsp; B: ${sB}`:'';
       html+=`<div style="padding:8px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between"><div>${winnerStr}</div><span style="font-size:11px;color:var(--color-text-tertiary);text-align:right">${scoreStr}</span></div>`;
     }
@@ -9288,7 +9424,7 @@ function renderWeekendPanel(){
   html+=`<div class="section-card"><div class="section-hd">Rounds</div>${orderedRounds.map(roundRow).join('')}<div style="padding:11px 14px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="launchE9()" style="width:100%;background:transparent;border:1px dashed #1D9E75;color:#1D9E75;padding:10px;border-radius:var(--border-radius-md);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">+ Add Round</button></div><div style="font-size:11px;color:var(--color-text-tertiary);padding:0 14px 12px;line-height:1.5">A round that does not count toward standings is labeled E9 or E18.</div></div>`;
 
   // --- Handicap ---
-  html+=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Handicap</div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net off low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffLow?'checked':''} onchange="STATE.netOffLow=this.checked;renderWeekendPanel();renderScorecard();renderBanner()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net games off foursome low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffFlightLow?'checked':''} onchange="STATE.netOffFlightLow=this.checked;autoSave();s2WriteActive();renderScorecard();renderBanner();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px"><span style="font-size:12px;color:var(--color-text-secondary)">Handicap adjustment</span><div style="display:flex;align-items:center;gap:4px"><input class="ie-num" type="number" value="${(WK.hdcpPct*100).toFixed(0)}" style="width:56px" onchange="WK.hdcpPct=parseFloat(this.value)/100;renderWeekendPanel();renderScorecard()"/><span style="font-size:12px;color:var(--color-text-secondary)">%</span></div></div></div>`;
+  html+=`<div class="section-card" id="hdcpCard" style="margin-bottom:14px"><div class="section-hd">Handicap</div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net off low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffLow?'checked':''} onchange="STATE.netOffLow=this.checked;renderWeekendPanel();renderScorecard();renderBanner()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net games off foursome low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffFlightLow?'checked':''} onchange="STATE.netOffFlightLow=this.checked;autoSave();s2WriteActive();renderScorecard();renderBanner();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px"><span style="font-size:12px;color:var(--color-text-secondary)">Handicap adjustment</span><div style="display:flex;align-items:center;gap:4px"><input class="ie-num" type="number" value="${(WK.hdcpPct*100).toFixed(0)}" style="width:56px" onchange="WK.hdcpPct=parseFloat(this.value)/100;renderWeekendPanel();renderScorecard()"/><span style="font-size:12px;color:var(--color-text-secondary)">%</span></div></div></div>`;
 
   // --- Weekend bet ---
   html+=(WK.isQuickRound?'':(`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Weekend bet</div><div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Buy-in per player</span>$<input class="ie-num" type="number" value="${WK.buyIn}" style="width:90px" onchange="WK.buyIn=parseFloat(this.value);autoSave()"/></div><div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Weekend winner</span><span style="font-size:13px;color:var(--color-text-primary)">Net stroke play</span></div></div>`));
@@ -11181,7 +11317,28 @@ function renderGamesTab(){
   const gameSel=document.getElementById('gamesGameSel');
   if(activeGames.length===0){
     gameSel.innerHTML=canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+ Add Game</button>':'';
-    document.getElementById('gamesContent').innerHTML='<div class="gs-empty-state">'+(canEditTrip()?'No games yet for this round. Tap + Add Game above to set one up.':'No games set up for this round yet.')+'</div>';
+    // "No games yet for this round" is false whenever another lane HAS games: F1 could be playing
+    // Wolf and F2 Skins, and the shared lane would still say the round had none. Say what is true,
+    // and say where the games actually are.
+    let _emptyMsg=canEditTrip()?'No games yet for this round. Tap + Add Game above to set one up.':'No games set up for this round yet.';
+    if(isMultiFlight(r)){
+      const _elsewhere=[];
+      flightsForRound(r).forEach(function(_,_fi){
+        if(_fi===_curLane)return;
+        const _gs=GAME_DEFS.filter(function(d){return _gsLaneOn(d,r,_fi);}).map(function(d){return d.name;});
+        if(_gs.length)_elsewhere.push('Foursome '+(_fi+1)+' is playing '+_gs.join(', ')+'.');
+      });
+      const _shared=GAME_DEFS.filter(function(d){return _gsLaneOn(d,r,'both');}).map(function(d){return d.name;});
+      if(_curLane==='both'&&_elsewhere.length){
+        _emptyMsg='No shared games this round.<br><span style="color:var(--color-text-tertiary);font-size:12px">'+_elsewhere.join(' ')+'</span>';
+      }else if(typeof _curLane==='number'&&(_elsewhere.length||_shared.length)){
+        const _bits=[];
+        if(_shared.length)_bits.push('Shared with both foursomes: '+_shared.join(', ')+'.');
+        _elsewhere.forEach(function(e){_bits.push(e);});
+        _emptyMsg='No games for Foursome '+(_curLane+1)+' yet.<br><span style="color:var(--color-text-tertiary);font-size:12px">'+_bits.join(' ')+'</span>';
+      }
+    }
+    document.getElementById('gamesContent').innerHTML='<div class="gs-empty-state">'+_emptyMsg+'</div>';
     return;
   }
   if(!STATE.gamesViewGame||!activeGames.find(g=>g.id===STATE.gamesViewGame)){
@@ -11199,6 +11356,16 @@ function renderGamesContent(){
   const g=STATE.gamesViewGame;
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
   const def=GAME_DEFS.find(d=>d.id===g);
+  // The stroke baseline for THE GAME YOU ARE LOOKING AT. It has to be per game: a foursome
+  // running Wolf and a cross-group Four-Ball has two different low men live at once, so a
+  // single line at the top of the lane would be a lie. See gameNetNote.
+  const _nn=document.getElementById('gamesNetNote');
+  if(_nn){
+    const _fiN=isMultiFlight(r)?_gsLane():null;
+    const _nt=gameNetNote(g,r,(typeof _fiN==='number'?_fiN:null));
+    _nn.innerHTML=_nt?('<div class="gs-net'+(_nt.warn?' warn':'')+'"><div class="t">'+_nt.html+'</div>'
+      +(_nt.change&&canEditTrip()?'<div class="c" onclick="_gsNetJump()">Change</div>':'')+'</div>'):'';
+  }
   if(g==='hammer')renderHammerRound();
   else if(g==='mp')renderMPRound();
   else if(g==='vegas')renderVegasRound();
