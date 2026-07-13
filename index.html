@@ -1197,7 +1197,7 @@ body.force-light{
     </div>
     <div class="login-card">
       <div class="login-title">Join Group</div>
-      <div class="login-sub">Enter the 6-character code from your group admin.</div>
+      <div class="login-sub">Enter the code from your group admin.</div>
       <div id="groupJoinError" class="login-error" style="display:none"></div>
       <input id="groupJoinCode" class="login-input" type="text" placeholder="XKTP7N" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="10" oninput="this.value=this.value.toUpperCase()"/>
       <button id="groupJoinBtn" class="login-btn" onclick="window.sbDoJoinGroup()">Join Group</button>
@@ -1503,7 +1503,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v116.1';
+const APP_VERSION='v116.3';
 
 // ===== THEME =====
 (function(){
@@ -3470,7 +3470,7 @@ async function renderGroupsScreen(){
   var body=document.getElementById('groupsBody');if(!body)return;
   var h='<div class="grp-actions2">'
     +'<button class="grp-act2" id="grpActCreate"><span class="grp-act2-ic"><i class="ti ti-plus"></i></span><span class="grp-act2-tx"><span class="grp-act2-t">Create a group</span><span class="grp-act2-d">Start a crew for your trips</span></span><i class="ti ti-chevron-right grp-act2-chev"></i></button>'
-    +'<button class="grp-act2" id="grpActJoin"><span class="grp-act2-ic"><i class="ti ti-user-plus"></i></span><span class="grp-act2-tx"><span class="grp-act2-t">Join a group</span><span class="grp-act2-d">Enter a 6-character code</span></span><i class="ti ti-chevron-right grp-act2-chev"></i></button>'
+    +'<button class="grp-act2" id="grpActJoin"><span class="grp-act2-ic"><i class="ti ti-user-plus"></i></span><span class="grp-act2-tx"><span class="grp-act2-t">Join a group</span><span class="grp-act2-d">Enter a code from your group admin</span></span><i class="ti ti-chevron-right grp-act2-chev"></i></button>'
     +'</div>';
   var groups=[];
   try{groups=await sbGetUserGroups();}catch(e){groups=[];}
@@ -6585,7 +6585,7 @@ function renderScorecard(){
   let _huPairNet=null;if(gameOnFs('mp',r,_fp)&&isHeadsUp(r)&&huNetOffMatchLow(r)){const _siHU=segForHole(hi-holeOffset(r),mpGamesForRound(r),roundHoleCount(r));const _tmHU=STATE.mpTeams[r]?.[_fp]?.[_siHU];if(_tmHU&&_tmHU[0]&&_tmHU[1]){_huPairNet={};for(let _mi=0;_mi<_tmHU[0].length;_mi++){const _pa=_tmHU[0][_mi],_pb=_tmHU[1][_mi];if(_pa!==undefined&&_pb!==undefined){_huPairNet[_pa]=[_pa,_pb];_huPairNet[_pb]=[_pa,_pb];}}}}
   // Snake holder for the ACTIVE foursome at this hole (the card only shows that foursome).
   const _snkHolder=gameOnFs('snake',r,_fp)?currentSnakeHolderForFlight(r,hi,_fp):null;
-  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r);const roStyle=_pvLock?'pointer-events:none':((isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'');const _rowDim=_pvLock?'opacity:0.42;':'';const _minusBtn=_pvLock?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_pvLock?'<i class="ti ti-lock" style="font-size:16px;color:var(--color-text-secondary);margin-left:2px" aria-hidden="true"></i>':'<button class="adj" onclick="adjScore('+i+',1)">+</button>';const wolfPiHere=wolfActive?wolfForHole(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('');
+  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r);const roStyle=_pvLock?'pointer-events:none':((isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'');const _rowDim=_pvLock?'opacity:0.42;':'';const _minusBtn=_pvLock?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_pvLock?'<i class="ti ti-lock" style="font-size:16px;color:var(--color-text-secondary);margin-left:2px" aria-hidden="true"></i>':'<button class="adj" onclick="adjScore('+i+',1)">+</button>';const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('');
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
   try{renderRazzleBox();}catch(re){console.error('renderRazzleBox error:',re);const w=document.getElementById('razzleBoxWrap');if(w)w.innerHTML='';}
@@ -8204,10 +8204,35 @@ function wolfForHole(hi,r,fi){
   for(let i=0;i<order.length;i++){if(worstPis.includes(order[i]))return order[i];}
   return order[wolfIdx];
 }
+// A WOLF PICK IS AN EVENT. Who the wolf WAS is part of that event and must not be recomputed
+// later from state that keeps moving.
+//
+// On holes 16-17, wolfForHole does not use the tee rotation at all: it hands the wolf to the
+// TRAILING player, which is a function of the running points and, on a tie, of net-through.
+// So entering or correcting ANY score can change who the wolf is on those holes - even a score
+// on a hole with no wolf pick, which cannot change anyone's points but can still flip the
+// net-through tiebreak. The stored pick does not move with it. When the wolf lands on the
+// stored PARTNER you get teamA=[wolf,wolf]: one man scored twice, against three men. Wolf
+// points then do not sum to zero and REAL MONEY IS CREATED FROM NOTHING. Measured at 2.3% of
+// rounds on v115.9 when a single score is forgotten and backfilled.
+//
+// Fix: freeze the wolf INTO the pick at pick time (setWolfPick), and read it back here. Every
+// path that describes an EXISTING pick must go through this resolver, never through raw
+// wolfForHole. Raw wolfForHole is now only correct for a hole that has no pick yet.
+//
+// A pick with no frozen wolf is a pre-v116.3 pick: fall back to wolfForHole so existing data
+// behaves exactly as before. Adopt-on-load, same as the stable-id cutover. No migration.
+// A frozen wolf who is no longer in the foursome also falls back, and the guard in
+// calcWolfPoints then refuses to resolve the hole rather than inventing a result.
+function wolfForHoleEff(hi,r,fi){
+  const p=wolfPicksForRound(r,fi)[hi];
+  if(p&&p.wolf!=null&&(flightsForRound(r)[fi]||[]).indexOf(p.wolf)>=0)return p.wolf;
+  return wolfForHole(hi,r,fi);
+}
 function wolfTeeOrder(hi,r,fi){
   const order=wolfOrderForRound(r,fi);
   const placement=(WK.rounds[r]&&WK.rounds[r].wolfPlacement)||WK.wolfPlacement||'last';
-  const wolfPi=wolfForHole(hi,r,fi);
+  const wolfPi=wolfForHoleEff(hi,r,fi);
   const wolfPos=order.indexOf(wolfPi);
   const seq=[];
   if(placement==='last'){
@@ -8223,6 +8248,31 @@ function wolfTeeOrder(hi,r,fi){
 // by global player index (pts entries only for that foursome's four), so the caller
 // aggregates by index same as always. Nets via getNetForFlight, which is byte-identical
 // to getNet when STATE.netOffFlightLow is off. See the Amendment A note above getNetForFlight.
+// THE Wolf absence rule. A Wolf hole is 2v2 or 1v3; either way it needs ALL FOUR nets,
+// because the lone branch pays every OTHER player and the partner branch scores a two-man
+// team. A hole where anyone in the foursome has not posted is not a result, it is an absence.
+//
+// This predicate ALREADY EXISTED, inline, in renderWolfBox's partner branch as `scoresReady`.
+// It was correct there and nowhere else. calcWolfPoints substituted a 99 sentinel, so a
+// wolf-and-partner team could not LOSE a hole its opponents had not played and the two absent
+// players were each charged a point; and the lone branch filtered the absent players out and
+// resolved against whoever was left, so a lone wolf could beat a field of one and lone mode B
+// computed a "best 2" from a single score. The same physical situation gave opposite answers
+// depending on the mode. Those numbers were not biased, they were meaningless.
+//
+// DO NOT reintroduce a sentinel. A filter DROPS absent data; a sentinel FABRICATES a score.
+// And note that Math.min(null,4) is 0 and null+4 is 4, so "just delete the 99" is not a fix
+// either: the caller must not do the arithmetic AT ALL until this returns true.
+//
+// Money-neutral at settlement BY CONSTRUCTION: Settle is only offered when isRoundComplete(r),
+// and a complete round has every net, so this never returns false there. Verified over 500
+// random complete rounds. No settled money was ever wrong; the damage was confined to the
+// running totals shown mid-round on the Games tab, the Recap and the Scores tab Wolf box.
+function wolfHoleReady(hi,r,fi){
+  const fp=flightsForRound(r)[fi]||[];
+  if(fp.length<4)return false;
+  return fp.every(function(pi){return getNetForFlight(pi,hi,r,fp)!==null;});
+}
 function calcWolfPoints(r,throughHole,fi){
   const through=throughHole!==undefined?throughHole:17;
   const flightPlayers=flightsForRound(r)[fi]||[];
@@ -8234,25 +8284,38 @@ function calcWolfPoints(r,throughHole,fi){
   for(let hi=0;hi<=through;hi++){
     const pick=picks[hi];
     if(!pick)continue;
-    const wolf=wolfForHole(hi,r,fi);
+    // Absence is not a score. See wolfHoleReady. This subsumes the wolfNet/partnerNet null
+    // checks below and is why there is no longer a sentinel anywhere in this function.
+    if(!wolfHoleReady(hi,r,fi))continue;
+    const wolf=wolfForHoleEff(hi,r,fi);
     const wolfNet=getNetForFlight(wolf,hi,r,flightPlayers);
     if(wolfNet===null)continue;
     const others=flightPlayers.filter(i=>i!==wolf);
     if(pick.type==='partner'){
       const partneri=pick.partner;
       if(partneri===null||partneri===undefined)continue;
+      // ZERO-SUM IS THE INVARIANT. A pick that no longer makes sense is not a result.
+      // If the partner IS the wolf, teamA=[wolf,wolf] scores one man twice against three men
+      // and the points stop summing to zero: money is created from nothing. If the partner is
+      // no longer in this foursome, his net gets pulled into a hole he is not playing and you
+      // get 2-on-3 for the same reason. Freezing the wolf into the pick (wolfForHoleEff) makes
+      // both unreachable for any pick made from v116.3 on; this guard is what makes them
+      // unrepresentable for legacy picks and for anything we have not thought of.
+      // Withholding a hole is always safe. Inventing money never is.
+      if(partneri===wolf||flightPlayers.indexOf(partneri)<0)continue;
       const partnerNet=getNetForFlight(partneri,hi,r,flightPlayers);
       if(partnerNet===null)continue;
       const teamA=[wolf,partneri];
       const teamB=others.filter(i=>i!==partneri);
       const partnerMode=(WK.rounds[r]&&WK.rounds[r].wolfPartnerMode)||WK.wolfPartnerMode||'bestball';
       let sA,sB;
+      // No sentinel. wolfHoleReady already proved every net exists.
       if(partnerMode==='bestball'){
-        sA=Math.min(...teamA.map(i=>{const n=getNetForFlight(i,hi,r,flightPlayers);return n===null?99:n;}));
-        sB=Math.min(...teamB.map(i=>{const n=getNetForFlight(i,hi,r,flightPlayers);return n===null?99:n;}));
+        sA=Math.min(...teamA.map(i=>getNetForFlight(i,hi,r,flightPlayers)));
+        sB=Math.min(...teamB.map(i=>getNetForFlight(i,hi,r,flightPlayers)));
       }else{
-        sA=teamA.reduce((s,i)=>{const n=getNetForFlight(i,hi,r,flightPlayers);return s+(n===null?99:n);},0);
-        sB=teamB.reduce((s,i)=>{const n=getNetForFlight(i,hi,r,flightPlayers);return s+(n===null?99:n);},0);
+        sA=teamA.reduce((s,i)=>s+getNetForFlight(i,hi,r,flightPlayers),0);
+        sB=teamB.reduce((s,i)=>s+getNetForFlight(i,hi,r,flightPlayers),0);
       }
       if(sA===sB)continue;
       const aWins=sA<sB;
@@ -8261,7 +8324,9 @@ function calcWolfPoints(r,throughHole,fi){
     }else{
       const mult=(pick.type==='blind')?blindMult:1;
       const totalPts=3*mult;
-      const otherNets=others.map(i=>({pi:i,net:getNetForFlight(i,hi,r,flightPlayers)})).filter(x=>x.net!==null).sort((a,b)=>a.net-b.net);
+      // No null-filter. Resolving against whoever happened to have posted is the same bug in a
+      // different coat. wolfHoleReady guarantees all three opponents are here.
+      const otherNets=others.map(i=>({pi:i,net:getNetForFlight(i,hi,r,flightPlayers)})).sort((a,b)=>a.net-b.net);
       if(!otherNets.length)continue;
       let wolfWins;
       if(loneMode==='A'){wolfWins=wolfNet===otherNets[0].net?null:wolfNet<otherNets[0].net;}
@@ -8289,7 +8354,7 @@ function calcWolfPointsAllFlights(r,throughHole){
 }
 function openWolfPickModal(hi,r,fi){
   if(isRoundLocked(r))return;if(isReadOnly||_pencilViewerLocked(r))return;
-  const wolf=wolfForHole(hi,r,fi);
+  const wolf=wolfForHoleEff(hi,r,fi);
   const wolfName=displayName(wolf);
   const order=wolfOrderForRound(r,fi);
   const placement=(WK.rounds[r]&&WK.rounds[r].wolfPlacement)||WK.wolfPlacement||'last';
@@ -8343,8 +8408,11 @@ function setWolfPick(r,hi,type,partner,fi){
   const isBlind=blindToggle&&blindToggle.checked;
   const finalType=(type==='lone'&&isBlind)?'blind':(type==='lone'?'lone':isBlind?'blind':type);
   const finalPartner=(finalType==='partner')?partner:null;
-  STATE.wolfPicks[r][fi][hi]={type:finalType,partner:finalPartner};
+  // Freeze the wolf into the event. wolfForHoleEff (not wolfForHole) so that CHANGING a pick
+  // keeps the wolf that was already frozen: you re-pick your partner, you do not re-tee.
+  STATE.wolfPicks[r][fi][hi]={type:finalType,partner:finalPartner,wolf:wolfForHoleEff(hi,r,fi)};
   autoSave();
+  s2WriteActive();
   closeWolfPickModal();
   renderWolfBox();
 }
@@ -8364,7 +8432,7 @@ function renderWolfBox(){
   if(!gameOnFs('wolf',r,fi)){wrap.innerHTML='';return;}
   const flightPlayers=flightsForRound(r)[fi]||[];
   if(flightPlayers.length<4){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Wolf</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>';return;}
-  const wolf=wolfForHole(hi,r,fi);
+  const wolf=wolfForHoleEff(hi,r,fi);
   const wolfName=displayName(wolf);
   const wolfPill=`<span style="font-size:10px;background:#085041;color:#9FE1CB;padding:1px 6px;border-radius:999px;font-weight:400;margin-left:4px">wolf</span>`;
   const pick=wolfPicksForRound(r,fi)[hi];
@@ -8388,6 +8456,10 @@ function renderWolfBox(){
     const isLone=pick.type==='lone'||isBlind;
     const holePts=calcWolfPoints(r,hi,fi);
     const wolfHolePts=(holePts.find(p=>p.pi===wolf)||{pts:0}).pts;
+    // The SAME rule the calc uses. The partner branch below already had this inline as
+    // `scoresReady` and was correct. The lone branch had no gate at all and would print
+    // "Wolf wins" on a hole two of the four had not putted out. One predicate, both branches.
+    const _wReady=wolfHoleReady(hi,r,fi);
     const typeBadge=isBlind?`<span style="font-size:11px;background:#085041;color:#9FE1CB;padding:2px 8px;border-radius:999px;margin-left:6px">Blind wolf</span>`:isLone?`<span style="font-size:11px;color:var(--color-text-tertiary);margin-left:6px">Lone wolf</span>`:'';
     const hdrColor=wolfHolePts>0?'#1D9E75':wolfHolePts<0?'#D85A30':'var(--color-text-tertiary)';
     const holePtsStr=wolfHolePts>0?`+${wolfHolePts} pts`:wolfHolePts<0?`${wolfHolePts} pts`:'Push';
@@ -8397,7 +8469,7 @@ function renderWolfBox(){
       const others=flightPlayers.filter(i=>i!==wolf);
       const otherNets=others.map(i=>({pi:i,net:getNetForFlight(i,hi,r,flightPlayers)})).filter(x=>x.net!==null).sort((a,b)=>a.net-b.net);
       let wolfWins=null;
-      if(wolfNet!==null&&otherNets.length){
+      if(_wReady){
         if(loneMode==='A'){wolfWins=wolfNet===otherNets[0].net?null:wolfNet<otherNets[0].net;}
         else{const wa2=wolfNet*2;const b2=otherNets.slice(0,2).reduce((s,x)=>s+x.net,0);wolfWins=wa2===b2?null:wa2<b2;}
       }
@@ -8409,7 +8481,7 @@ function renderWolfBox(){
       html+=`</div></div>`;
       let resultStr='';
       let wolfWinsResult=null;
-      if(wolfNet!==null&&otherNets.length){
+      if(_wReady){
         if(loneMode==='A'){wolfWinsResult=wolfNet===otherNets[0].net?null:wolfNet<otherNets[0].net;resultStr=`Wolf ${wolfNet} vs best (${otherNets[0].net})`;}
         else{const wa=wolfNet*2;const b2=otherNets.slice(0,2).reduce((s,x)=>s+x.net,0);wolfWinsResult=wa===b2?null:wa<b2;resultStr=`Wolf x2 (${wa}) vs best 2 (${b2})`;}
       }
@@ -8424,15 +8496,21 @@ function renderWolfBox(){
       const wolfNet=getNetForFlight(wolf,hi,r,flightPlayers);
       const partnerNet=getNetForFlight(partneri,hi,r,flightPlayers);
       const partnerMode=(WK.rounds[r]&&WK.rounds[r].wolfPartnerMode)||WK.wolfPartnerMode||'bestball';
-      let sA,sB;
-      if(partnerMode==='bestball'){
-        sA=Math.min(wolfNet!==null?wolfNet:99,partnerNet!==null?partnerNet:99);
-        sB=Math.min(...others.map(i=>{const n=getNetForFlight(i,hi,r,flightPlayers);return n!==null?n:99;}));
-      }else{
-        sA=(wolfNet!==null?wolfNet:99)+(partnerNet!==null?partnerNet:99);
-        sB=others.reduce((s,i)=>{const n=getNetForFlight(i,hi,r,flightPlayers);return s+(n!==null?n:99);},0);
+      // Do not do the arithmetic at all until the hole is ready. Dropping the sentinel WITHOUT
+      // this gate would be worse than keeping it: Math.min(null,4) is 0 and null+4 is 4, so an
+      // absent player silently becomes the BEST score on the hole.
+      // Same validity rule as the calc, so the box never draws a verdict the money will not pay.
+      const scoresReady=_wReady&&partneri!==wolf&&flightPlayers.indexOf(partneri)>=0;
+      let sA=null,sB=null;
+      if(scoresReady){
+        if(partnerMode==='bestball'){
+          sA=Math.min(wolfNet,partnerNet);
+          sB=Math.min(...others.map(i=>getNetForFlight(i,hi,r,flightPlayers)));
+        }else{
+          sA=wolfNet+partnerNet;
+          sB=others.reduce((s,i)=>s+getNetForFlight(i,hi,r,flightPlayers),0);
+        }
       }
-      const scoresReady=wolfNet!==null&&partnerNet!==null&&others.every(i=>getNetForFlight(i,hi,r,flightPlayers)!==null);
       let aWins=null;
       if(scoresReady&&sA!==sB){aWins=sA<sB;}
       const winDot=`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#1D9E75;margin-right:4px;vertical-align:middle;flex-shrink:0"></span>`;
@@ -8557,7 +8635,7 @@ function _renderWolfRoundBlock(r,fi,flightPlayers,wolfVal,labelHd){
   html+='</tr></thead><tbody>';
   let anyPicks=false;
   for(let hi=_off_wr;hi<_off_wr+_n_wr;hi++){
-    const wolf=wolfForHole(hi,r,fi);
+    const wolf=wolfForHoleEff(hi,r,fi);
     const pick=picks[hi];
     const deltas=holePtsMatrix[hi];
     const isPlayed=!!pick;
@@ -12173,6 +12251,14 @@ function skinHoleWinner(hi,r,fi){
     return winIdxs.length===1?{winner:winIdxs[0],type:'individual'}:{tied:true};
   } else {
     const sk=STATE.skinsTeams?.[r]?.[fi]?.[si];if(!sk)return null;
+    // ABSENCE IS NOT A SCORE. Same rule as Wolf, same reason: this awarded a skin as long as
+    // EACH TEAM had one ball in, so a hole resolved against a half-posted team and the missing
+    // partner might have been lower. The individual branch above already stalls correctly.
+    // Keyed off the FOURSOME, not the team arrays, so a malformed team cannot stall a hole
+    // forever. Money-neutral at settlement: a complete round has every net.
+    if(_skfp.some(function(pi){return skinNet(pi,hi,r,_skfp)===null;}))return null;
+    // The filters below are a no-op for well-formed teams now. They remain ONLY as tolerance
+    // for a malformed team array. They are NOT the absence rule; the guard above is.
     const bA=sk[0].map(pi=>skinNet(pi,hi,r,_skfp)).filter(x=>x!==null);
     const bB=sk[1].map(pi=>skinNet(pi,hi,r,_skfp)).filter(x=>x!==null);
     if(!bA.length||!bB.length)return null;
