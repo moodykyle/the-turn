@@ -1546,7 +1546,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;return holdsPencil(r!
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v117.13';
+const APP_VERSION='v117.14';
 
 // ===== THEME =====
 (function(){
@@ -5100,7 +5100,7 @@ function _renderContinueSection(){
   // Sub-line: where the trip stands, or where it is played, or nothing.
   var sub='';
   if(ct.is_quick_round){sub=ct.courses&&ct.courses[0]?ct.courses[0]:'';}
-  else if(showLb){sub=[ct.roundStatus||'',ct.currentCourse||''].filter(Boolean).join(' \u00b7 ');}
+  else if(showLb){sub=[ct.roundStatus||'',courseDisp(ct.currentCourse)||''].filter(Boolean).join(' \u00b7 ');}
   else {sub=[grpName,(ct.date||'')].filter(Boolean).join(' \u00b7 ')||'Not started';}
 
   // ONE tap target. A real button, not a div with an onclick: it gets keyboard focus, the right
@@ -9645,6 +9645,12 @@ async function _syncApplyTripRebuild(tripId){
     lbExpanded:STATE.lbExpanded,hammerExpanded:STATE.hammerExpanded,
     gamesSetupOpen:STATE.gamesSetupOpen,expCatExpanded:STATE.expCatExpanded
   };
+  // LB-7: a local score edit can arrive during the async s2ReadTrip above; the
+  // tick-start dirty gate cannot see it. Re-check here, immediately before the
+  // destructive STATE swap, and bail if dirty. The next clean tick rebuilds.
+  // Without this an in-progress stroke lands in the about-to-be-discarded STATE
+  // and is lost, then the pending flush persists the revert (silent, moves money).
+  if(_syncDirtyPending())return false;
   WK=s2data.WK;
   STATE=s2data.STATE;
   Object.assign(STATE,_view);
@@ -12386,7 +12392,7 @@ function unsettleItem(key){if(!STATE.settledRounds)return;STATE.settledRounds=ST
 function unsettleRound(r){unsettleItem(r);}
 function isRoundLocked(r){return(STATE.lockedRounds||[]).includes(r);}
 function lockRound(r){if(!STATE.lockedRounds)STATE.lockedRounds=[];if(!STATE.lockedRounds.includes(r))STATE.lockedRounds.push(r);autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();}
-function unlockRound(r){if((STATE.settledRounds||[]).includes(r)){alert('Unsettle this round on the Money tab before unlocking.');return;}if(!STATE.lockedRounds)return;STATE.lockedRounds=STATE.lockedRounds.filter(x=>x!==r);if(STATE.razzleFiredToasts){Object.keys(STATE.razzleFiredToasts).forEach(k=>{if(k.startsWith('bonus:'+r+':')||k.startsWith('birdie:'+r+':'))delete STATE.razzleFiredToasts[k];});}if(STATE.razzleHWM)STATE.razzleHWM[r]=undefined;autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();if(document.getElementById('mpanel-golf')?.classList.contains('active'))renderMoney();}
+function unlockRound(r){if((STATE.settledRounds||[]).includes(r)){showMsg('Unsettle this round on the Money tab before unlocking.');return;}if(!STATE.lockedRounds)return;STATE.lockedRounds=STATE.lockedRounds.filter(x=>x!==r);if(STATE.razzleFiredToasts){Object.keys(STATE.razzleFiredToasts).forEach(k=>{if(k.startsWith('bonus:'+r+':')||k.startsWith('birdie:'+r+':'))delete STATE.razzleFiredToasts[k];});}if(STATE.razzleHWM)STATE.razzleHWM[r]=undefined;autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();if(document.getElementById('mpanel-golf')?.classList.contains('active'))renderMoney();}
 
 function renderMoney(){
   const n=WK.players.length,pot=WK.buyIn*n;
