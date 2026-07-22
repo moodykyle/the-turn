@@ -1551,7 +1551,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v117.15';
+const APP_VERSION='v117.16';
 
 // ===== THEME =====
 (function(){
@@ -11683,10 +11683,10 @@ function renderGamesTab(){
       const _elsewhere=[];
       flightsForRound(r).forEach(function(_,_fi){
         if(_fi===_curLane)return;
-        const _gs=GAME_DEFS.filter(function(d){return _gsLaneOn(d,r,_fi);}).map(function(d){return d.name;});
+        const _gs=GAME_DEFS.filter(function(d){return _gsLaneOn(d,r,_fi);}).map(function(d){return d.label;});
         if(_gs.length)_elsewhere.push('Foursome '+(_fi+1)+' is playing '+_gs.join(', ')+'.');
       });
-      const _shared=GAME_DEFS.filter(function(d){return _gsLaneOn(d,r,'both');}).map(function(d){return d.name;});
+      const _shared=GAME_DEFS.filter(function(d){return _gsLaneOn(d,r,'both');}).map(function(d){return d.label;});
       if(_curLane==='both'&&_elsewhere.length){
         _emptyMsg='No shared games this round.<br><span style="color:var(--color-text-tertiary);font-size:12px">'+_elsewhere.join(' ')+'</span>';
       }else if(typeof _curLane==='number'&&(_elsewhere.length||_shared.length)){
