@@ -1551,7 +1551,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v117.16';
+const APP_VERSION='v117.23';
 
 // ===== THEME =====
 (function(){
@@ -5449,7 +5449,7 @@ function _twStep3Html(){
     `<div style="padding:12px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:10px;">`+
     `<div style="flex:1;"><div style="font-size:13px;color:var(--color-text-primary);">Handicap adjustment</div><div style="font-size:11px;color:var(--color-text-secondary);">% of USGA index applied to strokes</div></div>`+
     `<select id="tw_hdcpPct" class="course-select" style="width:72px;">`+
-    [100,90,80,75,70,60,50].map(v=>`<option value="${v}"${_twS.hdcpPct===v?' selected':''}>${v}%</option>`).join('')+
+    [100,95,90,85,80,75,70,65,60,55,50].map(v=>`<option value="${v}"${_twS.hdcpPct===v?' selected':''}>${v}%</option>`).join('')+
     `</select></div>`+
     `<div onclick="window._twToggleNetOffLow()" style="padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer;">`+
     `<div style="flex:1;"><div style="font-size:13px;color:var(--color-text-primary);">Net off low man</div><div style="font-size:11px;color:var(--color-text-secondary);">Lowest index plays off scratch</div></div>`+
@@ -6782,7 +6782,7 @@ function renderScorecard(){
       return;
     }
   }
-  const wolfActive=gameOnFs('wolf',r,_fp)&&(flightsForRound(r)[_fp]||[]).length>=4;let displayOrder=wolfActive?wolfTeeOrder(hi,r,_fp):WK.players.map((_,idx)=>idx);
+  const wolfActive=gameOnFs('wolf',r,_fp)&&(flightsForRound(r)[_fp]||[]).length>=4;let displayOrder=wolfActive?wolfTeeOrder(hi,r,_fp):(isMultiFlight(r)?(flightsForRound(r)[_fp]||[]).slice():WK.players.map((_,idx)=>idx));
   if(isMultiFlight(r)){
     const _flSet={};(flightsForRound(r)[_fp]||[]).forEach(pi=>{_flSet[pi]=1;});
     displayOrder=displayOrder.filter(i=>_flSet[i]);
@@ -9503,8 +9503,9 @@ function _syncLifecycleOk(){
   if(!WK||!STATE)return false;
   if(!_pencilActive())return false; // group trips only — solo/quick rounds are single-device by nature
   if(document.getElementById('mainScreen')?.style.display!=='block')return false;
-  const totalH=totalHoles();
-  if(totalH>0&&totalHolesPlayed()>=totalH)return false; // trip complete — nothing left to converge
+  let _allH=0,_playedH=0;
+  WK.rounds.forEach(function(_rd,_r){var _n=roundHoleCount(_r),_off=holeOffset(_r);_allH+=_n;for(var _hi=_off;_hi<_off+_n;_hi++){if(STATE.scores[_r][_hi]&&STATE.scores[_r][_hi].every(function(s){return s!==null;}))_playedH++;}});
+  if(_allH>0&&_playedH>=_allH)return false; // every hole of every round (incl. out-of-standings) entered - nothing left to converge
   return true;
 }
 
@@ -12943,7 +12944,9 @@ function _renderSkinsFlightBlock(r,fi,labelHd){
       const _skDone=isRoundComplete(r);
       const _skVerb=_skDone?'wins':'leads';
       if(_skSorted.length>=2&&_skSorted[0][1]===_skSorted[1][1]){
-        summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">No Blood</span>`;
+        const _topN=_skSorted[0][1];
+        const _tiedNames=_skSorted.filter(e=>e[1]===_topN).map(e=>displayName(parseInt(e[0]))).join(' & ');
+        summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">${_tiedNames} ${_skDone?'tie':'tied'} &middot; ${_topN} skin${_topN!==1?'s':''} each</span>`;
       } else {
         const topName=displayName(parseInt(_skSorted[0][0]));
         const netSkins=_skSorted.length>=2?_skSorted[0][1]-_skSorted[1][1]:_skSorted[0][1];
@@ -13553,7 +13556,7 @@ function renderSettle(){
     const snapNet_r=settled_r&&STATE.roundSettleData?.[r]?.snapNet;
     // If settled with a snapshot, skip live calc and use snapshot directly
     if(snapNet_r){
-      WK.players.forEach((_,pi)=>{auditGolf[pi].settled.push({r,label:'Round '+(r+1),val:snapNet_r[pi]});});
+      WK.players.forEach((_,pi)=>{auditGolf[pi].settled.push({r,label:roundLabel(r),val:snapNet_r[pi]});});
       return;
     }
     const mpR=gameOn('mp',r)?calcRoundMP(r):{gameResults:[],net:[]};
@@ -13627,8 +13630,8 @@ function renderSettle(){
     if(gameOn('skins',r)){
       const _skRa=calcRoundSkins(r);
       // Build skin unit counts per player for individual skins
-      const _skVal=roundVal('skinsVal',r,WK.skinsVal||5);
-      _skRa.net.forEach((v,pi)=>{if(v!==0){const netSk=_skVal>0?Math.round(Math.abs(v)/_skVal):0;const desc=(v>0?'net +':'net -')+netSk+' skin'+(netSk!==1?'s':'');auditGolf[pi].skins.push({label:`${roundLabel(r)} Skins`,val:v,desc});}});
+      const _skFl=flightsForRound(r);
+      _skRa.net.forEach((v,pi)=>{if(v!==0){let _wfi=_skFl.findIndex(function(fl){return fl.indexOf(pi)>=0;});if(_wfi<0)_wfi=0;const _skVal=roundValFs('skinsVal',r,_wfi,WK.skinsVal||5);const netSk=_skVal>0?Math.round(Math.abs(v)/_skVal):0;const desc=(v>0?'net +':'net -')+netSk+' skin'+(netSk!==1?'s':'');auditGolf[pi].skins.push({label:`${roundLabel(r)} Skins`,val:v,desc});}});
     }
   });
   {const _twA=twosAward(),_twS2=twosSnap();
@@ -13747,9 +13750,9 @@ function renderSettle(){
     // Snake - expandable, per-round breakdown. Reads this player's OWN foursome result so a
     // split round shows the pot and holder for the foursome pi actually played in.
     if(gameOnAny('snake')&&WK.rounds.some((_,_sr)=>{const _sfl=flightsForRound(_sr);const _sfi=_sfl.findIndex(f=>f.indexOf(pi)>=0);return _sfi>=0&&gameOnFs('snake',_sr,_sfi);})){
-      html+=catHdr('Snake',snakeNet[pi]);
-            WK.rounds.forEach((_,r)=>{
-        if((STATE.settledRounds||[]).includes(r))return;
+      let _snRows='';
+      WK.rounds.forEach((_,r)=>{
+        if((STATE.settledRounds||[]).includes(r)||(STATE.roundSettleData&&STATE.roundSettleData[r]))return;
         const _fr=snakeFlightResults(r).find(fr=>fr.members.indexOf(pi)>=0);
         if(!_fr||_fr.holder===null||_fr.pot<=0)return;
         const _others=_fr.members.length-1;if(_others<=0)return;
@@ -13758,9 +13761,9 @@ function renderSettle(){
         else{rNet=_fr.holder===pi?-_fr.pot:_fr.pot/_others;}
         if(rNet===0)return;
         const desc=_fr.holder===pi?'holds snake':`${displayName(_fr.holder)} holds`;
-        html+=subRow(roundLabel(r),desc,rNet);
+        _snRows+=subRow(roundLabel(r),desc,rNet);
       });
-      html+=`</div></div>`;
+      if(_snRows){html+=catHdr('Snake',snakeNet[pi]);html+=_snRows;html+=`</div></div>`;}
     }
 
     // Razzle Dazzle — expandable, per-round
