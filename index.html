@@ -1551,7 +1551,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v117.23';
+const APP_VERSION='v118.0';
 
 // ===== THEME =====
 (function(){
@@ -9610,6 +9610,12 @@ async function _syncApplyScoreDelta(tripId){
     if(!res.ok)return;
     const rows=await res.json();
     if(!rows||!rows.length)return;
+    // LB-7b guard 1 (coarse): a local save is mid-POST. s2WriteActive dequeues its keys
+    // from _s2Dirty.scores BEFORE its await, so the per-hole check below cannot see the
+    // in-flight holes. Bail without touching the watermark - everything re-pulls next
+    // tick, by which time the write has landed with a newer server stamp and
+    // last-write-wins converges. Deferred, never lost.
+    if(_s2WriteInFlight)return;
     let changed=false;
     // Pass 1: apply every appliable cell, and record the earliest timestamp we could
     // NOT apply because the local grid isn't sized for that round/player yet. A hole's
@@ -9633,6 +9639,16 @@ async function _syncApplyScoreDelta(tripId){
       if(!STATE.scores[rIdx]||!STATE.scores[rIdx][hi]||pi>=STATE.scores[rIdx][hi].length){
         if(!_firstBlockedTs||s.updated_at<_firstBlockedTs)_firstBlockedTs=s.updated_at;
         return; // trip rebuild (this tick or a later one) resizes the grid; re-pull then
+      }
+      // LB-7b guard 2 (per-hole): an unflushed local edit is queued for this hole. A
+      // remote row fetched before the local tap must not stomp it - the same TOCTOU as
+      // LB-7 (v117.14), cell-sized. BLOCKED, not ignored: fold into _firstBlockedTs so
+      // the watermark holds and this row (with its same-timestamp siblings) re-pulls
+      // after the flush. Advancing past it would permanently drop the other window's
+      // write - skipping without holding the watermark is strictly worse than no fix.
+      if(_s2Dirty.scores.has(rIdx+':'+hi)){
+        if(!_firstBlockedTs||s.updated_at<_firstBlockedTs)_firstBlockedTs=s.updated_at;
+        return;
       }
       if(STATE.scores[rIdx][hi][pi]!==s.strokes){
         STATE.scores[rIdx][hi][pi]=s.strokes;
