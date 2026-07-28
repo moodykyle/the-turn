@@ -1560,7 +1560,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v118.14';
+const APP_VERSION='v118.15';
 
 // ===== THEME =====
 (function(){
@@ -9094,21 +9094,23 @@ function renderWolfBox(){
     }
   }
   // Running totals strip: this foursome's players only (matches the approved mockup).
+  // v118.15: UNGATED. The old `anyPts` gate rendered the strip only when at least one
+  // running total was non-zero, so a foursome that was dead square showed NOTHING rather
+  // than showing zeros. Wolf is zero-sum, so all-square is a common and completely normal
+  // state, not an empty one - Rd 1 was square through H8 and the strip silently vanished.
+  // A gate that cannot distinguish "no result" from "even" must not decide visibility.
   const runPts=calcWolfPoints(r,hi,fi);
-  const anyPts=runPts.some(p=>p.pts!==0);
-  if(anyPts){
-    html+='<div style="display:flex;gap:6px;padding:8px 12px;flex-wrap:wrap;justify-content:center;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary)">';
-    runPts.forEach(p=>{
-      const pts=p.pts;
-      const clr=pts>0?'#1D9E75':pts<0?'#D85A30':'var(--color-text-tertiary)';
-      const ptsStr=pts>0?'+'+pts:String(pts);
-      const pl=WK.players[p.pi];
-      html+=`<div style="display:flex;align-items:center;gap:4px;font-size:12px">`;
-      html+=`<div class="avatar" style="width:20px;height:20px;font-size:7px;background:${pl.bg};color:${pl.fg}">${pl.ini}</div>`;
-      html+=`<span style="font-weight:600;color:${clr}">${ptsStr}</span></div>`;
-    });
-    html+='</div>';
-  }
+  html+='<div style="display:flex;gap:6px;padding:8px 12px;flex-wrap:wrap;justify-content:center;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary)">';
+  runPts.forEach(p=>{
+    const pts=p.pts;
+    const clr=pts>0?'#1D9E75':pts<0?'#D85A30':'var(--color-text-tertiary)';
+    const ptsStr=pts>0?'+'+pts:String(pts);
+    const pl=WK.players[p.pi];
+    html+=`<div style="display:flex;align-items:center;gap:4px;font-size:12px">`;
+    html+=`<div class="avatar" style="width:20px;height:20px;font-size:7px;background:${pl.bg};color:${pl.fg}">${pl.ini}</div>`;
+    html+=`<span style="font-weight:600;color:${clr}">${ptsStr}</span></div>`;
+  });
+  html+='</div>';
   html+='</div>';
   wrap.innerHTML=html;
 }
