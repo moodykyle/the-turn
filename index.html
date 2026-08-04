@@ -1582,7 +1582,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v118.21';
+const APP_VERSION='v118.22';
 
 // ===== THEME =====
 (function(){
@@ -13274,6 +13274,41 @@ function calcSkinsRound(r,fi){
     return{seg,si,fi,holes,teams:STATE.skinsTeams?.[r]?.[fi]?.[si]};
   });
 }
+function playerIni(pi){
+  // The initials the avatars and leaderboard chips already use.
+  const p=WK&&WK.players&&WK.players[pi];
+  return (p&&p.ini)||'?';
+}
+function skinsStandingFromHoles(holes,thruHole){
+  // v118.22: the ONE place that answers "how many skins does each side hold in
+  // this segment". Previously this loop lived inline inside _renderSkinsFlightBlock
+  // and the hole box had no access to it at all. thruHole is an ABSOLUTE hole index
+  // (holes[].h is already absolute, carrying holeOffset); null means the whole
+  // segment. holesPlayed counts resolved holes from the segment start and stops at
+  // the first pending one, so it names the boundary the standing runs through.
+  const isIndiv=WK.skinsFmt==='individual';
+  let a=0,b=0,holesPlayed=0,stopped=false;
+  const tally={};
+  (holes||[]).forEach(function(_h){
+    if(thruHole!==null&&thruHole!==undefined&&_h.h>thruHole)return;
+    if(!stopped){ if(_h.pending)stopped=true; else holesPlayed++; }
+    const winner=_h.winner,skinsWon=_h.skinsWon,tied=_h.tied;
+    if(!skinsWon||tied)return;
+    if(isIndiv){tally[winner]=(tally[winner]||0)+skinsWon;}
+    else{if(winner==='a')a+=skinsWon;else b+=skinsWon;}
+  });
+  const total=isIndiv?Object.values(tally).reduce(function(x,y){return x+y;},0):a+b;
+  return{isIndiv:isIndiv,a:a,b:b,tally:tally,total:total,holesPlayed:holesPlayed};
+}
+function skinsSegStanding(r,fi,si,thruHole){
+  const games=calcSkinsRound(r,fi);
+  const g=games&&games[si];
+  if(!g)return null;
+  const std=skinsStandingFromHoles(g.holes,thruHole);
+  std.teams=g.teams;
+  std.seg=g.seg;
+  return std;
+}
 function calcSkinsTally(r){
   const tally=Array(WK.players.length).fill(0);
   flightsForRound(r).forEach((_stfp,fi)=>{
@@ -13314,9 +13349,16 @@ function renderSkinsBoxWrap(){
     }
     body=skTeamBlock(skTeam[0],netsA,bestA,aWins,'A')+skTeamBlock(skTeam[1],netsB,bestB,bWins,'B');
   }
+  // v118.22: the segment standing, bounded through the hole being viewed. Read
+  // from skinsSegStanding, the same function the Games tab summary reads, so the
+  // two can no longer disagree about who holds what.
+  const _skStd=skinsSegStanding(r,_sbfi,si,hi);
   let leftTxt='',midTxt=carryTxt,midColor='#1D9E75';
   if(!res){
-    leftTxt='';
+    // Same rule as v118.18: name the boundary the standing runs through rather
+    // than leaving the slot blank, or the row below is silently describing the
+    // PREVIOUS hole with nothing saying so.
+    leftTxt=(_skStd&&_skStd.holesPlayed>0)?('Thru '+(seg.start+_skStd.holesPlayed+holeOffset(r))):'Not started';
     midColor='var(--color-text-secondary)';
   } else if(res.tied){
     leftTxt='Tied';
@@ -13330,7 +13372,40 @@ function renderSkinsBoxWrap(){
     midColor='#1D9E75';
   }
   const resultBar=`<div class="mp-result-bar"><span class="mp-result-text">${leftTxt}</span><span style="font-size:12px;font-weight:600;color:${midColor}">${midTxt}</span></div>`;
-  wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdr}${body}${resultBar}</div>`;
+  // The result bar describes THIS HOLE. The strip below describes the SEGMENT.
+  // Keeping them on separate lines is what stops the two from being read as one
+  // number, which is the ambiguity the three-slot version would have introduced.
+  let _skLeft='',_skRight='',_skRightClr='var(--color-text-secondary)';
+  if(_skStd&&_skStd.total>0){
+    if(_skStd.isIndiv){
+      // Only players holding skins. Four names with two zeros is noise, and the
+      // zeros carry no information the roster does not already give.
+      const _skEnt=Object.entries(_skStd.tally).sort(function(x,y){return y[1]-x[1];});
+      _skLeft=_skEnt.map(function(e){return playerIni(parseInt(e[0],10))+' '+e[1];}).join(' \u00b7 ');
+      const _skTop=_skEnt[0][1];
+      const _skTiedTop=_skEnt.filter(function(e){return e[1]===_skTop;});
+      if(_skTiedTop.length>1){
+        _skRight=_skTiedTop.map(function(e){return playerIni(parseInt(e[0],10));}).join(' & ')+' tied';
+      } else {
+        const _skNet=_skEnt.length>1?(_skTop-_skEnt[1][1]):_skTop;
+        _skRight=playerIni(parseInt(_skEnt[0][0],10))+' +'+_skNet+' skin'+(_skNet!==1?'s':'');
+        _skRightClr='#1D9E75';
+      }
+    } else {
+      _skLeft='A '+_skStd.a+' \u00b7 B '+_skStd.b;
+      const _skNet=_skStd.a-_skStd.b;
+      if(_skNet===0){_skRight='No Blood';}
+      else{
+        const _skAbs=Math.abs(_skNet);
+        _skRight=(_skNet>0?'A':'B')+' +'+_skAbs+' skin'+(_skAbs!==1?'s':'');
+        _skRightClr=_skNet>0?'#1D9E75':'#185FA5';
+      }
+    }
+  } else {
+    _skLeft='No skins yet';
+  }
+  const standingBar=`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">${_skLeft}</span><span style="font-size:12px;font-weight:500;color:${_skRightClr}">${_skRight}</span></div>`;
+  wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdr}${body}${resultBar}${standingBar}</div>`;
 }
 function renderSkinsRound(){
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
@@ -13360,14 +13435,13 @@ function _renderSkinsFlightBlock(r,fi,labelHd){
   games.forEach(({seg,holes,teams},gi)=>{
     const key='r'+r+'f'+fi+'g'+gi;
     const expanded=STATE.skinsExpanded[key]===true;
-    // Compute totals for summary
-    let skinsA=0,skinsB=0;
-    const playerTallyPre={};
-    holes.forEach(({winner,skinsWon,tied})=>{
-      if(!skinsWon||tied)return;
-      if(isIndiv){playerTallyPre[winner]=(playerTallyPre[winner]||0)+skinsWon;}
-      else{if(winner==='a')skinsA+=skinsWon;else skinsB+=skinsWon;}
-    });
+    // v118.22: totals now come from skinsStandingFromHoles, which the hole box
+    // reads too. Output here is byte-identical; insertion order into tally is
+    // unchanged because the helper walks holes in the same order, and the sort
+    // below is stable.
+    const _skStd=skinsStandingFromHoles(holes,null);
+    const skinsA=_skStd.a,skinsB=_skStd.b;
+    const playerTallyPre=_skStd.tally;
     let summaryHtml;
     const totalSkins=isIndiv?Object.values(playerTallyPre).reduce((a,b)=>a+b,0):skinsA+skinsB;
     if(totalSkins===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
