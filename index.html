@@ -621,6 +621,9 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
   -webkit-tap-highlight-color:transparent;
 }
 .game-pill.add-pill:active{background:#0F6E56;}
+#gamesGameSel::-webkit-scrollbar{display:none;}
+#gamesGameSel .game-pill{flex:1 0 auto;min-width:0;}
+#gamesGameSel .game-pill.add-pill{flex:0 0 auto;}
 
 .gs-setup-toggle{
   width:100%;
@@ -1451,7 +1454,7 @@ body.force-light{
     <div id="view-games" style="display:none" class="view">
       <div id="gamesRdSel" class="rd-sel" style="display:none"></div>
       <div id="gamesLaneBar" style="margin-bottom:0.6rem"></div>
-      <div id="gamesGameSel" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0.75rem"></div>
+      <div id="gamesGameSel" style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-right:14px;-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 22px),transparent 100%);mask-image:linear-gradient(to right,#000 calc(100% - 22px),transparent 100%);margin-bottom:0.75rem"></div>
       <div id="gamesNetNote"></div>
 <div id="gamesContent"></div>
     </div>
@@ -1582,7 +1585,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v118.22';
+const APP_VERSION='v118.23';
 
 // ===== THEME =====
 (function(){
