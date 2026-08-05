@@ -1585,7 +1585,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v118.23';
+const APP_VERSION='v118.24';
 
 // ===== THEME =====
 (function(){
@@ -12284,17 +12284,11 @@ function renderMPRound(){
         else if(pressesHU.length===0&&_mpPhase(finalMsHU)==='ip'){mResultStr='In progress';}
         else if(_mpPhase(finalMsHU)!=='done'||anyPressLiveHU){mResultStr='In progress';}
         else if(finalMsHU.leader){
-          const wn=finalMsHU.leader==='A'?mNameA:mNameB;
-          const raw=finalMsHU.scoreStr.replace('Team A',mNameA).replace('Team B',mNameB);
-          const scoreOnly=raw.replace(wn+' ','').replace(wn+': ','').trim();
-          // When presses exist, always show net dollar result — never score notation
-          if(pressesHU.length>0){
-            if(pressNetHU>0){mResultStr=`${mNameA} wins · $${Math.abs(pressNetHU).toFixed(2)}`;}
-            else if(pressNetHU<0){mResultStr=`${mNameB} wins · $${Math.abs(pressNetHU).toFixed(2)}`;}
-            else{mResultStr='No Blood';}
-          }
-          else if(finalMsHU.closed){mResultStr=`${wn} wins · ${scoreOnly}`;}
-          else{mResultStr=`${wn}: ${scoreOnly}`;}
+          // A settled match reports money, pressed or not. Score notation stays on
+          // the MATCH row inside the expansion, where it is not competing with a total.
+          if(pressNetHU>0){mResultStr=`${mNameA} wins · $${Math.abs(pressNetHU).toFixed(2)}`;}
+          else if(pressNetHU<0){mResultStr=`${mNameB} wins · $${Math.abs(pressNetHU).toFixed(2)}`;}
+          else{mResultStr='No Blood';}
         }
         else{
           // Base match A/S — check press net before falling back to A/S
@@ -12411,8 +12405,8 @@ function renderMPRound(){
             }
             html+=`</div>`;
           });
-          // Net card when presses exist
-          if(pressesHU.length>0){
+          // Summary card once the match has started, pressed or not
+          if(pressesHU.length>0||_mpPhase(finalMsHU)!=='ns'){
             const _aggDoneHU=_mpPhase(finalMsHU)==='done'&&!anyPressLiveHU;
             const wn=pressNetHU>0?mNameA:mNameB;
             const gameNetDisplay=!_aggDoneHU?'In progress':pressNetHU===0?'No Blood':`${wn} wins · $${Math.abs(pressNetHU).toFixed(2)}`;
@@ -12530,8 +12524,8 @@ function renderMPRound(){
         html+=`</div>`;
       });
 
-      // Net card - always visible when presses exist
-      if(presses.length>0){
+      // Summary card once the match has started, pressed or not
+      if(presses.length>0||_mpPhase(finalMs)!=='ns'){
         const _aggDone=_mpPhase(finalMs)==='done'&&!anyPressLive;
         const gameNetDisplay=!_aggDone?'In progress':pressNetA===0?'No Blood':pressNetA>0?`${_winLblA} wins · $${Math.abs(pressNetA).toFixed(2)}`:`${_winLblB} wins · $${Math.abs(pressNetA).toFixed(2)}`;
         const _aggClr=_aggDone?netClr:'var(--color-text-secondary)';
