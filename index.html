@@ -1585,7 +1585,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v118.31';
+const APP_VERSION='v118.34';
 
 // ===== THEME =====
 (function(){
@@ -1883,6 +1883,9 @@ async function s2WriteActive(){
           ...(rd.razzle5HoleBonus!=null&&{razzle5HoleBonus:rd.razzle5HoleBonus}),
           ...(rd.razzleBirdieGross!=null&&{razzleBirdieGross:rd.razzleBirdieGross}),
           ...(rd.razzleSettle!=null&&{razzleSettle:rd.razzleSettle}),
+          ...(rd.razzleFinalMatch!=null&&{razzleFinalMatch:rd.razzleFinalMatch}),
+          ...(rd.razzleFinalCloseBonus!=null&&{razzleFinalCloseBonus:rd.razzleFinalCloseBonus}),
+          ...(rd.razzleFinalBirdieBonus!=null&&{razzleFinalBirdieBonus:rd.razzleFinalBirdieBonus}),
           ...(rd.wolfPlacement!=null&&{wolfPlacement:rd.wolfPlacement}),
           ...(rd.wolfBlindMult!=null&&{wolfBlindMult:rd.wolfBlindMult}),
           ...(rd.wolfLoneMode!=null&&{wolfLoneMode:rd.wolfLoneMode}),
@@ -2237,6 +2240,9 @@ async function s2ReadTrip(tripId){
         ...(rd.razzle5HoleBonus!=null&&{razzle5HoleBonus:rd.razzle5HoleBonus}),
         ...(rd.razzleBirdieGross!=null&&{razzleBirdieGross:rd.razzleBirdieGross}),
         ...(rd.razzleSettle!=null&&{razzleSettle:rd.razzleSettle}),
+          ...(rd.razzleFinalMatch!=null&&{razzleFinalMatch:rd.razzleFinalMatch}),
+          ...(rd.razzleFinalCloseBonus!=null&&{razzleFinalCloseBonus:rd.razzleFinalCloseBonus}),
+          ...(rd.razzleFinalBirdieBonus!=null&&{razzleFinalBirdieBonus:rd.razzleFinalBirdieBonus}),
         ...(rd.wolfPlacement!=null&&{wolfPlacement:rd.wolfPlacement}),
         ...(rd.wolfBlindMult!=null&&{wolfBlindMult:rd.wolfBlindMult}),
         ...(rd.wolfLoneMode!=null&&{wolfLoneMode:rd.wolfLoneMode}),
@@ -7512,6 +7518,12 @@ function calcRazzle(r,fi){
   const _rzfp=flightsForRound(r)[fi]||[];
   if(_rzfp.length<4)return[];
   const base=roundValFs('razzleVal',r,fi,WK.razzleVal),birdBonus=roundVal('razzleBirdieBonus',r,WK.razzleBirdieBonus),sweepBonus=roundVal('razzleSweepBonus',r,WK.razzleSweepBonus),fiveBonus=roundVal('razzle5HoleBonus',r,WK.razzle5HoleBonus),settle=roundVal('razzleSettle',r,WK.razzleSettle||'perplayer');
+  // How an unfinished final match settles. Per foursome, because two groups can want
+  // different answers on the same day. Defaults reproduce the original behaviour:
+  // a match that never reaches three points has no winner and pays nobody.
+  const finalRule=roundValFs('razzleFinalMatch',r,fi,'void');
+  const finalCloseB=roundValFs('razzleFinalCloseBonus',r,fi,false)===true;
+  const finalBirdB=roundValFs('razzleFinalBirdieBonus',r,fi,false)===true;
   const _off_rz=holeOffset(r),_end_rz=_off_rz+roundHoleCount(r);
   const matches=[];let mi=0,h=_off_rz;
   while(h<_end_rz){
@@ -7532,14 +7544,26 @@ function calcRazzle(r,fi){
       h++;
     }
     const holesPlayed=closedOnHole>=0?closedOnHole-matchStartHole+1:h-matchStartHole;
-    const winner=matchClosed?(runA>0?'a':'b'):null;
+    // The inner loop has two exits that look identical from out here: the round ran out
+    // of holes, or the next hole has no scores yet. Only the first is a finished match.
+    // The missing-score break cannot leave h at the end, because the loop guard stops
+    // it first, so h alone tells them apart with no extra flag. Award on the wrong one
+    // and the money moves on every keystroke while a card is still being entered.
+    const ranOut=!matchClosed&&h>=_end_rz;
+    const leaderWin=ranOut&&finalRule==='leader'&&runA!==0;
+    const winner=(matchClosed||leaderWin)?(runA>0?'a':'b'):null;
     const loserPts=winner==='a'?holeLog.reduce((a,x)=>a+x.holePtsB,0):holeLog.reduce((a,x)=>a+x.holePtsA,0);
-    const sweep=matchClosed&&holesPlayed===2&&loserPts===0;
-    const fiveHole=matchClosed&&holesPlayed>=5;
-    let pot=base+birdieCount*birdBonus+(sweep?sweepBonus:0)+(fiveHole?fiveBonus:0);
+    // A real close always earns every bonus. A leader win earns them only if asked.
+    const bonusOk=matchClosed||(leaderWin&&finalCloseB);
+    const sweep=bonusOk&&holesPlayed===2&&loserPts===0;
+    const fiveHole=bonusOk&&holesPlayed>=5;
+    // Birdie money accrues as the birdies are made, so withholding it is a subtraction,
+    // not a gate like the other two.
+    const birdiePot=(leaderWin&&!finalBirdB)?0:birdieCount*birdBonus;
+    let pot=base+birdiePot+(sweep?sweepBonus:0)+(fiveHole?fiveBonus:0);
     const sv=settleVal(pot,tA.length,settle);
     if(holesPlayed===0)break;// no scores entered yet — stop processing
-    matches.push({mi,startHole:matchStartHole,endHole:h-1,closedOnHole,tA,tB,winner,holesPlayed,sweep,fiveHole,birdieCount,pot,sv,holeLog});
+    matches.push({mi,startHole:matchStartHole,endHole:h-1,closedOnHole,tA,tB,winner,leaderWin,holesPlayed,sweep,fiveHole,birdieCount,pot,sv,holeLog});
     mi++;
   }
   return matches;
@@ -7746,6 +7770,10 @@ function renderRazzleBox(){
     STATE.razzleFiredToasts[matchKey]=true;
     toastMsgs.forEach((msg,tidx)=>{setTimeout(()=>{const el=document.getElementById('razzleBonusToast'+tidx);if(el)el.remove();const t=document.createElement('div');t.id='razzleBonusToast'+tidx;t.style.cssText='position:fixed;bottom:'+(80+tidx*55)+'px;left:50%;transform:translateX(-50%);background:#185FA5;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3500);},150+tidx*200);});
   });
+  // The acknowledgement fires from the same place as the bonus toasts, but is NOT gated
+  // on razzleToastOk: that flag only turns on when you walk FORWARD onto a hole, and the
+  // hole that completes a card is often one you went back to fill in.
+  if(razzleFinalNoticeDue(r,_rbfi))showRazzleFinalModal(r,_rbfi);
   if(!matches.length){
     const teams=razzleTeamsForMatch(r,0,_rbfi);
     const nA=teams[0].map(i=>displayName(i)).join(' & '),nB=teams[1].map(i=>displayName(i)).join(' & ');
@@ -7772,7 +7800,8 @@ function renderRazzleBox(){
     return;
   }
   const {holePtsA,holePtsB,runA,runLead,runLeader}=holeEntry;
-  const matchClosed=m.winner!==null&&hi>=m.closedOnHole;
+  // Decided, not closed: a leader win has closedOnHole -1, which hi>=-1 always satisfies.
+  const matchClosed=(m.closedOnHole>=0&&hi>=m.closedOnHole)||m.leaderWin===true;
   const hdr=gameBoxHeaderWithFmt('Razzle Dazzle · Match '+(m.mi+1),'H'+(m.startHole+1)+'-'+(m.endHole+1));
   let scoreStr;
   if(matchClosed){const fRunA=m.holeLog.length?m.holeLog[m.holeLog.length-1].runA:0;const fLead=Math.abs(fRunA);scoreStr=(m.winner==='a'?'A':'B')+' wins '+fLead+'-0';}
@@ -7818,6 +7847,63 @@ function renderRazzleBox(){
   const resultBar='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;padding:8px 12px;font-size:11px;background:var(--color-background-secondary)"><span style="color:'+(holePtsA===0&&holePtsB===0||holePtsA===holePtsB?'#D97706':'var(--color-text-secondary)')+';">'+(holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinner+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB)))+'</span><span style="color:var(--color-text-secondary);text-align:center">'+teamScoreStr+'</span><span style="color:var(--color-text-secondary);text-align:center">'+indStr+'</span><span style="color:#1D9E75;text-align:right;font-weight:500">'+standingStr+'</span></div>';
   if(res){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+hdr+razzleTeamBlock(tA,res.nA,res.sumA,res.bestA)+razzleTeamBlock(tB,res.nB,res.sumB,res.bestB)+resultBar+'</div>';}
   else{wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+hdr+'<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';}
+}
+// isRoundComplete asks about the WHOLE FIELD. This notice is per foursome, and two
+// groups finish at different times, so waiting on the other lane would hold the
+// acknowledgement back until a group that has nothing to do with this match walks in.
+function _rzFlightComplete(r,fi){
+  const n=roundHoleCount(r),off=holeOffset(r);
+  const mem=(flightsForRound(r)[fi]||[]);
+  if(!mem.length)return false;
+  for(let hi=off;hi<off+n;hi++){
+    const row=STATE.scores&&STATE.scores[r]&&STATE.scores[r][hi];
+    if(!row)return false;
+    for(let k=0;k<mem.length;k++){const s=row[mem[k]];if(s===null||s===undefined)return false;}
+  }
+  return true;
+}
+// Returns the awarded match, or null. The modal is a thin wrapper over this so the
+// rule is testable without a DOM and the two can never disagree.
+function razzleFinalNoticeDue(r,fi){
+  fi=fi||0;
+  if(!WK||!WK.rounds||!WK.rounds[r])return null;
+  if(isRoundLocked(r))return null;
+  if(!gameOnFs('razzle',r,fi))return null;
+  if(!_rzFlightComplete(r,fi))return null;
+  if(!STATE.razzleFiredToasts)STATE.razzleFiredToasts={};
+  if(STATE.razzleFiredToasts['final:'+r+':'+fi])return null;
+  const ms=calcRazzle(r,fi);
+  const m=ms.length?ms[ms.length-1]:null;
+  return (m&&m.leaderWin===true)?m:null;
+}
+function showRazzleFinalModal(r,fi){
+  fi=fi||0;
+  const m=razzleFinalNoticeDue(r,fi);
+  if(!m)return;
+  if(document.getElementById('razzleFinalModal'))return;
+  const winTeam=m.winner==='a'?m.tA:m.tB;
+  const names=winTeam.map(function(i){return displayName(i);}).join(' & ');
+  const settle=roundVal('razzleSettle',r,WK.razzleSettle||'perplayer');
+  const perWho=settle==='perteam'?'per team':'per player';
+  const holes='H'+(m.startHole+1)+' to '+(m.endHole+1);
+  const modal=document.createElement('div');
+  modal.id='razzleFinalModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem';
+  modal.innerHTML='<div style="background:var(--color-background-primary);border-radius:12px;padding:20px;max-width:340px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.3)">'
+    +'<div style="font-size:16px;font-weight:600;color:var(--color-text-primary);margin-bottom:4px">Razzle Dazzle · Match '+(m.mi+1)+'</div>'
+    +'<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:14px">'+holes+' · the round ended before this match reached three points.</div>'
+    +'<div style="font-size:13px;color:var(--color-text-primary);line-height:1.55;margin-bottom:6px">This foursome is set to award an unfinished final match to the leader, so it goes to <strong>'+names+'</strong>.</div>'
+    +'<div style="font-size:13px;color:#1D9E75;font-weight:600;margin-bottom:16px">$'+m.sv.toFixed(2)+' '+perWho+'</div>'
+    +'<button onclick="ackRazzleFinal('+r+','+fi+')" style="width:100%;padding:11px;border:none;border-radius:8px;background:#1D9E75;color:#fff;font-size:14px;font-weight:500;cursor:pointer">Got it</button>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+function ackRazzleFinal(r,fi){
+  fi=fi||0;
+  if(!STATE.razzleFiredToasts)STATE.razzleFiredToasts={};
+  STATE.razzleFiredToasts['final:'+r+':'+fi]=true;
+  const el=document.getElementById('razzleFinalModal');if(el)el.remove();
+  autoSave();s2WriteActive();
 }
 function showRazzleTeamModal(r,nextHole){
   if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[]);
@@ -7927,9 +8013,13 @@ function _renderRazzleFlightBlock(r,fi,labelHd){
         if(!hl){html+='<div style="display:grid;grid-template-columns:28px 1fr 80px;align-items:center;padding:5px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px"><span style="color:var(--color-text-tertiary)">H'+(h+1)+'</span><span style="color:var(--color-text-tertiary)">-</span><span></span></div>';continue;}
         const {holePtsA,holePtsB,runA,runLead,runLeader,teamPt,indPt}=hl;
         const hW=holePtsA>holePtsB?'a':holePtsB>holePtsA?'b':null;
-        const isClosed=m.winner!==null&&h===m.closedOnHole;
-        const isPost=m.winner!==null&&h>m.closedOnHole;
-        const fRunAG=m.holeLog.length?m.holeLog[m.holeLog.length-1].runA:0;const fLeadG=Math.abs(fRunAG);const scoreStr=isPost?'closed':isClosed?((m.winner==='a'?'A':'B')+' wins '+fLeadG+'-0'):(hl.runLeader?hl.runLeader+' '+hl.runLead+'-0':'A/S');
+        // closedOnHole, not winner. A leader win carries a winner with closedOnHole at -1,
+        // and every hole is h > -1, which lit up a branch that had never run before.
+        const isClosed=m.closedOnHole>=0&&h===m.closedOnHole;
+        const isPost=m.closedOnHole>=0&&h>m.closedOnHole;
+        // An awarded match is decided on its last hole, without ever closing out.
+        const isAwarded=m.leaderWin===true&&h===m.endHole;
+        const fRunAG=m.holeLog.length?m.holeLog[m.holeLog.length-1].runA:0;const fLeadG=Math.abs(fRunAG);const scoreStr=isPost?'closed':(isClosed||isAwarded)?((m.winner==='a'?'A':'B')+' wins '+fLeadG+'-0'):(hl.runLeader?hl.runLeader+' '+hl.runLead+'-0':'A/S');
         // Bonus indicators inline on the hole row
         const par=WK.rounds[r].course.holes[h]?.par||4;
         const birdCount=[...m.tA,...m.tB].filter(pi=>{if(roundVal('razzleBirdieGross',r,WK.razzleBirdieGross)){const g=STATE.scores[r][h][pi];return g!==null&&(par-g)>=1;}const n=getNetForFlight(pi,h,r,_rzfp);return n!==null&&(par-n)>=1;}).length;
@@ -7942,7 +8032,7 @@ function _renderRazzleFlightBlock(r,fi,labelHd){
         const holeWinLetter=hW==='a'?'A':hW==='b'?'B':null;
         const holeResultColor=hW==='a'?'#1D9E75':hW==='b'?'#185FA5':'var(--color-text-secondary)';
         const holeResult=holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinLetter+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB));const holeResultColorFinal=holePtsA===0&&holePtsB===0||holePtsA===holePtsB?'#D97706':holeResultColor;
-        const standingColor=isClosed?(m.winner==='a'?'#1D9E75':'#185FA5'):'var(--color-text-secondary)';
+        const standingColor=(isClosed||isAwarded)?(m.winner==='a'?'#1D9E75':'#185FA5'):'var(--color-text-secondary)';
         html+='<div style="display:grid;grid-template-columns:28px 1fr 1fr 72px;align-items:center;gap:4px;padding:5px 16px 5px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px'+(isPost?';opacity:0.45':'')+'"><span style="color:var(--color-text-tertiary)">H'+(h+1)+'</span><span style="color:'+holeResultColorFinal+';text-align:center">'+holeResult+'</span><span style="text-align:right;padding-right:6px">'+bonusTags+'</span><span style="text-align:right;color:'+standingColor+'">'+scoreStr+'</span></div>';
       }
       // Footer
@@ -11989,6 +12079,14 @@ function _gsRazzleSetupBody(r){
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ sweep bonus</span>$<input class="ie-num" type="number" placeholder="${WK.razzleSweepBonus||5}" value="${WK.rounds[r].razzleSweepBonus!=null?WK.rounds[r].razzleSweepBonus:''}" style="width:80px" oninput="const v=this.value.trim();if(v===''){delete WK.rounds[${r}].razzleSweepBonus;}else{WK.rounds[${r}].razzleSweepBonus=parseFloat(v);}autoSave();s2WriteActive();"/></div>`;
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ 5-hole bonus</span>$<input class="ie-num" type="number" placeholder="${WK.razzle5HoleBonus||5}" value="${WK.rounds[r].razzle5HoleBonus!=null?WK.rounds[r].razzle5HoleBonus:''}" style="width:80px" oninput="const v=this.value.trim();if(v===''){delete WK.rounds[${r}].razzle5HoleBonus;}else{WK.rounds[${r}].razzle5HoleBonus=parseFloat(v);}autoSave();s2WriteActive();"/></div>`;
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Birdie bonus scored on</span><select class="ie-sel" onchange="const bg=this.value==='gross';WK.rounds[${r}].razzleBirdieGross=bg;autoSave();s2WriteActive()"><option value="net"${!roundVal('razzleBirdieGross',r,WK.razzleBirdieGross)?' selected':''}>Net score</option><option value="gross"${roundVal('razzleBirdieGross',r,WK.razzleBirdieGross)?' selected':''}>Gross score</option></select></div>`;
+  const _rzFin=_gsOptVal('razzleFinalMatch',r,'void');
+  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Unfinished final match</span><select class="ie-sel" onchange="_gsOptSet('razzleFinalMatch',${r},this.value);autoSave();s2WriteActive();_gsRefreshAfterEdit()"><option value="void"${_rzFin!=='leader'?' selected':''}>No winner</option><option value="leader"${_rzFin==='leader'?' selected':''}>Leader wins</option></select></div>`;
+  if(_rzFin==='leader'){
+    const _rzCB=_gsOptVal('razzleFinalCloseBonus',r,false)===true;
+    const _rzBB=_gsOptVal('razzleFinalBirdieBonus',r,false)===true;
+    h+=`<div class="setup-row" style="padding-left:14px"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Pay sweep and 5-hole bonus</span><label class="toggle"><input type="checkbox"${_rzCB?' checked':''} onchange="_gsOptSet('razzleFinalCloseBonus',${r},this.checked);autoSave();s2WriteActive()"><span class="toggle-slider"></span></label></div>`;
+    h+=`<div class="setup-row" style="padding-left:14px"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Pay birdie bonus</span><label class="toggle"><input type="checkbox"${_rzBB?' checked':''} onchange="_gsOptSet('razzleFinalBirdieBonus',${r},this.checked);autoSave();s2WriteActive()"><span class="toggle-slider"></span></label></div>`;
+  }
   h+=`<div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Settlement</span><select class="ie-sel" onchange="WK.rounds[${r}].razzleSettle=this.value;autoSave();s2WriteActive()"><option value="perplayer"${roundVal('razzleSettle',r,WK.razzleSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${roundVal('razzleSettle',r,WK.razzleSettle||'perplayer')==='perteam'?' selected':''}>Per team</option></select></div>`;
   return h;
 }
@@ -12179,6 +12277,10 @@ function renderGamesTab(){
 function _gsSyncLaneToViews(){const _lv=(_gsLane()==='both')?-1:_gsLane();STATE.mpViewFlight=_lv;STATE.vegasViewFlight=_lv;STATE.skinsViewFlight=_lv;STATE.snakeViewFlight=_lv;STATE.razzleViewFlight=_lv;STATE.wolfViewFlight=_lv;STATE.hammerViewFlight=_lv;}
 function _gsStakeVal(key,r){const lane=_gsLane();if(lane==='both')return WK.rounds[r][key]!=null?WK.rounds[r][key]:'';const fs=Array.isArray(WK.rounds[r].fsGames)?WK.rounds[r].fsGames[lane]:null;return (fs&&fs[key]!=null)?fs[key]:'';}
 function _gsStakeSet(key,r,raw,fb){const lane=_gsLane();const v=(''+(raw==null?'':raw)).trim();const tgt=lane==='both'?WK.rounds[r]:_gsEnsureFs(r)[lane];if(v===''){delete tgt[key];}else{let num=parseFloat(v);if(fb!=null&&!num)num=fb;tgt[key]=num;if(lane!=='both')WK.rounds[r].independentGames=true;}}
+// The stake helpers above only speak numbers. These two are their opposite number for
+// options, and they read through the same lane -> round -> trip cascade the games use.
+function _gsOptVal(key,r,dflt){const lane=_gsLane();return lane==='both'?roundVal(key,r,dflt):roundValFs(key,r,lane,dflt);}
+function _gsOptSet(key,r,val){const lane=_gsLane();const tgt=lane==='both'?WK.rounds[r]:_gsEnsureFs(r)[lane];tgt[key]=val;if(lane!=='both')WK.rounds[r].independentGames=true;}
 function renderGamesContent(){
   if(!WK)return;
   _gsSyncLaneToViews();
@@ -12881,7 +12983,7 @@ function unsettleItem(key){if(!STATE.settledRounds)return;STATE.settledRounds=ST
 function unsettleRound(r){unsettleItem(r);}
 function isRoundLocked(r){return(STATE.lockedRounds||[]).includes(r);}
 function lockRound(r){if(!STATE.lockedRounds)STATE.lockedRounds=[];if(!STATE.lockedRounds.includes(r))STATE.lockedRounds.push(r);autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();}
-function unlockRound(r){if((STATE.settledRounds||[]).includes(r)){showMsg('Unsettle this round on the Money tab before unlocking.');return;}if(!STATE.lockedRounds)return;STATE.lockedRounds=STATE.lockedRounds.filter(x=>x!==r);if(STATE.razzleFiredToasts){Object.keys(STATE.razzleFiredToasts).forEach(k=>{if(k.startsWith('bonus:'+r+':')||k.startsWith('birdie:'+r+':'))delete STATE.razzleFiredToasts[k];});}if(STATE.razzleHWM)STATE.razzleHWM[r]=undefined;autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();if(document.getElementById('mpanel-golf')?.classList.contains('active'))renderMoney();}
+function unlockRound(r){if((STATE.settledRounds||[]).includes(r)){showMsg('Unsettle this round on the Money tab before unlocking.');return;}if(!STATE.lockedRounds)return;STATE.lockedRounds=STATE.lockedRounds.filter(x=>x!==r);if(STATE.razzleFiredToasts){Object.keys(STATE.razzleFiredToasts).forEach(k=>{if(k.startsWith('bonus:'+r+':')||k.startsWith('birdie:'+r+':')||k.startsWith('final:'+r+':'))delete STATE.razzleFiredToasts[k];});}if(STATE.razzleHWM)STATE.razzleHWM[r]=undefined;autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();if(document.getElementById('mpanel-golf')?.classList.contains('active'))renderMoney();}
 
 function renderMoney(){
   const n=WK.players.length,pot=WK.buyIn*n;
