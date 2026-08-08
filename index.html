@@ -1585,7 +1585,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v118.34';
+const APP_VERSION='v118.35';
 
 // ===== THEME =====
 (function(){
@@ -1886,6 +1886,10 @@ async function s2WriteActive(){
           ...(rd.razzleFinalMatch!=null&&{razzleFinalMatch:rd.razzleFinalMatch}),
           ...(rd.razzleFinalCloseBonus!=null&&{razzleFinalCloseBonus:rd.razzleFinalCloseBonus}),
           ...(rd.razzleFinalBirdieBonus!=null&&{razzleFinalBirdieBonus:rd.razzleFinalBirdieBonus}),
+          ...(rd.razzleBirdieOn!=null&&{razzleBirdieOn:rd.razzleBirdieOn}),
+          ...(rd.razzleSweepOn!=null&&{razzleSweepOn:rd.razzleSweepOn}),
+          ...(rd.razzle5HoleOn!=null&&{razzle5HoleOn:rd.razzle5HoleOn}),
+          ...(rd.razzle5HoleMode!=null&&{razzle5HoleMode:rd.razzle5HoleMode}),
           ...(rd.wolfPlacement!=null&&{wolfPlacement:rd.wolfPlacement}),
           ...(rd.wolfBlindMult!=null&&{wolfBlindMult:rd.wolfBlindMult}),
           ...(rd.wolfLoneMode!=null&&{wolfLoneMode:rd.wolfLoneMode}),
@@ -2243,6 +2247,10 @@ async function s2ReadTrip(tripId){
           ...(rd.razzleFinalMatch!=null&&{razzleFinalMatch:rd.razzleFinalMatch}),
           ...(rd.razzleFinalCloseBonus!=null&&{razzleFinalCloseBonus:rd.razzleFinalCloseBonus}),
           ...(rd.razzleFinalBirdieBonus!=null&&{razzleFinalBirdieBonus:rd.razzleFinalBirdieBonus}),
+          ...(rd.razzleBirdieOn!=null&&{razzleBirdieOn:rd.razzleBirdieOn}),
+          ...(rd.razzleSweepOn!=null&&{razzleSweepOn:rd.razzleSweepOn}),
+          ...(rd.razzle5HoleOn!=null&&{razzle5HoleOn:rd.razzle5HoleOn}),
+          ...(rd.razzle5HoleMode!=null&&{razzle5HoleMode:rd.razzle5HoleMode}),
         ...(rd.wolfPlacement!=null&&{wolfPlacement:rd.wolfPlacement}),
         ...(rd.wolfBlindMult!=null&&{wolfBlindMult:rd.wolfBlindMult}),
         ...(rd.wolfLoneMode!=null&&{wolfLoneMode:rd.wolfLoneMode}),
@@ -6582,6 +6590,15 @@ function gameOnAny(game){
 }
 function roundVal(key,r,tripDefault){return WK.rounds[r]?.[key]??tripDefault;}
 function gameOnFs(game,r,fi){if(!WK||!WK.rounds||!WK.rounds[r])return false;const rd=WK.rounds[r];if(!rd.independentGames||fi==null||game==='twos')return gameOn(game,r);const _k=gameFlagKey(game);const _fg=rd.fsGames;const _f=Array.isArray(_fg)?_fg[fi]:null;if(_f&&_f[_k]===true)return true;return rd[_k]===true;}
+// The four answers to "what happens when a match reaches five holes". One key, so
+// there is no illegal combination for a read site to reconcile. Order is the order
+// the selector shows them in; the third column is the line under the selector.
+const _RZ5MODES=[
+  ['add','Add the bonus','Every long match pays the stake plus the bonus, and the next match starts at the stake again.'],
+  ['addcarry','Add the bonus, carry it forward','The bonus stacks onto the stake and stays there, so each long match starts where the last one finished.'],
+  ['dbl','Double this match','A long match is worth twice the stake. The next match starts at the stake again.'],
+  ['dblcarry','Double, carry it forward','The stake doubles and stays doubled, so long matches compound.']
+];
 function roundValFs(key,r,fi,tripDefault){const rd=WK.rounds&&WK.rounds[r];if(rd&&rd.independentGames&&fi!=null&&Array.isArray(rd.fsGames)&&rd.fsGames[fi]&&rd.fsGames[fi][key]!==undefined)return rd.fsGames[fi][key];return roundVal(key,r,tripDefault);}
 function _fsOff(game,r,fi){const rd=WK.rounds&&WK.rounds[r];return !!(rd&&rd.independentGames&&!gameOnFs(game,r,fi));}
 const OPT_PANELS=['menu','weekend','players','flights','courses','info','htp'];
@@ -7495,9 +7512,9 @@ function calcRazzleHole(hi,r,tA,tB,fp){
   const sumA=nA[0]+nA[1],sumB=nB[0]+nB[1],bestA=Math.min(...nA),bestB=Math.min(...nB);
   return{teamPt:sumA<sumB?'a':sumB<sumA?'b':null,indPt:bestA<bestB?'a':bestB<bestA?'b':null,nA,nB,sumA,sumB,bestA,bestB};
 }
-function razzleBirdies(team,hi,r,fp){
+function razzleBirdies(team,hi,r,fp,fi){
   const par=WK.rounds[r].course.holes[hi]?.par||4;
-  if(roundVal('razzleBirdieGross',r,WK.razzleBirdieGross)){
+  if(roundValFs('razzleBirdieGross',r,fi,WK.razzleBirdieGross)){
     return team.filter(pi=>{const g=STATE.scores[r][hi][pi];return g!==null&&(par-g)>=1;}).length;
   }
   return team.filter(pi=>{const n=getNetForFlight(pi,hi,r,fp);return n!==null&&(par-n)>=1;}).length;
@@ -7517,7 +7534,19 @@ function calcRazzle(r,fi){
   if(!Array.isArray(STATE.razzleMatchTeams[r]))STATE.razzleMatchTeams[r]=[];
   const _rzfp=flightsForRound(r)[fi]||[];
   if(_rzfp.length<4)return[];
-  const base=roundValFs('razzleVal',r,fi,WK.razzleVal),birdBonus=roundVal('razzleBirdieBonus',r,WK.razzleBirdieBonus),sweepBonus=roundVal('razzleSweepBonus',r,WK.razzleSweepBonus),fiveBonus=roundVal('razzle5HoleBonus',r,WK.razzle5HoleBonus),settle=roundVal('razzleSettle',r,WK.razzleSettle||'perplayer');
+  const base=roundValFs('razzleVal',r,fi,WK.razzleVal),birdBonus=roundValFs('razzleBirdieBonus',r,fi,WK.razzleBirdieBonus),sweepBonus=roundValFs('razzleSweepBonus',r,fi,WK.razzleSweepBonus),fiveBonus=roundValFs('razzle5HoleBonus',r,fi,WK.razzle5HoleBonus),settle=roundValFs('razzleSettle',r,fi,WK.razzleSettle||'perplayer');
+  // Each bonus switches on and off independently of its dollar amount, so a group
+  // can drop a bonus for a round without losing the number they normally play.
+  // Absent means on, which is what every round before this build did.
+  const birdOn=roundValFs('razzleBirdieOn',r,fi,true)!==false;
+  const sweepOn=roundValFs('razzleSweepOn',r,fi,true)!==false;
+  const fiveOn=roundValFs('razzle5HoleOn',r,fi,true)!==false;
+  // One key with four answers rather than two booleans. Two booleans admit the
+  // same four states and nothing else, but they also admit a reconciliation
+  // question every read site would have to answer the same way.
+  const fiveMode=roundValFs('razzle5HoleMode',r,fi,'add');
+  const fiveDbl=fiveMode==='dbl'||fiveMode==='dblcarry';
+  const fiveCarry=fiveMode==='addcarry'||fiveMode==='dblcarry';
   // How an unfinished final match settles. Per foursome, because two groups can want
   // different answers on the same day. Defaults reproduce the original behaviour:
   // a match that never reaches three points has no winner and pays nobody.
@@ -7525,7 +7554,7 @@ function calcRazzle(r,fi){
   const finalCloseB=roundValFs('razzleFinalCloseBonus',r,fi,false)===true;
   const finalBirdB=roundValFs('razzleFinalBirdieBonus',r,fi,false)===true;
   const _off_rz=holeOffset(r),_end_rz=_off_rz+roundHoleCount(r);
-  const matches=[];let mi=0,h=_off_rz;
+  const matches=[];let mi=0,h=_off_rz,stake=base;
   while(h<_end_rz){
     const teams=razzleTeamsForMatch(r,mi,fi);
     const tA=teams[0],tB=teams[1];
@@ -7537,7 +7566,7 @@ function calcRazzle(r,fi){
       if(res.teamPt==='a')holePtsA++;else if(res.teamPt==='b')holePtsB++;
       if(res.indPt==='a')holePtsA++;else if(res.indPt==='b')holePtsB++;
       runA+=holePtsA-holePtsB;
-      birdieCount+=razzleBirdies(tA,h,r,_rzfp)+razzleBirdies(tB,h,r,_rzfp);
+      birdieCount+=razzleBirdies(tA,h,r,_rzfp,fi)+razzleBirdies(tB,h,r,_rzfp,fi);
       const runLead=Math.abs(runA),runLeader=runA>0?'A':runA<0?'B':null;
       holeLog.push({hi:h,holePtsA,holePtsB,runA,runLead,runLeader,holeResult:holePtsA>holePtsB?'a':holePtsB>holePtsA?'b':'tie',nA:res.nA,nB:res.nB,sumA:res.sumA,sumB:res.sumB,bestA:res.bestA,bestB:res.bestB,teamPt:res.teamPt,indPt:res.indPt});
       if(Math.abs(runA)>=3){matchClosed=true;closedOnHole=h;h++;break;}
@@ -7555,15 +7584,25 @@ function calcRazzle(r,fi){
     const loserPts=winner==='a'?holeLog.reduce((a,x)=>a+x.holePtsB,0):holeLog.reduce((a,x)=>a+x.holePtsA,0);
     // A real close always earns every bonus. A leader win earns them only if asked.
     const bonusOk=matchClosed||(leaderWin&&finalCloseB);
-    const sweep=bonusOk&&holesPlayed===2&&loserPts===0;
-    const fiveHole=bonusOk&&holesPlayed>=5;
+    const sweep=bonusOk&&sweepOn&&holesPlayed===2&&loserPts===0;
+    const fiveHole=bonusOk&&fiveOn&&holesPlayed>=5;
     // Birdie money accrues as the birdies are made, so withholding it is a subtraction,
     // not a gate like the other two.
-    const birdiePot=(leaderWin&&!finalBirdB)?0:birdieCount*birdBonus;
-    let pot=base+birdiePot+(sweep?sweepBonus:0)+(fiveHole?fiveBonus:0);
+    const birdiePot=(!birdOn||(leaderWin&&!finalBirdB))?0:birdieCount*birdBonus;
+    // matchStake is this match's stake, captured before any carry moves it.
+    // fiveAdd is the dollars the 5-hole bonus actually contributed: its amount in a
+    // fixed mode, the stake itself in a doubling one. Every display site reads it
+    // rather than recomputing from a key that may not be the one in force.
+    const matchStake=stake;
+    const fiveAdd=fiveHole?(fiveDbl?matchStake:fiveBonus):0;
+    let pot=matchStake+fiveAdd+birdiePot+(sweep?sweepBonus:0);
     const sv=settleVal(pot,tA.length,settle);
     if(holesPlayed===0)break;// no scores entered yet — stop processing
-    matches.push({mi,startHole:matchStartHole,endHole:h-1,closedOnHole,tA,tB,winner,leaderWin,holesPlayed,sweep,fiveHole,birdieCount,pot,sv,holeLog});
+    matches.push({mi,startHole:matchStartHole,endHole:h-1,closedOnHole,tA,tB,winner,leaderWin,holesPlayed,sweep,fiveHole,birdieCount,stake:matchStake,fiveAdd,pot,sv,holeLog});
+    // Only the 5-hole escalation carries, and only the stake carries. Birdie and
+    // sweep money stay inside the match that earned them. A sweep is two holes by
+    // definition, so it can never be the thing that moves the stake.
+    if(fiveHole&&fiveCarry)stake=fiveDbl?matchStake*2:matchStake+fiveBonus;
     mi++;
   }
   return matches;
@@ -7764,8 +7803,11 @@ function renderRazzleBox(){
     const matchKey='bonus:'+r+':'+_rbfi+':'+cm.mi;
     if(STATE.razzleFiredToasts[matchKey])return;
     const toastMsgs=[];
-    if(cm.sweep&&(roundVal('razzleSweepBonus',r,WK.razzleSweepBonus)||0)>0)toastMsgs.push('Sweep bonus! +$'+(roundVal('razzleSweepBonus',r,WK.razzleSweepBonus)||5).toFixed(2)+' to pot');
-    if(cm.fiveHole&&(roundVal('razzle5HoleBonus',r,WK.razzle5HoleBonus)||0)>0)toastMsgs.push('5-hole bonus! +$'+(roundVal('razzle5HoleBonus',r,WK.razzle5HoleBonus)||5).toFixed(2)+' to pot');
+    // cm.sweep and cm.fiveHole are already gated on their toggles, and cm.fiveAdd is
+    // already the right number in a doubling mode, so neither line re-reads a key.
+    const _swAmt=roundValFs('razzleSweepBonus',r,_rbfi,WK.razzleSweepBonus)||0;
+    if(cm.sweep&&_swAmt>0)toastMsgs.push('Sweep bonus! +$'+_swAmt.toFixed(2)+' to pot');
+    if(cm.fiveHole&&cm.fiveAdd>0)toastMsgs.push('5-hole bonus! +$'+cm.fiveAdd.toFixed(2)+' to pot');
     if(!toastMsgs.length)return;
     STATE.razzleFiredToasts[matchKey]=true;
     toastMsgs.forEach((msg,tidx)=>{setTimeout(()=>{const el=document.getElementById('razzleBonusToast'+tidx);if(el)el.remove();const t=document.createElement('div');t.id='razzleBonusToast'+tidx;t.style.cssText='position:fixed;bottom:'+(80+tidx*55)+'px;left:50%;transform:translateX(-50%);background:#185FA5;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3500);},150+tidx*200);});
@@ -8022,7 +8064,7 @@ function _renderRazzleFlightBlock(r,fi,labelHd){
         const fRunAG=m.holeLog.length?m.holeLog[m.holeLog.length-1].runA:0;const fLeadG=Math.abs(fRunAG);const scoreStr=isPost?'closed':(isClosed||isAwarded)?((m.winner==='a'?'A':'B')+' wins '+fLeadG+'-0'):(hl.runLeader?hl.runLeader+' '+hl.runLead+'-0':'A/S');
         // Bonus indicators inline on the hole row
         const par=WK.rounds[r].course.holes[h]?.par||4;
-        const birdCount=[...m.tA,...m.tB].filter(pi=>{if(roundVal('razzleBirdieGross',r,WK.razzleBirdieGross)){const g=STATE.scores[r][h][pi];return g!==null&&(par-g)>=1;}const n=getNetForFlight(pi,h,r,_rzfp);return n!==null&&(par-n)>=1;}).length;
+        const birdCount=[...m.tA,...m.tB].filter(pi=>{if(roundValFs('razzleBirdieGross',r,fi,WK.razzleBirdieGross)){const g=STATE.scores[r][h][pi];return g!==null&&(par-g)>=1;}const n=getNetForFlight(pi,h,r,_rzfp);return n!==null&&(par-n)>=1;}).length;
         const holeNumInMatch=h-m.startHole; // 0-based
         const bonusBits=[];
         if(m.sweep&&holeNumInMatch===1)bonusBits.push({lbl:'sweep',clr:'#1D9E75'}); // sweep = won in 2 holes (index 1)
@@ -8038,13 +8080,17 @@ function _renderRazzleFlightBlock(r,fi,labelHd){
       // Footer
       if(m.winner){
         const bonusDetail=[];
-        if(m.sweep)bonusDetail.push('Sweep +$'+(roundVal('razzleSweepBonus',r,WK.razzleSweepBonus||5)).toFixed(2));
-        if(m.fiveHole)bonusDetail.push('5-hole +$'+(roundVal('razzle5HoleBonus',r,WK.razzle5HoleBonus||5)).toFixed(2));
-        if(m.birdieCount>0)bonusDetail.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':'')+' +$'+(m.birdieCount*(roundVal('razzleBirdieBonus',r,WK.razzleBirdieBonus||5))).toFixed(2));
+        const _swA=roundValFs('razzleSweepBonus',r,fi,WK.razzleSweepBonus||5);
+        // Derived, not recomputed. Whatever is left of the pot after the stake, the
+        // 5-hole contribution and the sweep IS the birdie money, under every toggle.
+        const _bdA=m.pot-m.stake-m.fiveAdd-(m.sweep?_swA:0);
+        if(m.sweep)bonusDetail.push('Sweep +$'+_swA.toFixed(2));
+        if(m.fiveHole)bonusDetail.push('5-hole +$'+m.fiveAdd.toFixed(2));
+        if(_bdA>0)bonusDetail.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':'')+' +$'+_bdA.toFixed(2));
         const winColor=aWins?'#1D9E75':'#185FA5';
         html+='<div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px;background:var(--color-background-secondary)">';
         html+='<span style="font-weight:500;color:'+winColor+'">'+(aWins?'A':'B')+' wins</span>';
-        const baseStr='Base $'+(roundValFs('razzleVal',r,fi,WK.razzleVal||5).toFixed(2));const allParts=[baseStr].concat(bonusDetail);html+='<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:2px">'+allParts.join(' · ')+' : Total $'+m.pot.toFixed(2)+'</div>';
+        const baseStr='Base $'+m.stake.toFixed(2);const allParts=[baseStr].concat(bonusDetail);html+='<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:2px">'+allParts.join(' · ')+' : Total $'+m.pot.toFixed(2)+'</div>';
         html+='</div>';
       } else if(m.holesPlayed===0){
         html+='<div style="padding:8px 12px;font-size:12px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)">No scores yet</div>';
@@ -12074,11 +12120,23 @@ function _gsRazzleSetupBody(r){
     rots.forEach((rot,ri)=>{const nA=rot[0].map(i=>displayName(i)).join(' & '),nB=rot[1].map(i=>displayName(i)).join(' & ');h+=`<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:3px"><span style="color:var(--color-text-tertiary)">Match ${ri+1},${ri+4},${ri+7}:</span> ${nA} vs ${nB}</div>`;});
     h+=`</div>`;
   }
+  const _rzBdOn=_gsOptVal('razzleBirdieOn',r,true)!==false;
+  const _rzSwOn=_gsOptVal('razzleSweepOn',r,true)!==false;
+  const _rz5On=_gsOptVal('razzle5HoleOn',r,true)!==false;
+  const _rz5Mode=_gsOptVal('razzle5HoleMode',r,'add');
+  // In a doubling mode the dollar amount is never read, so the input goes away and
+  // the label drops its dollar sign rather than sitting there meaning nothing.
+  const _rz5Amt=_rz5On&&_rz5Mode!=='dbl'&&_rz5Mode!=='dblcarry';
+  const _rz5Hint=(_RZ5MODES.find(o=>o[0]===_rz5Mode)||_RZ5MODES[0])[2];
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per match</span>$<input class="ie-num" type="number" placeholder="${WK.razzleVal||5}" value="${_gsStakeVal('razzleVal',r)}" style="width:80px" oninput="_gsStakeSet('razzleVal',${r},this.value);autoSave();s2WriteActive();"/></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ birdie bonus</span>$<input class="ie-num" type="number" placeholder="${WK.razzleBirdieBonus||5}" value="${WK.rounds[r].razzleBirdieBonus!=null?WK.rounds[r].razzleBirdieBonus:''}" style="width:80px" oninput="const v=this.value.trim();if(v===''){delete WK.rounds[${r}].razzleBirdieBonus;}else{WK.rounds[${r}].razzleBirdieBonus=parseFloat(v);}autoSave();s2WriteActive();"/></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ sweep bonus</span>$<input class="ie-num" type="number" placeholder="${WK.razzleSweepBonus||5}" value="${WK.rounds[r].razzleSweepBonus!=null?WK.rounds[r].razzleSweepBonus:''}" style="width:80px" oninput="const v=this.value.trim();if(v===''){delete WK.rounds[${r}].razzleSweepBonus;}else{WK.rounds[${r}].razzleSweepBonus=parseFloat(v);}autoSave();s2WriteActive();"/></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ 5-hole bonus</span>$<input class="ie-num" type="number" placeholder="${WK.razzle5HoleBonus||5}" value="${WK.rounds[r].razzle5HoleBonus!=null?WK.rounds[r].razzle5HoleBonus:''}" style="width:80px" oninput="const v=this.value.trim();if(v===''){delete WK.rounds[${r}].razzle5HoleBonus;}else{WK.rounds[${r}].razzle5HoleBonus=parseFloat(v);}autoSave();s2WriteActive();"/></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Birdie bonus scored on</span><select class="ie-sel" onchange="const bg=this.value==='gross';WK.rounds[${r}].razzleBirdieGross=bg;autoSave();s2WriteActive()"><option value="net"${!roundVal('razzleBirdieGross',r,WK.razzleBirdieGross)?' selected':''}>Net score</option><option value="gross"${roundVal('razzleBirdieGross',r,WK.razzleBirdieGross)?' selected':''}>Gross score</option></select></div>`;
+  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">${_rzBdOn?'$ ':''}birdie bonus</span>${_rzBdOn?'$<input class="ie-num" type="number" placeholder="'+(WK.razzleBirdieBonus||5)+'" value="'+_gsStakeVal('razzleBirdieBonus',r)+'" style="width:80px" oninput="_gsStakeSet(\'razzleBirdieBonus\','+r+',this.value);autoSave();s2WriteActive();"/>':''}<label class="toggle"><input type="checkbox"${_rzBdOn?' checked':''} onchange="_gsOptSet('razzleBirdieOn',${r},this.checked);autoSave();s2WriteActive();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>`;
+  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">${_rzSwOn?'$ ':''}sweep bonus</span>${_rzSwOn?'$<input class="ie-num" type="number" placeholder="'+(WK.razzleSweepBonus||5)+'" value="'+_gsStakeVal('razzleSweepBonus',r)+'" style="width:80px" oninput="_gsStakeSet(\'razzleSweepBonus\','+r+',this.value);autoSave();s2WriteActive();"/>':''}<label class="toggle"><input type="checkbox"${_rzSwOn?' checked':''} onchange="_gsOptSet('razzleSweepOn',${r},this.checked);autoSave();s2WriteActive();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>`;
+  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">${_rz5Amt?'$ ':''}5-hole bonus</span>${_rz5Amt?'$<input class="ie-num" type="number" placeholder="'+(WK.razzle5HoleBonus||5)+'" value="'+_gsStakeVal('razzle5HoleBonus',r)+'" style="width:80px" oninput="_gsStakeSet(\'razzle5HoleBonus\','+r+',this.value);autoSave();s2WriteActive();"/>':''}<label class="toggle"><input type="checkbox"${_rz5On?' checked':''} onchange="_gsOptSet('razzle5HoleOn',${r},this.checked);autoSave();s2WriteActive();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>`;
+  if(_rz5On){
+    h+=`<div class="setup-row" style="padding-left:14px"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">When a match hits 5 holes</span><select class="ie-sel" onchange="_gsOptSet('razzle5HoleMode',${r},this.value);autoSave();s2WriteActive();_gsRefreshAfterEdit()">${_RZ5MODES.map(o=>`<option value="${o[0]}"${_rz5Mode===o[0]?' selected':''}>${o[1]}</option>`).join('')}</select></div>`;
+    h+=`<div style="font-size:11px;color:var(--color-text-tertiary);padding:0 12px 9px 26px;line-height:1.45">${_rz5Hint}</div>`;
+  }
+  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Birdie bonus scored on</span><select class="ie-sel" onchange="_gsOptSet('razzleBirdieGross',${r},this.value==='gross');autoSave();s2WriteActive()"><option value="net"${!_gsOptVal('razzleBirdieGross',r,WK.razzleBirdieGross)?' selected':''}>Net score</option><option value="gross"${_gsOptVal('razzleBirdieGross',r,WK.razzleBirdieGross)?' selected':''}>Gross score</option></select></div>`;
   const _rzFin=_gsOptVal('razzleFinalMatch',r,'void');
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Unfinished final match</span><select class="ie-sel" onchange="_gsOptSet('razzleFinalMatch',${r},this.value);autoSave();s2WriteActive();_gsRefreshAfterEdit()"><option value="void"${_rzFin!=='leader'?' selected':''}>No winner</option><option value="leader"${_rzFin==='leader'?' selected':''}>Leader wins</option></select></div>`;
   if(_rzFin==='leader'){
@@ -12087,7 +12145,7 @@ function _gsRazzleSetupBody(r){
     h+=`<div class="setup-row" style="padding-left:14px"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Pay sweep and 5-hole bonus</span><label class="toggle"><input type="checkbox"${_rzCB?' checked':''} onchange="_gsOptSet('razzleFinalCloseBonus',${r},this.checked);autoSave();s2WriteActive()"><span class="toggle-slider"></span></label></div>`;
     h+=`<div class="setup-row" style="padding-left:14px"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Pay birdie bonus</span><label class="toggle"><input type="checkbox"${_rzBB?' checked':''} onchange="_gsOptSet('razzleFinalBirdieBonus',${r},this.checked);autoSave();s2WriteActive()"><span class="toggle-slider"></span></label></div>`;
   }
-  h+=`<div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Settlement</span><select class="ie-sel" onchange="WK.rounds[${r}].razzleSettle=this.value;autoSave();s2WriteActive()"><option value="perplayer"${roundVal('razzleSettle',r,WK.razzleSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${roundVal('razzleSettle',r,WK.razzleSettle||'perplayer')==='perteam'?' selected':''}>Per team</option></select></div>`;
+  h+=`<div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Settlement</span><select class="ie-sel" onchange="_gsOptSet('razzleSettle',${r},this.value);autoSave();s2WriteActive()"><option value="perplayer"${roundVal('razzleSettle',r,WK.razzleSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${roundVal('razzleSettle',r,WK.razzleSettle||'perplayer')==='perteam'?' selected':''}>Per team</option></select></div>`;
   return h;
 }
 function _gsVegasSetupBody(r){
