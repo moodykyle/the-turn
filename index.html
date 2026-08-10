@@ -699,6 +699,52 @@ body.force-light .gs-setup-toggle,body.force-light .gs-setup-body{box-shadow:0 2
 .gs-add-row:active{background:var(--color-background-secondary);}
 .gs-add-row-disabled{cursor:default;}
 .gs-add-row-disabled:active{background:transparent;}
+/* Scoped to the Add Game sheet. gsBothModal and gsIndepConfirm share
+   .gs-add-picker-inner and are three lines of prose, so they must not inherit a
+   scrolling body or a pinned header. */
+.gs-add-picker-inner.gs-add-picker-v2{
+  padding:16px 0 0;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.gs-add-picker-v2 .gs-add-picker-hd{
+  flex:0 0 auto;
+  padding:0 16px 12px;margin-bottom:0;
+  border-bottom:0.5px solid var(--color-border-tertiary);
+}
+/* A flex container, so the list below is a flex item with a resolved height.
+   height:100% would need a DEFINITE parent height, and this parent is sized by
+   max-height, which is not the same thing: the list scrolls but never reports
+   that it can. */
+.gs-add-scroll{position:relative;flex:1 1 auto;min-height:0;display:flex;}
+.gs-add-list{
+  flex:1 1 auto;min-height:0;width:100%;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  /* No bottom gutter. Padding under the last visible row is what makes a clipped
+     list look finished rather than clipped. */
+  padding:12px 16px 0;
+  scroll-padding-bottom:34px;
+}
+.gs-add-list > :last-child{margin-bottom:16px;}
+.gs-add-more{
+  position:absolute;left:0;right:0;bottom:0;height:46px;
+  pointer-events:none;
+  display:flex;align-items:flex-end;justify-content:center;padding-bottom:7px;
+  background:linear-gradient(to bottom,transparent,var(--color-background-primary) 62%);
+  opacity:0;transition:opacity .16s ease;
+}
+.gs-add-scroll.more .gs-add-more{opacity:1;}
+.gs-add-more-pill{
+  display:flex;align-items:center;justify-content:center;
+  width:30px;height:22px;border-radius:11px;
+  background:var(--color-background-secondary);
+  border:0.5px solid var(--color-border-tertiary);
+}
+.gs-add-more svg{display:block;}
+@media(prefers-reduced-motion:reduce){.gs-add-more{transition:none;}}
+.gs-add-split{display:flex;align-items:center;gap:9px;margin:4px 0 10px;}
+.gs-add-split span{font-size:11px;font-weight:600;letter-spacing:0.03em;color:var(--color-text-tertiary);white-space:nowrap;}
+.gs-add-split i{flex:1 1 auto;height:0;border-top:0.5px solid var(--color-border-tertiary);}
 .gs-empty-state{
   text-align:center;color:var(--color-text-secondary);
   padding:2rem 1rem;
@@ -1459,9 +1505,12 @@ body.force-light{
 <div id="gamesContent"></div>
     </div>
     <div id="gsAddPicker" class="gs-add-picker" onclick="if(event.target===this)window._gsCloseAddPicker()">
-      <div class="gs-add-picker-inner">
+      <div class="gs-add-picker-inner gs-add-picker-v2">
         <div class="gs-add-picker-hd">Add Game</div>
-        <div id="gsAddPickerList"></div>
+        <div class="gs-add-scroll" id="gsAddScroll">
+          <div id="gsAddPickerList" class="gs-add-list" onscroll="window._gsAddMore()"></div>
+          <div class="gs-add-more" aria-hidden="true"><span class="gs-add-more-pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></span></div>
+        </div>
       </div>
     </div>
     <div id="gsBothModal" class="gs-add-picker" onclick="if(event.target===this)window._gsCloseBothModal()">
@@ -1585,7 +1634,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v118.37';
+const APP_VERSION='v119.01';
 
 // ===== THEME =====
 (function(){
@@ -4683,7 +4732,7 @@ function _qrStepHtml(){
     if(_qrS.n===1){_qrFinish();return '';}
     const games=['Match Play','Vegas','Skins','Razzle Dazzle','Wolf','Hammer',"Two's Club",'Snake','Four-Ball'];
     let gameRows=games.map(function(g,i){
-      const _note=_gameMinNote(g,_qrS.n);const greyed=!!_note;const on=!greyed&&!!_gsGames[g];
+      const _note=_gameFieldNote(g,_qrS.n);const greyed=!!_note;const on=!greyed&&!!_gsGames[g];
       const isLast=i===games.length-1;
       const _qrNeedLbl=_note?'<span style="font-size:11px;color:var(--color-text-tertiary);margin-right:8px">'+_note+'</span>':'';
       return'<div '+(greyed?'':'onclick="window._qrToggleGame('+i+')"')+' style="display:flex;align-items:center;padding:11px 12px;'+(isLast?'':'border-bottom:0.5px solid var(--color-border-tertiary);')+(greyed?'opacity:0.35;':'cursor:pointer;')+'">'
@@ -4707,7 +4756,7 @@ function _qrStepHtml(){
 window._qrToggleGame=function(i){
   const games=['Match Play','Vegas','Skins','Razzle Dazzle','Wolf','Hammer',"Two's Club",'Snake','Four-Ball'];
   const g=games[i];if(!g)return;
-  if(_gameMinNote(g,_qrS.n))return;
+  if(_gameFieldNote(g,_qrS.n))return;
   if(_gsGames[g])delete _gsGames[g];
   else _gsGames[g]=true;
   _qrRender();
@@ -5687,7 +5736,7 @@ function _twStep5Html(){
   const games=['Match Play','Vegas','Skins','Razzle Dazzle','Wolf','Hammer',"Two's Club",'Snake','Four-Ball'];
   const _twN=(_twS.selectedMembers||[]).length;
   let gameRows=games.map((g,i)=>{
-    const _note=_gameMinNote(g,_twN);const greyed=!!_note;const on=!greyed&&!!_twS.games[g];
+    const _note=_gameFieldNote(g,_twN);const greyed=!!_note;const on=!greyed&&!!_twS.games[g];
     const isLast=i===games.length-1;
     const _needLbl=_note?`<span style="font-size:11px;color:var(--color-text-tertiary);margin-right:8px;">${_note}</span>`:'';
     const _rowClick=greyed?'':`onclick="window._twToggleGameIdx(${i})"`;
@@ -5972,7 +6021,7 @@ window._twToggleMember=function(memberId){
 window._twToggleGameIdx=function(i){
   const games=['Match Play','Vegas','Skins','Razzle Dazzle','Wolf','Hammer',"Two's Club",'Snake','Four-Ball'];
   const g=games[i];if(!g)return;
-  if(_gameMinNote(g,(_twS.selectedMembers||[]).length))return;
+  if(_gameFieldNote(g,(_twS.selectedMembers||[]).length))return;
   if(_twS.games[g])delete _twS.games[g];
   else _twS.games[g]=true;
   _twRender();
@@ -11953,7 +12002,40 @@ function renderFourBallRound(){
   });
   el.innerHTML=h;
 }
-function _gameMinNote(id,n){const k={'Match Play':'mp','Vegas':'vegas','Skins':'skins','Razzle Dazzle':'razzle','Wolf':'wolf','Hammer':'hammer',"Two's Club":'twos','Snake':'snake','Four-Ball':'fourball','Nines':'nines'}[id]||id;if(k==='nines')return n===3?null:'Needs 3 players';if(k==='hammer')return(n===2||n>=4)?null:'Needs 2 or 4 players';if(k==='wolf'||k==='vegas'||k==='razzle')return n>=4?null:'Needs 4 players';if(k==='mp')return(n===2||n>=4)?null:'Needs 2 or 4 players';if(k==='fourball')return n>=4?null:'Needs 4 players';return null;}
+const GAME_KEY={'Match Play':'mp','Vegas':'vegas','Skins':'skins','Razzle Dazzle':'razzle','Wolf':'wolf','Hammer':'hammer',"Two's Club":'twos','Snake':'snake','Four-Ball':'fourball','Nines':'nines'};
+// The group sizes each game can actually SEAT. Absent from this table means the
+// game runs at any number. Every player-count question in the build derives from
+// here, including the reason strings, so there is one place to be wrong.
+const GAME_SIZES={nines:[3],hammer:[2,4],mp:[2,4],wolf:[4],vegas:[4],razzle:[4],fourball:[4]};
+function _gameSizes(id){return GAME_SIZES[GAME_KEY[id]||id]||null;}
+function _gameSizeNote(s){return 'Needs '+(s.length===1?s[0]:s.slice(0,-1).join(', ')+' or '+s[s.length-1])+' players';}
+// A SEATED group. The size must be one the game can seat, not merely enough of
+// them: a four-player game in a group of five deals four in and leaves the fifth
+// man out of the money without saying so.
+function _gameGroupNote(id,n){const s=_gameSizes(id);if(!s)return null;return s.indexOf(n)>=0?null:_gameSizeNote(s);}
+// The FIELD at trip setup, before foursomes exist. Eight players can obviously
+// play Razzle, they just split first, so the only question here is whether one
+// legal group could be formed at all. Using the group predicate here would block
+// every trip over four players from turning a four-player game on.
+function _gameFieldNote(id,n){const s=_gameSizes(id);if(!s)return null;return n>=Math.min.apply(null,s)?null:_gameSizeNote(s);}
+// Whether a LANE can play a game. A specific lane is just its own size. "Both"
+// writes the flag into every foursome, so every foursome has to be able to play
+// it, and the sizes cannot be collapsed to a single number first: Nines wants
+// exactly 3 and Hammer wants 2 or 4, so the smallest group is not the strictest
+// test. Sizes 3 and 4 clear a min() gate for Nines and then land ninesOn on the
+// four. min() is only ever too permissive, never too strict, since min is itself
+// one of the sizes.
+function _gameLaneNote(id,r,lane){
+  const _lens=flightsForRound(r).map(function(g){return (g||[]).length;});
+  if(lane!=='both')return _gameGroupNote(id,(_lens[lane]||0));
+  if(!_lens.length)return _gameGroupNote(id,0);
+  let _bad=0,_note=null;
+  for(let i=0;i<_lens.length;i++){const _n=_gameGroupNote(id,_lens[i]);if(_n){_bad++;if(!_note)_note=_n;}}
+  if(!_bad)return null;
+  // "Needs 3 players" in front of a man looking at his own group of three is not
+  // an explanation, it is a contradiction. Say which case it is.
+  return _bad===_lens.length?_note:(_note+' in every foursome');
+}
 function _gsLane(){return STATE.gamesLane===undefined?'both':STATE.gamesLane;}
 function _gsEnsureFs(r){const rd=WK.rounds[r];const nf=flightsForRound(r).length;if(!Array.isArray(rd.fsGames))rd.fsGames=[];while(rd.fsGames.length<nf)rd.fsGames.push({});for(let i=0;i<rd.fsGames.length;i++){if(!rd.fsGames[i]||typeof rd.fsGames[i]!=='object')rd.fsGames[i]={};}return rd.fsGames;}
 function _gsIsShared(def,r){return def.tripLevel?!!WK[def.onField]:!!(WK.rounds[r]&&WK.rounds[r][def.onField]);}
@@ -11973,22 +12055,40 @@ window._gsOpenAddPicker=function(){
   if(inactive.length===0){
     list.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:1rem 0;font-size:13px">All games are already active for this round.</div>';
   } else {
-    const _gfl=flightsForRound(r);
-    const _gfLens=_gfl.map(function(g){return (g||[]).length;});
-    // A specific lane gates on itself. "Both" writes the game to every lane, so it
-    // gates on the SMALLEST: the weakest foursome decides what all of them can play.
-    const _np=(_laneAP==='both')?(_gfLens.length?Math.min.apply(null,_gfLens):0):((_gfl[_laneAP]||[]).length);
-    list.innerHTML=inactive.map(def=>{const _note=_gameMinNote(def.id,_np);if(_note){return`<div class="gs-add-row gs-add-row-disabled"><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;color:var(--color-text-tertiary)">${def.label}</span><span style="font-size:11px;color:var(--color-text-tertiary)">${_note}</span></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>`;}return`<div class="gs-add-row" onclick="window._gsAddGame('${def.id}')"><span style="font-size:14px;color:var(--color-text-primary)">${def.label}</span><span style="color:#1D9E75;font-size:18px">+</span></div>`;}).join('');
+    const _mkRow=def=>{const _note=_gameLaneNote(def.id,r,_laneAP);if(_note){return`<div class="gs-add-row gs-add-row-disabled"><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;color:var(--color-text-tertiary)">${def.label}</span><span style="font-size:11px;color:var(--color-text-tertiary)">${_note}</span></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>`;}return`<div class="gs-add-row" onclick="window._gsAddGame('${def.id}')"><span style="font-size:14px;color:var(--color-text-primary)">${def.label}</span><span style="color:#1D9E75;font-size:18px">+</span></div>`;};
+    // Playable first. At 3+4 only three of ten are addable and they sit at
+    // positions 2, 7 and 10, so the last one lands at the fold. STABLE partition:
+    // GAME_DEFS order is preserved INSIDE each group, so a game moves only because
+    // of whether it can be played, never by name or by how often it is used.
+    const _yes=inactive.filter(def=>!_gameLaneNote(def.id,r,_laneAP));
+    const _no=inactive.filter(def=>_gameLaneNote(def.id,r,_laneAP));
+    const _split=(_yes.length&&_no.length)?'<div class="gs-add-split"><i></i><span>Not available for these foursomes</span><i></i></div>':'';
+    list.innerHTML=_yes.map(_mkRow).join('')+_split+_no.map(_mkRow).join('');
   }
   document.getElementById('gsAddPicker').classList.add('visible');
+  document.getElementById('gsAddPickerList').scrollTop=0;
+  requestAnimationFrame(window._gsAddMore);
 };
 window._gsCloseAddPicker=function(){document.getElementById('gsAddPicker').classList.remove('visible');};
+// Shown only while there is more list below, and cleared at the end. Called from
+// the list's own onscroll rather than a listener bound at open, because the list
+// is rebuilt by innerHTML on every open and a listener has to outlive that.
+window._gsAddMore=function(){
+  const s=document.getElementById('gsAddScroll'),l=document.getElementById('gsAddPickerList');
+  if(!s||!l)return;
+  const _has=l.scrollHeight-l.clientHeight>1;
+  const _end=l.scrollTop+l.clientHeight>=l.scrollHeight-1;
+  s.classList.toggle('more',_has&&!_end);
+};
 window._gsAddGame=function(gameId){
   if(!canEditTrip())return;
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
   const def=GAME_DEFS.find(d=>d.id===gameId);
   if(!def)return;
   const _lane=_gsLane();
+  // Not a duplicate of the picker's grey-out: that only styles a row, and this
+  // function is reachable directly from a row rendered before the roster changed.
+  if(_gameLaneNote(def.id,r,_lane))return;
   const _finish=function(){STATE.gamesViewGame=def.id;window._gsCloseAddPicker();autoSave();s2WriteActive();updateTabDimming();renderGamesTab();window._gsOpenSetupModal(gameId);};
   if(_lane!=='both'&&!def.tripLevel){
     const _first=!(WK.rounds[r].independentGames===true);
@@ -14169,7 +14269,7 @@ function renderHammerBox(){
   const r=STATE.currentRound,hi=STATE.currentHole;
   if(!gameOn('hammer',r)){wrap.innerHTML='';return;}
   const _hbfi=isMultiFlight(r)?(getFlightPick(r)||0):0;
-  {const _hn=_gameMinNote('hammer',(flightsForRound(r)[_hbfi]||[]).length);if(_hn){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Hammer</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">'+_hn+'.</div></div>';return;}}
+  {const _hn=_gameGroupNote('hammer',(flightsForRound(r)[_hbfi]||[]).length);if(_hn){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Hammer</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">'+_hn+'.</div></div>';return;}}
   if(!gameOnFs('hammer',r,_hbfi)){wrap.innerHTML='';return;}const hc=calcHammerHole(hi,r,_hbfi);if(!hc){wrap.innerHTML='';return;}
   const{tA,tB,nA,nB,scoreA,scoreB,allIn,hs,potVal,si}=hc;
   const locked=isRoundLocked(r);
@@ -14327,7 +14427,7 @@ function _ninesGrid(r,fi,members,off,n){
 function _ninesFlightBlock(r,fi,labelHd){
   const fp=flightsForRound(r)[fi]||[];
   let html=labelHd||'';
-  const _nn=_gameMinNote('nines',fp.length);
+  const _nn=_gameGroupNote('nines',fp.length);
   if(_nn)return html+'<div style="text-align:center;color:var(--color-text-secondary);padding:1.25rem 0;font-size:13px">'+_nn+'.</div>';
   const roll=calcNinesPoints(r,fi);
   const _off=holeOffset(r),_n=roundHoleCount(r);
@@ -14380,7 +14480,7 @@ function renderNinesBox(){
   const _nbfi=isMultiFlight(r)?(getFlightPick(r)||0):0;
   if(!gameOnFs('nines',r,_nbfi)){wrap.innerHTML='';return;}
   const fp=flightsForRound(r)[_nbfi]||[];
-  const _nn=_gameMinNote('nines',fp.length);
+  const _nn=_gameGroupNote('nines',fp.length);
   if(_nn){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Nines</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">'+_nn+'.</div></div>';return;}
   const hc=calcNinesHole(hi,r,_nbfi);
   const roll=calcNinesPoints(r,_nbfi,hi);
@@ -14400,7 +14500,7 @@ function renderHammerRound(){
   const el=document.getElementById('gamesContent');
   if(!gameOn('hammer',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Hammer is off for this round</div>';return;}
   const multi=isMultiFlight(r);const fl=flightsForRound(r);
-  {const _hfLens=fl.map(function(g){return (g||[]).length;});const _hn=_gameMinNote('hammer',_hfLens.length?Math.max.apply(null,_hfLens):0);if(_hn){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">'+_hn+'.</div>';return;}}
+  {const _hfLens=fl.map(function(g){return (g||[]).length;});const _hn=_hfLens.some(function(n){return !_gameGroupNote('hammer',n);})?null:_gameGroupNote('hammer',0);if(_hn){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">'+_hn+'.</div>';return;}}
   if(!multi){el.innerHTML=_renderHammerFlightBlock(r,0,null);return;}
   if(STATE.hammerViewFlight===undefined||STATE.hammerViewFlight===null)STATE.hammerViewFlight=-1;
   let sel=STATE.hammerViewFlight;if(sel!==-1&&sel>=fl.length)sel=0;
@@ -14417,7 +14517,7 @@ function _renderHammerFlightBlock(r,fi,labelHd){
   const baseVal=roundValFs('hammerVal',r,fi,WK.hammerVal||2);
   const payout=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');
   const _hfp=flightsForRound(r)[fi]||[];
-  {const _hfn=_gameMinNote('hammer',_hfp.length);if(_hfn)return (labelHd||'')+'<div style="text-align:center;color:var(--color-text-secondary);padding:1.25rem 0;font-size:13px">'+_hfn+'.</div>';}
+  {const _hfn=_gameGroupNote('hammer',_hfp.length);if(_hfn)return (labelHd||'')+'<div style="text-align:center;color:var(--color-text-secondary);padding:1.25rem 0;font-size:13px">'+_hfn+'.</div>';}
   let html=labelHd||'';
   segs.forEach((seg,si)=>{
     const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;
