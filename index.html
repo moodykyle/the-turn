@@ -1585,7 +1585,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v118.35';
+const APP_VERSION='v118.36';
 
 // ===== THEME =====
 (function(){
@@ -2020,7 +2020,8 @@ async function s2WriteActive(){
         amount:e.amount||0,
         paid_by:e.paidBy,
         owes:e.owes||null,
-        custom_split:!!e.customSplit
+        custom_split:!!e.customSplit,
+        note:e.note||''
       }));
       if(exps.length)await s2Upsert('expenses',exps);
     }
@@ -2383,7 +2384,8 @@ async function s2ReadTrip(tripId){
         amount:e.amount||0,
         paidBy:e.paid_by,
         owes:e.owes||[],
-        customSplit:!!e.custom_split
+        customSplit:!!e.custom_split,
+        note:e.note||''
       }))
     };
 
@@ -13812,6 +13814,41 @@ function setMoneyTab(t){
 }
 
 // ===== EXPENSES =====
+const EXP_NOTE_MAX=600;
+// A note that is only whitespace is not a note. The tag and the block must
+// agree on that or a row gets a Note badge that opens onto nothing.
+function _expHasNote(e){return !!(e&&typeof e.note==='string'&&e.note.trim());}
+function _expNoteHtml(e){
+  if(!_expHasNote(e))return '';
+  return '<div style="padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-tertiary)">'
+    +'<div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:3px">Note</div>'
+    +'<div style="font-size:12px;line-height:1.5;color:var(--color-text-secondary);white-space:pre-wrap;word-break:break-word">'+_clEsc(e.note)+'</div></div>';
+}
+function _expNoteCount(){
+  const ta=document.getElementById('eNote'),ct=document.getElementById('eNoteCt');
+  if(!ta||!ct)return;
+  const n=ta.value.length;
+  ct.textContent=n+' / '+EXP_NOTE_MAX;
+  ct.style.color=n>EXP_NOTE_MAX*0.9?'#D97706':'var(--color-text-tertiary)';
+}
+// Jump from the Settle Up audit to the expense that produced a line.
+// The category expansion is real state; the row body is not (it is an inline
+// style toggle), so the body has to be opened after the render, not before.
+function _expJumpTo(id){
+  const e=(STATE.expenses||[]).find(x=>x.id===id);
+  if(!e)return;
+  if(!STATE.expCatExpanded)STATE.expCatExpanded={};
+  STATE.expCatExpanded[e.cat]=true;
+  setMoneyTab('expenses');
+  setTimeout(function(){
+    const b=document.getElementById('exp-bdy-'+id);
+    if(!b)return;
+    b.style.display='block';
+    const a=document.getElementById('exp-bdy-'+id+'-arr');
+    if(a)a.style.transform='rotate(180deg)';
+    if(b.scrollIntoView)b.scrollIntoView({behavior:'smooth',block:'center'});
+  },60);
+}
 function renderExpenses(){
   const exps=STATE.expenses||[];
   const groups={};ECATS.forEach(c=>{groups[c.id]=[];});
@@ -13839,10 +13876,10 @@ function renderExpenses(){
       const actionsHtml=(isReadOnly||expLocked)?'':`<div style="display:flex;gap:8px;padding:8px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary)"><button class="btn-sm" onclick="openExpForm('${e.id}')">Edit</button><button class="btn-danger" onclick="deleteExp('${e.id}')">Delete</button></div>`;
       html+=`<div style="margin:6px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden">
         <div style="background:var(--color-background-secondary);padding:9px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="(()=>{const b=document.getElementById('${bdyId}');const open=b.style.display==='none';b.style.display=open?'block':'none';const arr=document.getElementById('${bdyId}-arr');if(arr)arr.style.transform=open?'rotate(180deg)':'rotate(0deg)';})()">
-          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">${e.desc}</span><span style="font-size:11px;color:var(--color-text-secondary)">${e.cat==='golf'?'Won by':'Paid by'} ${pn} · ${splitDesc}</span></div>
-          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">$${e.amount.toFixed(2)}</span><span id="${bdyId}-arr" style="font-size:10px;color:#1D9E75;transition:transform 0.2s;display:inline-block">▼</span></div>
+          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">${_clEsc(e.desc)}</span><span style="font-size:11px;color:var(--color-text-secondary)">${e.cat==='golf'?'Won by':'Paid by'} ${pn} · ${splitDesc}</span></div>
+          <div style="display:flex;align-items:center;gap:8px">${_expHasNote(e)?'<span style="font-size:9px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--color-text-tertiary);border:0.5px solid var(--color-border-secondary);border-radius:3px;padding:1px 4px;line-height:1.4">Note</span>':''}<span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">$${e.amount.toFixed(2)}</span><span id="${bdyId}-arr" style="font-size:10px;color:#1D9E75;transition:transform 0.2s;display:inline-block">▼</span></div>
         </div>
-        <div id="${bdyId}" style="display:none">${bdyHtml}${actionsHtml}</div>
+        <div id="${bdyId}" style="display:none">${_expNoteHtml(e)}${bdyHtml}${actionsHtml}</div>
       </div>`;
     });}
     html+='</div>';
@@ -13869,16 +13906,17 @@ function openExpForm(editId){
   const defOwes=ex?ex.owes:WK.players.map((_,i)=>({pi:i,amt:null}));
   const form=`<div style="padding:1rem;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:14px;background:var(--color-background-secondary)">
 <div style="font-size:15px;font-weight:500;margin-bottom:12px">${editId?'Edit':'Add'} Expense</div>
-<div class="field-row"><div class="field-label">Description</div><input class="text-input" id="eDesc" value="${ex?.desc||''}" placeholder="e.g. Airbnb night 1"/></div>
+<div class="field-row"><div class="field-label">Description</div><input class="text-input" id="eDesc" value="${_clEsc(ex?.desc||'')}" placeholder="e.g. Airbnb night 1"/></div>
 <div class="field-row"><div class="field-label">Category</div><select class="course-select" id="eCat" onchange="(function(){const g=document.getElementById('eCat').value==='golf';document.getElementById('ePaidByLabel').textContent=g?'Won by':'Paid by';document.getElementById('eOwesLabel').textContent=g?'Who lost?':'Who owes?';})()">${ECATS.map(c=>`<option value="${c.id}"${c.id===(ex?.cat||'misc')?' selected':''}>${c.e} ${c.l}</option>`).join('')}</select></div>
 <div class="field-row"><div class="field-label">Amount ($)</div><input class="text-input" id="eAmt" type="number" step=".01" value="${ex?.amount||''}" placeholder="0.00" style="width:120px"/></div>
 <div class="field-row"><div class="field-label" id="ePaidByLabel">${(ex?.cat||'misc')==='golf'?'Won by':'Paid by'}</div><select class="course-select" id="ePaidBy">${WK.players.map((p,i)=>`<option value="${i}"${i===(ex?.paidBy??0)?' selected':''}>${displayName(i)}</option>`).join('')}</select></div>
 <div class="field-row"><div class="field-label" id="eOwesLabel">${(ex?.cat||'misc')==='golf'?'Who lost?':'Who owes?'}</div><div id="eChips" style="display:flex;flex-wrap:wrap;gap:4px">${WK.players.map((p,i)=>{const ow=defOwes.some(o=>o.pi===i);return`<span class="pchip${ow?' active':''}" onclick="this.classList.toggle('active')">${displayName(i)}</span>`;}).join('')}</div></div>
 <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><label class="toggle"><input type="checkbox" id="eCustom" ${ex?.customSplit?'checked':''} onchange="document.getElementById('eCustomFields').style.display=this.checked?'block':'none'"><span class="toggle-slider"></span></label><span style="font-size:13px;color:var(--color-text-primary)">Custom split</span></div>
 <div id="eCustomFields" style="display:${ex?.customSplit?'block':'none'};margin-bottom:12px">${WK.players.map((p,i)=>{const oe=defOwes.find(o=>o.pi===i);return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="flex:1;font-size:13px">${displayName(i)}</span><span>$</span><input class="ie-num" id="eShare${i}" type="number" step=".01" placeholder="0.00" value="${oe?.amt??''}" style="width:90px"/></div>`;}).join('')}</div>
-<div style="display:flex;gap:8px"><button class="btn-primary" onclick="saveExp()">Save</button><button class="btn-secondary" style="flex:none" onclick="cancelExp()">Cancel</button></div>
+<div style="margin-bottom:12px"><div class="field-label" style="display:block;margin-bottom:5px">Note <span style="color:var(--color-text-tertiary)">(optional)</span></div><textarea id="eNote" maxlength="600" oninput="_expNoteCount()" placeholder="What the charge covers, what it does not, anything the group will ask about later." style="font-family:inherit;font-size:13px;line-height:1.5;padding:8px 9px;border:0.5px solid var(--color-border-secondary);border-radius:6px;background:var(--color-background-primary);color:var(--color-text-primary);width:100%;min-height:74px;resize:vertical;box-sizing:border-box">${_clEsc(ex?.note||'')}</textarea><div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px"><span style="font-size:11px;color:var(--color-text-tertiary)">Shows on the expense when expanded.</span><span id="eNoteCt" style="font-size:11px;color:var(--color-text-tertiary)"></span></div></div><div style="display:flex;gap:8px"><button class="btn-primary" onclick="saveExp()">Save</button><button class="btn-secondary" style="flex:none" onclick="cancelExp()">Cancel</button></div>
 </div>`;
   document.getElementById('expensesContent').innerHTML=form+document.getElementById('expensesContent').innerHTML;
+  _expNoteCount();
 }
 function saveExp(){
   if(isReadOnly)return;
@@ -13887,6 +13925,9 @@ function saveExp(){
   const amount=parseFloat(document.getElementById('eAmt')?.value)||0;
   const paidBy=parseInt(document.getElementById('ePaidBy')?.value??0);
   const custom=document.getElementById('eCustom')?.checked||false;
+  // Capped on SAVE, not only by the maxlength attribute: maxlength is a UI
+  // courtesy that a paste or an older cached form can walk straight past.
+  const note=(document.getElementById('eNote')?.value||'').slice(0,EXP_NOTE_MAX);
   if(!desc){alert('Enter a description.');return;}
   if(!amount){alert('Enter an amount.');return;}
   const chips=document.querySelectorAll('#eChips .pchip');
@@ -13895,8 +13936,8 @@ function saveExp(){
   const share=amount/active.length;
   const owes=custom?active.map(pi=>({pi,amt:parseFloat(document.getElementById('eShare'+pi)?.value||0)})):active.map(pi=>({pi,amt:share}));
   if(!STATE.expenses)STATE.expenses=[];
-  if(editExpId){const idx=STATE.expenses.findIndex(e=>e.id===editExpId);if(idx>=0)STATE.expenses[idx]={id:editExpId,desc,cat,amount,paidBy,owes,customSplit:custom};}
-  else STATE.expenses.push({id:Date.now()+'',desc,cat,amount,paidBy,owes,customSplit:custom});
+  if(editExpId){const idx=STATE.expenses.findIndex(e=>e.id===editExpId);if(idx>=0)STATE.expenses[idx]={id:editExpId,desc,cat,amount,paidBy,owes,customSplit:custom,note};}
+  else STATE.expenses.push({id:Date.now()+'',desc,cat,amount,paidBy,owes,customSplit:custom,note});
   editExpId=null;autoSave();renderExpenses();
 }
 function cancelExp(){editExpId=null;renderExpenses();}
@@ -14736,7 +14777,7 @@ function renderSettle(){
         settledRowsHtml+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--color-background-tertiary);border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:11px;color:var(--color-text-secondary)">Expenses <span style="font-style:italic">settled</span></span><span style="font-size:12px;color:var(--color-text-secondary)">${fmt(expNet[pi])}</span></div>`;
       } else {
         html+=catHdr('Expenses',expNet[pi]);
-                myExps.forEach(e=>{let mv=0;e.owes.forEach(o=>{if(o.pi===e.paidBy)return;if(e.paidBy===pi)mv+=o.amt;if(o.pi===pi)mv-=o.amt;});const _g=e.cat==='golf';const _role=e.paidBy===pi?(_g?'won':'paid'):(_g?'lost':'owes');html+=subRow(e.desc,_role,mv);});
+                myExps.forEach(e=>{let mv=0;e.owes.forEach(o=>{if(o.pi===e.paidBy)return;if(e.paidBy===pi)mv+=o.amt;if(o.pi===pi)mv-=o.amt;});const _g=e.cat==='golf';const _role=e.paidBy===pi?(_g?'won':'paid'):(_g?'lost':'owes');html+=subRow('<span onclick="event.stopPropagation();_expJumpTo(\''+e.id+'\')" style="cursor:pointer;color:#1D9E75;font-weight:500">'+_clEsc(e.desc)+'<span style="font-size:9px;margin-left:2px">&#8599;</span></span>',_role,mv);});
         html+=`</div></div>`;
       }
     }
