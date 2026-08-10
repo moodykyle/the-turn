@@ -1585,7 +1585,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v118.36';
+const APP_VERSION='v118.37';
 
 // ===== THEME =====
 (function(){
@@ -2021,9 +2021,17 @@ async function s2WriteActive(){
         paid_by:e.paidBy,
         owes:e.owes||null,
         custom_split:!!e.customSplit,
-        note:e.note||''
+        note:e.note||'',
+        status:e.status||'active',
+        status_at:e.statusAt||null,
+        status_by:e.statusBy||null,
+        created_by:e.createdBy||null
       }));
-      if(exps.length)await s2Upsert('expenses',exps);
+      // NO length gate. s2Upsert already early-returns on an empty array, so the
+      // guard bought nothing and could only ever suppress a write. Requeue on
+      // failure, matching the players upsert three blocks above.
+      const _expOk=await s2Upsert('expenses',exps);
+      if(!_expOk)_s2Dirty.expenses=true;
     }
 
   }catch(e){
@@ -2059,7 +2067,7 @@ async function s2ValidateOnLoad(){
     const scoreRows=sr.ok?await sr.json():[];
 
     // Fetch expense count
-    const er=await fetch(SB_URL+'/rest/v1/expenses?trip_id=eq.'+encodeURIComponent(tripId)+'&select=expense_id',{
+    const er=await fetch(SB_URL+'/rest/v1/expenses?trip_id=eq.'+encodeURIComponent(tripId)+'&status=eq.active&select=expense_id',{
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}
     });
     const expRows=er.ok?await er.json():[];
@@ -2067,7 +2075,7 @@ async function s2ValidateOnLoad(){
     // Blob counts for comparison
     const blobPlayers=WK.players.length;
     const blobScores=WK.rounds.reduce((a,_,r)=>a+STATE.scores[r].reduce((b,h)=>b+h.filter(s=>s!==null).length,0),0);
-    const blobExpenses=(STATE.expenses||[]).length;
+    const blobExpenses=_expLiveList().length;
     const totalPossibleScores=WK.rounds.length*18*WK.players.length;
 
     const tripMatch=tripRows.length>0?'✓':'not yet written';
@@ -2385,8 +2393,15 @@ async function s2ReadTrip(tripId){
         paidBy:e.paid_by,
         owes:e.owes||[],
         customSplit:!!e.custom_split,
-        note:e.note||''
-      }))
+        note:e.note||'',
+        status:e.status||'active',
+        statusAt:e.status_at||null,
+        statusBy:e.status_by||null,
+        createdBy:e.created_by||null
+      // Mapped FIRST, then filtered through the one predicate. Filtering the
+      // raw server rows would need a second inline status test, which is the
+      // N-copies shape: two definitions of live, free to drift apart.
+      })).filter(_expLive)
     };
 
     console.log('%c[Step3] Loaded trip from new schema','color:#60a5fa;font-weight:bold',tripId);
@@ -13815,6 +13830,13 @@ function setMoneyTab(t){
 
 // ===== EXPENSES =====
 const EXP_NOTE_MAX=600;
+// The ONE definition of a live expense. status is the only truth; statusAt and
+// statusBy are display and never gate anything. A row with no status at all is
+// live, which is what makes every pre-v118.37 row legal without a backfill.
+// Any status that is not 'active' is not live, so a future 'comped' or
+// 'disputed' needs no second predicate.
+function _expLive(e){return !!e&&(e.status===undefined||e.status===null||e.status==='active');}
+function _expLiveList(){return (STATE.expenses||[]).filter(_expLive);}
 // A note that is only whitespace is not a note. The tag and the block must
 // agree on that or a row gets a Note badge that opens onto nothing.
 function _expHasNote(e){return !!(e&&typeof e.note==='string'&&e.note.trim());}
@@ -13850,7 +13872,7 @@ function _expJumpTo(id){
   },60);
 }
 function renderExpenses(){
-  const exps=STATE.expenses||[];
+  const exps=_expLiveList();
   const groups={};ECATS.forEach(c=>{groups[c.id]=[];});
   exps.forEach(e=>groups[e.cat]?.push(e));
   const expLocked=(STATE.settledRounds||[]).includes('expenses');let html=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px">${(isReadOnly||expLocked)?'':`<button class="btn-primary" style="flex:none;padding:8px 16px;font-size:13px" onclick="openExpForm()">+ Add Expense</button>`}</div>`;if(expLocked)html+=`<div style="margin-bottom:12px;padding:10px 14px;background:var(--color-background-secondary);border:1.5px solid var(--color-border-primary);border-radius:var(--border-radius-md);font-size:13px;font-weight:500;color:var(--color-text-primary);text-align:center">Expenses settled - <span style='font-weight:400;color:var(--color-text-secondary)'>Unsettle to make changes</span></div>`;
@@ -13936,12 +13958,37 @@ function saveExp(){
   const share=amount/active.length;
   const owes=custom?active.map(pi=>({pi,amt:parseFloat(document.getElementById('eShare'+pi)?.value||0)})):active.map(pi=>({pi,amt:share}));
   if(!STATE.expenses)STATE.expenses=[];
-  if(editExpId){const idx=STATE.expenses.findIndex(e=>e.id===editExpId);if(idx>=0)STATE.expenses[idx]={id:editExpId,desc,cat,amount,paidBy,owes,customSplit:custom,note};}
-  else STATE.expenses.push({id:Date.now()+'',desc,cat,amount,paidBy,owes,customSplit:custom,note});
+  if(editExpId){const idx=STATE.expenses.findIndex(e=>e.id===editExpId);if(idx>=0){const _prev=STATE.expenses[idx]||{};STATE.expenses[idx]={id:editExpId,desc,cat,amount,paidBy,owes,customSplit:custom,note,status:_prev.status||'active',statusAt:_prev.statusAt||null,statusBy:_prev.statusBy||null,createdBy:_prev.createdBy||null};}}
+  else STATE.expenses.push({id:Date.now()+'',desc,cat,amount,paidBy,owes,customSplit:custom,note,status:'active',statusAt:null,statusBy:null,createdBy:(typeof sbCurrentUser==='function'&&sbCurrentUser()?.id)||null});
   editExpId=null;autoSave();renderExpenses();
 }
 function cancelExp(){editExpId=null;renderExpenses();}
-function deleteExp(id){if(isReadOnly||(STATE.settledRounds||[]).includes('expenses'))return;if(!confirm('Delete expense?'))return;STATE.expenses=(STATE.expenses||[]).filter(e=>e.id!==id);autoSave();renderExpenses();}
+function deleteExp(id){
+  if(isReadOnly||(STATE.settledRounds||[]).includes('expenses'))return;
+  const e=(STATE.expenses||[]).find(x=>x.id===id);
+  if(!e)return;
+  // _confirmSheet, not the native confirm(): trip and round deletion already
+  // use it and this one was simply never converted. It is callback-based
+  // rather than blocking, so the work moves INSIDE onOk.
+  _confirmSheet({
+    icon:'ti-trash',
+    title:'Delete this expense?',
+    body:'"'+_clEsc(e.desc||'this expense')+'" will be removed from the list and from everyone\u2019s settlement.',
+    okLabel:'Delete',
+    onOk:function(){_expVoid(id);}
+  });
+}
+function _expVoid(id){
+  const e=(STATE.expenses||[]).find(x=>x.id===id);
+  if(!e)return;
+  // Soft delete. Removing it from the array would leave the row on the server
+  // forever, because the expense write path has only ever upserted, and the
+  // read mapper hydrates from that table.
+  e.status='void';
+  e.statusAt=new Date().toISOString();
+  e.statusBy=(typeof sbCurrentUser==='function'&&sbCurrentUser()?.id)||null;
+  autoSave();renderExpenses();
+}
 
 // ===== SETTLE UP =====
 
@@ -14466,7 +14513,7 @@ function calcGolfNetPerPlayer(){
 }
 function calcExpNetPerPlayer(){
   const net=Array(WK.players.length).fill(0);
-  (STATE.expenses||[]).forEach(e=>{e.owes.forEach(o=>{if(o.pi===e.paidBy)return;net[o.pi]-=o.amt;net[e.paidBy]+=o.amt;});});
+  _expLiveList().forEach(e=>{e.owes.forEach(o=>{if(o.pi===e.paidBy)return;net[o.pi]-=o.amt;net[e.paidBy]+=o.amt;});});
   return net;
 }
 function simplifyDebts(balances){
@@ -14635,7 +14682,7 @@ function renderSettle(){
 
     html+=`<div class="section-card" style="margin-bottom:14px">`;
     // Pre-compute for header and body
-    const myExps=(STATE.expenses||[]).filter(e=>e.paidBy===pi||e.owes.some(o=>o.pi===pi));
+    const myExps=_expLiveList().filter(e=>e.paidBy===pi||e.owes.some(o=>o.pi===pi));
     const expSettledAudit=(STATE.settledRounds||[]).includes('expenses');
     // Collapsed header — summary row, tap to expand
     html+=`<div class="audit-player-row" onclick="toggleAuditPlayer(${pi})">`;
