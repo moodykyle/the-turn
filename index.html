@@ -1634,7 +1634,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v119.04';
+const APP_VERSION='v119.05';
 
 // ===== THEME =====
 (function(){
@@ -9035,10 +9035,77 @@ function setHammerDrop(si,slot,pIdx,r,fi){
   teams[tIdx][pos]=pIdx;
   autoSave();s2WriteActive();_gsRefreshAfterEdit();renderHammerBox();
 }
-function setMPGamesForRound(r,g){if(!canEditTrip())return;WK.mpGamesPerRound[r]=g;STATE.mpTeams[r]=flightsForRound(r).map((_,_ffi)=>isHeadsUp(r)?defaultHUTeamsForFlight(r,_ffi):defaultTeamsForFlight(r,_ffi));if(STATE.pressState)STATE.pressState[r]=flightsForRound(r).map(()=>[]);autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderMPHoleBox();}
-function setVegaSegsForRound(r,v){if(!canEditTrip())return;WK.vegasSegsPerRound[r]=v;STATE.vegTeams[r]=flightsForRound(r).map((_,_ffi)=>defaultVegasTeamsForFlight(r,_ffi));autoSave();s2WriteActive();_gsRefreshAfterEdit();renderVegasBoxWrap();}
+// --- Destructive game-settings guard (v119.05) --------------------------------
+// Segment counts and the Match Play format are ROUND-level, but their setters rebuild
+// team assignments across EVERY foursome. Under the lane selector that means a change
+// made while looking at Foursome 2 silently tears down Foursome 1. Three hazards close
+// here: (1) no setter checked whether the value was actually changing, so re-selecting
+// the value already showing ran a full teardown; (2) two of them had no canEditTrip()
+// gate, so they fired on settled and locked rounds; (3) Hammer rebuilt its TEAMS and
+// left STATE.hammerState (the recorded throws) alone, so recorded money was silently
+// reattributed to a pairing that no longer existed. Per-foursome segment counts are the
+// real fix and are backlogged; this guards the teardown that survives that conversion.
+
+// Open presses across every foursome of a round.
+function _gsPressCount(r){
+  var ps=(STATE.pressState||[])[r];
+  if(!Array.isArray(ps))return 0;
+  var n=0;
+  for(var fi=0;fi<ps.length;fi++)if(Array.isArray(ps[fi]))n+=ps[fi].length;
+  return n;
+}
+// Holes across every foursome that hold a recorded hammer result.
+function _gsHammerHoleCount(r){
+  var hs=(STATE.hammerState||[])[r];
+  if(!Array.isArray(hs))return 0;
+  var n=0;
+  for(var fi=0;fi<hs.length;fi++){
+    var row=hs[fi];if(!Array.isArray(row))continue;
+    for(var h=0;h<row.length;h++)if(row[h]!=null)n++;
+  }
+  return n;
+}
+// Has anyone entered a score in this round? Rebuilding teams restates every hole already
+// played, so scores on their own are enough to make a rebuild worth confirming.
+function _gsRoundHasScores(r){
+  var rows=(STATE.scores||[])[r];
+  if(!Array.isArray(rows))return false;
+  for(var h=0;h<rows.length;h++){
+    var row=rows[h];if(!Array.isArray(row))continue;
+    for(var p=0;p<row.length;p++)if(row[p]!=null)return true;
+  }
+  return false;
+}
+// Runs go() straight away when there is nothing to lose, and behind _confirmSheet when
+// there is. The only path that skips go() is the user pressing Cancel.
+function _gsConfirmDestructive(opts,go){
+  if(!opts.risk){go();return;}
+  _confirmSheet({icon:opts.icon||'ti-alert-triangle',title:opts.title,body:opts.body,okLabel:opts.okLabel||'Change anyway',onOk:go,onCancel:opts.onCancel});
+}
+// Shared tail for the segment and format warnings: name the presses if any are open,
+// otherwise fall back to the milder restatement warning when holes have been played.
+function _gsRiskTail(pc,sc,what){
+  if(pc)return ' '+pc+' open press'+(pc===1?'':'es')+' will be lost and cannot be rebuilt from the scores.';
+  if(sc)return ' Holes already played will be re-scored against the new '+what+'.';
+  return '';
+}
+function _setMPFormat(r,fmt){
+  if(!canEditTrip())return;
+  var cur=(WK.rounds[r]&&WK.rounds[r].mpFormat==='headsup')?'headsup':'team';
+  if(cur===fmt)return; // re-selecting the format already showing is not a change
+  var pc=_gsPressCount(r),sc=_gsRoundHasScores(r);
+  var body='Switching to '+(fmt==='headsup'?'Heads up':'Team')+' rebuilds the matches in every foursome, not just the one you are viewing.'+_gsRiskTail(pc,sc,'matches');
+  _gsConfirmDestructive({risk:(pc>0||sc),title:'Change match format?',body:body,okLabel:'Change format'},function(){
+    WK.rounds[r].mpFormat=fmt;
+    STATE.mpTeams[r]=flightsForRound(r).map((_,_ffi)=>fmt==='headsup'?defaultHUTeamsForFlight(r,_ffi):defaultTeamsForFlight(r,_ffi));
+    if(STATE.pressState)STATE.pressState[r]=flightsForRound(r).map(()=>[]);
+    autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderMPHoleBox();
+  });
+}
+function setMPGamesForRound(r,g){if(!canEditTrip())return;if(mpGamesForRound(r)===g){if(WK.mpGamesPerRound[r]!==g){WK.mpGamesPerRound[r]=g;autoSave();s2WriteActive();}return;}var pc=_gsPressCount(r),sc=_gsRoundHasScores(r);var body='Changing the number of segments rebuilds the matches in every foursome, not just the one you are viewing.'+_gsRiskTail(pc,sc,'matches');_gsConfirmDestructive({risk:(pc>0||sc),title:'Change Match Play segments?',body:body,okLabel:'Change segments',onCancel:function(){_gsRefreshAfterEdit();}},function(){WK.mpGamesPerRound[r]=g;STATE.mpTeams[r]=flightsForRound(r).map((_,_ffi)=>isHeadsUp(r)?defaultHUTeamsForFlight(r,_ffi):defaultTeamsForFlight(r,_ffi));if(STATE.pressState)STATE.pressState[r]=flightsForRound(r).map(()=>[]);autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderMPHoleBox();});}
+function setVegaSegsForRound(r,v){if(!canEditTrip())return;if(vegasSegForRound(r)===v){if(WK.vegasSegsPerRound[r]!==v){WK.vegasSegsPerRound[r]=v;autoSave();s2WriteActive();}return;}var sc=_gsRoundHasScores(r);var body='Changing the number of segments rebuilds the teams in every foursome, not just the one you are viewing.'+_gsRiskTail(0,sc,'teams');_gsConfirmDestructive({risk:sc,title:'Change Vegas segments?',body:body,okLabel:'Change segments',onCancel:function(){_gsRefreshAfterEdit();}},function(){WK.vegasSegsPerRound[r]=v;STATE.vegTeams[r]=flightsForRound(r).map((_,_ffi)=>defaultVegasTeamsForFlight(r,_ffi));autoSave();s2WriteActive();_gsRefreshAfterEdit();renderVegasBoxWrap();});}
 function skinsGamesForRound(r){const ov=WK.skinsGamesPerRound?.[r];return(ov>0)?ov:(WK.skinsGamesDefault>0?WK.skinsGamesDefault:mpGamesForRound(r));}
-function setSkinsGamesForRound(r,v){if(!canEditTrip())return;if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=WK.rounds.map(()=>0);WK.skinsGamesPerRound[r]=v;if(!STATE.skinsTeams)STATE.skinsTeams=[];STATE.skinsTeams[r]=flightsForRound(r).map((_,_ffi)=>defaultSkinsTeamsForFlight(r,_ffi));reconcileSkinsTeams(r);autoSave();s2WriteActive();_gsRefreshAfterEdit();}
+function setSkinsGamesForRound(r,v){if(!canEditTrip())return;if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=WK.rounds.map(()=>0);if(skinsGamesForRound(r)===v){if(WK.skinsGamesPerRound[r]!==v){WK.skinsGamesPerRound[r]=v;autoSave();s2WriteActive();}return;}var sc=_gsRoundHasScores(r);var body='Changing the number of segments rebuilds the teams in every foursome, not just the one you are viewing.'+_gsRiskTail(0,sc,'teams');_gsConfirmDestructive({risk:sc,title:'Change Skins segments?',body:body,okLabel:'Change segments',onCancel:function(){_gsRefreshAfterEdit();}},function(){WK.skinsGamesPerRound[r]=v;if(!STATE.skinsTeams)STATE.skinsTeams=[];STATE.skinsTeams[r]=flightsForRound(r).map((_,_ffi)=>defaultSkinsTeamsForFlight(r,_ffi));reconcileSkinsTeams(r);autoSave();s2WriteActive();_gsRefreshAfterEdit();});}
 
 function wolfOrderForRound(r,fi){const stored=STATE.wolfOrder&&STATE.wolfOrder[r]&&STATE.wolfOrder[r][fi];if(stored&&stored.length)return stored;const fl=flightsForRound(r)[fi];return (fl&&fl.length)?fl:[0,1,2,3];}
 function wolfPicksForRound(r,fi){return(STATE.wolfPicks&&STATE.wolfPicks[r]&&STATE.wolfPicks[r][fi])||Array(18).fill(null);}
@@ -10037,8 +10104,9 @@ function _confirmSheet(opts){
   ov.appendChild(card);
   document.body.appendChild(ov);
   function close(){ov.remove();}
-  ov.addEventListener('click',function(e){if(e.target===ov)close();});
-  card.querySelector('#_csCancel').addEventListener('click',close);
+  function dismiss(){close();if(typeof opts.onCancel==='function')opts.onCancel();}
+  ov.addEventListener('click',function(e){if(e.target===ov)dismiss();});
+  card.querySelector('#_csCancel').addEventListener('click',dismiss);
   card.querySelector('#_csOk').addEventListener('click',function(){close();if(typeof opts.onOk==='function')opts.onOk();});
 }
 window._pencilTakeoverConfirm=function(){
@@ -12341,9 +12409,9 @@ function _gsMPSetupBody(r){
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per game</span>$<input class="ie-num" type="number" placeholder="${_gsStakePh('gameVal',r,WK.gameVal)}" value="${_gsStakeVal('gameVal',r)}" style="width:80px" oninput="_gsStakeSet('gameVal',${r},this.value);autoSave();s2WriteActive();"/></div>`;
   if(_np>=4){
     h+=`<div style="display:flex;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);overflow:hidden;margin:8px 0 4px">`
-    +`<div onclick="WK.rounds[${r}].mpFormat='team';STATE.mpTeams[${r}]=flightsForRound(${r}).map((_,_ffi)=>defaultTeamsForFlight(${r},_ffi));if(STATE.pressState)STATE.pressState[${r}]=flightsForRound(${r}).map(()=>[]);autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderMPHoleBox()" `
+    +`<div onclick="_setMPFormat(${r},'team')" `
     +`style="flex:1;padding:7px 8px;font-size:12px;text-align:center;cursor:pointer;${!_hu?'background:#1D9E75;color:#E1F5EE;font-weight:500':'background:var(--color-background-secondary);color:var(--color-text-secondary)'}">Team</div>`
-    +`<div onclick="WK.rounds[${r}].mpFormat='headsup';STATE.mpTeams[${r}]=flightsForRound(${r}).map((_,_ffi)=>defaultHUTeamsForFlight(${r},_ffi));if(STATE.pressState)STATE.pressState[${r}]=flightsForRound(${r}).map(()=>[]);autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderMPHoleBox()" `
+    +`<div onclick="_setMPFormat(${r},'headsup')" `
     +`style="flex:1;padding:7px 8px;font-size:12px;text-align:center;cursor:pointer;${_hu?'background:#1D9E75;color:#E1F5EE;font-weight:500':'background:var(--color-background-secondary);color:var(--color-text-secondary)'}">Heads up</div>`
     +`</div>`;
   }
@@ -14140,7 +14208,7 @@ function reconcileHammerTeams(r){
   STATE.hammerState[r]=hsOut;
 }
 function hammerSegsForRound(r){const ov=WK.hammerSegsPerRound?.[r];return(ov>0)?ov:(WK.hammerSegsDefault>0?WK.hammerSegsDefault:1);}
-function setHammerSegsForRound(r,v){if(!WK.hammerSegsPerRound)WK.hammerSegsPerRound=WK.rounds.map(()=>1);WK.hammerSegsPerRound[r]=v;WK.rounds[r].hammerSegs=v;if(!STATE.hammerTeams)STATE.hammerTeams=[];STATE.hammerTeams[r]=flightsForRound(r).map((_f,fi)=>defaultHammerTeamsForFlight(r,fi));autoSave();s2WriteActive();_gsRefreshAfterEdit();}
+function setHammerSegsForRound(r,v){if(!canEditTrip())return;if(!WK.hammerSegsPerRound)WK.hammerSegsPerRound=WK.rounds.map(()=>1);if(hammerSegsForRound(r)===v){if(WK.hammerSegsPerRound[r]!==v){WK.hammerSegsPerRound[r]=v;WK.rounds[r].hammerSegs=v;autoSave();s2WriteActive();}return;}var hc=_gsHammerHoleCount(r),sc=_gsRoundHasScores(r);var body='Changing the number of segments rebuilds the teams in every foursome, not just the one you are viewing.';if(hc)body+=' '+hc+' hole'+(hc===1?'':'s')+' with a recorded hammer will be cleared, because those results belong to the old teams.';else if(sc)body+=' Holes already played will be re-scored against the new teams.';_gsConfirmDestructive({risk:(hc>0||sc),title:'Change Hammer segments?',body:body,okLabel:'Change segments',onCancel:function(){_gsRefreshAfterEdit();}},function(){WK.hammerSegsPerRound[r]=v;WK.rounds[r].hammerSegs=v;if(!STATE.hammerTeams)STATE.hammerTeams=[];STATE.hammerTeams[r]=flightsForRound(r).map((_f,fi)=>defaultHammerTeamsForFlight(r,fi));if(!STATE.hammerState)STATE.hammerState=[];STATE.hammerState[r]=flightsForRound(r).map(()=>Array(18).fill(null));autoSave();s2WriteActive();_gsRefreshAfterEdit();});}
 function calcHammerCarry(r,si,upToHole,fi){
   fi=fi||0;
   // Compute carry pot accumulated from start of segment up to (not including) upToHole
