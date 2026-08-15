@@ -1634,7 +1634,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v119.08';
+const APP_VERSION='v119.09';
 
 // ===== THEME =====
 (function(){
@@ -10306,9 +10306,15 @@ async function _pencilSave(r,fi){
 // sbEnsureFresh, single-flight guarded. Never applies a remote pull over an
 // unflushed local edit — gated on the same _s2Dirty flags the write path uses.
 // ============================================================================
+// The sync cadence, named once. These used to be four bare literals across four
+// write sites for a variable with a single read, so changing the tick meant
+// finding every one of them; missing one left a value that looked changed and
+// was overwritten by the next start or the next recovery.
+const SYNC_TICK_MS=15000;    // normal interval between sync ticks
+const SYNC_BACKOFF_MS=60000; // slower interval after a failed tick
 let _syncTimer=null;          // self-rescheduling setTimeout handle (not setInterval — backoff needs a variable delay)
 let _syncInFlight=null;       // single-flight guard, same pattern as _refreshInFlight
-let _syncBackoffMs=15000;     // current tick interval; 15s normally, 60s after a failed tick
+let _syncBackoffMs=SYNC_TICK_MS;     // current tick interval; 15s normally, 60s after a failed tick
 let _syncTripUpdatedAt=null;  // last-applied trips.updated_at (beacon watermark)
 let _syncScoreWatermark=null; // last-applied scores.updated_at (delta watermark)
 
@@ -10333,8 +10339,8 @@ function _syncLifecycleOk(){
   return true;
 }
 
-function _syncBackoff(){_syncBackoffMs=60000;}
-function _syncResetBackoff(){_syncBackoffMs=15000;}
+function _syncBackoff(){_syncBackoffMs=SYNC_BACKOFF_MS;}
+function _syncResetBackoff(){_syncBackoffMs=SYNC_TICK_MS;}
 
 function _syncScheduleNext(){
   if(_syncTimer){clearTimeout(_syncTimer);_syncTimer=null;}
@@ -10354,7 +10360,7 @@ function _syncStart(){
   // the client clock, which would risk silently missing another phone's earlier-
   // stamped write. Never seed from new Date() on a money path.
   _syncScoreWatermark=(WK&&WK._updatedAt)||'1970-01-01T00:00:00Z';
-  _syncBackoffMs=15000;
+  _syncResetBackoff();
   _syncScheduleNext();
 }
 function _syncStop(){
