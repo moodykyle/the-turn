@@ -561,6 +561,55 @@ body.force-dark .hm-sheet-btn.danger{background:rgba(180,35,24,0.16);color:#FCA5
 /* Skins */
 .sk-badge{font-size:10px;background:#FEF3C7;color:#92400E;border-radius:var(--border-radius-md);padding:1px 6px;margin-left:4px;}
 .carry{color:#D97706;font-weight:600;}
+/* Shortened rounds. The amber here is #D97706, the same one .carry already uses in
+   both themes, rather than the hardcoded light block the app used to reach for. */
+.sr-warn{background:rgba(217,119,6,0.14);border-left:3px solid #D97706;color:#B45309;
+  font-size:12px;line-height:1.45;padding:9px 11px;border-radius:6px;margin:4px 0 14px;}
+@media(prefers-color-scheme:dark){.sr-warn{color:#FCD34D;}}
+.sr-warn ul{margin:6px 0 0;padding-left:16px;}
+.sr-warn li{margin-bottom:2px;}
+.sr-short{font-weight:600;color:#B45309;}
+@media(prefers-color-scheme:dark){.sr-short{color:#FCD34D;}}
+.sr-chip{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;
+  background:rgba(217,119,6,0.18);color:#B45309;border:0.5px solid rgba(217,119,6,0.5);white-space:nowrap;}
+@media(prefers-color-scheme:dark){.sr-chip{color:#FCD34D;}}
+.sr-stdnote{padding:7px 12px;font-size:11px;color:var(--color-text-secondary);
+  background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);}
+.sr-link{background:none;border:none;font-family:inherit;font-size:13px;font-weight:600;
+  color:#1D9E75;cursor:pointer;padding:0;text-decoration:underline;}
+.sr-striprow{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin-top:9px;padding-top:9px;border-top:0.5px solid var(--color-background-secondary);}
+.sr-striprow span{font-size:11px;color:var(--color-text-secondary);}
+.hdot.done.sr-void,.hdot.sr-void{background:repeating-linear-gradient(135deg,var(--color-background-secondary),
+  var(--color-background-secondary) 3px,var(--color-background-primary) 3px,
+  var(--color-background-primary) 6px);color:var(--color-text-tertiary);border-style:dashed;
+  border-color:var(--color-border-secondary);}
+.sr-info{background:var(--color-background-info);color:var(--color-text-info);font-size:12px;
+  line-height:1.45;padding:10px 11px;border-radius:6px;margin:4px 0 14px;}
+.sr-opt{display:flex;align-items:center;gap:10px;padding:11px 12px;margin-bottom:8px;
+  border:1px solid var(--color-border-tertiary);border-radius:10px;
+  background:var(--color-background-secondary);cursor:pointer;}
+.sr-opt.sel{border-color:#1D9E75;border-width:1.5px;background:rgba(29,158,117,0.12);}
+.sr-opt.dis{opacity:0.42;cursor:default;}
+.sr-radio{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--color-border-secondary);flex-shrink:0;}
+.sr-opt.sel .sr-radio{border-color:#1D9E75;border-width:5px;}
+.sr-opt .sr-nm{font-size:13px;font-weight:600;flex:1;}
+.sr-opt .sr-nm small{display:block;font-size:11px;font-weight:400;color:var(--color-text-secondary);margin-top:2px;}
+.sr-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;
+  border:1px solid var(--color-border-tertiary);border-radius:10px;margin-bottom:14px;
+  background:var(--color-background-secondary);cursor:pointer;}
+.sr-toggle .sr-tl{font-size:13px;font-weight:600;}
+.sr-toggle .sr-tl small{display:block;font-size:11px;font-weight:400;color:var(--color-text-secondary);margin-top:2px;}
+.sr-sw{width:44px;height:26px;border-radius:13px;background:var(--color-border-secondary);position:relative;flex-shrink:0;transition:background .15s;}
+.sr-sw.on{background:#1D9E75;}
+.sr-sw::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s;}
+.sr-sw.on::after{left:21px;}
+.sr-btns{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.sr-btn{padding:12px;border-radius:11px;font-size:14px;font-weight:600;font-family:inherit;
+  text-align:center;border:0.5px solid var(--color-border-secondary);
+  background:var(--color-background-secondary);color:var(--color-text-primary);}
+.sr-btn.go{background:#1D9E75;border-color:#1D9E75;color:#fff;}
+.sr-btn:disabled{opacity:0.45;}
 /* Expenses */
 .exp-item{border-bottom:0.5px solid var(--color-border-tertiary);padding:10px 12px;}
 .exp-item:last-child{border-bottom:none;}
@@ -1634,7 +1683,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v119.09';
+const APP_VERSION='v119.27';
 
 // ===== THEME =====
 (function(){
@@ -1911,6 +1960,9 @@ async function s2WriteActive(){
           ...(rd.ninesBlitz!=null&&{ninesBlitz:rd.ninesBlitz}),
           independentGames:!!rd.independentGames,
           ...(Array.isArray(rd.fsGames)&&rd.fsGames.length&&{fsGames:rd.fsGames}),
+          ...(Array.isArray(rd.fsEndHoles)&&rd.fsEndHoles.length&&{fsEndHoles:rd.fsEndHoles}),
+          ...(rd.shortInStandings!=null&&{shortInStandings:rd.shortInStandings}),
+          ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),
           ...(rd.hammerVal!=null&&{hammerVal:rd.hammerVal}),
           ...(rd.hammerSegs!=null&&{hammerSegs:rd.hammerSegs}),
           ...(rd.hammerMode!=null&&{hammerMode:rd.hammerMode}),
@@ -2281,6 +2333,9 @@ async function s2ReadTrip(tripId){
         ...(rd.ninesBlitz!=null&&{ninesBlitz:rd.ninesBlitz}),
         independentGames:rd.independentGames===true,
         ...(Array.isArray(rd.fsGames)&&rd.fsGames.length&&{fsGames:rd.fsGames}),
+        ...(Array.isArray(rd.fsEndHoles)&&rd.fsEndHoles.length&&{fsEndHoles:rd.fsEndHoles}),
+        ...(rd.shortInStandings!=null&&{shortInStandings:rd.shortInStandings}),
+        ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),
         ...(rd.hammerVal!=null&&{hammerVal:rd.hammerVal}),
         ...(rd.hammerSegs!=null&&{hammerSegs:rd.hammerSegs}),
         ...(rd.hammerMode!=null&&{hammerMode:rd.hammerMode}),
@@ -6824,7 +6879,7 @@ function openRoundSheet(fnName,cur){
 }
 function closeRoundSheet(){const s=document.getElementById('roundSheet');if(s)s.remove();}
 function renderRdSel(cid,cur,fn){const el=document.getElementById(cid);if(!el)return;const isEntry=cid==='entryRdSel'||cid==='ctxRdSel';el.innerHTML=WK.rounds.map((rd,i)=>{const done=isRoundComplete(i);const lkd=(STATE.lockedRounds||[]).includes(i);const detailsLink=isEntry&&i===cur?`<div onclick="event.stopPropagation();showRoundDetails()" style="position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,0.5);color:rgba(255,255,255,0.8);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1">i</div>`:'';return`<div class="rd-btn${i===cur?' active':''}${done?' done':''}" onclick="${fn}(${i})">${roundLabel(i)}${lkd?' 🔒':''}<br><span style="font-size:9px;opacity:0.75">${rdLabel(i)}</span>${detailsLink}</div>`;}).join('');}
-function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=_flightResumeHole(r,(getFlightPick(r)||0));STATE.razzleToastOk=false;if(!STATE.razzleHWM)STATE.razzleHWM={};const _seRfi=getFlightPick(r)||0;if(!STATE.razzleHWM[r]||typeof STATE.razzleHWM[r]!=='object')STATE.razzleHWM[r]={};const _roundComplete=isRoundComplete(r);const _maxH=holeOffset(r)+roundHoleCount(r)-1;if(STATE.razzleHWM[r][_seRfi]===undefined)STATE.razzleHWM[r][_seRfi]=_roundComplete?_maxH:-1;renderRdSel('entryRdSel',r,'switchEntryRound');_renderCtxRdSel('scores');STATE.scRound=r;updateHoleUI();if(_scViewMode==='card')renderSCGrid();}
+function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=_flightResumeHole(r,(getFlightPick(r)||0));STATE.razzleToastOk=false;if(!STATE.razzleHWM)STATE.razzleHWM={};const _seRfi=getFlightPick(r)||0;if(!STATE.razzleHWM[r]||typeof STATE.razzleHWM[r]!=='object')STATE.razzleHWM[r]={};const _roundComplete=isRoundComplete(r);const _maxH=holeOffset(r)+fsHoleCount(r,_seRfi)-1;if(STATE.razzleHWM[r][_seRfi]===undefined)STATE.razzleHWM[r][_seRfi]=_roundComplete?_maxH:-1;renderRdSel('entryRdSel',r,'switchEntryRound');_renderCtxRdSel('scores');STATE.scRound=r;updateHoleUI();if(_scViewMode==='card')renderSCGrid();}
 function switchCardRound(r){STATE.scRound=r;renderRdSel('cardRdSel',r,'switchCardRound');STATE.scGridFlightSel=-1;renderSCGrid();}
 function switchGamesRound(r){STATE.gamesViewRound=r;renderGamesTab();}
 function switchGamesGame(g){STATE.gamesViewGame=g;renderGamesTab();}
@@ -6848,11 +6903,114 @@ function roundHoleLabel(r){const rd=WK.rounds[r];const nh=rd.nineHole;if(!rd.isE
 function holesForRound(r){const rd=WK.rounds[r];const allHoles=rd.course&&rd.course.holes?rd.course.holes:Array.from({length:18},(_,i)=>({par:4,si:i+1}));if(rd.nineHole==='front')return allHoles.slice(0,9);if(rd.nineHole==='back')return allHoles.slice(9,18);return allHoles;}
 function holeOffset(r){return WK.rounds[r]&&WK.rounds[r].nineHole==='back'?9:0;}
 function roundHoleCount(r){return holesForRound(r).length;}
+// SHORTENED ROUNDS. rd.fsEndHoles[fi] is a hole COUNT, not an index: 14 means this
+// foursome's round is 14 holes long. Absent, malformed, zero or >= the full round
+// all mean a full round, so a trip that has never ended a round short resolves
+// exactly as v119.09 did. That is the migration guarantee and neutral_harness.js
+// is what holds it.
+//
+// THREE SCOPES, ONE RULE: the length is the minimum over whoever the thing
+// involves. A foursome game involves one foursome. Field-scope Four-Ball involves
+// the foursomes in its pool. Standings involve everybody. See fsHoleCount,
+// poolHoleCount, standingsHoleCount below; they are the three arguments to that
+// one rule, not three special cases.
+function fsEndHolesRaw(r){
+  const rd=WK&&WK.rounds&&WK.rounds[r];
+  return (rd&&Array.isArray(rd.fsEndHoles))?rd.fsEndHoles:null;
+}
+function fsHoleCount(r,fi){
+  const full=roundHoleCount(r);
+  if(fi===null||fi===undefined)return full;
+  const raw=fsEndHolesRaw(r);
+  if(!raw)return full;
+  const v=raw[fi];
+  // Clamp rather than trust. A stored value longer than the round would let a bad
+  // write lengthen a round, and a nine-hole round must never resolve to 18.
+  if(typeof v!=='number'||!isFinite(v)||v<1||v>=full)return full;
+  return Math.floor(v);
+}
+function fsEndedShort(r,fi){return fsHoleCount(r,fi)<roundHoleCount(r);}
+// fis null or empty means every foursome, which is how field-scope Four-Ball pools
+// arrive (fbPools returns fi:null for them).
+function poolHoleCount(r,fis){
+  const full=roundHoleCount(r);
+  if(!fsEndHolesRaw(r))return full;
+  const list=(Array.isArray(fis)&&fis.length)?fis:flightsForRound(r).map((_,i)=>i);
+  let min=full;
+  for(let k=0;k<list.length;k++){const v=fsHoleCount(r,list[k]);if(v<min)min=v;}
+  return min;
+}
+// The field minimum. Standings are measured through the shortest foursome so a
+// player who played 16 is never ranked against one who played 14. Deliberately a
+// different basis from fsHoleCount, exactly as getNet is from getNetForFlight.
+function standingsHoleCount(r){return poolHoleCount(r,null);}
+// How many holes this foursome has actually FINISHED, counted contiguously from the
+// start of the round. Contiguous is the whole point: a group with holes 1-10 and 16
+// posted has finished 10, not 11, and a claim of 16 must be refused. Without that a bad
+// declaration silently drags the field minimum down and reshuffles the standings.
+function _fsScoredThrough(r,fi){
+  const off=holeOffset(r),full=roundHoleCount(r);
+  const mem=(flightsForRound(r)[fi]||[]).filter(pi=>typeof pi==='number'&&pi>=0);
+  if(!mem.length)return 0;
+  let k=0;
+  for(;k<full;k++){
+    const row=STATE.scores&&STATE.scores[r]&&STATE.scores[r][off+k];
+    if(!row)break;
+    let ok=true;
+    for(let j=0;j<mem.length;j++){const s=row[mem[j]];if(s===null||s===undefined){ok=false;break;}}
+    if(!ok)break;
+  }
+  return k;
+}
+// True when any foursome in the round carries an end declaration.
+function _roundHasEnd(r){
+  const raw=fsEndHolesRaw(r);
+  if(!raw)return false;
+  return flightsForRound(r).some((_,fi)=>fsEndedShort(r,fi));
+}
+// A short label for the round card. One number when every foursome stopped together,
+// otherwise each foursome named, because two different lengths is the case people will
+// not otherwise believe.
+// True when a segment's holes lie entirely past this foursome's end hole, so they will
+// never be played. Distinct from "not started", which still might be.
+function _segNotPlayed(r,fi,seg){
+  if(!seg||!fsEndedShort(r,fi))return false;
+  return seg.start>=fsHoleCount(r,fi);
+}
+function _endChipLabel(r){
+  const fls=flightsForRound(r);
+  // ONLY the foursomes that actually ended. Listing every foursome's length made a
+  // group that never ended look like it had ended at 18, which is the opposite of
+  // what was happening: it was still out on the course.
+  const ended=[];
+  fls.forEach((_,fi)=>{if(fsEndedShort(r,fi))ended.push({fi,n:fsHoleCount(r,fi)});});
+  if(!ended.length)return '';
+  if(ended.length===fls.length){
+    const uniq=[...new Set(ended.map(e=>e.n))];
+    if(uniq.length===1)return 'Ended at '+uniq[0];
+  }
+  if(ended.length===1&&fls.length===1)return 'Ended at '+ended[0].n;
+  return ended.map(e=>'F'+(e.fi+1)+' ended at '+e.n).join(' \u00b7 ');
+}
 // The single source of truth for "does this round count toward the weekend".
 // An emergency round flagged out of standings is golf people play BECAUSE it does not count.
 // Eight sites used to answer this question independently and calcPotRankings answered it wrong,
 // so the board showed one leader all weekend and the pot paid someone else.
-function inStandingsRound(r){const rd=WK.rounds[r];return !(rd&&rd.isE9&&!rd.inStandings);}
+function inStandingsRound(r){
+  const rd=WK.rounds[r];
+  if(rd&&rd.isE9&&!rd.inStandings)return false;
+  // A round the field never got nine holes into does not enter the weekend unless it
+  // is explicitly opted in. There is no USGA rule to inherit here: acceptability is a
+  // handicap-posting question and whether a round counts is the Committee's call. Nine
+  // is the prompt threshold, not a verdict.
+  //
+  // OWN FLAG, DELIBERATELY. rd.inStandings answers the E9 question. Reusing it here
+  // would be one field answering two questions that can diverge, since a round ended
+  // at 7 and later resumed past 9 leaves the flag standing for a question that no
+  // longer applies.
+  if(rd&&fsEndHolesRaw(r)&&standingsHoleCount(r)<9&&!rd.shortInStandings)return false;
+  return true;
+}
 function lowCH(r){return Math.min(...WK.players.map((_,pi)=>pi).filter(_vpi).map(pi=>{let ch=courseHdcp(pi,r);if(WK.rounds[r]&&WK.rounds[r].nineHole)ch=Math.round(ch/2);return ch;}));}
 function effHdcp(pi,r){let ch=courseHdcp(pi,r);if(WK.rounds[r]&&WK.rounds[r].nineHole)ch=Math.round(ch/2);return STATE.netOffLow?Math.max(0,ch-lowCH(r)):ch;}
 function strokes(pi,hi,r){const h=effHdcp(pi,r);const nineHole=WK.rounds[r]&&WK.rounds[r].nineHole;if(nineHole){const activeHoles=holesForRound(r);const offset=holeOffset(r);const localHi=hi-offset;if(localHi<0||localHi>=activeHoles.length)return 0;const thisSI=activeHoles[localHi].si;const rank=activeHoles.filter(ah=>ah.si<=thisSI).length;if(h<0){const a=-h;return -(Math.floor(a/9)+(rank>=10-(a%9)?1:0));}return Math.floor(h/9)+(h%9>=rank?1:0);}const si=WK.rounds[r].course.holes[hi]?.si||hi+1;if(h<0){const a=-h;return -(Math.floor(a/18)+(si>=19-(a%18)?1:0));}return Math.floor(h/18)+(h%18>=si?1:0);}
@@ -7082,7 +7240,14 @@ function renderScorecard(){
   try{renderRazzleBox();}catch(re){console.error('renderRazzleBox error:',re);const w=document.getElementById('razzleBoxWrap');if(w)w.innerHTML='';}
   try{renderWolfBox();}catch(we){console.error('renderWolfBox error:',we);const wb=document.getElementById('wolfBoxWrap');if(wb)wb.innerHTML='';}
   try{renderFBBox();}catch(fe){console.error('renderFBBox error:',fe);const fbb=document.getElementById('fbBoxWrap');if(fbb)fbb.innerHTML='';}}
-function adjScore(pi,delta){if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRound,_curFi(STATE.currentRound)))return;if((STATE.lockedRounds||[]).includes(STATE.currentRound))return;const r=STATE.currentRound,hi=STATE.currentHole,par=WK.rounds[r].course.holes[hi]?.par||4,c=STATE.scores[r][hi][pi];STATE.scores[r][hi][pi]=c===null?par:Math.max(1,c+delta);_s2Cleared.delete(r+':'+hi+':'+pi);s2MarkDirty(['score'],r+':'+hi);clearTimeout(window._s2ScoreTimer);window._s2ScoreTimer=setTimeout(()=>{autoSave(true);s2WriteActive();},1500);// Check auto-press after all players scored this hole
+function adjScore(pi,delta){if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRound,_curFi(STATE.currentRound)))return;if((STATE.lockedRounds||[]).includes(STATE.currentRound))return;
+  // Refusing only at Save was not enough: this writes straight to STATE and schedules
+  // its own autoSave, so the number stuck and synced anyway. Refuse the keystroke.
+  {const _asR=STATE.currentRound,_asHi=STATE.currentHole,_asFi=_curFi(_asR);
+   if(fsEndedShort(_asR,_asFi)&&_asHi>=holeOffset(_asR)+fsHoleCount(_asR,_asFi)){
+     showMsg('This round ended at hole '+fsHoleCount(_asR,_asFi)+'. Tap Resume round to keep playing.');
+     return;}}
+  const r=STATE.currentRound,hi=STATE.currentHole,par=WK.rounds[r].course.holes[hi]?.par||4,c=STATE.scores[r][hi][pi];STATE.scores[r][hi][pi]=c===null?par:Math.max(1,c+delta);_s2Cleared.delete(r+':'+hi+':'+pi);s2MarkDirty(['score'],r+':'+hi);clearTimeout(window._s2ScoreTimer);window._s2ScoreTimer=setTimeout(()=>{autoSave(true);s2WriteActive();},1500);// Check auto-press after all players scored this hole
 const allScored=STATE.scores[r][hi].every(s=>s!==null);const _asFi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(allScored&&gameOnFs('mp',r,_asFi)){const mpG=mpGamesForRound(r,_asFi);const _th=roundHoleCount(r);const si=segForHole(hi-holeOffset(r),mpG,_th);checkAutoPress(r,_asFi,si);}renderScorecard();renderHoleDots();renderHammerBox();renderSkinsBoxWrap();renderMPHoleBox();renderVegasBoxWrap();
   _updateActionRow();
 }
@@ -7355,7 +7520,13 @@ function _fbSplitCents(amt,n){
 // means one partner covering a hole is enough, so this tolerates a pickup; it stalls
 // only when an entire team blanked a hole, which is genuinely not a finished game.
 function fbPoolComplete(pool,r){
-  const need=roundHoleCount(r);
+  // A pool spans whichever foursomes its teams came from. fbPools gives fi:null for a
+  // field-scope pool, which means every foursome, and poolHoleCount reads null the
+  // same way. So the length is the minimum over exactly the groups in this game, which
+  // is the same rule standings use over the whole field.
+  const need=fsEndHolesRaw(r)
+    ? poolHoleCount(r,(pool&&pool.fi!=null)?[pool.fi]:null)
+    : roundHoleCount(r);
   if(!need)return false;
   return pool.teams.every(function(t){return fbTeamCard(t,r,pool.players).played===need;});
 }
@@ -7645,7 +7816,10 @@ function calcRazzle(r,fi){
   const finalRule=roundValFs('razzleFinalMatch',r,fi,'void');
   const finalCloseB=roundValFs('razzleFinalCloseBonus',r,fi,false)===true;
   const finalBirdB=roundValFs('razzleFinalBirdieBonus',r,fi,false)===true;
-  const _off_rz=holeOffset(r),_end_rz=_off_rz+roundHoleCount(r);
+  // The end of THIS foursome's round, not the field's and not the card's. The loop
+  // guard below is `h < _end_rz`, so shrinking this shrinks the guard with it and the
+  // ranOut proxy stays sound: a missing-score break still cannot reach the end.
+  const _off_rz=holeOffset(r),_end_rz=_off_rz+fsHoleCount(r,fi);
   const matches=[];let mi=0,h=_off_rz,stake=base;
   while(h<_end_rz){
     const teams=razzleTeamsForMatch(r,mi,fi);
@@ -7676,7 +7850,14 @@ function calcRazzle(r,fi){
     const loserPts=winner==='a'?holeLog.reduce((a,x)=>a+x.holePtsB,0):holeLog.reduce((a,x)=>a+x.holePtsA,0);
     // A real close always earns every bonus. A leader win earns them only if asked.
     const bonusOk=matchClosed||(leaderWin&&finalCloseB);
-    const sweep=bonusOk&&sweepOn&&holesPlayed===2&&loserPts===0;
+    // A SWEEP REQUIRES THE MATCH TO HAVE ACTUALLY CLOSED. holesPlayed===2 with the
+    // loser on zero was a correct proxy for "took 3 points in two holes" only while
+    // sweeps required matchClosed, because closing in two holes means 3 or 4 points by
+    // definition. leaderWin created a second way to be awarded a match without ever
+    // reaching 3, and the proxy woke up: a leader 2-0 up when play was called collected
+    // a sweep bonus for a match that never finished.
+    // Third dormant proxy in this arc, after m.winner!==null and h>=_end_rz.
+    const sweep=matchClosed&&sweepOn&&holesPlayed===2&&loserPts===0;
     const fiveHole=bonusOk&&fiveOn&&holesPlayed>=5;
     // Birdie money accrues as the birdies are made, so withholding it is a subtraction,
     // not a gate like the other two.
@@ -7715,7 +7896,7 @@ function razzleMatchClosedOnHole(r,hi){
   if(!gameOn('razzle',r))return false;
   const _rmfi=isMultiFlight(r)?(getFlightPick(r)||0):0;
   const matches=calcRazzle(r,_rmfi);
-  return matches.some(m=>m.closedOnHole===hi&&hi<holeOffset(STATE.currentRound)+roundHoleCount(STATE.currentRound)-1);
+  return matches.some(m=>m.closedOnHole===hi&&hi<holeOffset(STATE.currentRound)+fsHoleCount(STATE.currentRound,_rmfi)-1);
 }
 
 function renderSnakeEntry(){
@@ -7986,7 +8167,7 @@ function renderRazzleBox(){
 // groups finish at different times, so waiting on the other lane would hold the
 // acknowledgement back until a group that has nothing to do with this match walks in.
 function _rzFlightComplete(r,fi){
-  const n=roundHoleCount(r),off=holeOffset(r);
+  const n=fsHoleCount(r,fi),off=holeOffset(r);
   const mem=(flightsForRound(r)[fi]||[]);
   if(!mem.length)return false;
   for(let hi=off;hi<off+n;hi++){
@@ -8415,7 +8596,27 @@ function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap')
           </div>`;
   }
   wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdr}${inner}</div>`;}
-function renderHoleDots(){const r=STATE.currentRound;const nHoles=roundHoleCount(r);const off=holeOffset(r);const _need=_flightNeedIdxs(r);const makeDot=(i)=>{const done=STATE.scores[r][i]&&_need.every(function(pi){return STATE.scores[r][i][pi]!==null;});return'<div class="hdot'+(done?' done':'')+(i===STATE.currentHole?' cur':'')+'" onclick="jumpHole('+i+')">'+(i+1)+'</div>';};let html='';if(nHoles<=9){html='<div class="hole-dots-row">'+Array.from({length:nHoles},(_,i)=>makeDot(i+off)).join('')+'</div>';}else{const front=Array.from({length:9},(_,i)=>makeDot(i)).join('');const back=Array.from({length:nHoles-9},(_,i)=>makeDot(i+9)).join('');html='<div class="hole-dots-row">'+front+'</div><div class="hole-dots-row">'+back+'</div>';}document.getElementById('holeDots').innerHTML=html;}
+function renderHoleDots(){const r=STATE.currentRound;const nHoles=roundHoleCount(r);const off=holeOffset(r);const _need=_flightNeedIdxs(r);
+  // Holes past this foursome's end were never played. They stay tappable so a score can
+  // still be corrected after the fact; they just stop reading as merely blank.
+  const _srFi=(typeof getFlightPick==='function'?getFlightPick(r):0)||0;
+  const _srEnd=off+fsHoleCount(r,_srFi);
+  const _srShort=fsEndedShort(r,_srFi);
+  const makeDot=(i)=>{const done=STATE.scores[r][i]&&_need.every(function(pi){return STATE.scores[r][i][pi]!==null;});return'<div class="hdot'+(done?' done':'')+(_srShort&&i>=_srEnd?' sr-void':'')+(i===STATE.currentHole?' cur':'')+'" onclick="jumpHole('+i+')">'+(i+1)+'</div>';};let html='';if(nHoles<=9){html='<div class="hole-dots-row">'+Array.from({length:nHoles},(_,i)=>makeDot(i+off)).join('')+'</div>';}else{const front=Array.from({length:9},(_,i)=>makeDot(i)).join('');const back=Array.from({length:nHoles-9},(_,i)=>makeDot(i+9)).join('');html='<div class="hole-dots-row">'+front+'</div><div class="hole-dots-row">'+back+'</div>';}  // Placement B: a quiet link, not a filled button, and only in the window where
+  // ending is meaningful. A mis-tap opens the sheet and nothing else.
+  const _srDone=_fsScoredThrough(r,_srFi);
+  const _srOk=canEditTrip()&&!isRoundLocked(r)&&!(STATE.settledRounds||[]).includes(r);
+  if(_srShort){
+    // Informational, so it reads louder than the destructive direction does. The whole
+    // row is the tap target and it opens the round status sheet rather than acting.
+    html+='<div class="sr-striprow" style="cursor:pointer" onclick="_srStatusSheet('+r+')">'+
+      '<span class="sr-chip">Round ended at '+fsHoleCount(r,_srFi)+'</span>'+
+      '<span class="sr-link" style="font-size:12px">Round status</span></div>';
+  } else if(_srOk&&_srDone>=1&&_srDone<nHoles){
+    html+='<div class="sr-striprow"><span>Play called?</span>'+
+      '<button class="sr-link" style="font-size:12px" onclick="_endRoundSheet('+r+')">End round at '+_srDone+'</button></div>';
+  }
+  document.getElementById('holeDots').innerHTML=html;}
 function jumpHole(i){STATE.razzleToastOk=false;STATE.currentHole=i;updateHoleUI();}
 function changeHole(d){const r=STATE.currentRound,curHole=STATE.currentHole,_maxHi=holeOffset(r)+roundHoleCount(r)-1,nextHole=Math.max(holeOffset(r),Math.min(_maxHi,curHole+d));const _chfi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(d>0&&gameOnFs('razzle',r,_chfi)&&razzleMatchClosedOnHole(r,curHole)&&!isRoundLocked(r)){const _cms=calcRazzle(r,_chfi);const _closedM=_cms.find(m=>m.closedOnHole===curHole);const _nextMi=_closedM?_closedM.mi+1:_cms.length;const _teamsSet=STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r]&&STATE.razzleMatchTeams[r][_chfi]&&STATE.razzleMatchTeams[r][_chfi][_nextMi];if(!_teamsSet){showRazzleTeamModal(r,nextHole);return;}}if(d>0){if(!STATE.razzleHWM)STATE.razzleHWM={};const hwm=(STATE.razzleHWM[r]&&STATE.razzleHWM[r][_chfi]!==undefined)?STATE.razzleHWM[r][_chfi]:-1;if(nextHole>hwm){if(!STATE.razzleHWM[r])STATE.razzleHWM[r]={};STATE.razzleHWM[r][_chfi]=nextHole;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}}else{STATE.razzleToastOk=false;}STATE.currentHole=nextHole;updateHoleUI();}
 function _fsPillOutside(e){
@@ -8481,7 +8682,7 @@ function updateHoleUI(){
     }
   }
   if(!STATE.razzleHWM)STATE.razzleHWM={};
-  {const _uhFi=getFlightPick(r)||0;if(!STATE.razzleHWM[r]||typeof STATE.razzleHWM[r]!=='object')STATE.razzleHWM[r]={};if(STATE.razzleHWM[r][_uhFi]===undefined){const _rc=isRoundComplete(r);const _maxH2=holeOffset(r)+roundHoleCount(r)-1;STATE.razzleHWM[r][_uhFi]=_rc?_maxH2:-1;}}
+  {const _uhFi=getFlightPick(r)||0;if(!STATE.razzleHWM[r]||typeof STATE.razzleHWM[r]!=='object')STATE.razzleHWM[r]={};if(STATE.razzleHWM[r][_uhFi]===undefined){const _rc=isRoundComplete(r);const _maxH2=holeOffset(r)+fsHoleCount(r,_uhFi)-1;STATE.razzleHWM[r][_uhFi]=_rc?_maxH2:-1;}}
   if(!WK.rounds[r]||!WK.rounds[r].course){console.error('updateHoleUI: missing round/course for round',r);return;}
   const hole=WK.rounds[r].course.holes?.[hi]||{par:4,si:hi+1};
   const locked=isRoundLocked(r),complete=isRoundComplete(r);
@@ -8515,7 +8716,15 @@ function _flightNeedIdxs(r){
   }
   return WK.players.map(function(_,pi){return pi;});
 }
-function saveHole(){if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRound,_curFi(STATE.currentRound)))return;const r=STATE.currentRound,hi=STATE.currentHole;if(!_flightNeedIdxs(r).every(function(pi){return STATE.scores[r][hi][pi]!==null;})){showMsg('Enter all scores first.');return;}if(gameOn('wolf',r)){const _wfi=isMultiFlight(r)?getFlightPick(r):0;if(_wfi!==null&&gameOnFs('wolf',r,_wfi)&&(flightsForRound(r)[_wfi]||[]).length>=4&&!wolfPicksForRound(r,_wfi)[hi]){showMsg('Wolf still needs a pick for this hole. Choose a partner, go lone, or go blind.');return;}}autoSave();s2WriteActive();if(hi<holeOffset(r)+roundHoleCount(r)-1)changeHole(1);else setView('board');}
+function saveHole(){if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRound,_curFi(STATE.currentRound)))return;const r=STATE.currentRound,hi=STATE.currentHole;
+  // A score past the end hole means the round did not end there. Refuse and point at
+  // Resume rather than quietly banking a hole that no game will ever count.
+  const _shFi=_curFi(r);
+  if(fsEndedShort(r,_shFi)&&hi>=holeOffset(r)+fsHoleCount(r,_shFi)){
+    showMsg('This round ended at hole '+fsHoleCount(r,_shFi)+'. Tap Resume round to keep playing.');
+    return;
+  }
+  if(!_flightNeedIdxs(r).every(function(pi){return STATE.scores[r][hi][pi]!==null;})){showMsg('Enter all scores first.');return;}if(gameOn('wolf',r)){const _wfi=isMultiFlight(r)?getFlightPick(r):0;if(_wfi!==null&&gameOnFs('wolf',r,_wfi)&&(flightsForRound(r)[_wfi]||[]).length>=4&&!wolfPicksForRound(r,_wfi)[hi]){showMsg('Wolf still needs a pick for this hole. Choose a partner, go lone, or go blind.');return;}}autoSave();s2WriteActive();if(hi<holeOffset(r)+roundHoleCount(r)-1)changeHole(1);else setView('board');}
 // ONE clear path. _actClear and resetHole held byte-identical copies of this logic, and
 // BOTH cleared the whole roster and EVERY foursome's per-hole game state. In a multi-foursome
 // round that wiped the other group's scores, hammer throw, wolf pick and snake holder out of
@@ -8712,7 +8921,7 @@ function _potNetOver(pi,r,holeIdxs){let s=0;for(let k=0;k<holeIdxs.length;k++){c
 function countbackPot(tied){
   const r=_potFinalRound();
   if(r<0)return{winner:null,level:'no standings round'};
-  const off=holeOffset(r),cnt=roundHoleCount(r);
+  const off=holeOffset(r),cnt=standingsHoleCount(r);
   const all=Array.from({length:cnt},(_,i)=>off+i);
   const rungs=[{n:cnt,label:'final round'},{n:9,label:'last 9'},{n:6,label:'last 6'},{n:3,label:'last 3'},{n:1,label:'final hole'}];
   let field=tied.slice();
@@ -8832,7 +9041,7 @@ function tripStandings(){
     let net=0,played=0,parTot=0;
     for(let r=0;r<WK.rounds.length;r++){
       if(!inStandingsRound(r))continue;
-      const off=holeOffset(r),n=roundHoleCount(r);
+      const off=holeOffset(r),n=standingsHoleCount(r);
       for(let h=off;h<off+n;h++){
         const g=(STATE.scores[r]&&STATE.scores[r][h])?STATE.scores[r][h][i]:null;
         if(g!==null&&g!==undefined){net+=getNet(i,h,r);played++;parTot+=WK.rounds[r].course.holes[h]?.par||4;}
@@ -8883,13 +9092,13 @@ function playerThru(pi){
   let last=-1;
   for(let r=0;r<WK.rounds.length;r++){
     if(!inStandingsRound(r))continue;
-    const off=holeOffset(r),n=roundHoleCount(r);
+    const off=holeOffset(r),n=standingsHoleCount(r);
     for(let h=off;h<off+n;h++){
       if(STATE.scores[r]&&STATE.scores[r][h]&&STATE.scores[r][h][pi]!==null){last=r;break;}
     }
   }
   if(last<0)return{n:0,label:'-',done:false,r:-1};
-  const off=holeOffset(last),n=roundHoleCount(last);
+  const off=holeOffset(last),n=standingsHoleCount(last);
   let posted=0;
   for(let h=off;h<off+n;h++)if(STATE.scores[last][h][pi]!==null)posted++;
   const done=posted>=n;
@@ -8905,17 +9114,17 @@ function calcPotRankings(){
     let net=0,played=0,parTot=0;
     WK.rounds.forEach((_,r)=>{
       if(!inStandingsRound(r))return;
-      {const _off_bn=holeOffset(r),_n_bn=roundHoleCount(r);for(let h=_off_bn;h<_off_bn+_n_bn;h++){const s=getNet(pi,h,r);if(s!==null){net+=s;played++;parTot+=WK.rounds[r].course.holes[h]?.par||4;}}}
+      {const _off_bn=holeOffset(r),_n_bn=standingsHoleCount(r);for(let h=_off_bn;h<_off_bn+_n_bn;h++){const s=getNet(pi,h,r);if(s!==null){net+=s;played++;parTot+=WK.rounds[r].course.holes[h]?.par||4;}}}
     });
     return{pi,total:-(net-parTot),byRound:[]};// negate so sort descending = lowest net wins
   }).sort((a,b)=>b.total-a.total);
 }
-function totalHolesPlayed(){return WK.rounds.reduce((a,_,r)=>{if(!inStandingsRound(r))return a;const n=roundHoleCount(r);const off=holeOffset(r);let cnt=0;for(let hi=off;hi<off+n;hi++){if(STATE.scores[r][hi]&&STATE.scores[r][hi].every(s=>s!==null))cnt++;}return a+cnt;},0);}
-function totalHoles(){return WK.rounds.reduce((a,_,r)=>{if(!inStandingsRound(r))return a;return a+roundHoleCount(r);},0);}
-function calcRoundRankings(){const entries=[];WK.rounds.forEach((rd,r)=>{if(rd.nineHole)return;if(!inStandingsRound(r))return;const off=holeOffset(r),cnt=roundHoleCount(r);const activeHoles=STATE.scores[r].slice(off,off+cnt);const anyComplete=activeHoles.some(h=>h.every(s=>s!==null));if(!anyComplete)return;WK.players.forEach((p,pi)=>{const roundComplete=activeHoles.every(h=>h[pi]!==null);if(!roundComplete)return;const gross=activeHoles.reduce((a,hole)=>a+(hole[pi]||0),0);const net=Array.from({length:cnt},(_,i)=>getNet(pi,off+i,r)).reduce((a,n)=>a+(n||0),0);const parTotal=rd.course.holes.slice(off,off+cnt).reduce((a,h)=>a+h.par,0);entries.push({pi,r,courseName:rd.courseName,gross,net,parTotal,relGross:gross-parTotal,relNet:net-parTotal});});});entries.sort((a,b)=>a.net-b.net);let rank=1;entries.forEach((e,i)=>{if(i>0&&entries[i].net===entries[i-1].net){e.rank=entries[i-1].rank;}else{e.rank=rank;}rank=i+2;});return entries;}
+function totalHolesPlayed(){return WK.rounds.reduce((a,_,r)=>{if(!inStandingsRound(r))return a;const n=standingsHoleCount(r);const off=holeOffset(r);let cnt=0;for(let hi=off;hi<off+n;hi++){if(STATE.scores[r][hi]&&STATE.scores[r][hi].every(s=>s!==null))cnt++;}return a+cnt;},0);}
+function totalHoles(){return WK.rounds.reduce((a,_,r)=>{if(!inStandingsRound(r))return a;return a+standingsHoleCount(r);},0);}
+function calcRoundRankings(){const entries=[];WK.rounds.forEach((rd,r)=>{if(rd.nineHole)return;if(!inStandingsRound(r))return;const off=holeOffset(r),cnt=standingsHoleCount(r);const activeHoles=STATE.scores[r].slice(off,off+cnt);const anyComplete=activeHoles.some(h=>h.every(s=>s!==null));if(!anyComplete)return;WK.players.forEach((p,pi)=>{const roundComplete=activeHoles.every(h=>h[pi]!==null);if(!roundComplete)return;const gross=activeHoles.reduce((a,hole)=>a+(hole[pi]||0),0);const net=Array.from({length:cnt},(_,i)=>getNet(pi,off+i,r)).reduce((a,n)=>a+(n||0),0);const parTotal=rd.course.holes.slice(off,off+cnt).reduce((a,h)=>a+h.par,0);entries.push({pi,r,courseName:rd.courseName,gross,net,parTotal,relGross:gross-parTotal,relNet:net-parTotal});});});entries.sort((a,b)=>a.net-b.net);let rank=1;entries.forEach((e,i)=>{if(i>0&&entries[i].net===entries[i-1].net){e.rank=entries[i-1].rank;}else{e.rank=rank;}rank=i+2;});return entries;}
 function toggleRoundRankings(){STATE.roundRankOpen=!STATE.roundRankOpen;renderBoard();}
 function toggleEmergencyRankings(){STATE.emergencyRankOpen=!STATE.emergencyRankOpen;renderBoard();}
-function calcEmergencyRankings(){const entries=[];WK.rounds.forEach((rd,r)=>{if(inStandingsRound(r))return;const off=holeOffset(r),cnt=roundHoleCount(r);const activeHoles=STATE.scores[r].slice(off,off+cnt);const anyComplete=activeHoles.some(h=>h.every(s=>s!==null));if(!anyComplete)return;WK.players.forEach((p,pi)=>{const roundComplete=activeHoles.every(h=>h[pi]!==null);if(!roundComplete)return;const gross=activeHoles.reduce((a,hole)=>a+(hole[pi]||0),0);const net=Array.from({length:cnt},(_,i)=>getNet(pi,off+i,r)).reduce((a,n)=>a+(n||0),0);const parTotal=rd.course.holes.slice(off,off+cnt).reduce((a,h)=>a+h.par,0);entries.push({pi,r,courseName:rd.courseName,gross,net,parTotal,relGross:gross-parTotal,relNet:net-parTotal});});});entries.sort((a,b)=>a.net-b.net);let rank=1;entries.forEach((e,i)=>{if(i>0&&entries[i].net===entries[i-1].net){e.rank=entries[i-1].rank;}else{e.rank=rank;}rank=i+2;});return entries;}
+function calcEmergencyRankings(){const entries=[];WK.rounds.forEach((rd,r)=>{if(inStandingsRound(r))return;const off=holeOffset(r),cnt=standingsHoleCount(r);const activeHoles=STATE.scores[r].slice(off,off+cnt);const anyComplete=activeHoles.some(h=>h.every(s=>s!==null));if(!anyComplete)return;WK.players.forEach((p,pi)=>{const roundComplete=activeHoles.every(h=>h[pi]!==null);if(!roundComplete)return;const gross=activeHoles.reduce((a,hole)=>a+(hole[pi]||0),0);const net=Array.from({length:cnt},(_,i)=>getNet(pi,off+i,r)).reduce((a,n)=>a+(n||0),0);const parTotal=rd.course.holes.slice(off,off+cnt).reduce((a,h)=>a+h.par,0);entries.push({pi,r,courseName:rd.courseName,gross,net,parTotal,relGross:gross-parTotal,relNet:net-parTotal});});});entries.sort((a,b)=>a.net-b.net);let rank=1;entries.forEach((e,i)=>{if(i>0&&entries[i].net===entries[i-1].net){e.rank=entries[i-1].rank;}else{e.rank=rank;}rank=i+2;});return entries;}
 // Standings -> that round's scorecard grid. The card is a mode of the Scores tab, not a
 // view of its own, and setView('scores') resets the mode to 'hole', so the flip to card
 // has to come after it. Foursome filter resets to All so the whole field is visible.
@@ -8936,13 +9145,13 @@ function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
     const rounds=WK.rounds.map((_,r)=>{
       if(!inStandingsRound(r))return null;
       let rNet=0,rGross=0,rPar=0,rPlayed=0;
-      {const _off_bg=holeOffset(r),_n_bg=roundHoleCount(r);for(let h=_off_bg;h<_off_bg+_n_bg;h++){
+      {const _off_bg=holeOffset(r),_n_bg=standingsHoleCount(r);for(let h=_off_bg;h<_off_bg+_n_bg;h++){
         const g=STATE.scores[r][h][i];
         if(g!==null){const s=getNet(i,h,r);rNet+=s;rGross+=g;rPar+=WK.rounds[r].course.holes[h]?.par||4;rPlayed++;}
       }}
-      return{r,rNet,rGross,rPar,rPlayed,complete:rPlayed===roundHoleCount(r)};
+      return{r,rNet,rGross,rPar,rPlayed,complete:rPlayed===standingsHoleCount(r)};
     });
-    rounds.filter(Boolean).forEach(rd=>{if(rd.complete){net+=rd.rNet;played+=roundHoleCount(rd.r);parTot+=rd.rPar;}else{const _off_rb2=holeOffset(rd.r),_n_rb2=roundHoleCount(rd.r);for(let h=_off_rb2;h<_off_rb2+_n_rb2;h++){const s=getNet(i,h,rd.r);if(s!==null){net+=s;played++;parTot+=WK.rounds[rd.r].course.holes[h]?.par||4;}}}});
+    rounds.filter(Boolean).forEach(rd=>{if(rd.complete){net+=rd.rNet;played+=standingsHoleCount(rd.r);parTot+=rd.rPar;}else{const _off_rb2=holeOffset(rd.r),_n_rb2=standingsHoleCount(rd.r);for(let h=_off_rb2;h<_off_rb2+_n_rb2;h++){const s=getNet(i,h,rd.r);if(s!==null){net+=s;played++;parTot+=WK.rounds[rd.r].course.holes[h]?.par||4;}}}});
     return{...p,i,net,played,parTot,rel:net-parTot,rounds};
   });
   // Ordering, rank labels and THRU all come from tripStandings(). The board keeps its own
@@ -8976,11 +9185,11 @@ function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
         const netCol=relNet<0?'#1D9E75':relNet>0?'#D85A30':'var(--color-text-primary)';
         // Count strokes received in this round
         let rdStrokes=0;
-        if(rd.complete&&inStandingsRound(rd.r)){const _off_b=holeOffset(rd.r),_n_b=roundHoleCount(rd.r);for(let hi=_off_b;hi<_off_b+_n_b;hi++)rdStrokes+=strokes(p.i,hi,rd.r);}
+        if(rd.complete&&inStandingsRound(rd.r)){const _off_b=holeOffset(rd.r),_n_b=standingsHoleCount(rd.r);for(let hi=_off_b;hi<_off_b+_n_b;hi++)rdStrokes+=strokes(p.i,hi,rd.r);}
         const strokesStr=rd.complete?(rdStrokes>0?rdStrokes+' stroke'+(rdStrokes!==1?'s':''):rdStrokes<0?'gives '+(-rdStrokes)+' stroke'+(rdStrokes!==-1?'s':''):'no strokes'):'';
         html+=`<div onclick="_lbOpenCard(${rd.r})" style="display:grid;grid-template-columns:auto 1fr auto auto auto auto;align-items:center;gap:6px;padding:6px 12px 6px 56px;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer">
           <span style="font-size:11px;color:var(--color-text-tertiary);white-space:nowrap">${roundLabel(rd.r)}</span>
-          <span style="font-size:11px;color:var(--color-text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${rdLabel(rd.r)}</span>
+          <span style="font-size:11px;color:var(--color-text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${rdLabel(rd.r)}${_roundHasEnd(rd.r)?' \u00b7 <span class="sr-short">'+standingsHoleCount(rd.r)+' holes</span>':''}</span>
           <span style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap">${rd.complete?rd.rGross+' ('+relGrossStr+')':'—'}</span>
           <span style="font-size:11px;color:var(--color-text-tertiary);white-space:nowrap">${strokesStr}</span>
           <span style="font-size:13px;font-weight:600;color:${netCol};white-space:nowrap;min-width:36px;text-align:right">${rd.complete?netStr:'—'}</span>
@@ -8991,7 +9200,11 @@ function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
     }
     html+=`</div>`;
   });
-  html+=`</div>`;const entries=calcRoundRankings();const isOpen=STATE.roundRankOpen;html+=`<div class="collapsible-hd${isOpen?' open':''}" onclick="toggleRoundRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Best individual rounds</span><span style="font-size:12px;color:#1D9E75">${isOpen?'▲':'▼'}</span></div>`;if(isOpen){if(entries.length===0){html+=`<div class="collapsible-body"><div style="padding:16px 12px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Complete at least one full round to see rankings</div></div>`;}else{html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;entries.forEach(e=>{const p=WK.players[e.pi];const cbg=COURSE_COLORS[e.r%COURSE_COLORS.length];const cfg=COURSE_FG[e.r%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const badgeLabel=rdLabel(e.r);html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${displayName(e.pi)}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}};const eEntries=calcEmergencyRankings();if(eEntries.length>0){const eOpen=STATE.emergencyRankOpen;html+=`<div class="collapsible-hd${eOpen?' open':''}" onclick="toggleEmergencyRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Emergency rounds</span><span style="font-size:12px;color:#1D9E75">${eOpen?'▲':'▼'}</span></div>`;if(eOpen){html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;eEntries.forEach(e=>{const p=WK.players[e.pi];const cbg=COURSE_COLORS[e.r%COURSE_COLORS.length];const cfg=COURSE_FG[e.r%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const erd=WK.rounds[e.r];const holeLabel=erd.nineHole==='front'?'Front 9':erd.nineHole==='back'?'Back 9':'9 holes';const badgeLabel=rdLabel(e.r)+(erd.nineHole?' - '+holeLabel:'');html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${displayName(e.pi)}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}}document.getElementById('boardContent').innerHTML=html;}
+  html+=`</div>`;const entries=calcRoundRankings();const isOpen=STATE.roundRankOpen;html+=`<div class="collapsible-hd${isOpen?' open':''}" onclick="toggleRoundRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Best individual rounds</span><span style="font-size:12px;color:#1D9E75">${isOpen?'▲':'▼'}</span></div>`;if(isOpen){if(entries.length===0){html+=`<div class="collapsible-body"><div style="padding:16px 12px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Complete at least one full round to see rankings</div></div>`;}else{html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;entries.forEach(e=>{const p=WK.players[e.pi];const cbg=COURSE_COLORS[e.r%COURSE_COLORS.length];const cfg=COURSE_FG[e.r%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const badgeLabel=rdLabel(e.r);html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${displayName(e.pi)}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}};const eEntries=calcEmergencyRankings();if(eEntries.length>0){const eOpen=STATE.emergencyRankOpen;html+=`<div class="collapsible-hd${eOpen?' open':''}" onclick="toggleEmergencyRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Emergency rounds</span><span style="font-size:12px;color:#1D9E75">${eOpen?'▲':'▼'}</span></div>`;if(eOpen){html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;eEntries.forEach(e=>{const p=WK.players[e.pi];const cbg=COURSE_COLORS[e.r%COURSE_COLORS.length];const cfg=COURSE_FG[e.r%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const erd=WK.rounds[e.r];const holeLabel=erd.nineHole==='front'?'Front 9':erd.nineHole==='back'?'Back 9':'9 holes';
+      // A shortened round joins the same vocabulary the nine-hole rounds already use.
+      // Without it a 7 hole score reads as a very bad 18 hole one.
+      const _ehShort=_roundHasEnd(e.r)?standingsHoleCount(e.r):0;
+      const badgeLabel=rdLabel(e.r)+(erd.nineHole?' - '+holeLabel:(_ehShort?' - '+_ehShort+' holes':''));html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${displayName(e.pi)}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}}document.getElementById('boardContent').innerHTML=html;}
 function pOpts(sel,members){return WK.players.map((p,i)=>((members&&members.indexOf(i)<0)?'':`<option value="${i}"${i===sel?' selected':''}>${displayName(i)}</option>`)).join('');}
 // Same as pOpts but restricted to one foursome's players, for per-foursome dropdowns.
 function pOptsForFlight(sel,flightPlayers){return (flightPlayers||[]).map(i=>`<option value="${i}"${i===sel?' selected':''}>${displayName(i)}</option>`).join('');}
@@ -12336,6 +12549,45 @@ window._gsCloseSetupModal=function(){
   if(m)m.remove();
   renderGamesContent();
 };
+// Write path for ending a round. fis is the list of foursome indices that stopped.
+// Refuses any claim beyond what a foursome has actually finished, so the caller cannot
+// invent holes. Returns null on success or a printable reason.
+window._endRoundAt=function(r,fis,count){
+  if(!canEditTrip())return 'You do not have edit access for this trip.';
+  if(isRoundLocked(r))return 'This round is locked.';
+  if((STATE.settledRounds||[]).includes(r))return 'This round is already settled.';
+  const full=roundHoleCount(r);
+  count=Math.floor(Number(count));
+  if(!isFinite(count)||count<1)return 'Pick a hole.';
+  if(count>=full)return 'That is the whole round. Nothing to end.';
+  for(let i=0;i<fis.length;i++){
+    const done=_fsScoredThrough(r,fis[i]);
+    if(count>done)return 'Foursome '+(fis[i]+1)+' has only finished '+done+' hole'+(done===1?'':'s')+'.';
+  }
+  const rd=WK.rounds[r];
+  if(!Array.isArray(rd.fsEndHoles))rd.fsEndHoles=[];
+  while(rd.fsEndHoles.length<flightsForRound(r).length)rd.fsEndHoles.push(null);
+  fis.forEach(fi=>{rd.fsEndHoles[fi]=count;});
+  autoSave();s2WriteActive();
+  return null;
+};
+// Weather clears and the group goes back out. Without this the only fix is rebuilding
+// the trip, which is why Resume is not optional.
+window._resumeRound=function(r,fis){
+  if(!canEditTrip())return 'You do not have edit access for this trip.';
+  // Same guards as _endRoundAt, which had them and this did not. An ended round counts
+  // as complete, so Lock and Settle both become reachable; resuming from there would
+  // change the hole count a settled round's money was figured on. The UI hides the
+  // button, but a write path guarded only by a render is one call site away from wrong.
+  if(isRoundLocked(r))return 'This round is locked.';
+  if((STATE.settledRounds||[]).includes(r))return 'This round is already settled. Unsettle it first.';
+  const rd=WK.rounds[r];
+  if(!Array.isArray(rd.fsEndHoles))return null;
+  fis.forEach(fi=>{rd.fsEndHoles[fi]=null;});
+  if(rd.fsEndHoles.every(v=>v==null)){delete rd.fsEndHoles;delete rd.shortInStandings;}
+  autoSave();s2WriteActive();
+  return null;
+};
 window._gsRemoveGame=function(gameId){
   if(!canEditTrip())return;
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
@@ -12356,6 +12608,196 @@ function _gsRefreshAfterEdit(){
   if(v&&v.style.display!=='none')renderGamesContent();
   if(document.getElementById('gsSetupModal')&&window._gsSetupGameId)window._gsOpenSetupModal(window._gsSetupGameId);
 }
+// The confirm sheet. Scope is a choice every time because the declaration is per
+// foursome; Everyone is the shortcut for the common case.
+window._srSheetState=null;
+window._endRoundSheet=function(r){
+  const fls=flightsForRound(r);
+  const cur=(typeof getFlightPick==='function'?getFlightPick(r):0)||0;
+  const scored=fls.map((_,fi)=>_fsScoredThrough(r,fi));
+  const dflt=scored[cur]||Math.max.apply(null,scored.concat([0]));
+  STATE._srSheet={r,pick:(fls.length>1?cur:0),count:dflt,inStd:false,all:fls.length<=1};
+  _srRenderSheet();
+};
+function _srClose(){const m=document.getElementById('srSheet');if(m)m.remove();STATE._srSheet=null;}
+window._srPick=function(v){
+  const s=STATE._srSheet;if(!s)return;
+  if(v==='all'){s.all=true;}else{s.all=false;s.pick=Number(v);}
+  // Re-derive the hole from the NEW scope. The renderer only ever clamps downward, so
+  // without this, switching to a shorter foursome and back leaves the count stuck at
+  // the shorter one's cap and ends the wrong group at the wrong hole.
+  const fis=_srFis();
+  s.count=Math.min.apply(null,fis.map(fi=>_fsScoredThrough(s.r,fi)));
+  _srRenderSheet();
+};
+window._srCount=function(d){const s=STATE._srSheet;if(!s)return;const r=s.r;
+  const fis=_srFis();const cap=Math.min.apply(null,fis.map(fi=>_fsScoredThrough(r,fi)));
+  s.count=Math.max(1,Math.min(cap,s.count+d));_srRenderSheet();};
+window._srToggleStd=function(){const s=STATE._srSheet;if(!s)return;s.inStd=!s.inStd;_srRenderSheet();};
+function _srFis(){const s=STATE._srSheet;const fls=flightsForRound(s.r);
+  return s.all?fls.map((_,i)=>i):[s.pick];}
+window._srConfirm=function(){
+  const s=STATE._srSheet;if(!s)return;
+  const fis=_srFis();
+  const err=window._endRoundAt(s.r,fis,s.count);
+  if(err){showMsg(err);return;}
+  if(s.inStd)WK.rounds[s.r].shortInStandings=true;
+  else delete WK.rounds[s.r].shortInStandings;
+  autoSave();s2WriteActive();
+  _srClose();
+  if(typeof renderMoney==='function')renderMoney();
+  if(typeof updateHoleUI==='function')updateHoleUI();
+  if(typeof renderBoard==='function')renderBoard();
+};
+// Flip the under-9 opt-in from the round card.
+window._srToggleRoundStd=function(r,fromSheet){
+  if(!canEditTrip())return;
+  if((STATE.settledRounds||[]).includes(r)){showMsg('This round is already settled.');return;}
+  const rd=WK.rounds[r];
+  if(rd.shortInStandings===true)delete rd.shortInStandings; else rd.shortInStandings=true;
+  autoSave();s2WriteActive();
+  if(typeof renderMoney==='function')renderMoney();
+  if(typeof renderBoard==='function')renderBoard();
+  if(fromSheet)window._srStatusSheet(r);
+};
+// Everything about an ended round, in one place, reached from the hole grid.
+window._srStatusSheet=function(r){
+  const fls=flightsForRound(r);
+  const ended=fls.map((_,i)=>i).filter(i=>fsEndedShort(r,i));
+  if(!ended.length)return;
+  const std=standingsHoleCount(r);
+  const settled=(STATE.settledRounds||[]).includes(r);
+  const canEdit=canEditTrip()&&!settled&&!isRoundLocked(r);
+  const inStd=WK.rounds[r].shortInStandings===true;
+  const old=document.getElementById('srStatusSheet');if(old)old.remove();
+  const el=document.createElement('div');
+  el.id='srStatusSheet';
+  el.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:9999';
+  const who=ended.map(i=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--color-border-tertiary);border-radius:10px;background:var(--color-background-secondary);margin-bottom:8px">
+      <span style="font-size:13px;font-weight:600;color:var(--color-text-primary)">${fls.length>1?'Foursome '+(i+1):'This round'}</span>
+      <span style="font-size:13px;color:var(--color-text-secondary)">ended at hole ${fsHoleCount(r,i)}</span></div>`).join('');
+  const stdBlock=std<9
+    ? `<div class="sr-info">A round needs at least 9 holes to count toward the weekend standings. This one stopped at ${std}. Either way the games settle normally and everyone gets paid.</div>`+
+      (canEdit?`<div class="sr-toggle" onclick="_srToggleRoundStd(${r},1)"><div class="sr-tl">Count toward the weekend<small>Leave off and the weekend standings skip this round</small></div><div class="sr-sw${inStd?' on':''}"></div></div>`
+             :`<div class="sr-stdnote" style="border-radius:10px;margin-bottom:14px">${inStd?'Counting toward the weekend.':'Sitting out the weekend standings.'}</div>`)
+    : `<div class="sr-stdnote" style="border-radius:10px;margin-bottom:14px">Standings count ${std} hole${std===1?'':'s'}, the shortest foursome.</div>`;
+  el.innerHTML=`<div style="background:var(--color-background-primary);border-radius:16px 16px 0 0;padding:6px 16px 22px;width:100%;max-width:480px;max-height:88vh;overflow:auto">
+      <div style="width:36px;height:4px;border-radius:2px;background:var(--color-border-secondary);margin:0 auto 14px"></div>
+      <h3 style="font-size:16px;font-weight:600;margin:0 0 5px;color:var(--color-text-primary)">Round status</h3>
+      <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 14px;line-height:1.45">Play was called early on this round.</p>
+      ${who}${stdBlock}
+      ${canEdit?`<button class="sr-btn" style="width:100%;margin-bottom:9px" onclick="document.getElementById('srStatusSheet').remove();_srResume(${r},null)">Resume round</button>`:''}
+      <button class="sr-btn go" style="width:100%" onclick="document.getElementById('srStatusSheet').remove()">Done</button>
+    </div>`;
+  el.addEventListener('click',e=>{if(e.target===el)el.remove();});
+  document.body.appendChild(el);
+};
+window._srResumeDo=function(r,fis){
+  const err=window._resumeRound(r,fis);
+  if(err){showMsg(err);return;}
+  const m=document.getElementById('srResumeSheet');if(m)m.remove();
+  if(typeof renderMoney==='function')renderMoney();
+  if(typeof updateHoleUI==='function')updateHoleUI();
+  if(typeof renderBoard==='function')renderBoard();
+};
+// End round asks who stopped; Resume used to just act, and from the hole grid it acted
+// on the current foursome only. On a two-foursome round that meant two taps in two
+// places with nothing on screen saying so.
+window._srResume=function(r,fi){
+  const fls=flightsForRound(r);
+  const ended=fls.map((_,i)=>i).filter(i=>fsEndedShort(r,i));
+  if(ended.length<=1){window._srResumeDo(r,ended.length?ended:[fi==null?0:fi]);return;}
+  const old=document.getElementById('srResumeSheet');if(old)old.remove();
+  const el=document.createElement('div');
+  el.id='srResumeSheet';
+  el.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:9999';
+  const rows=ended.map(i=>`<button class="sr-btn" style="width:100%;margin-bottom:8px;text-align:left" onclick="_srResumeDo(${r},[${i}])">Foursome ${i+1} only <span style="color:var(--color-text-secondary);font-weight:400">- ended at ${fsHoleCount(r,i)}</span></button>`).join('');
+  el.innerHTML=`<div style="background:var(--color-background-primary);border-radius:16px 16px 0 0;padding:6px 16px 22px;width:100%;max-width:480px">
+      <div style="width:36px;height:4px;border-radius:2px;background:var(--color-border-secondary);margin:0 auto 14px"></div>
+      <h3 style="font-size:16px;font-weight:600;margin:0 0 5px;color:var(--color-text-primary)">Resume the round</h3>
+      <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 14px;line-height:1.45">Holes after the end hole can be scored again. Nothing already entered is lost.</p>
+      ${rows}
+      <button class="sr-btn go" style="width:100%;margin-bottom:12px" onclick="_srResumeDo(${r},[${ended.join(',')}])">Everyone</button>
+      <button class="sr-btn" style="width:100%" onclick="document.getElementById('srResumeSheet').remove()">Cancel</button>
+    </div>`;
+  el.addEventListener('click',e=>{if(e.target===el)el.remove();});
+  document.body.appendChild(el);
+};
+// How many holes past `count` still hold a score for this foursome. These are holes the
+// declaration says were not played, and every game except Razzle will keep counting
+// them, so they are worth naming out loud.
+function _fsScoredPast(r,fi,count){
+  const off=holeOffset(r),full=roundHoleCount(r);
+  const mem=(flightsForRound(r)[fi]||[]).filter(pi=>typeof pi==='number'&&pi>=0);
+  let n=0;
+  for(let k=count;k<full;k++){
+    const row=STATE.scores&&STATE.scores[r]&&STATE.scores[r][off+k];
+    if(row&&mem.some(pi=>row[pi]!==null&&row[pi]!==undefined))n++;
+  }
+  return n;
+}
+function _srRenderSheet(){
+  const s=STATE._srSheet;if(!s)return;
+  const r=s.r,fls=flightsForRound(r);
+  if(s.all&&fls.some((_,fi)=>fsEndedShort(r,fi))){s.all=false;}
+  const fis=_srFis();
+  const cap=Math.min.apply(null,fis.map(fi=>_fsScoredThrough(r,fi)));
+  if(s.count>cap)s.count=cap;
+  const full=roundHoleCount(r);
+  // What the standings horizon WOULD be once this is applied. Every other foursome
+  // keeps whatever it already has.
+  const projected=Math.min.apply(null,fls.map((_,fi)=>fis.indexOf(fi)>=0?s.count:fsHoleCount(r,fi)));
+  const under9=projected<9;
+  const opt=(sel,val,name,sub,dis)=>`<div class="sr-opt${sel?' sel':''}${dis?' dis':''}"${dis?'':` onclick="_srPick('${val}')"`}><div class="sr-radio"></div><div class="sr-nm">${name}<small>${sub}</small></div></div>`;
+  let opts='';
+  if(fls.length>1){
+    fls.forEach((mem,fi)=>{
+      const nm=(mem||[]).filter(pi=>pi>=0).map(pi=>displayName(pi)).join(', ');
+      const _oEnded=fsEndedShort(r,fi);
+      opts+=opt(!s.all&&s.pick===fi,String(fi),'Foursome '+(fi+1)+(_oEnded?' \u00b7 already ended at '+fsHoleCount(r,fi):''),
+        nm+' - thru '+_fsScoredThrough(r,fi));
+    });
+    const _anyEnded=fls.some((_,fi)=>fsEndedShort(r,fi));
+    opts+=opt(s.all&&!_anyEnded,'all','Everyone',
+      _anyEnded?'Not available once a foursome has ended, it would pull the others back':'Every foursome stopped',
+      _anyEnded);
+  }
+  const canGo=cap>=1&&s.count>=1&&s.count<full;
+  let warn=cap<1?`<div class="sr-warn">Nothing to end yet: no hole has every score in.</div>`:'';
+  // Stale scores past the proposed end hole. Named, never deleted.
+  if(cap>=1){
+    const stale=fis.map(fi=>({fi,n:_fsScoredPast(r,fi,s.count)})).filter(x=>x.n>0);
+    if(stale.length){
+      const who=stale.map(x=>(fls.length>1?'Foursome '+(x.fi+1)+' has ':'There are ')+x.n+' hole'+(x.n===1?'':'s')).join(' and ');
+      warn+=`<div class="sr-warn">${who} scored past hole ${s.count}. Those holes will still count in the games. Clear them first if they were entered by mistake.</div>`;
+    }
+  }
+  const info=under9?`<div class="sr-info">A round needs at least 9 holes to count toward the weekend standings. This one stopped at ${projected}, so it will sit out the final tally unless you turn it on below. Either way the games settle normally and everyone gets paid.</div>`+
+    `<div class="sr-toggle" onclick="_srToggleStd()"><div class="sr-tl">Count toward the weekend<small>Leave off and the weekend standings skip this round</small></div><div class="sr-sw${s.inStd?' on':''}"></div></div>`:'';
+  const old=document.getElementById('srSheet');if(old)old.remove();
+  const m=document.createElement('div');
+  m.id='srSheet';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:9999';
+  m.innerHTML=`<div style="background:var(--color-background-primary);border-radius:16px 16px 0 0;padding:6px 16px 22px;width:100%;max-width:480px;max-height:88vh;overflow:auto">
+      <div style="width:36px;height:4px;border-radius:2px;background:var(--color-border-secondary);margin:0 auto 14px"></div>
+      <h3 style="font-size:16px;font-weight:600;margin:0 0 5px;color:var(--color-text-primary)">End the round at hole ${s.count}</h3>
+      <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 14px;line-height:1.45">Hole${s.count+1===full?'':'s'} ${s.count+1}${s.count+1===full?'':' to '+full} will not be played.${fls.length>1?' Pick who stopped.':''}</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;margin-bottom:12px;border:1px solid var(--color-border-tertiary);border-radius:10px;background:var(--color-background-secondary)">
+        <span style="font-size:13px;font-weight:600;color:var(--color-text-primary)">Last hole played</span>
+        <span style="display:flex;align-items:center;gap:12px">
+          <button class="sr-btn" style="padding:4px 12px;font-size:16px" onclick="_srCount(-1)">-</button>
+          <span style="font-size:15px;font-weight:600;min-width:22px;text-align:center;color:var(--color-text-primary)">${s.count}</span>
+          <button class="sr-btn" style="padding:4px 12px;font-size:16px" onclick="_srCount(1)">+</button>
+        </span>
+      </div>
+      ${opts}${warn}${info}
+      <div class="sr-btns"><button class="sr-btn" onclick="_srClose()">Cancel</button>
+      <button class="sr-btn go" ${canGo?'':'disabled'} onclick="_srConfirm()">${fis.every(fi=>fsEndedShort(r,fi))?'Update end hole':'End round'}</button></div>
+    </div>`;
+  m.addEventListener('click',e=>{if(e.target===m)_srClose();});
+  document.body.appendChild(m);
+}
+window._srClose=_srClose;
 window._gsToggleSetup=function(gameId){
   if(!STATE.gamesSetupOpen)STATE.gamesSetupOpen={};
   STATE.gamesSetupOpen[gameId]=!STATE.gamesSetupOpen[gameId];
@@ -12463,8 +12905,8 @@ function _gsRazzleSetupBody(r){
   if(_rzFin==='leader'){
     const _rzCB=_gsOptVal('razzleFinalCloseBonus',r,false)===true;
     const _rzBB=_gsOptVal('razzleFinalBirdieBonus',r,false)===true;
-    h+=`<div class="setup-row" style="padding-left:14px"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Pay sweep and 5-hole bonus</span><label class="toggle"><input type="checkbox"${_rzCB?' checked':''} onchange="_gsOptSet('razzleFinalCloseBonus',${r},this.checked);autoSave();s2WriteActive()"><span class="toggle-slider"></span></label></div>`;
-    h+=`<div class="setup-row" style="padding-left:14px"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Pay birdie bonus</span><label class="toggle"><input type="checkbox"${_rzBB?' checked':''} onchange="_gsOptSet('razzleFinalBirdieBonus',${r},this.checked);autoSave();s2WriteActive()"><span class="toggle-slider"></span></label></div>`;
+    h+=`<div class="setup-row" style="padding-left:14px"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Leader also takes the 5-hole bonus</span><label class="toggle"><input type="checkbox"${_rzCB?' checked':''} onchange="_gsOptSet('razzleFinalCloseBonus',${r},this.checked);autoSave();s2WriteActive()"><span class="toggle-slider"></span></label></div>`;
+    h+=`<div class="setup-row" style="padding-left:14px"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Leader also takes the birdie bonus</span><label class="toggle"><input type="checkbox"${_rzBB?' checked':''} onchange="_gsOptSet('razzleFinalBirdieBonus',${r},this.checked);autoSave();s2WriteActive()"><span class="toggle-slider"></span></label></div>`;
   }
   h+=`<div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Settlement</span><select class="ie-sel" onchange="_gsOptSet('razzleSettle',${r},this.value);autoSave();s2WriteActive()"><option value="perplayer"${roundVal('razzleSettle',r,WK.razzleSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${roundVal('razzleSettle',r,WK.razzleSettle||'perplayer')==='perteam'?' selected':''}>Per team</option></select></div>`;
   return h;
@@ -12973,7 +13415,7 @@ function renderMPRound(){
     html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
     const _winLblA=_huRnd?nameA:'A',_winLblB=_huRnd?nameB:'B';
     const anyPressLive=presses.some(p=>{const pr=calcPressResult(r,_fi,si,p);return pr&&!pr.closed&&pr.holesLeft>0;});
-    const netResultLabel2=(()=>{if(!finalMs)return'Not started';if(_mpPhase(finalMs)==='ip')return'In progress';if(anyPressLive)return'In progress';if(!finalMs.closed){if(pressNetA>0)return`${_winLblA} wins · $${Math.abs(pressNetA).toFixed(2)}`;if(pressNetA<0)return`${_winLblB} wins · $${Math.abs(pressNetA).toFixed(2)}`;return finalMs.scoreStr.replace('Team A',_winLblA).replace('Team B',_winLblB);}if(pressNetA===0)return'No Blood';return pressNetA>0?`${_winLblA} wins · $${Math.abs(pressNetA).toFixed(2)}`:`${_winLblB} wins · $${Math.abs(pressNetA).toFixed(2)}`;})();
+    const netResultLabel2=(()=>{if(_segNotPlayed(r,_fi,seg))return'Not played';if(!finalMs)return'Not started';if(_mpPhase(finalMs)==='ip')return'In progress';if(anyPressLive)return'In progress';if(!finalMs.closed){if(pressNetA>0)return`${_winLblA} wins · $${Math.abs(pressNetA).toFixed(2)}`;if(pressNetA<0)return`${_winLblB} wins · $${Math.abs(pressNetA).toFixed(2)}`;return finalMs.scoreStr.replace('Team A',_winLblA).replace('Team B',_winLblB);}if(pressNetA===0)return'No Blood';return pressNetA>0?`${_winLblA} wins · $${Math.abs(pressNetA).toFixed(2)}`:`${_winLblB} wins · $${Math.abs(pressNetA).toFixed(2)}`;})();
     const netResultClr2=(_mpPhase(finalMs)==='ip'||anyPressLive)?'var(--color-text-secondary)':(pressNetA>0?'#1D9E75':pressNetA<0?'#185FA5':'var(--color-text-secondary)');
     html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleMPGame('${key}')">`;
     html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">Match ${si+1} · H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
@@ -13125,14 +13567,15 @@ function _renderVegasFlightBlock(r,fi,labelHd){
     for(let h=seg.start;h<seg.end;h++){const res=calcVegas(h+_off_vr,r,fi);if(!res||res.tied)continue;if(res.aWins)totA+=res.diff;else totB+=res.diff;}
     const net=totA-totB;
     let summaryHtml;
-    if(totA===0&&totB===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
+    if(_segNotPlayed(r,fi,seg)){summaryHtml=`<span style="color:var(--color-text-tertiary);font-size:12px">Not played</span>`;}
+    else if(totA===0&&totB===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
     else if(net===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">No Blood</span>`;}
     else{const winLtr2=net>0?'A':'B';const winClr=net>0?'#1D9E75':'#185FA5';const absDiff=Math.abs(net);summaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winLtr2} wins · +${absDiff} pts</span>`;}
     html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
     html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleVegasGame('${key}')">`;
     html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">Match ${si+1} &middot; H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
     html+=`<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#1D9E75;margin-bottom:2px">TEAM A</div><div style="font-size:11px;font-weight:500;color:#1D9E75">${nameA}</div></div><div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">${nameB}</div></div></div>`;
-    const vegNetLabel=(()=>{if(totA===0&&totB===0)return'In progress';const n2=totA-totB;if(n2===0)return'No Blood';return n2>0?`A wins · +${Math.abs(n2)} pts`:`B wins · +${Math.abs(n2)} pts`;})();
+    const vegNetLabel=(()=>{if(_segNotPlayed(r,fi,seg))return'Not played';if(totA===0&&totB===0)return'In progress';const n2=totA-totB;if(n2===0)return'No Blood';return n2>0?`A wins · +${Math.abs(n2)} pts`:`B wins · +${Math.abs(n2)} pts`;})();
     const vegNetClr=(totA-totB)>0?'#1D9E75':(totA-totB)<0?'#185FA5':'var(--color-text-secondary)';
     html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Match Result: <span style="font-weight:500;color:${vegNetClr}">${vegNetLabel}</span></div>`;
     html+=`</div>`;
@@ -13166,6 +13609,20 @@ function _renderVegasFlightBlock(r,fi,labelHd){
 }
 // Settlement helper — returns per-player value based on settle setting
 function settleVal(val,teamSize,settle){return settle==='perteam'?val/teamSize:val;}
+// How a Match Play segment settles when the round ended before its holes ran out.
+// Returns the winner to record: unchanged when the segment ran its course or the match
+// was already decided, and 'tie' when the rule says void and the match was still live.
+//
+// segEnd is the segment's last hole as an offset within the round, so it compares
+// directly against fsHoleCount, which is a count of holes for this foursome.
+function _mpSegDisposition(r,fi,segEnd,pA,pB,winner){
+  const played=Math.min(segEnd,fsHoleCount(r,fi));
+  const remaining=segEnd-played;
+  if(remaining<=0)return winner;                 // the segment got all its holes
+  if(Math.abs(pA-pB)>remaining)return winner;    // already decided, rain changes nothing
+  const rule=roundValFs('mpFinalSeg',r,fi,'leader');
+  return rule==='void'?'tie':winner;
+}
 function calcRoundMP(r){
   const n=WK.players.length,net=Array(n).fill(0);
   const _th=roundHoleCount(r);const _off=holeOffset(r);
@@ -13183,7 +13640,7 @@ function calcRoundMP(r){
         if(piA===undefined||piB===undefined)return;
         let pA=0,pB=0;
         for(let h=seg.start;h<seg.end;h++){const res=calcMPHU(h+_off,r,fi,mi);if(!res)continue;if(res.aWins)pA++;else if(res.halved){pA+=0.5;pB+=0.5;}else pB++;}
-        const winner=pA>pB?'a':pB>pA?'b':'tie';
+        const winner=_mpSegDisposition(r,fi,seg.end,pA,pB,pA>pB?'a':pB>pA?'b':'tie');
         if(winner==='a'){net[piA]+=mpVal;net[piB]-=mpVal;}
         else if(winner==='b'){net[piB]+=mpVal;net[piA]-=mpVal;}
         // Add press results for this match
@@ -13193,7 +13650,7 @@ function calcRoundMP(r){
     }else{
       let pA=0,pB=0;
       for(let h=seg.start;h<seg.end;h++){const res=calcMP(h+_off,r,fi);if(!res)continue;if(res.aWins)pA++;else if(res.halved){pA+=0.5;pB+=0.5;}else pB++;}
-      const winner=pA>pB?'a':pB>pA?'b':'tie';
+      const winner=_mpSegDisposition(r,fi,seg.end,pA,pB,pA>pB?'a':pB>pA?'b':'tie');
       const mpSv=settleVal(mpVal,tm[0].length,WK.mpSettle||'perplayer');
       if(winner==='a'){tm[0].forEach(pi=>net[pi]+=mpSv);tm[1].forEach(pi=>net[pi]-=mpSv);}
       else if(winner==='b'){tm[1].forEach(pi=>net[pi]+=mpSv);tm[0].forEach(pi=>net[pi]-=mpSv);}
@@ -13267,7 +13724,32 @@ function calcRoundTwos(r){
   });
   return twos;
 }
-function isRoundComplete(r){const n=roundHoleCount(r),off=holeOffset(r);for(let hi=off;hi<off+n;hi++){if(!STATE.scores[r][hi]||!STATE.scores[r][hi].every(s=>s!==null))return false;}return true;}
+function isRoundComplete(r){
+  const off=holeOffset(r);
+  // Untouched v119.11 path. Byte for byte, so a trip with no ended round runs the
+  // code it always ran rather than a rewrite that merely agrees.
+  if(!fsEndHolesRaw(r)){
+    const n=roundHoleCount(r);
+    for(let hi=off;hi<off+n;hi++){if(!STATE.scores[r][hi]||!STATE.scores[r][hi].every(s=>s!==null))return false;}
+    return true;
+  }
+  // A round is complete when every foursome has scores through ITS OWN end hole. A
+  // foursome that ended at 14 is done; its neighbour that played 18 is judged on 18.
+  // Ending never excuses a gap inside the range a foursome actually played, and never
+  // excuses another foursome's gap.
+  const fls=flightsForRound(r);
+  for(let fi=0;fi<fls.length;fi++){
+    const mem=(fls[fi]||[]).filter(pi=>typeof pi==='number'&&pi>=0);
+    if(!mem.length)continue;
+    const n=fsHoleCount(r,fi);
+    for(let hi=off;hi<off+n;hi++){
+      const row=STATE.scores[r][hi];
+      if(!row)return false;
+      for(let k=0;k<mem.length;k++){const s=row[mem[k]];if(s===null||s===undefined)return false;}
+    }
+  }
+  return true;
+}
 function settleRound(r){
   if(!STATE.settledRounds)STATE.settledRounds=[];
   if(!STATE.lockedRounds)STATE.lockedRounds=[];
@@ -13445,10 +13927,38 @@ function renderMoney(){
     const summParts=complete?WK.players.map((p,i)=>`<span style="color:${roundNet[i]>0?'#1D9E75':roundNet[i]<0?'#D85A30':'var(--color-text-secondary)'};font-size:11px">${displayName(i)} ${fmt(roundNet[i])}</span>`).join('<span style="color:var(--color-text-tertiary);margin:0 2px">·</span>'):`<span style="font-size:11px;color:var(--color-text-secondary)">In progress</span>`;
 
     html+=`<div class="section-card round-card-collapsed" id="rcard-${r}" style="margin-bottom:14px;${settled?'opacity:0.6;':''}">`;
-    const lkd_r=isRoundLocked(r);html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard(${r})"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-primary)">${roundLabel(r)} - ${courseDisp(WK.rounds[r].courseName)}${lkd_r?' 🔒':''} </span><div style="display:flex;gap:4px;flex-wrap:wrap">${summParts}</div></div><div style="display:flex;align-items:center;gap:8px">${settled&&!changed?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:settled&&changed?`<span style="color:#D97706;font-size:11px">⚠ Changed</span><button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:complete?`<button class="btn-sm" onclick="event.stopPropagation();settleRound(${r})">Settle</button>`:''} ${lkd_r&&!settled?`<button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unlockRound(${r})">Unlock</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
+    const lkd_r=isRoundLocked(r);html+=`<div class="section-hd" style="cursor:pointer" onclick="toggleRoundCard(${r})"><div style="display:flex;flex-direction:column;gap:3px;flex:1"><span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-primary)">${roundLabel(r)} - ${courseDisp(WK.rounds[r].courseName)}${lkd_r?' 🔒':''} </span><div style="display:flex;gap:4px;flex-wrap:wrap">${summParts}${_roundHasEnd(r)?`<span class="sr-chip">${_endChipLabel(r)}</span>`:''}</div></div><div style="display:flex;align-items:center;gap:8px">${settled&&!changed?`<button class="btn-sm" style="font-size:10px;" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:settled&&changed?`<span style="color:#D97706;font-size:11px">⚠ Changed</span><button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unsettleRound(${r})">Unsettle</button>`:complete?`<button class="btn-sm" onclick="event.stopPropagation();settleRound(${r})">Settle</button>`:''} ${lkd_r&&!settled?`<button class="btn-sm" style="font-size:10px" onclick="event.stopPropagation();unlockRound(${r})">Unlock</button>`:''}<span class="round-card-chevron">▼</span></div></div>`;
     html+=`<div class="round-card-body">`;
-    if(changed)html+=`<div style="padding:8px 12px;background:#FEF3C7;border-bottom:0.5px solid #F59E0B;font-size:12px;color:#92400E">⚠ Scores edited after settlement - amounts are current.</div>`;
-    if(!complete){html+=`<div class="pending-box">Scores incomplete</div></div></div>`;return;}
+    // One warning treatment in the app, not two. This was the only hardcoded light
+    // amber banner; the status pill and the skins badge are different things that
+    // merely shared the palette, and they are left alone.
+    if(changed)html+=`<div class="sr-warn" style="margin:0;border-radius:0;border-left:none;border-bottom:0.5px solid #D97706">⚠ Scores edited after settlement - amounts are current.</div>`;
+    if(_roundHasEnd(r)){
+      const _srStd=standingsHoleCount(r);
+      const _srAll=flightsForRound(r).map((_,fi)=>fsHoleCount(r,fi));
+      html+=`<div class="sr-stdnote">Standings count ${_srStd} hole${_srStd===1?'':'s'}, the shortest foursome.${new Set(_srAll).size>1?' Each foursome\u2019s games settle on its own holes.':''}</div>`;
+      // The weekend opt-in used to live here. It is a setting, and Money reports rather
+      // than configures, so it moved to the round status sheet on the Scores tab where
+      // the rest of the ending flow already lives. This line stays read-only.
+      if(_srStd<9){
+        const _srIn=WK.rounds[r].shortInStandings===true;
+        html+=`<div class="sr-stdnote">${_srIn?'Under 9 holes, counting toward the weekend standings by choice.':'Under 9 holes, so this round sits out the weekend standings.'}</div>`;
+      }
+    }
+    if(!complete){
+      // The escape hatch belongs exactly where you go looking for Settle and find
+      // nothing. Only offered when the round could actually be ended.
+      const _srCan=canEditTrip()&&!isRoundLocked(r)&&!(STATE.settledRounds||[]).includes(r)
+        &&flightsForRound(r).some((_,fi)=>_fsScoredThrough(r,fi)>=1);
+      const _srWaiting=_roundHasEnd(r)
+        ?flightsForRound(r).map((_,fi)=>fsEndedShort(r,fi)?null:'Foursome '+(fi+1)).filter(Boolean)
+        :[];
+      html+=`<div class="pending-box">`;
+      html+=_srWaiting.length
+        ?`<span style="display:block;margin-bottom:9px">Still waiting on ${_srWaiting.join(' and ')}.</span>`
+        :`<span style="display:block;margin-bottom:9px">Scores incomplete through hole ${roundHoleCount(r)}.</span>`;
+      if(_srCan)html+=`<button class="sr-link" onclick="_endRoundSheet(${r})">Play called early? End the round here</button>`;
+      html+=`</div></div></div>`;return;}
 
     if(gameOn('skins',r)&&skR&&skR.gameResults.length){
       const isIndivMoney=WK.skinsFmt==='individual';
@@ -15258,7 +15768,7 @@ function showRoundDetails(){
     const eff=_effOf(pi);
     // Find stroke holes (1-indexed for display). Uses game or weekend strokes per view.
     const strokeHoles=[];const giveHoles=[];
-    const _off_sh=holeOffset(r),_n_sh=roundHoleCount(r);for(let hi=_off_sh;hi<_off_sh+_n_sh;hi++){const _sh=_strokesOf(pi,hi);if(_sh>0)strokeHoles.push(hi+1);else if(_sh<0)giveHoles.push(hi+1);}
+    const _off_sh=holeOffset(r),_n_sh=standingsHoleCount(r);for(let hi=_off_sh;hi<_off_sh+_n_sh;hi++){const _sh=_strokesOf(pi,hi);if(_sh>0)strokeHoles.push(hi+1);else if(_sh<0)giveHoles.push(hi+1);}
     return{name:displayName(pi),bg:p.bg,fg:p.fg,ini:p.ini,idx:sbHcpDisplay(idx),wkndIdx:sbHcpDisplay(wkndIdx),ch:chDisplay(ch),eff:chDisplay(eff),strokeHoles,giveHoles};
   });
   const netOffLowActive=_gameView?true:STATE.netOffLow;
