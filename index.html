@@ -1177,6 +1177,9 @@ body.force-light{
 .fb-pot .l{font-size:11px;color:#9FE1CB;text-transform:uppercase;letter-spacing:0.06em;}
 .fb-pot .v{font-size:19px;font-weight:600;color:#E1F5EE;}
 .fb-cap{padding:8px 12px;font-size:10.5px;color:var(--color-text-tertiary);line-height:1.5;}
+    /* Explains money rather than adding any, so it is NOT the green every other Four-Ball
+       accent uses. Same reasoning as the v119.31 Razzle awarded tag. */
+    .fb-tie{padding:8px 12px;font-size:11px;color:var(--color-text-secondary);line-height:1.5;border-top:0.5px solid var(--color-border-tertiary);}
 .fb-warn{padding:8px 12px;font-size:11px;color:#D85A30;line-height:1.5;}
 .fb-note{padding:9px 12px;font-size:11px;color:var(--color-text-secondary);line-height:1.5;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);}
 .fb-note b{color:var(--color-text-primary);font-weight:600;}
@@ -1670,12 +1673,25 @@ function _pencilMergeCellPure(base,r,fi,cell){fi=fi||0;var out=Array.isArray(bas
 function _pencilPadSet(arr,r,fi,cell){while(arr.length<=r)arr.push(null);if(!Array.isArray(arr[r]))arr[r]=(arr[r]==null?[]:[arr[r]]);while(arr[r].length<=fi)arr[r].push(null);arr[r][fi]=cell;return arr;}
 function _pencilRowArr(r){return WK?_pencilRowArrOf(WK._pencilLock||[],r):[];}
 function _curFi(r){return getFlightPick(r)||0;}
+// A null pick is NOT foursome 0. _curFi collapses the two deliberately, because a dozen
+// read sites need some index to render against, but every surface that offers an ACTION
+// has to tell them apart: before a pick there is no pencil to claim, no foursome to be a
+// viewer of, and no game box that belongs to anybody. v119.34.
+var _FS_GAME_WRAP_IDS=['hammerBoxWrap','wolfBoxWrap','fbBoxWrap','snakeEntryWrap','skinsBoxWrap','razzleBoxWrap','mpBoxWrap','vegasBoxWrap','ninesBoxWrap'];
+function _fsPickPending(r){if(typeof isMultiFlight!=='function'||!isMultiFlight(r))return false;return getFlightPick(r)===null;}
+// renderScorecard returns early at the picker, and five of the nine boxes are only
+// rendered from AFTER that return, so they keep whatever the last successful render left
+// in them - a previous round's card, carried across switchEntryRound. Clearing is the
+// only thing that reaches them.
+function _fsBlankGameBoxes(){_FS_GAME_WRAP_IDS.forEach(function(id){var el=document.getElementById(id);if(el){el.innerHTML='';el.style.cssText='';}});}
 function _pencilLockFor(r,fi){fi=fi||0;if(!WK)return null;var row=_pencilRowArr(r);return row[fi]||null;}
 function _pencilViewerLocked(r,fi){if(!_pencilActive())return false;return !holdsPencil(r,fi);}
 function _updateActionRowGameLock(){
   var r=STATE.currentRound;
-  var locked=_pencilViewerLocked(r,_curFi(r));
-  ['hammerBoxWrap','wolfBoxWrap','fbBoxWrap','snakeEntryWrap','skinsBoxWrap','razzleBoxWrap','mpBoxWrap','vegasBoxWrap','ninesBoxWrap'].forEach(function(id){
+  // Pending pick stands down rather than dimming: _pencilViewerLocked would evaluate
+  // foursome 0 and declare the user a view-only observer of a group they have not chosen.
+  var locked=!_fsPickPending(r)&&_pencilViewerLocked(r,_curFi(r));
+  _FS_GAME_WRAP_IDS.forEach(function(id){
     var el=document.getElementById(id);
     if(el)el.style.cssText=locked?'opacity:0.5;pointer-events:none':'';
   });
@@ -1691,7 +1707,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v119.33';
+const APP_VERSION='v119.38';
 
 // ===== THEME =====
 (function(){
@@ -6550,6 +6566,17 @@ function _updateActionRow(){
   row.style.gridTemplateColumns='';
   row.style.background='';
   var _gridBtn='<button class="act-tog" id="actTogBtn" onclick="window._actToggleView()" title="Card view"><i class="ti ti-layout-grid"></i></button>';
+  // No foursome picked yet. Start Scoring here would claim foursome 0's pencil for
+  // whoever taps it, and Save & Continue would demand a score from every player in the
+  // field. Text-plus-grid shape borrowed from the viewing state, in neutral grey: nothing
+  // is held, there is simply no foursome yet. The grid button stays because card view is
+  // field-wide and needs no pick.
+  if(_fsPickPending(r)){
+    row.style.gridTemplateColumns='1fr 64px';
+    row.innerHTML='<div class="act-fs-pending" style="display:flex;align-items:center;min-width:0;font-size:13px;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Pick your foursome to start scoring</div>'+_gridBtn;
+    _updateActionRowGameLock();
+    return;
+  }
   if(!isReadOnly&&_pencilActive()){
     const _arFi=_curFi(r);
     if(pencilUnheld(r,_arFi)){
@@ -7199,6 +7226,7 @@ function renderScorecard(){
   if(isMultiFlight(r)){
     _fp=getFlightPick(r);
     if(_fp===null){
+      _fsBlankGameBoxes();
       const _fl=flightsForRound(r);
       let _promptHtml='<div class="fs-pick-prompt"><div class="fpp-t">Select your foursome</div>';
       for(let _fi=0;_fi<_fl.length;_fi++){
@@ -7449,6 +7477,59 @@ function fbTeamNo(r,team){
 }
 // Rank plus finishing position. Ties share a position and consume the ones below it,
 // as in every real leaderboard: 1, T2, T2, 4. The ONLY source of a Four-Ball position.
+// The rungs of a Four-Ball key, in the order fbRank concatenates them: two base terms,
+// then fbCountback's four. Index 5 is the raw 18-hole total, reachable only when two teams
+// tie on TO PAR while playing different pars, which needs different holes played.
+var _FB_KEY_RUNGS=[null,null,'back 9','last 6','last 3','all 18'];
+// Which rung separated two teams, or null if their keys never diverge. Read-only.
+function fbTieRung(a,b){
+  if(!Array.isArray(a)||!Array.isArray(b))return null;
+  const n=Math.min(a.length,b.length);
+  for(let i=0;i<n;i++)if(a[i]!==b[i])return{idx:i,label:_FB_KEY_RUNGS[i]||null};
+  return null;
+}
+// Which finishing positions actually take money, mirroring the awards array
+// calcRoundFourBall builds - including its rule that Top 2 needs three teams, since with
+// two the second place IS last place. Read separately on purpose: if the pays rule ever
+// moves, this shows up as a diff here rather than as a note describing an unpaid row.
+function fbPayingPositions(rows,r){
+  const d=fbDefaults(r);
+  return (d.pays===2&&rows&&rows.length>=3)?[1,2]:[1];
+}
+var _FB_PLACE=[null,'First place','Second place'];
+// One line per paying position that ended in a tie, in finishing order. Only once the pot
+// is real: a provisional board has not broken anything yet.
+function fbTieLines(rows,r,done){
+  const out=[];
+  if(!done||!rows||rows.length<2)return out;
+  const d=fbDefaults(r);
+  fbPayingPositions(rows,r).forEach(function(pos){
+    const i=rows.findIndex(function(x){return x.pos===pos;});
+    // No row holds this position, which is what a tie SPANNING it looks like: two teams
+    // both on pos 1 leave nothing on pos 2, and the pos 1 line already covers them.
+    if(i<0)return;
+    const a=rows[i];
+    if(!a.card.played)return;
+    const place=_FB_PLACE[pos]||('Position '+pos);
+    const at=place+' tied at '+_fbToPar(a.card.toPar)+'. ';
+    // Teams sharing this position: the tie was never broken and they share the money.
+    const bucket=rows.filter(function(x){return x.pos===pos;}).length;
+    if(bucket>1){
+      out.push(d.tie==='countback'
+        ? at+'Countback could not separate them, so the money is split '+bucket+' ways.'
+        : at+'Money split '+bucket+' ways.');
+      return;
+    }
+    // Held outright, but check whether it was a tie the countback resolved.
+    const b=rows[i+1];
+    if(!b||!b.card.played)return;
+    if(a.key[0]!==b.key[0]||a.key[1]!==b.key[1])return;
+    const rung=fbTieRung(a.key,b.key);
+    if(!rung||!rung.label)return;
+    out.push(at+'Tie broken by countback: '+rung.label+'.');
+  });
+  return out;
+}
 function fbStandings(pool,r){
   const rows=fbRank(pool,r);
   let pos=1;
@@ -8640,8 +8721,8 @@ function renderHoleDots(){const r=STATE.currentRound;const nHoles=roundHoleCount
   const makeDot=(i)=>{const done=STATE.scores[r][i]&&_need.every(function(pi){return STATE.scores[r][i][pi]!==null;});return'<div class="hdot'+(done?' done':'')+(_srShort&&i>=_srEnd?' sr-void':'')+(i===STATE.currentHole?' cur':'')+'" onclick="jumpHole('+i+')">'+(i+1)+'</div>';};let html='';if(nHoles<=9){html='<div class="hole-dots-row">'+Array.from({length:nHoles},(_,i)=>makeDot(i+off)).join('')+'</div>';}else{const front=Array.from({length:9},(_,i)=>makeDot(i)).join('');const back=Array.from({length:nHoles-9},(_,i)=>makeDot(i+9)).join('');html='<div class="hole-dots-row">'+front+'</div><div class="hole-dots-row">'+back+'</div>';}  // Placement B: a quiet link, not a filled button, and only in the window where
   // ending is meaningful. A mis-tap opens the sheet and nothing else.
   const _srDone=_fsScoredThrough(r,_srFi);
-  const _srOk=canEditTrip()&&!isRoundLocked(r)&&!(STATE.settledRounds||[]).includes(r);
-  if(_srShort){
+  const _srOk=!_fsPickPending(r)&&canEditTrip()&&!isRoundLocked(r)&&!(STATE.settledRounds||[]).includes(r);
+  if(_srShort&&!_fsPickPending(r)){
     // Informational, so it reads louder than the destructive direction does. The whole
     // row is the tap target and it opens the round status sheet rather than acting.
     html+='<div class="sr-striprow" style="cursor:pointer" onclick="_srStatusSheet('+r+')">'+
@@ -8652,7 +8733,10 @@ function renderHoleDots(){const r=STATE.currentRound;const nHoles=roundHoleCount
       '<button class="sr-link" style="font-size:12px" onclick="_endRoundSheet('+r+')">End round at '+_srDone+'</button></div>';
   }
   document.getElementById('holeDots').innerHTML=html;
-  _srAutoExpand(r,_srFi);}
+  // The one-shot is keyed on the foursome. Firing it pre-pick spends foursome 0's key on
+  // a device that may well pick foursome 1, and the grid then never opens for the group
+  // the user actually joined.
+  if(!_fsPickPending(r))_srAutoExpand(r,_srFi);}
 function jumpHole(i){STATE.razzleToastOk=false;STATE.currentHole=i;updateHoleUI();}
 function changeHole(d){const r=STATE.currentRound,curHole=STATE.currentHole,_maxHi=holeOffset(r)+roundHoleCount(r)-1,nextHole=Math.max(holeOffset(r),Math.min(_maxHi,curHole+d));const _chfi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(d>0&&gameOnFs('razzle',r,_chfi)&&razzleMatchClosedOnHole(r,curHole)&&!isRoundLocked(r)){const _cms=calcRazzle(r,_chfi);const _closedM=_cms.find(m=>m.closedOnHole===curHole);const _nextMi=_closedM?_closedM.mi+1:_cms.length;const _teamsSet=STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r]&&STATE.razzleMatchTeams[r][_chfi]&&STATE.razzleMatchTeams[r][_chfi][_nextMi];if(!_teamsSet){showRazzleTeamModal(r,nextHole);return;}}if(d>0){if(!STATE.razzleHWM)STATE.razzleHWM={};const hwm=(STATE.razzleHWM[r]&&STATE.razzleHWM[r][_chfi]!==undefined)?STATE.razzleHWM[r][_chfi]:-1;if(nextHole>hwm){if(!STATE.razzleHWM[r])STATE.razzleHWM[r]={};STATE.razzleHWM[r][_chfi]=nextHole;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}}else{STATE.razzleToastOk=false;}STATE.currentHole=nextHole;updateHoleUI();}
 function _fsPillOutside(e){
@@ -8723,7 +8807,7 @@ function updateHoleUI(){
   const hole=WK.rounds[r].course.holes?.[hi]||{par:4,si:hi+1};
   const locked=isRoundLocked(r),complete=isRoundComplete(r);
   document.getElementById('holeLabel').textContent='Hole '+(hi+1);
-  var _voPill=document.getElementById('viewOnlyPill');if(_voPill)_voPill.style.display=_pencilViewerLocked(r,_curFi(r))?'inline-flex':'none';
+  var _voPill=document.getElementById('viewOnlyPill');if(_voPill)_voPill.style.display=(!_fsPickPending(r)&&_pencilViewerLocked(r,_curFi(r)))?'inline-flex':'none';
   const _yds=hole.yardage||0;const _ydStr=_yds>0?' · '+_yds+' yds':'';document.getElementById('holeMeta').textContent='Par '+hole.par+_ydStr+' · Hdcp '+hole.si;
   const _minHole=holeOffset(r),_maxHole=holeOffset(r)+roundHoleCount(r)-1;
   document.getElementById('prevBtn').disabled=hi===_minHole;
@@ -8740,7 +8824,12 @@ function updateHoleUI(){
   if(!bn){bn=document.createElement('div');bn.id='lockedRoundBanner';bn.style.cssText='margin:0.5rem 1rem;padding:8px 12px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:12px;color:var(--color-text-secondary);text-align:center';bn.textContent='🔒 Round locked - scores are final. Unlock to make changes.';const sc=document.getElementById('scorecard');if(sc&&sc.parentNode)sc.parentNode.insertBefore(bn,sc);}
   document.getElementById('lockedRoundBanner').style.display=locked?'block':'none';
   if(document.getElementById('scorecard'))document.getElementById('scorecard').style.opacity=locked?'0.45':'1';
-  renderBanner();renderScorecard();renderHoleDots();renderHammerBox();renderSkinsBoxWrap();renderMPHoleBox();renderVegasBoxWrap();_updateActionRowGameLock();
+  renderBanner();renderScorecard();renderHoleDots();
+  // These four are the boxes updateHoleUI renders itself, so renderScorecard's early
+  // return does not stop them: pre-pick they would repopulate with foursome 0's state.
+  if(_fsPickPending(r)){_fsBlankGameBoxes();}
+  else{renderHammerBox();renderSkinsBoxWrap();renderMPHoleBox();renderVegasBoxWrap();}
+  _updateActionRowGameLock();
   // Update hole strip + action row
   _updateHoleStrip();
   _updateActionRow();
@@ -10470,6 +10559,9 @@ async function _tripAdminSave(){
 window._pencilClaim=function(){
   if(isReadOnly)return;
   var r=STATE.currentRound,fi=_curFi(r);
+  // Write-path guard, not a duplicate of the render-path one: a disabled button is not a
+  // closed door. v119.33's R11 is exactly this lesson in the other direction.
+  if(_fsPickPending(r))return;
   if(!pencilUnheld(r,fi))return;
   var _uid=sbCurrentUser()?.id;if(!_uid)return;
   if(!WK._pencilLock)WK._pencilLock=[];
@@ -10504,6 +10596,7 @@ function _confirmSheet(opts){
 window._pencilTakeoverConfirm=function(){
   if(isReadOnly)return;
   var r=STATE.currentRound,fi=_curFi(r);
+  if(_fsPickPending(r))return;
   var holderUid=pencilHolder(r,fi);
   var holderName=_pencilHolderName(r,fi);
   if(!holderUid){window._pencilClaim();return;}
@@ -12412,6 +12505,10 @@ function renderFourBallRound(){
         +'<div class="fb-lbr"><span class="fb-lbt" style="color:'+(played?_fbParCol(row.card.toPar):'var(--color-text-tertiary)')+'">'+(played?_fbToPar(row.card.toPar):'-')+'</span>'
         +'<span class="'+cls+'" style="font-size:12px;font-weight:500">'+(done&&played?(_fbMoney(per)+' ea'):'')+'</span></div></div>';
     });
+    // Two teams on the same number with different money is a result that reads like a
+    // mistake. The card was correct and silent; this is the sentence it was missing.
+    // One row per line so two ties read as two statements rather than one run-on.
+    fbTieLines(rows,r,done).forEach(function(_ln){h+='<div class="fb-tie">'+_ln+'</div>';});
     h+='</div>';
     // Hole by hole for the SELECTED team, or the leader when nothing is picked. A team
     // with an empty card has nothing to show, so it falls back rather than render blank.
@@ -12692,8 +12789,14 @@ window._endRoundSheet=function(r){
   const fls=flightsForRound(r);
   const cur=(typeof getFlightPick==='function'?getFlightPick(r):0)||0;
   const scored=fls.map((_,fi)=>_fsScoredThrough(r,fi));
-  const dflt=scored[cur]||Math.max.apply(null,scored.concat([0]));
-  STATE._srSheet={r,pick:(fls.length>1?cur:0),count:dflt,inStd:false,all:fls.length<=1};
+  const _mx=Math.max.apply(null,scored.concat([0]));
+  // No pick on this device means the app does not know which group the user is in, and a
+  // pre-selected radio reads as a fact rather than a guess. Opens at the latest hole any
+  // group reached, which is what _srCap computes for the Everyone scope, so the stepper
+  // is already where that scope wants it.
+  const _pend=(typeof _fsPickPending==='function')&&_fsPickPending(r);
+  const dflt=_pend?_mx:(scored[cur]||_mx);
+  STATE._srSheet={r,pick:(fls.length>1?cur:0),count:dflt,inStd:false,all:_pend||fls.length<=1};
   _srRenderSheet();
 };
 function _srClose(){const m=document.getElementById('srSheet');if(m)m.remove();STATE._srSheet=null;}
