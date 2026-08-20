@@ -577,6 +577,9 @@ body.force-dark .hm-sheet-btn.danger{background:rgba(180,35,24,0.16);color:#FCA5
   background:rgba(217,119,6,0.18);color:#B45309;border:0.5px solid rgba(217,119,6,0.5);white-space:nowrap;}
 @media(prefers-color-scheme:dark){.sr-chip{color:#FCD34D;}}
 .sr-chip-tap{cursor:pointer;}
+.rz-awarded{font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;
+border:0.5px solid var(--color-border-secondary);color:var(--color-text-tertiary);
+border-radius:3px;padding:1px 5px;margin-left:6px;white-space:nowrap;}
 .sr-chip-car{margin-left:5px;font-weight:600;opacity:0.75;}
 .sr-stdnote{padding:7px 12px;font-size:11px;color:var(--color-text-secondary);
   background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);}
@@ -1688,7 +1691,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v119.30';
+const APP_VERSION='v119.33';
 
 // ===== THEME =====
 (function(){
@@ -8334,7 +8337,7 @@ function _renderRazzleFlightBlock(r,fi,labelHd){
     const totalHolesInRound=WK.rounds[r].course.holes.length;
     const roundComplete=STATE.scores[r]&&STATE.scores[r][totalHolesInRound-1]&&STATE.scores[r][totalHolesInRound-1].every(s=>s!==null);
     let statusStr;
-    if(m.winner){const wLtr=aWins?'A':'B';const wClr=aWins?'#1D9E75':'#185FA5';statusStr='<span style="font-size:11px;color:var(--color-text-tertiary)">Match Result: </span><span style="color:'+wClr+';font-weight:500">'+wLtr+' wins · $'+m.pot.toFixed(2)+'</span>';}
+    if(m.winner){const wLtr=aWins?'A':'B';const wClr=aWins?'#1D9E75':'#185FA5';statusStr='<span style="font-size:11px;color:var(--color-text-tertiary)">Match Result: </span><span style="color:'+wClr+';font-weight:500">'+wLtr+' wins · $'+m.pot.toFixed(2)+'</span>'+(m.leaderWin===true?'<span class="rz-awarded">awarded</span>':'');}
     else if(roundComplete||m.holesPlayed===0&&!roundComplete){
       if(m.holesPlayed===0){statusStr='<span style="font-size:11px;color:var(--color-text-tertiary)">Match Result: </span><span style="color:var(--color-text-tertiary)">Not started</span>';}
       else if(roundComplete){statusStr='<span style="font-size:11px;color:var(--color-text-tertiary)">Match Result: </span><span style="color:var(--color-text-secondary);font-weight:500">No Blood</span>';}
@@ -8389,6 +8392,12 @@ function _renderRazzleFlightBlock(r,fi,labelHd){
         const winColor=aWins?'#1D9E75':'#185FA5';
         html+='<div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px;background:var(--color-background-secondary)">';
         html+='<span style="font-weight:500;color:'+winColor+'">'+(aWins?'A':'B')+' wins</span>';
+        if(m.leaderWin===true){
+          const _awTxt=fsEndedShort(r,fi)
+            ? 'Awarded to the leader. Play ended at hole '+(m.endHole+1)+'.'
+            : 'Awarded to the leader. The match never closed out.';
+          html+='<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:2px">'+_awTxt+'</div>';
+        }
         const baseStr='Base $'+m.stake.toFixed(2);const allParts=[baseStr].concat(bonusDetail);html+='<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:2px">'+allParts.join(' · ')+' : Total $'+m.pot.toFixed(2)+'</div>';
         html+='</div>';
       } else if(m.holesPlayed===0){
@@ -9227,9 +9236,10 @@ function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
         let rdStrokes=0;
         if(rd.complete&&inStandingsRound(rd.r)){const _off_b=holeOffset(rd.r),_n_b=standingsHoleCount(rd.r);for(let hi=_off_b;hi<_off_b+_n_b;hi++)rdStrokes+=strokes(p.i,hi,rd.r);}
         const strokesStr=rd.complete?(rdStrokes>0?rdStrokes+' stroke'+(rdStrokes!==1?'s':''):rdStrokes<0?'gives '+(-rdStrokes)+' stroke'+(rdStrokes!==-1?'s':''):'no strokes'):'';
-        html+=`<div onclick="_lbOpenCard(${rd.r})" style="display:grid;grid-template-columns:auto 1fr auto auto auto auto;align-items:center;gap:6px;padding:6px 12px 6px 56px;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer">
+        html+=`<div onclick="_lbOpenCard(${rd.r})" style="display:grid;grid-template-columns:auto minmax(0,auto) 1fr auto auto auto auto;align-items:center;gap:6px;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer">
           <span style="font-size:11px;color:var(--color-text-tertiary);white-space:nowrap">${roundLabel(rd.r)}</span>
-          <span style="font-size:11px;color:var(--color-text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${rdLabel(rd.r)}${_roundHasEnd(rd.r)?' \u00b7 <span class="sr-short">'+standingsHoleCount(rd.r)+' holes</span>':''}</span>
+          <span style="font-size:11px;color:var(--color-text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${rdLabel(rd.r)}</span>
+          <span style="font-size:11px;white-space:nowrap">${_roundHasEnd(rd.r)?'<span class="sr-short">'+standingsHoleCount(rd.r)+' holes</span>':''}</span>
           <span style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap">${rd.complete?rd.rGross+' ('+relGrossStr+')':'—'}</span>
           <span style="font-size:11px;color:var(--color-text-tertiary);white-space:nowrap">${strokesStr}</span>
           <span style="font-size:13px;font-weight:600;color:${netCol};white-space:nowrap;min-width:36px;text-align:right">${rd.complete?netStr:'—'}</span>
@@ -12611,6 +12621,33 @@ window._endRoundAt=function(r,fis,count){
   autoSave();s2WriteActive();
   return null;
 };
+// Everyone mode: each foursome ends where IT stopped, so one count per foursome. Same
+// guards as above, one write at the end rather than a loop of _endRoundAt calls, because
+// s2WriteActive sends the whole game-state surface on every call.
+window._endRoundEach=function(r,perFi){
+  if(!canEditTrip())return 'You do not have edit access for this trip.';
+  if(isRoundLocked(r))return 'This round is locked.';
+  if((STATE.settledRounds||[]).includes(r))return 'This round is already settled.';
+  const full=roundHoleCount(r);
+  const ends=[];
+  const keys=Object.keys(perFi||{});
+  for(let i=0;i<keys.length;i++){
+    const fi=Number(keys[i]);
+    const c=Math.floor(Number(perFi[keys[i]]));
+    if(!isFinite(c)||c<1)return 'Pick a hole.';
+    if(c>=full)continue;                 // played the whole round, nothing to declare
+    const done=_fsScoredThrough(r,fi);
+    if(c>done)return 'Foursome '+(fi+1)+' has only finished '+done+' hole'+(done===1?'':'s')+'.';
+    ends.push([fi,c]);
+  }
+  if(!ends.length)return 'That is the whole round. Nothing to end.';
+  const rd=WK.rounds[r];
+  if(!Array.isArray(rd.fsEndHoles))rd.fsEndHoles=[];
+  while(rd.fsEndHoles.length<flightsForRound(r).length)rd.fsEndHoles.push(null);
+  ends.forEach(function(e){rd.fsEndHoles[e[0]]=e[1];});
+  autoSave();s2WriteActive();
+  return null;
+};
 // Weather clears and the group goes back out. Without this the only fix is rebuilding
 // the trip, which is why Resume is not optional.
 window._resumeRound=function(r,fis){
@@ -12660,6 +12697,14 @@ window._endRoundSheet=function(r){
   _srRenderSheet();
 };
 function _srClose(){const m=document.getElementById('srSheet');if(m)m.remove();STATE._srSheet=null;}
+// The scope's stepper bound. Single foursome: its own last hole. Everyone: the LATEST
+// any group reached, since the stepper caps rather than levels.
+function _srCap(r,all,fis){
+  const t=fis.map(fi=>_fsScoredThrough(r,fi));
+  return all?Math.max.apply(null,t):Math.min.apply(null,t);
+}
+// What a given foursome would actually end at under the current ceiling.
+function _srEff(r,fi,count){return Math.min(count,_fsScoredThrough(r,fi));}
 window._srPick=function(v){
   const s=STATE._srSheet;if(!s)return;
   if(v==='all'){s.all=true;}else{s.all=false;s.pick=Number(v);}
@@ -12667,11 +12712,11 @@ window._srPick=function(v){
   // without this, switching to a shorter foursome and back leaves the count stuck at
   // the shorter one's cap and ends the wrong group at the wrong hole.
   const fis=_srFis();
-  s.count=Math.min.apply(null,fis.map(fi=>_fsScoredThrough(s.r,fi)));
+  s.count=_srCap(s.r,s.all,fis);
   _srRenderSheet();
 };
 window._srCount=function(d){const s=STATE._srSheet;if(!s)return;const r=s.r;
-  const fis=_srFis();const cap=Math.min.apply(null,fis.map(fi=>_fsScoredThrough(r,fi)));
+  const fis=_srFis();const cap=_srCap(r,s.all,fis);
   s.count=Math.max(1,Math.min(cap,s.count+d));_srRenderSheet();};
 window._srToggleStd=function(){const s=STATE._srSheet;if(!s)return;s.inStd=!s.inStd;_srRenderSheet();};
 function _srFis(){const s=STATE._srSheet;const fls=flightsForRound(s.r);
@@ -12679,7 +12724,13 @@ function _srFis(){const s=STATE._srSheet;const fls=flightsForRound(s.r);
 window._srConfirm=function(){
   const s=STATE._srSheet;if(!s)return;
   const fis=_srFis();
-  const err=window._endRoundAt(s.r,fis,s.count);
+  let err;
+  if(s.all){
+    const perFi={};fis.forEach(fi=>{perFi[fi]=_srEff(s.r,fi,s.count);});
+    err=window._endRoundEach(s.r,perFi);
+  }else{
+    err=window._endRoundAt(s.r,fis,s.count);
+  }
   if(err){showMsg(err);return;}
   if(s.inStd)WK.rounds[s.r].shortInStandings=true;
   else delete WK.rounds[s.r].shortInStandings;
@@ -12781,12 +12832,18 @@ function _srRenderSheet(){
   const r=s.r,fls=flightsForRound(r);
   if(s.all&&fls.some((_,fi)=>fsEndedShort(r,fi))){s.all=false;}
   const fis=_srFis();
-  const cap=Math.min.apply(null,fis.map(fi=>_fsScoredThrough(r,fi)));
+  const cap=_srCap(r,s.all,fis);
   if(s.count>cap)s.count=cap;
   const full=roundHoleCount(r);
+  // Under the ceiling model every foursome has its own end, so everything below reads
+  // eff(fi) rather than s.count. When they all land on the same hole the sheet looks
+  // exactly as it did before.
+  const eff=fi=>_srEff(r,fi,s.count);
+  const ending=fis.filter(fi=>eff(fi)<full);
+  const uniform=fis.every(fi=>eff(fi)===eff(fis[0]));
   // What the standings horizon WOULD be once this is applied. Every other foursome
   // keeps whatever it already has.
-  const projected=Math.min.apply(null,fls.map((_,fi)=>fis.indexOf(fi)>=0?s.count:fsHoleCount(r,fi)));
+  const projected=Math.min.apply(null,fls.map((_,fi)=>fis.indexOf(fi)>=0?eff(fi):fsHoleCount(r,fi)));
   const under9=projected<9;
   const opt=(sel,val,name,sub,dis)=>`<div class="sr-opt${sel?' sel':''}${dis?' dis':''}"${dis?'':` onclick="_srPick('${val}')"`}><div class="sr-radio"></div><div class="sr-nm">${name}<small>${sub}</small></div></div>`;
   let opts='';
@@ -12802,14 +12859,14 @@ function _srRenderSheet(){
       _anyEnded?'Not available once a foursome has ended, it would pull the others back':'Every foursome stopped',
       _anyEnded);
   }
-  const canGo=cap>=1&&s.count>=1&&s.count<full;
+  const canGo=cap>=1&&s.count>=1&&ending.length>0;
   let warn=cap<1?`<div class="sr-warn">Nothing to end yet: no hole has every score in.</div>`:'';
   // Stale scores past the proposed end hole. Named, never deleted.
   if(cap>=1){
-    const stale=fis.map(fi=>({fi,n:_fsScoredPast(r,fi,s.count)})).filter(x=>x.n>0);
+    const stale=fis.map(fi=>({fi,n:_fsScoredPast(r,fi,eff(fi)),at:eff(fi)})).filter(x=>x.n>0);
     if(stale.length){
-      const who=stale.map(x=>(fls.length>1?'Foursome '+(x.fi+1)+' has ':'There are ')+x.n+' hole'+(x.n===1?'':'s')).join(' and ');
-      warn+=`<div class="sr-warn">${who} scored past hole ${s.count}. Those holes will still count in the games. Clear them first if they were entered by mistake.</div>`;
+      const who=stale.map(x=>(fls.length>1?'Foursome '+(x.fi+1)+' has ':'There are ')+x.n+' hole'+(x.n===1?'':'s')+(uniform?'':' past hole '+x.at)).join(' and ');
+      warn+=`<div class="sr-warn">${who} scored${uniform?' past hole '+s.count:''}. Those holes will still count in the games. Clear them first if they were entered by mistake.</div>`;
     }
   }
   const info=under9?`<div class="sr-info">A round needs at least 9 holes to count toward the weekend standings. This one stopped at ${projected}, so it will sit out the final tally unless you turn it on below. Either way the games settle normally and everyone gets paid.</div>`+
@@ -12820,10 +12877,12 @@ function _srRenderSheet(){
   m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:9999';
   m.innerHTML=`<div style="background:var(--color-background-primary);border-radius:16px 16px 0 0;padding:6px 16px 22px;width:100%;max-width:480px;max-height:88vh;overflow:auto">
       <div style="width:36px;height:4px;border-radius:2px;background:var(--color-border-secondary);margin:0 auto 14px"></div>
-      <h3 style="font-size:16px;font-weight:600;margin:0 0 5px;color:var(--color-text-primary)">End the round at hole ${s.count}</h3>
-      <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 14px;line-height:1.45">Hole${s.count+1===full?'':'s'} ${s.count+1}${s.count+1===full?'':' to '+full} will not be played.${fls.length>1?' Pick who stopped.':''}</p>
+      <h3 style="font-size:16px;font-weight:600;margin:0 0 5px;color:var(--color-text-primary)">${uniform?'End the round at hole '+s.count:'End the round where each foursome stopped'}</h3>
+      <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 14px;line-height:1.45">${uniform
+        ?`Hole${s.count+1===full?'':'s'} ${s.count+1}${s.count+1===full?'':' to '+full} will not be played.${fls.length>1?' Pick who stopped.':''}`
+        :fis.map(fi=>'Foursome '+(fi+1)+(eff(fi)>=full?' played the full round':' ends at hole '+eff(fi))).join('. ')+'.'}</p>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;margin-bottom:12px;border:1px solid var(--color-border-tertiary);border-radius:10px;background:var(--color-background-secondary)">
-        <span style="font-size:13px;font-weight:600;color:var(--color-text-primary)">Last hole played</span>
+        <span style="font-size:13px;font-weight:600;color:var(--color-text-primary)">${uniform?'Last hole played':'End no later than'}</span>
         <span style="display:flex;align-items:center;gap:12px">
           <button class="sr-btn" style="padding:4px 12px;font-size:16px" onclick="_srCount(-1)">-</button>
           <span style="font-size:15px;font-weight:600;min-width:22px;text-align:center;color:var(--color-text-primary)">${s.count}</span>
