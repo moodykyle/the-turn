@@ -577,7 +577,7 @@ body.force-dark .hm-sheet-btn.danger{background:rgba(180,35,24,0.16);color:#FCA5
   background:rgba(217,119,6,0.18);color:#B45309;border:0.5px solid rgba(217,119,6,0.5);white-space:nowrap;}
 @media(prefers-color-scheme:dark){.sr-chip{color:#FCD34D;}}
 .sr-chip-tap{cursor:pointer;}
-.rz-awarded{font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;
+.rz-awarded,.end-chip{font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;
 border:0.5px solid var(--color-border-secondary);color:var(--color-text-tertiary);
 border-radius:3px;padding:1px 5px;margin-left:6px;white-space:nowrap;}
 .sr-chip-car{margin-left:5px;font-weight:600;opacity:0.75;}
@@ -1707,7 +1707,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v119.38';
+const APP_VERSION='v120.15';
 
 // ===== THEME =====
 (function(){
@@ -2462,25 +2462,18 @@ async function s2ReadTrip(tripId){
       newScores[rIdx][hi][pi]=s.strokes;
     });
 
-    // Reconstruct STATE — resume at first unplayed hole of first incomplete round,
-    // or flag standings if all rounds complete
-    const _resumePos=(()=>{
-      for(let _ri=0;_ri<newWK.rounds.length;_ri++){
-        const _off=newWK.rounds[_ri]?.nineHole==='back'?9:0;
-        const _n=newWK.rounds[_ri]?.nineHole?9:18;
-        for(let _hi=_off;_hi<_off+_n;_hi++){
-          const _row=newScores[_ri]&&newScores[_ri][_hi];
-          const _complete=_row&&_row.length>0&&_row.every(s=>s!==null);
-          if(!_complete)return{r:_ri,h:_hi,allDone:false};
-        }
-      }
-      return{r:0,h:0,allDone:true};
-    })();
     // Foursomes and per-round flight counts, needed by any per-game [r][fi] hydrate below.
     // Computed locally (not via flightsForRound/flightCountsForTrip) because global WK/STATE
     // are not assigned until this whole object is returned to the caller.
+    // MUST precede the resume scan below, which reads them to know which holes each
+    // foursome still owes.
     const _rf=padFlights(t.round_flights,nR,nP);
     const _flCounts=_rf.map(fl=>fl.length);
+    // Reconstruct STATE. Resume at the first hole still owed by somebody, in the first
+    // round that is both started and still owing, or flag standings if the trip is
+    // square. A round ended early is square at its own end hole, which is why this
+    // cannot be a plain scan for nulls.
+    const _resumePos=resumePosition(_resumeDims(newWK.rounds),newScores,_rf);
     if(!Array.isArray(newWK._flightedGames))newWK._flightedGames=[];
     if(newWK._flightedGames.indexOf('wolf')<0)newWK._flightedGames.push('wolf');
     const newSTATE={
@@ -5512,6 +5505,76 @@ function _segFsVal(key,r,fi){
 }
 function mpGamesForRound(r,fi){return _segFsVal('mpGames',r,fi)||WK.mpGamesPerRound[r]||WK.mpGamesDefault;}
 function _mpPhase(ms){if(!ms)return'ns';if(ms.closed||ms.holesLeft===0)return'done';return'ip';}
+// A segment that BEGAN before this foursome's end hole and would have run past it.
+// _segNotPlayed covers the segment lying wholly beyond the end; this covers the one
+// that straddles it, which settlement has already closed and paid.
+function _mpSegCutShort(r,fi,seg){
+  if(!seg||!fsEndedShort(r,fi))return false;
+  const n=fsHoleCount(r,fi);
+  return seg.start<n&&seg.end>n;
+}
+// Read-only mirror of _mpSegDisposition. Says HOW a settled segment ended without
+// changing what it returns. Re-derived from numbers the calc already published, so no
+// money path moves. Same shape as fbTieRung (v119.37) and Razzle's awarded tag.
+//
+// A cut-short segment has four endings and they are not interchangeable:
+//   decided  the margin already exceeded the holes left; the rain changed nothing
+//   square   the sides were level when play stopped
+//   void     there WAS a leader and the rule threw the match away
+//   award    there was a leader and the rule handed them the match
+// The last two are told apart by asking the disposition itself rather than re-reading
+// mpFinalSeg here, so the rule stays owned by one function.
+function _mpSegOutcome(r,fi,segEnd,pA,pB){
+  const played=Math.min(segEnd,fsHoleCount(r,fi));
+  const remaining=segEnd-played;
+  if(remaining<=0)return'';                       // the segment got all its holes
+  if(Math.abs(pA-pB)>remaining)return'decided';
+  if(pA===pB)return'square';
+  return _mpSegDisposition(r,fi,segEnd,pA,pB,pA>pB?'a':'b')==='tie'?'void':'award';
+}
+// True when a hole lies past this foursome's end hole and will never be played.
+// Takes a GLOBAL hole index: the two row builders disagree about whether their loop
+// variable includes holeOffset, so each one has to say which it is holding.
+function _mpHoleDead(r,fi,h){
+  return fsEndedShort(r,fi)&&h>=holeOffset(r)+fsHoleCount(r,fi);
+}
+// The phase a RENDER surface should show. _mpPhase reads holesLeft off the full segment
+// and cannot know the round stopped early, so a straddling segment reports 'ip' forever
+// while settlement has already paid it. Wrapped rather than fixed at source:
+// calcMPMatchScore is a calc function feeding the press logic and the hole rows, and
+// this is a label.
+function _mpPhaseFs(r,fi,seg,ms){
+  const ph=_mpPhase(ms);
+  return (ph==='ip'&&_mpSegCutShort(r,fi,seg))?'done':ph;
+}
+// One sentence per ending, one place. Razzle's card says the same things in the same
+// words, so the two games explain the same situation identically.
+// The collapsed card has to say SOMETHING. The sentence lives in the body next to the
+// result, which means it is invisible until the card is opened, and a rained out match
+// that looks ordinary from the outside is the whole defect this arc set out to fix.
+// Razzle already had this shape: an 'awarded' chip in the header, the sentence below.
+function _mpEndChip(tag){
+  if(tag==='stopped')return'cut short';
+  if(tag==='award')return'awarded';
+  if(tag==='void')return'void';
+  if(tag==='square'||tag==='decided')return'cut short';
+  return'';
+}
+function _mpEndNote(r,fi,tag){
+  if(!tag)return'';
+  const h=holeOffset(r)+fsHoleCount(r,fi);
+  if(tag==='award')return'Awarded to the leader. Play ended at hole '+h+'.';
+  if(tag==='void')return'No winner. Play ended at hole '+h+'.';
+  if(tag==='square')return'All square when play ended at hole '+h+'.';
+  if(tag==='decided')return'Match was already decided. Play ended at hole '+h+'.';
+  if(tag==='stopped')return'Play ended at hole '+h+'.';
+  return'';
+}
+// Skins, Hammer, Vegas and Wolf accumulate per hole. There is no match to leave
+// unfinished, so nothing is awarded or voided and no money turns on the rule: they stop
+// at the last hole scored whether or not anyone marks the round ended. What they owe the
+// reader is the fact that it stopped, in the same words the other games use.
+function _segStopTag(r,fi,seg){return _mpSegCutShort(r,fi,seg)?'stopped':'';}
 function pressesOnForRound(r){const rd=WK.rounds[r];if(rd.pressesOn!==undefined)return rd.pressesOn;if(WK.pressesOn)return true;return gameOn('mp',r);}
 function autoPressOnForRound(r){const rd=WK.rounds[r];return rd.autoPressOn!==undefined?rd.autoPressOn:!!WK.autoPressOn;}
 function autoPressThresholdForRound(r){const rd=WK.rounds[r];return rd.autoPressThreshold!=null?rd.autoPressThreshold:(WK.autoPressThreshold||2);}
@@ -5572,12 +5635,25 @@ function calcPressResult(r,fi,si,press){
     if(Math.abs(pA-pB)>holesLeft)break;
   }
   if(lastPlayed<_pressStart)return null;
-  const winner=pA>pB?'a':pB>pA?'b':'tie';
+  let winner=pA>pB?'a':pB>pA?'b':'tie';
   const holesPlayed=lastPlayed-_pressStart+1;
   const holesInPress=endHole-press.startHole;
   const holesLeft=holesInPress-holesPlayed;
   const lead=Math.abs(pA-pB);
   const closed=lead>holesLeft;
+  // A press is contracted to run to the end of its segment. holesInPress and holesLeft
+  // stay measured against THAT, deliberately: clamping the contract to a shortened round
+  // would make a press that never finished look like it ran its course, which is the
+  // opposite of the truth. What the shortened round changes is how many of those holes
+  // can still be played, and that is a separate number.
+  const _prMissing=Math.max(0,seg.end-Math.min(seg.end,fsHoleCount(r,fi)));
+  const cutShort=_prMissing>0;
+  const playableLeft=Math.max(0,holesLeft-_prMissing);
+  // A press is a side bet on the same holes as the match carrying it, so when play stops
+  // before either is decided they settle the same way. Ignoring the rule here paid the
+  // press on a match the very same rule had just voided: one card, two answers.
+  // Only reachable on an ended round, so no round that merely ran out of daylight moves.
+  if(!closed&&cutShort&&lead>0&&roundValFs('mpFinalSeg',r,fi,'leader')==='void')winner='tie';
   const _huPrSv=press.mi!==undefined;
   const sv=settleVal(press.val,_huPrSv?1:tm[0].length,WK.mpSettle||'perplayer');
   const pressLeader=pA>pB?'A':pB>pA?'B':null;
@@ -5596,7 +5672,7 @@ function calcPressResult(r,fi,si,press){
   } else if(!pressLeader){pScoreStr='A/S';}
   else if(lead===holesLeft){pScoreStr=pressLeader+': Dormie '+lead;}
   else{pScoreStr=pressLeader+': '+lead+' up';}
-  return{pA,pB,winner,closed,sv,lead,holesLeft,scoreStr:pScoreStr,leader:pressLeader};
+  return{pA,pB,winner,closed,sv,lead,holesLeft,cutShort,playableLeft,scoreStr:pScoreStr,leader:pressLeader};
 }
 function mpResultDesc(winner,pA,pB,side,segLen){if(winner==='tie')return'Halved';const myWin=(side==='a'&&winner==='a')||(side==='b'&&winner==='b');const lead=Math.abs(pA-pB);const holesLeft=Math.max(0,segLen-(pA+pB));if(lead>holesLeft)return(myWin?'Won ':'Lost ')+lead+'&'+holesLeft;if(holesLeft===0)return(myWin?'Won ':'Lost ')+lead+' up';return(myWin?'Leading ':'Trailing ')+lead;}
 function checkAutoPress(r,fi,si){
@@ -6973,18 +7049,99 @@ function fsEndHolesRaw(r){
   const rd=WK&&WK.rounds&&WK.rounds[r];
   return (rd&&Array.isArray(rd.fsEndHoles))?rd.fsEndHoles:null;
 }
+// Clamp rather than trust. A stored value longer than the round would let a bad
+// write lengthen a round, and a nine-hole round must never resolve to 18.
+// Shared, because the resume scan asks a stored end value the same question
+// fsHoleCount does and a second copy of this rule would be free to drift.
+function _clampEnd(v,full){
+  if(typeof v!=='number'||!isFinite(v)||v<1||v>=full)return full;
+  return Math.floor(v);
+}
 function fsHoleCount(r,fi){
   const full=roundHoleCount(r);
   if(fi===null||fi===undefined)return full;
   const raw=fsEndHolesRaw(r);
   if(!raw)return full;
-  const v=raw[fi];
-  // Clamp rather than trust. A stored value longer than the round would let a bad
-  // write lengthen a round, and a nine-hole round must never resolve to 18.
-  if(typeof v!=='number'||!isFinite(v)||v<1||v>=full)return full;
-  return Math.floor(v);
+  return _clampEnd(raw[fi],full);
 }
 function fsEndedShort(r,fi){return fsHoleCount(r,fi)<roundHoleCount(r);}
+// RESUME POSITION. Where an opened trip lands, and where a round switch or foursome
+// pick lands inside a round. Pure and argument-fed on purpose: the trip-open caller
+// runs mid-hydration, before global WK and STATE exist, so it cannot reach
+// holeOffset or fsHoleCount. Feeding dimensions in keeps one copy of the rule and
+// makes the scan directly testable, which the old inline version was not.
+//
+// specs = [{mem:[pi,...], cap:n}]. A hole is NEEDED when some group still owes it:
+// the hole falls inside that group's OWN length and one of its members has no score.
+// A group that ended at 14 owes nothing on 15, and its neighbour that played 18
+// still does. Returns the first needed hole index, or -1 when nothing is owed.
+function _firstNeededHole(rows,off,full,specs){
+  for(let hi=off;hi<off+full;hi++){
+    const row=rows&&rows[hi];
+    for(let k=0;k<specs.length;k++){
+      const sp=specs[k];
+      if(!sp.mem.length)continue;
+      if(hi>=off+sp.cap)continue; // past this group's end. Not its debt.
+      if(!row)return hi;
+      for(let j=0;j<sp.mem.length;j++){
+        const v=row[sp.mem[j]];
+        if(v===null||v===undefined)return hi;
+      }
+    }
+  }
+  return -1;
+}
+// dims[r]={off,full,ends}. Built from raw round records, so the hydrate can call it
+// with rounds it has not yet installed as WK. The off/full rule mirrors what the
+// hydrate always used, which is what keeps a trip with no ended round landing
+// exactly where v119.38 landed it.
+function _resumeDims(rounds){
+  return (rounds||[]).map(function(rd){
+    return { off:(rd&&rd.nineHole==='back')?9:0,
+             full:(rd&&rd.nineHole)?9:18,
+             ends:(rd&&Array.isArray(rd.fsEndHoles))?rd.fsEndHoles:null };
+  });
+}
+function resumePosition(dims,scores,flights){
+  const specsFor=function(r){
+    const d=dims[r];
+    let fls=(flights&&flights[r])||null;
+    if(!fls||!fls.length){
+      // No foursome record: treat the field as one group, which is what a
+      // single-foursome trip is anyway.
+      const row=(scores&&scores[r]&&scores[r][d.off])||[];
+      fls=[row.map(function(_,i){return i;})];
+    }
+    return fls.map(function(fl,fi){
+      return { mem:(fl||[]).filter(function(pi){return typeof pi==='number'&&pi>=0;}),
+               cap:d.ends?_clampEnd(d.ends[fi],d.full):d.full };
+    });
+  };
+  const started=function(r){
+    const rows=scores&&scores[r];
+    if(!rows)return false;
+    for(let hi=0;hi<rows.length;hi++){
+      const row=rows[hi];
+      if(!row)continue;
+      for(let pi=0;pi<row.length;pi++)if(row[pi]!==null&&row[pi]!==undefined)return true;
+    }
+    return false;
+  };
+  // A round with a score in it outranks an untouched earlier one. Playing out of
+  // order is rare, but landing on an empty round while another is live is worse
+  // than landing a round further on than expected.
+  let firstOpen=-1,firstOpenHole=0;
+  for(let r=0;r<dims.length;r++){
+    const d=dims[r];
+    const h=_firstNeededHole(scores&&scores[r],d.off,d.full,specsFor(r));
+    if(h<0)continue; // every group is square through its own end hole
+    if(started(r))return{r:r,h:h,allDone:false};
+    if(firstOpen<0){firstOpen=r;firstOpenHole=h;}
+  }
+  // Nothing started and still owing. An untouched round is not a finished trip.
+  if(firstOpen>=0)return{r:firstOpen,h:firstOpenHole,allDone:false};
+  return{r:0,h:0,allDone:true};
+}
 // fis null or empty means every foursome, which is how field-scope Four-Ball pools
 // arrive (fbPools returns fi:null for them).
 function poolHoleCount(r,fis){
@@ -7290,7 +7447,7 @@ function renderScorecard(){
   let _huPairNet=null;if(gameOnFs('mp',r,_fp)&&isHeadsUp(r)&&huNetOffMatchLow(r)){const _siHU=segForHole(hi-holeOffset(r),mpGamesForRound(r,_fp),roundHoleCount(r));const _tmHU=STATE.mpTeams[r]?.[_fp]?.[_siHU];if(_tmHU&&_tmHU[0]&&_tmHU[1]){_huPairNet={};for(let _mi=0;_mi<_tmHU[0].length;_mi++){const _pa=_tmHU[0][_mi],_pb=_tmHU[1][_mi];if(_pa!==undefined&&_pb!==undefined){_huPairNet[_pa]=[_pa,_pb];_huPairNet[_pb]=[_pa,_pb];}}}}
   // Snake holder for the ACTIVE foursome at this hole (the card only shows that foursome).
   const _snkHolder=gameOnFs('snake',r,_fp)?currentSnakeHolderForFlight(r,hi,_fp):null;
-  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const roStyle=_pvLock?'pointer-events:none':((isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':'');const _rowDim=_pvLock?'opacity:0.42;':'';const _minusBtn=_pvLock?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_pvLock?'<i class="ti ti-lock" style="font-size:16px;color:var(--color-text-secondary);margin-left:2px" aria-hidden="true"></i>':'<button class="adj" onclick="adjScore('+i+',1)">+</button>';const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('');
+  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const roStyle=_pvLock?'pointer-events:none':((isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':(_deadH?'pointer-events:none':''));const _rowDim=_pvLock?'opacity:0.42;':(_deadH?'opacity:0.42;':'');const _minusBtn=(_pvLock||_deadH)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_pvLock?'<i class="ti ti-lock" style="font-size:16px;color:var(--color-text-secondary);margin-left:2px" aria-hidden="true"></i>':(_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('');
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
   try{renderNinesBox();}catch(ne){console.error('renderNinesBox error:',ne);const nw=document.getElementById('ninesBoxWrap');if(nw)nw.innerHTML='';}
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
@@ -7334,7 +7491,14 @@ function snakeFinalHolderForFlight(r,fi){
   const arr=snakeHolderArr(r,fi);
   if(!arr)return null;
   const _off=holeOffset(r),_n=roundHoleCount(r);
-  for(let h=_off+_n-1;h>=_off;h--){if(arr[h]!==null&&arr[h]!==undefined)return arr[h];}
+  // A holder recorded past this foursome's end hole never actually held it: nobody
+  // played that hole. Unlike a stale score, which the app has refused to write since
+  // v119.18, a holder could be entered by hand on any hole the strip could reach, so
+  // this guard is what stops old data paying out on a hole that was rained off.
+  for(let h=_off+_n-1;h>=_off;h--){
+    if(_mpHoleDead(r,fi,h))continue;
+    if(arr[h]!==null&&arr[h]!==undefined)return arr[h];
+  }
   return null;
 }
 // Current pot for one foursome, derived from its holder transfers across the round window.
@@ -7345,6 +7509,7 @@ function calcSnakePotForFlight(r,fi){
   let pot=0,prevHolder=null;
   const _off=holeOffset(r),_n=roundHoleCount(r);
   for(let h=_off;h<_off+_n;h++){
+    if(_mpHoleDead(r,fi,h))continue; // see snakeFinalHolderForFlight
     const holder=arr[h];
     if(holder===null||holder===undefined)continue;
     if(prevHolder===null){
@@ -8015,6 +8180,8 @@ function renderSnakeEntry(){
   if(!gameOn('snake',STATE.currentRound)){wrap.innerHTML='';return;}
   const r=STATE.currentRound,hi=STATE.currentHole;
   if(isReadOnly||isRoundLocked(r)){wrap.innerHTML='';return;}
+  {const _sfp=isMultiFlight(r)?getFlightPick(r):0;
+   if(_sfp!==null&&_mpHoleDead(r,_sfp,hi)){wrap.innerHTML='';return;}}
   // Resolve the active foursome. On a multi-flight round with no pick yet the scorecard
   // shows the foursome picker, so render nothing here until one is chosen.
   const _fp=isMultiFlight(r)?getFlightPick(r):0;
@@ -8049,6 +8216,10 @@ function onSnakeChange(val){
   const r=STATE.currentRound,hi=STATE.currentHole;
   const _fp=isMultiFlight(r)?getFlightPick(r):0;
   if(_fp===null){renderSnakeEntry();return;}
+  // Hole navigation still reaches past an end hole even though scoring does not, so the
+  // write is refused here as well as hidden below. The calc guard makes old data
+  // harmless; this stops new data being made.
+  if(_mpHoleDead(r,_fp,hi)){renderSnakeEntry();return;}
   if(!STATE.snakeHolder)STATE.snakeHolder=WK.rounds.map(()=>[]);
   if(!Array.isArray(STATE.snakeHolder[r]))STATE.snakeHolder[r]=[];
   if(!Array.isArray(STATE.snakeHolder[r][_fp]))STATE.snakeHolder[r][_fp]=Array(18).fill(null);
@@ -8276,6 +8447,34 @@ function renderRazzleBox(){
 // isRoundComplete asks about the WHOLE FIELD. This notice is per foursome, and two
 // groups finish at different times, so waiting on the other lane would hold the
 // acknowledgement back until a group that has nothing to do with this match walks in.
+// What the Razzle header should say about a match. Extracted so it is testable, and
+// because the test it replaces was a fourth private copy of "is this round finished"
+// sitting beside isRoundComplete, _rzFlightComplete and fsHoleCount.
+//
+// The old inline version asked whether hole 18's row was filled for every player in the
+// FIELD. That was wrong three ways: a foursome that ended early never fills hole 18, a
+// nine hole round has no hole 18 to fill, and a field-wide test makes one foursome wait
+// on the other, which is the exact thing _rzFlightComplete exists to prevent.
+//
+// It also carried a dead branch: the guard was `roundComplete || (holesPlayed===0 &&
+// !roundComplete)`, so by the time the inner else could be reached roundComplete was
+// already true and its 'In progress' could never print.
+// The no-blood twin of the awarded line. A Razzle match with no winner ran out of
+// holes; when the round was ended early that is WHY, and a bare "No blood" reads like a
+// match that was played to the end and halved. Derived from what already exists, so no
+// calc changes: no winner plus a complete flight means the match ran out, and
+// fsEndedShort says the running out was the rain rather than the eighteenth hole.
+function _rzEndNote(r,fi,m){
+  if(!m||m.winner)return'';
+  if(!_rzFlightComplete(r,fi)||!fsEndedShort(r,fi))return'';
+  return 'All square when play ended at hole '+(holeOffset(r)+fsHoleCount(r,fi))+'.';
+}
+function _rzMatchStatus(r,fi,m){
+  if(!m)return'ns';
+  if(m.winner)return'win';
+  if(!m.holesPlayed)return'ns';
+  return _rzFlightComplete(r,fi)?'noblood':'ip';
+}
 function _rzFlightComplete(r,fi){
   const n=fsHoleCount(r,fi),off=holeOffset(r);
   const mem=(flightsForRound(r)[fi]||[]);
@@ -8415,16 +8614,14 @@ function _renderRazzleFlightBlock(r,fi,labelHd){
     const key='r'+r+'f'+fi+'m'+m.mi;
     const expanded=STATE.razzleExpanded[key]===true;// default collapsed
     // Header summary
-    const totalHolesInRound=WK.rounds[r].course.holes.length;
-    const roundComplete=STATE.scores[r]&&STATE.scores[r][totalHolesInRound-1]&&STATE.scores[r][totalHolesInRound-1].every(s=>s!==null);
+    const _rzLbl='<span style="font-size:11px;color:var(--color-text-tertiary)">Match Result: </span>';
+    const _rzSt=_rzMatchStatus(r,fi,m);
     let statusStr;
-    if(m.winner){const wLtr=aWins?'A':'B';const wClr=aWins?'#1D9E75':'#185FA5';statusStr='<span style="font-size:11px;color:var(--color-text-tertiary)">Match Result: </span><span style="color:'+wClr+';font-weight:500">'+wLtr+' wins · $'+m.pot.toFixed(2)+'</span>'+(m.leaderWin===true?'<span class="rz-awarded">awarded</span>':'');}
-    else if(roundComplete||m.holesPlayed===0&&!roundComplete){
-      if(m.holesPlayed===0){statusStr='<span style="font-size:11px;color:var(--color-text-tertiary)">Match Result: </span><span style="color:var(--color-text-tertiary)">Not started</span>';}
-      else if(roundComplete){statusStr='<span style="font-size:11px;color:var(--color-text-tertiary)">Match Result: </span><span style="color:var(--color-text-secondary);font-weight:500">No Blood</span>';}
-      else{statusStr='<span style="font-size:11px;color:var(--color-text-tertiary)">Match Result: </span><span style="color:var(--color-text-secondary)">In progress</span>';}
-    }
-    else{statusStr='<span style="font-size:11px;color:var(--color-text-tertiary)">Match Result: </span><span style="color:var(--color-text-secondary)">In progress</span>';}
+    if(_rzSt==='win'){const wLtr=aWins?'A':'B';const wClr=aWins?'#1D9E75':'#185FA5';statusStr=_rzLbl+'<span style="color:'+wClr+';font-weight:500">'+wLtr+' wins · $'+m.pot.toFixed(2)+'</span>'+(m.leaderWin===true?'<span class="rz-awarded">awarded</span>':'');}
+    else if(_rzSt==='ns'){statusStr=_rzLbl+'<span style="color:var(--color-text-tertiary)">Not started</span>';}
+    else if(_rzSt==='noblood'){statusStr=_rzLbl+'<span style="color:var(--color-text-secondary);font-weight:500">No Blood</span>'
+      +(_rzEndNote(r,fi,m)?'<span class="end-chip">cut short</span>':'');}
+    else{statusStr=_rzLbl+'<span style="color:var(--color-text-secondary)">In progress</span>';}
     html+='<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">';
     html+='<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleRazzleMatch(\''+key+'\')">';
     html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Match '+(m.mi+1)+' · H'+(m.startHole+1)+(m.endHole>m.startHole?'-'+(m.endHole+1):'')+'</span><span style="color:#1D9E75;font-size:12px">'+(expanded?'▲':'▼')+'</span></div>';
@@ -8484,7 +8681,9 @@ function _renderRazzleFlightBlock(r,fi,labelHd){
       } else if(m.holesPlayed===0){
         html+='<div style="padding:8px 12px;font-size:12px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)">No scores yet</div>';
       } else {
-        html+='<div style="padding:8px 12px;font-size:12px;color:var(--color-text-secondary);border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)">No blood</div>';
+        const _rzEn=_rzEndNote(r,fi,m);
+        html+='<div style="padding:8px 12px;font-size:12px;color:var(--color-text-secondary);border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)">No blood'
+          +(_rzEn?'<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:2px">'+_rzEn+'</div>':'')+'</div>';
       }
     }
     html+='</div>';
@@ -8769,15 +8968,15 @@ function _fsPillRender(){
   menu.innerHTML=html;
 }
 function _flightResumeHole(r,fi){
-  const off=holeOffset(r),n=roundHoleCount(r);
+  // THIS foursome's length, not the round's. Landing past its end hole puts the user
+  // on a hole saveHole and adjScore will both refuse, which is navigation delivering
+  // somebody somewhere the app will not let them work.
+  const off=holeOffset(r),n=fsHoleCount(r,fi);
   const need=(flightsForRound(r)[fi]||[]).filter(function(pi){return pi>=0;});
   if(!need.length)return off;
-  for(let hi=off;hi<off+n;hi++){
-    const row=STATE.scores[r]&&STATE.scores[r][hi];
-    const complete=row&&need.every(function(pi){return row[pi]!==null;});
-    if(!complete)return hi;
-  }
-  return off+n-1; // that foursome is fully scored: land on the last hole for review
+  const hi=_firstNeededHole(STATE.scores&&STATE.scores[r],off,n,[{mem:need,cap:n}]);
+  if(hi>=0)return hi;
+  return off+n-1; // fully scored: land on ITS last hole for review, not the round's
 }
 function _fsPillPick(i){
   var r=STATE.currentRound;
@@ -10102,6 +10301,16 @@ function _renderWolfRoundBlock(r,fi,flightPlayers,wolfVal,labelHd){
     const deltas=holePtsMatrix[hi];
     const isPlayed=!!pick;
     if(isPlayed)anyPicks=true;
+    // hi is already a GLOBAL hole index in this loop. One spanning cell rather than a
+    // marker in each player column: the grid is narrow and saying it four times across
+    // a row is worse than saying it once.
+    if(_mpHoleDead(r,fi,hi)){
+      html+='<tr style="border-bottom:0.5px solid var(--color-border-tertiary)">';
+      html+='<td style="text-align:center;padding:6px 4px;background:var(--color-background-secondary);border-right:0.5px solid var(--color-border-tertiary)"><div style="font-size:20px;font-weight:500;color:var(--color-text-tertiary);line-height:1">'+(hi+1)+'</div></td>';
+      html+='<td colspan="'+flightPlayers.length+'" style="text-align:center;padding:8px 4px"><span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary)">not played</span></td>';
+      html+='</tr>';
+      continue;
+    }
     html+='<tr style="border-bottom:0.5px solid var(--color-border-tertiary)'+(isPlayed?'':';opacity:0.35')+'">';
     html+='<td style="text-align:center;padding:6px 4px;background:var(--color-background-secondary);border-right:0.5px solid var(--color-border-tertiary)"><div style="font-size:20px;font-weight:500;color:var(--color-text-primary);line-height:1">'+(hi+1)+'</div></td>';
     flightPlayers.forEach((pi,idx)=>{
@@ -12494,8 +12703,10 @@ function renderFourBallRound(){
       const cls=per>0.0001?'money-pos':(per<-0.0001?'money-neg':'money-nil');
       const played=row.card.played>0;
       const tno=fbTeamNo(r,row.team);
+      // The foursome's own round. Saying 'thru 15 of 18' about a round that ended at 15
+      // reads as three holes still owed on a card whose pot has already been awarded.
       const sel=(STATE.fbCard===tno);
-      const need=roundHoleCount(r);
+      const need=(pool.fi!=null)?fsHoleCount(r,pool.fi):roundHoleCount(r);
       const thru=played?('net '+row.card.total+' &middot; thru '+row.card.played+(row.card.played<need?' of '+need:'')):'no scores yet';
       const winner=(pos===1&&played&&done);
       h+='<div class="fb-lbrow'+(winner?' win':'')+(sel?' fb-sel':'')+'" onclick="window._fbShowCard('+tno+')" style="cursor:pointer">'
@@ -13199,6 +13410,15 @@ function _gsMPSetupBody(r){
   }
   const _mpFl=flightsForRound(r);const _mpMulti=_mpFl.length>1;let _mpSel=(STATE.mpViewFlight===undefined?-1:STATE.mpViewFlight);if(_mpMulti){h+='<div class="gf-filter" style="margin:8px 0 4px">';_mpFl.forEach((_,i)=>{h+='<button class="'+(_mpSel===i?'on':'')+'" onclick="_mpViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});h+='<button class="'+(_mpSel===-1?'on':'')+'" onclick="_mpViewFilterPick(-1)">Both</button></div>';}for(let _fi=0;_fi<_mpFl.length;_fi++){if(_mpMulti&&_mpSel!==-1&&_mpSel!==_fi)continue;const _mem=_mpFl[_fi]||[];if(_mpMulti){h+='<div style="display:flex;align-items:center;gap:7px;padding:6px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,_fi)+'</span></div>';}h+=getSegments(mpGamesForRound(r,_fi),_th_mp).map((seg,si)=>{const tm=STATE.mpTeams[r]?.[_fi]?.[si];if(!tm)return'';if(_hu){const _nMatches=tm[0].length;const a0=tm[0][0],a1=tm[0][1],b0=tm[1][0],b1=tm[1][1];return`<div class="team-game-row">`+`<div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}-${seg.end}</div></div>`+`<div style="flex:1">`+`<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">`+`<span style="font-size:11px;color:#1D9E75;width:44px">M1:</span>`+`<select class="team-dropdown" onchange="setDropHU(${si},0,0,parseInt(this.value),${r},${_fi})">${pOpts(a0,_mem)}</select>`+`<span style="font-size:11px;color:var(--color-text-tertiary)">vs</span>`+`<select class="team-dropdown" onchange="setDropHU(${si},1,0,parseInt(this.value),${r},${_fi})">${pOpts(b0,_mem)}</select>`+`</div>`+(_nMatches>1?`<div style="display:flex;align-items:center;gap:4px">`+`<span style="font-size:11px;color:#185FA5;width:44px">M2:</span>`+`<select class="team-dropdown" onchange="setDropHU(${si},0,1,parseInt(this.value),${r},${_fi})">${pOpts(a1,_mem)}</select>`+`<span style="font-size:11px;color:var(--color-text-tertiary)">vs</span>`+`<select class="team-dropdown" onchange="setDropHU(${si},1,1,parseInt(this.value),${r},${_fi})">${pOpts(b1,_mem)}</select>`+`</div>`:'')+`</div></div>`;}else{const[a0,a1]=tm[0],[b0,b1]=tm[1];return`<div class="team-game-row">`+`<div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}-${seg.end}</div></div>`+`<div style="flex:1">`+`<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">`+`<span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span>`+`<select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},false,${_fi})">${pOpts(a0,_mem)}</select>`+`<select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},false,${_fi})">${pOpts(a1,_mem)}</select>`+`</div>`+`<div style="display:flex;align-items:center;gap:4px">`+`<span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span>`+`<select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},false,${_fi})">${pOpts(b0,_mem)}</select>`+`<select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},false,${_fi})">${pOpts(b1,_mem)}</select>`+`</div></div></div>`;}}).join('');}
   if(_hu){h+=`<div class="setup-row"><div style="flex:1"><div style="font-size:13px;color:var(--color-text-secondary)">Net off match low</div><div style="font-size:11px;color:var(--color-text-tertiary);margin-top:1px">On: higher handicap gets the difference. Off: full handicap.</div></div><label class="toggle"><input type="checkbox" ${huNetOffMatchLow(r)?'checked':''} onchange="WK.rounds[${r}].mpHUNetOffMatchLow=this.checked;autoSave();s2WriteActive();renderScorecard();renderBanner();renderMPHoleBox();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>`;}if(!_hu){h+=`<div class="setup-row" style="gap:10px"><span style="font-size:13px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.mpSettle=this.value;autoSave();s2WriteActive()"><option value="perplayer"${(WK.mpSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.mpSettle==='perteam'?' selected':''}>Per team</option></select></div>`;}
+  // Unfinished match. The key has been read, defaulted and persisted since v119.30 with
+  // no writer anywhere, so an undecided segment always went to the leader and nobody
+  // could choose otherwise. Same two options and the same words as Razzle's control, one
+  // game reading them differently: Razzle defaults to void, Match Play to leader, because
+  // that is what each has silently been doing and neither default may move now.
+  // _gsOptVal/_gsOptSet carry the lane, so this is per foursome wherever the sheet is.
+  // Outside the !_hu branch on purpose: _mpSegDisposition governs both lanes.
+  const _mpFin=_gsOptVal('mpFinalSeg',r,'leader');
+  h+=`<div class="setup-row" style="gap:10px"><div style="flex:1"><div style="font-size:13px;color:var(--color-text-secondary)">Unfinished match</div><div style="font-size:11px;color:var(--color-text-tertiary);margin-top:1px">When play ends before a match is decided.</div></div><select class="ie-sel" onchange="_gsOptSet('mpFinalSeg',${r},this.value);autoSave();s2WriteActive();_gsRefreshAfterEdit()"><option value="leader"${_mpFin!=='void'?' selected':''}>Leader wins</option><option value="void"${_mpFin==='void'?' selected':''}>No winner</option></select></div>`;
   h+=renderPressCfgRows(r);
   return h;
 }
@@ -13433,19 +13653,36 @@ function renderMPRound(){
     const expanded=STATE.mpExpanded[key]===true;
     const finalMs=calcMPMatchScore(r,_fi,si,seg.end-1);
     const presses=getPresses(r,_fi,si);
+    // Every phase read on this card goes through here. Routing only some of them would
+    // put two different bases on one card, which is the failure the hole dots already
+    // demonstrate.
+    const _phase=(ms)=>_mpPhaseFs(r,_fi,seg,ms);
+
+    // The leader SETTLEMENT recognises, which is not always the one who is ahead. Under
+    // the void rule a live match has a leader and no winner, and a card reading the raw
+    // finalMs.leader prints a dollar figure calcRoundMP never pays. That divergence was
+    // harmless only while the label short-circuited to 'In progress' before reaching any
+    // money; teaching the phase about end holes in v120.04 removed the cover.
+    const _mpWin=finalMs?_mpSegDisposition(r,_fi,seg.end,finalMs.diff,0,
+      finalMs.leader==='A'?'a':finalMs.leader==='B'?'b':'tie'):null;
+    const _mpLeadS=_mpWin==='a'?'A':_mpWin==='b'?'B':null;
+    // Voided is not the same as halved and must not borrow its words: nobody tied here,
+    // the match was thrown out with a leader standing.
+    const _mpVoided=!!(finalMs&&finalMs.leader&&!_mpLeadS);
 
     // Build original bet result summary
     let origSummaryHtml;
-    const _osPh=_mpPhase(finalMs);
+    const _osPh=_phase(finalMs);
     if(_osPh==='ns'){origSummaryHtml=`<span style="color:var(--color-text-tertiary);font-size:12px">Not started</span>`;}
     else if(_osPh==='ip'){origSummaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
-    else if(!finalMs.leader){origSummaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">Tied - A/S</span>`;}
-    else{const winLtr=finalMs.leader==='A'?(_huRnd?nameA:'A'):(_huRnd?nameB:'B');const winClr=finalMs.leader==='A'?'#1D9E75':'#185FA5';let resultScore=finalMs.scoreStr.replace('Team A',_huRnd?nameA:'A').replace('Team B',_huRnd?nameB:'B');resultScore=resultScore.replace(winLtr+' ','').replace(winLtr+': ','').trim();origSummaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winLtr} wins · ${resultScore}</span>`;}
+    else if(_mpVoided){origSummaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">No winner</span>`;}
+    else if(!_mpLeadS){origSummaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">Tied - A/S</span>`;}
+    else{const winLtr=_mpLeadS==='A'?(_huRnd?nameA:'A'):(_huRnd?nameB:'B');const winClr=_mpLeadS==='A'?'#1D9E75':'#185FA5';let resultScore=finalMs.scoreStr.replace('Team A',_huRnd?nameA:'A').replace('Team B',_huRnd?nameB:'B');resultScore=resultScore.replace(winLtr+' ','').replace(winLtr+': ','').trim();origSummaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winLtr} wins · ${resultScore}</span>`;}
 
     // Compute press net for top-level header
     const origVal=roundValFs('gameVal',r,_fi,WK.gameVal);
     const origSv=settleVal(origVal,tA.length,WK.mpSettle||'perplayer');
-    const origNet=finalMs?(finalMs.leader==='A'?origSv:finalMs.leader==='B'?-origSv:0):null;
+    const origNet=finalMs?(_mpLeadS==='A'?origSv:_mpLeadS==='B'?-origSv:0):null;
     let pressNetA=origNet||0;
     presses.forEach(p=>{const pr=calcPressResult(r,_fi,si,p);if(!pr||pr.winner==='tie')return;const sign=pr.winner==='a'?1:-1;pressNetA+=sign*pr.sv;});
     const netStr=origNet===null?'':(pressNetA>0?`A +$${Math.abs(pressNetA).toFixed(2)}`:pressNetA<0?`B +$${Math.abs(pressNetA).toFixed(2)}`:'Even');
@@ -13468,17 +13705,23 @@ function renderMPRound(){
         const mExp=STATE.mpExpanded[mKey]===true;
         const finalMsHU=calcMPMatchScoreHU(r,_fi,si,mi,seg.end-1);
         const origValHU=roundValFs('gameVal',r,_fi,WK.gameVal);
-        const origNetHU=finalMsHU?(finalMsHU.leader==='A'?origValHU:finalMsHU.leader==='B'?-origValHU:0):null;
+        const _mpWinHU=finalMsHU?_mpSegDisposition(r,_fi,seg.end,finalMsHU.diff,0,
+          finalMsHU.leader==='A'?'a':finalMsHU.leader==='B'?'b':'tie'):null;
+        const _mpLeadSHU=_mpWinHU==='a'?'A':_mpWinHU==='b'?'B':null;
+        const _mpVoidedHU=!!(finalMsHU&&finalMsHU.leader&&!_mpLeadSHU);
+        const origNetHU=finalMsHU?(_mpLeadSHU==='A'?origValHU:_mpLeadSHU==='B'?-origValHU:0):null;
         const pressesHU=getPresses(r,_fi,si,mi);
         let pressNetHU=origNetHU||0;
         pressesHU.forEach(p=>{const pr=calcPressResult(r,_fi,si,p);if(!pr||pr.winner==='tie')return;pressNetHU+=(pr.winner==='a'?1:-1)*pr.sv;});
-        const anyPressLiveHU=pressesHU.some(p=>{const pr=calcPressResult(r,_fi,si,p);return pr&&!pr.closed&&pr.holesLeft>0;});
+        const anyPressLiveHU=pressesHU.some(p=>{const pr=calcPressResult(r,_fi,si,p);return pr&&!pr.closed&&pr.playableLeft>0;});
         const mNetClr=pressNetHU>0?'#1D9E75':pressNetHU<0?'#185FA5':'var(--color-text-secondary)';
+        const _mpTagHU=finalMsHU?_mpSegOutcome(r,_fi,seg.end,finalMsHU.diff,0):'';
+        const _mpChipHU=_mpEndChip(_mpTagHU);
         // Build clean result string: "Name wins · score" not "Name wins - Name score"
         let mResultStr;
         if(!finalMsHU){mResultStr='Not started';}
-        else if(pressesHU.length===0&&_mpPhase(finalMsHU)==='ip'){mResultStr='In progress';}
-        else if(_mpPhase(finalMsHU)!=='done'||anyPressLiveHU){mResultStr='In progress';}
+        else if(pressesHU.length===0&&_phase(finalMsHU)==='ip'){mResultStr='In progress';}
+        else if(_phase(finalMsHU)!=='done'||anyPressLiveHU){mResultStr='In progress';}
         else if(finalMsHU.leader){
           // A settled match reports money, pressed or not. Score notation stays on
           // the MATCH row inside the expansion, where it is not competing with a total.
@@ -13498,7 +13741,7 @@ function renderMPRound(){
         // Match header row
         html+=`<div style="border-top:0.5px solid var(--color-border-tertiary);padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start" onclick="STATE.mpExpanded['${mKey}']=!STATE.mpExpanded['${mKey}'];_gsRefreshAfterEdit()">`;
         html+=`<div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:5px">Match ${mi+1} · ${mNameA} vs ${mNameB}</div>`;
-        html+=`<div style="font-size:12px;color:var(--color-text-secondary)">Match Result: <span style="font-weight:500;color:${mResultFinalClr}">${mResultStr}</span></div></div>`;
+        html+=`<div style="font-size:12px;color:var(--color-text-secondary)">Match Result: <span style="font-weight:500;color:${mResultFinalClr}">${mResultStr}${_mpChipHU?`<span class="end-chip">${_mpChipHU}</span>`:''}</span></div></div>`;
         html+=`<span style="color:#1D9E75;font-size:12px;margin-top:2px;flex-shrink:0">${mExp?'▲':'▼'}</span>`;
         html+=`</div>`;
         if(mExp){
@@ -13511,7 +13754,10 @@ function renderMPRound(){
               const holeLabel=pressOnHole
                 ?`<span style="display:inline-block;background:#1e3d52;color:#5bb8e8;border-radius:5px;font-size:10px;font-weight:700;padding:2px 5px;letter-spacing:0.03em">H${h+holeOffset(r)+1}</span>`
                 :`<span style="color:var(--color-text-tertiary);font-size:12px">H${h+holeOffset(r)+1}</span>`;
-              if(!res){rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div><div style="width:52px;flex-shrink:0;font-size:12px;color:var(--color-text-tertiary)">-</div><div style="flex:1;padding-left:16px"></div><div style="width:28px;flex-shrink:0"></div></div>`;continue;}
+              if(!res){
+                // h is ROUND RELATIVE in this builder; calcMPHU above adds the offset.
+                const _deadHU=_mpHoleDead(r,_fi,h+holeOffset(r));
+                rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div><div style="width:52px;flex-shrink:0;font-size:12px;color:var(--color-text-tertiary)">${_deadHU?'':'-'}</div><div style="flex:1;padding-left:16px">${_deadHU?'<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic">not played</span>':''}</div><div style="width:28px;flex-shrink:0"></div></div>`;continue;}
               const scoresPair=`<div style="width:52px;flex-shrink:0;font-size:12px;font-weight:500"><span style="color:#1D9E75">${res.bestA}</span><span style="color:var(--color-text-tertiary);margin:0 3px;font-weight:400">vs</span><span style="color:#185FA5">${res.bestB}</span></div>`;
               let msHtml;
               if(!ms2)msHtml=`<div style="flex:1;padding-left:16px"><span style="color:var(--color-text-tertiary);font-size:12px">-</span></div>`;
@@ -13533,11 +13779,11 @@ function renderMPRound(){
           const betKeyHU=mKey+'b0';
           const betExpHU=STATE.mpExpanded[betKeyHU]===true;
           // MATCH row dollar = base match value only (origNetHU)
-          const origNetHUStr=(finalMsHU&&_mpPhase(finalMsHU)==='done'&&origNetHU)?`$${Math.abs(origNetHU).toFixed(2)}`:'';
+          const origNetHUStr=(finalMsHU&&_phase(finalMsHU)==='done'&&origNetHU)?`$${Math.abs(origNetHU).toFixed(2)}`:'';
           const origNetHUClr=origNetHU>0?'#1D9E75':origNetHU<0?'#185FA5':'var(--color-text-secondary)';
           // Score-only summary for MATCH collapsible header (no dollar - shown separately)
           // Build from raw finalMsHU, NOT from mResultStr (which may have dollar injected by press block)
-          let mSummary;const _smPh=_mpPhase(finalMsHU);
+          let mSummary;const _smPh=_phase(finalMsHU);
           if(_smPh==='ns')mSummary=`<span style="color:var(--color-text-tertiary);font-size:12px">Not started</span>`;
           else if(_smPh==='ip')mSummary=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;
           else if(!finalMsHU.leader)mSummary=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">A/S</span>`;
@@ -13571,7 +13817,8 @@ function renderMPRound(){
             const pressShortLabel=`PRESS · ${p.startHole+1===_psEndH?'H'+(p.startHole+1):'H'+(p.startHole+1)+'-'+_psEndH}`;
             let pressSummaryHU,pressNetStrHU='',pressNetClrHU='var(--color-text-secondary)';
             if(!pr){pressSummaryHU=`<span style="color:var(--color-text-secondary);font-size:12px">Not started</span>`;}
-            else if(!pr.closed&&pr.holesLeft>0){pressSummaryHU=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
+            else if(!pr.closed&&pr.playableLeft>0){pressSummaryHU=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
+            else if(pr.winner==='tie'&&pr.cutShort&&pr.lead>0){pressSummaryHU=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">No winner</span>`;}
             else if(pr.winner==='tie'){pressSummaryHU=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">A/S</span>`;}
             else{const _clHU=pr.closed;const wn=pr.winner==='a'?mNameA:mNameB;const wc=_clHU?(pr.winner==='a'?'#1D9E75':'#185FA5'):'var(--color-text-secondary)';
             const _pScoreWn=pr.winner==='a'?mNameA:mNameB;
@@ -13602,12 +13849,13 @@ function renderMPRound(){
             html+=`</div>`;
           });
           // Summary card once the match has started, pressed or not
-          if(pressesHU.length>0||_mpPhase(finalMsHU)!=='ns'){
-            const _aggDoneHU=_mpPhase(finalMsHU)==='done'&&!anyPressLiveHU;
+          if(pressesHU.length>0||_phase(finalMsHU)!=='ns'){
+            const _aggDoneHU=_phase(finalMsHU)==='done'&&!anyPressLiveHU;
             const wn=pressNetHU>0?mNameA:mNameB;
             const gameNetDisplay=!_aggDoneHU?'In progress':pressNetHU===0?'No Blood':`${wn} wins · $${Math.abs(pressNetHU).toFixed(2)}`;
             const _aggClrHU=_aggDoneHU?mNetClr:'var(--color-text-secondary)';
-            html+=`<div style="margin:0 10px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;background:var(--color-background-secondary);display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Match Result</span><span style="font-weight:600;font-size:12px;color:${_aggClrHU}">${gameNetDisplay}</span></div>`;
+            const _mpEnHU=_mpEndNote(r,_fi,_mpTagHU);
+            html+=`<div style="margin:0 10px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;background:var(--color-background-secondary)"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Match Result</span><span style="font-weight:600;font-size:12px;color:${_aggClrHU}">${gameNetDisplay}</span></div>${_mpEnHU?`<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:4px">${_mpEnHU}</div>`:''}</div>`;
           }
           html+=`<div style="height:8px"></div>`;
         }
@@ -13616,9 +13864,11 @@ function renderMPRound(){
     } else {
     html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
     const _winLblA=_huRnd?nameA:'A',_winLblB=_huRnd?nameB:'B';
-    const anyPressLive=presses.some(p=>{const pr=calcPressResult(r,_fi,si,p);return pr&&!pr.closed&&pr.holesLeft>0;});
-    const netResultLabel2=(()=>{if(_segNotPlayed(r,_fi,seg))return'Not played';if(!finalMs)return'Not started';if(_mpPhase(finalMs)==='ip')return'In progress';if(anyPressLive)return'In progress';if(!finalMs.closed){if(pressNetA>0)return`${_winLblA} wins · $${Math.abs(pressNetA).toFixed(2)}`;if(pressNetA<0)return`${_winLblB} wins · $${Math.abs(pressNetA).toFixed(2)}`;return finalMs.scoreStr.replace('Team A',_winLblA).replace('Team B',_winLblB);}if(pressNetA===0)return'No Blood';return pressNetA>0?`${_winLblA} wins · $${Math.abs(pressNetA).toFixed(2)}`:`${_winLblB} wins · $${Math.abs(pressNetA).toFixed(2)}`;})();
-    const netResultClr2=(_mpPhase(finalMs)==='ip'||anyPressLive)?'var(--color-text-secondary)':(pressNetA>0?'#1D9E75':pressNetA<0?'#185FA5':'var(--color-text-secondary)');
+    // playableLeft, not holesLeft: a press owed three holes that will never be played is
+    // over, whatever its contract says.
+    const anyPressLive=presses.some(p=>{const pr=calcPressResult(r,_fi,si,p);return pr&&!pr.closed&&pr.playableLeft>0;});
+    const netResultLabel2=(()=>{if(_segNotPlayed(r,_fi,seg))return'Not played';if(!finalMs)return'Not started';if(_phase(finalMs)==='ip')return'In progress';if(anyPressLive)return'In progress';if(_mpVoided&&pressNetA===0)return'No winner';if(!finalMs.closed){if(pressNetA>0)return`${_winLblA} wins · $${Math.abs(pressNetA).toFixed(2)}`;if(pressNetA<0)return`${_winLblB} wins · $${Math.abs(pressNetA).toFixed(2)}`;return finalMs.scoreStr.replace('Team A',_winLblA).replace('Team B',_winLblB);}if(pressNetA===0)return'No Blood';return pressNetA>0?`${_winLblA} wins · $${Math.abs(pressNetA).toFixed(2)}`:`${_winLblB} wins · $${Math.abs(pressNetA).toFixed(2)}`;})();
+    const netResultClr2=(_phase(finalMs)==='ip'||anyPressLive)?'var(--color-text-secondary)':(pressNetA>0?'#1D9E75':pressNetA<0?'#185FA5':'var(--color-text-secondary)');
     html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleMPGame('${key}')">`;
     html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">Match ${si+1} · H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
     html+=`<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px">`;
@@ -13630,7 +13880,14 @@ function renderMPRound(){
       html+=`<div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">${nameB}</div></div>`;
     }
     html+=`</div>`;
-    html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Match Result: <span style="font-weight:500;color:${netResultClr2}">${netResultLabel2}</span></div>`;
+    // diff against 0 is the same magnitude as pA-pB: halves add to both sides and cancel.
+    const _mpTag=finalMs?_mpSegOutcome(r,_fi,seg.end,finalMs.diff,0):'';
+    const _mpChip=_mpEndChip(_mpTag);
+    html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Match Result: <span style="font-weight:500;color:${netResultClr2}">${netResultLabel2}</span>${_mpChip?`<span class="end-chip">${_mpChip}</span>`:''}</div>`;
+    // One tag, two surfaces: a chip in the header and the full sentence at the foot,
+    // which is where Razzle puts its own. Deriving them separately would let the chip
+    // and the sentence disagree about the same match.
+    const _mpEn=_mpEndNote(r,_fi,_mpTag);
     html+=`</div>`;
 
     if(expanded){
@@ -13643,7 +13900,10 @@ function renderMPRound(){
           const holeLabel=pressOnHole
             ?`<span style="display:inline-block;background:#1e3d52;color:#5bb8e8;border-radius:5px;font-size:10px;font-weight:700;padding:2px 5px;letter-spacing:0.03em">H${h+1}</span>`
             :`<span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span>`;
-          if(!res){rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div><div style="width:52px;flex-shrink:0;font-size:12px;color:var(--color-text-tertiary)">-</div><div style="flex:1;padding-left:16px"></div><div style="width:40px;flex-shrink:0"></div></div>`;continue;}
+          if(!res){
+            // h is a GLOBAL hole index in this builder.
+            const _dead=_mpHoleDead(r,_fi,h);
+            rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div><div style="width:52px;flex-shrink:0;font-size:12px;color:var(--color-text-tertiary)">${_dead?'':'-'}</div><div style="flex:1;padding-left:16px">${_dead?'<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic">not played</span>':''}</div><div style="width:40px;flex-shrink:0"></div></div>`;continue;}
           const ms=msFunc(h);
           const scoresPair=`<div style="width:52px;flex-shrink:0;font-size:12px;font-weight:500"><span style="color:#1D9E75">${res.bestA}</span><span style="color:var(--color-text-tertiary);margin:0 3px;font-weight:400">vs</span><span style="color:#185FA5">${res.bestB}</span></div>`;
           let matchStateHtml;
@@ -13678,7 +13938,7 @@ function renderMPRound(){
       // Original bet card - collapsed by default
       const betKey=key+'b0';
       const betExp=STATE.mpExpanded[betKey]===true;
-      const origNetStr=(finalMs&&_mpPhase(finalMs)==='done'&&origNet)?`$${Math.abs(origNet).toFixed(2)}`:'';
+      const origNetStr=(finalMs&&_phase(finalMs)==='done'&&origNet)?`$${Math.abs(origNet).toFixed(2)}`:'';
       const origNetClr=origNet>0?'#1D9E75':origNet<0?'#185FA5':'var(--color-text-secondary)';
       html+=`<div style="margin:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden">`;
       html+=`<div style="background:var(--color-background-secondary);padding:7px 12px;display:flex;align-items:center;cursor:pointer;gap:0" onclick="STATE.mpExpanded['${betKey}']=!STATE.mpExpanded['${betKey}'];_gsRefreshAfterEdit()">`;
@@ -13701,7 +13961,12 @@ function renderMPRound(){
         const pressLabel=(p.auto?'Auto-press':'Press '+(pi+1))+' · '+(p.startHole+1===seg.end?'H'+(p.startHole+1):'H'+(p.startHole+1)+'-'+seg.end)+' · $'+p.val.toFixed(2);
         let pressSummary,pressNetStr='',pressNetClr='var(--color-text-secondary)';
         if(!pr){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px">Not started</span>`;}
-        else if(!pr.closed&&pr.holesLeft>0){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
+        // playableLeft, not holesLeft. v120.08 taught the segment header this and left the
+        // press card behind, so a press owed three holes nobody will ever play still read
+        // as live on the very card that shows its holes marked not played.
+        else if(!pr.closed&&pr.playableLeft>0){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
+        // A voided press is not a halved one. Somebody was ahead; the rule threw it out.
+        else if(pr.winner==='tie'&&pr.cutShort&&pr.lead>0){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">No winner</span>`;}
         else if(pr.winner==='tie'){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">A/S</span>`;}
         else{const wLtr=pr.winner==='a'?'A':'B';const wclr=pr.winner==='a'?'#1D9E75':'#185FA5';const _prSc=(pr.scoreStr||'').replace(/^[AB][ :]/,'').trim();pressSummary=`<span style="color:${wclr};font-weight:500;font-size:12px">${wLtr} wins${_prSc?' · '+_prSc:''}</span>`;const pnetv=pr.winner==='a'?pr.sv:-pr.sv;pressNetStr='$'+Math.abs(pnetv).toFixed(2);pressNetClr=pnetv>0?'#1D9E75':pnetv<0?'#185FA5':'var(--color-text-secondary)';}
         const pressWinName=pr?(pr.winner==='a'?nameA:pr.winner==='b'?nameB:''):'';
@@ -13721,11 +13986,11 @@ function renderMPRound(){
       });
 
       // Summary card once the match has started, pressed or not
-      if(presses.length>0||_mpPhase(finalMs)!=='ns'){
-        const _aggDone=_mpPhase(finalMs)==='done'&&!anyPressLive;
+      if(presses.length>0||_phase(finalMs)!=='ns'){
+        const _aggDone=_phase(finalMs)==='done'&&!anyPressLive;
         const gameNetDisplay=!_aggDone?'In progress':pressNetA===0?'No Blood':pressNetA>0?`${_winLblA} wins · $${Math.abs(pressNetA).toFixed(2)}`:`${_winLblB} wins · $${Math.abs(pressNetA).toFixed(2)}`;
         const _aggClr=_aggDone?netClr:'var(--color-text-secondary)';
-        html+=`<div style="margin:0 10px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;background:var(--color-background-secondary);display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Match Result</span><span style="font-weight:600;font-size:12px;color:${_aggClr}">${gameNetDisplay}</span></div>`;
+        html+=`<div style="margin:0 10px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;background:var(--color-background-secondary)"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Match Result</span><span style="font-weight:600;font-size:12px;color:${_aggClr}">${gameNetDisplay}</span></div>${_mpEn?`<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:4px">${_mpEn}</div>`:''}</div>`;
       }
     }
     html+=`</div>`;
@@ -13777,9 +14042,16 @@ function _renderVegasFlightBlock(r,fi,labelHd){
     html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleVegasGame('${key}')">`;
     html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">Match ${si+1} &middot; H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
     html+=`<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#1D9E75;margin-bottom:2px">TEAM A</div><div style="font-size:11px;font-weight:500;color:#1D9E75">${nameA}</div></div><div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">${nameB}</div></div></div>`;
-    const vegNetLabel=(()=>{if(_segNotPlayed(r,fi,seg))return'Not played';if(totA===0&&totB===0)return'In progress';const n2=totA-totB;if(n2===0)return'No Blood';return n2>0?`A wins · +${Math.abs(n2)} pts`:`B wins · +${Math.abs(n2)} pts`;})();
+    // h is SEGMENT RELATIVE here; calcVegas takes a global index.
+    const _vgAwait=(()=>{for(let h=seg.start;h<seg.end;h++){const _gh=h+_off_vr;
+      if(_mpHoleDead(r,fi,_gh))continue;
+      if(!calcVegas(_gh,r,fi))return true;}
+      return false;})();
+    const vegNetLabel=(()=>{if(_segNotPlayed(r,fi,seg))return'Not played';if(totA===0&&totB===0)return _vgAwait?'In progress':'No Blood';const n2=totA-totB;if(n2===0)return'No Blood';return n2>0?`A wins · +${Math.abs(n2)} pts`:`B wins · +${Math.abs(n2)} pts`;})();
     const vegNetClr=(totA-totB)>0?'#1D9E75':(totA-totB)<0?'#185FA5':'var(--color-text-secondary)';
-    html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Match Result: <span style="font-weight:500;color:${vegNetClr}">${vegNetLabel}</span></div>`;
+    const _vgTag=_segStopTag(r,fi,seg),_vgChip=_mpEndChip(_vgTag),_vgNote=_mpEndNote(r,fi,_vgTag);
+    html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Match Result: <span style="font-weight:500;color:${vegNetClr}">${vegNetLabel}</span>${_vgChip?`<span class="end-chip">${_vgChip}</span>`:''}</div>`;
+    if(_vgNote)html+=`<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:4px">${_vgNote}</div>`;
     html+=`</div>`;
     if(expanded){
       let rows='';
@@ -13787,9 +14059,11 @@ function _renderVegasFlightBlock(r,fi,labelHd){
         const res=calcVegas(h+_off_vr,r,fi);
         const isFlip=res&&(res.aFlip||res.bFlip);
         const holeLabel=isFlip
-          ?`<span style="display:inline-block;background:#1e3d52;color:#5bb8e8;border-radius:5px;font-size:10px;font-weight:700;padding:2px 5px;letter-spacing:0.03em">H${h+1}</span>`
-          :`<span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span>`;
-        if(!res){rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div><div style="flex:1;font-size:12px;color:var(--color-text-tertiary)">-</div><div style="width:60px;flex-shrink:0"></div></div>`;continue;}
+          ?`<span style="display:inline-block;background:#1e3d52;color:#5bb8e8;border-radius:5px;font-size:10px;font-weight:700;padding:2px 5px;letter-spacing:0.03em">H${h+_off_vr+1}</span>`
+          :`<span style="color:var(--color-text-tertiary);font-size:12px">H${h+_off_vr+1}</span>`;
+        // h is SEGMENT RELATIVE in this loop; calcVegas above adds the offset.
+        const _vgDead=_mpHoleDead(r,fi,h+_off_vr);
+        if(!res){rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div><div style="flex:1;font-size:12px;color:var(--color-text-tertiary)">${_vgDead?'<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic">not played</span>':'-'}</div><div style="width:60px;flex-shrink:0"></div></div>`;continue;}
         const scoresHtml=`<div style="flex:1;font-size:12px;font-weight:500;color:var(--color-text-primary);padding-left:8px">${res.numA} vs ${res.numB}</div>`;
         const dblBadge=res.doubled?` <span style="font-size:10px;color:var(--color-text-tertiary)">(x2)</span>`:'';
         if(res.tied){rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div>${scoresHtml}<div style="width:60px;flex-shrink:0;text-align:right"><span style="color:#BA7517;font-size:12px;font-weight:500">Tied</span></div></div>`;continue;}
@@ -14293,6 +14567,7 @@ function renderMoney(){
             <span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:var(--color-text-primary)':'visibility:hidden'}">${bWins?scoreLabel:''}</span>
             <span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${bWins?dollarStr:''}</span>
           </div>
+          ${(()=>{const _t=_mpEndNote(r,fi,_mpSegOutcome(r,fi,seg.end,pA,pB));return _t?`<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:2px">${_t}</div>`:'';})()}
         </div>${pressHtml}`;
       });
     }
@@ -14728,7 +15003,13 @@ function _renderSkinsFlightBlock(r,fi,labelHd){
     const playerTallyPre=_skStd.tally;
     let summaryHtml;
     const totalSkins=isIndiv?Object.values(playerTallyPre).reduce((a,b)=>a+b,0):skinsA+skinsB;
-    if(totalSkins===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
+    // A hole past the foursome's end hole is not outstanding, it is finished business.
+    // Without this, two carried-over holes leave zero skins and the card reads In
+    // progress forever, while the bar directly beneath it already says No Blood.
+    // holes[].h carries the offset, so these are GLOBAL indices.
+    const _skAwait=holes.some(x=>x.pending&&!_mpHoleDead(r,fi,x.h));
+    if(totalSkins===0&&_skAwait){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
+    else if(totalSkins===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">No Blood</span>`;}
     else if(isIndiv){
       const _skSorted=Object.entries(playerTallyPre).sort((a,b)=>b[1]-a[1]);
       const _skDone=isRoundComplete(r);
@@ -14755,14 +15036,18 @@ function _renderSkinsFlightBlock(r,fi,labelHd){
       const nB=teams[1].map(i=>displayName(i)).join(' & ');
       html+=`<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#1D9E75;margin-bottom:2px">TEAM A</div><div style="font-size:11px;font-weight:500;color:#1D9E75">${nA}</div></div><div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">${nB}</div></div></div>`;
     }
-    html+=`<div style="font-size:12px;padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Match Result: ${summaryHtml}</div>`;
+    const _skTag=_segStopTag(r,fi,seg),_skChip=_mpEndChip(_skTag),_skNote=_mpEndNote(r,fi,_skTag);
+    html+=`<div style="font-size:12px;padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Match Result: ${summaryHtml}${_skChip?`<span class="end-chip">${_skChip}</span>`:''}</div>`;
+    if(_skNote)html+=`<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:4px">${_skNote}</div>`;
     html+=`</div>`;
     if(expanded){
       let rows='',skinsA2=0,skinsB2=0;
       const playerTally={};
       holes.forEach(({h,pending,tied,winner,type,skinsWon,carry})=>{
         let winTxt='', winColor='var(--color-text-primary)', midTxt='';
-        if(pending){winTxt=`<span style="color:var(--color-text-secondary)">-</span>`;midTxt='-';}
+        // holes[].h already carries the offset, so this one is a GLOBAL index.
+        if(pending&&_mpHoleDead(r,fi,h)){winTxt='';midTxt='<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic">not played</span>';}
+        else if(pending){winTxt=`<span style="color:var(--color-text-secondary)">-</span>`;midTxt='-';}
         else if(tied){midTxt=`<span style="color:#BA7517;font-size:12px;font-weight:500">${carry} skin${carry!==1?'s':''}</span>`;winTxt=`<span style="color:#BA7517;font-size:12px;font-weight:500;white-space:nowrap">Carried Over</span>`;}
         else if(skinsWon){
           if(isIndiv){const pi=winner;playerTally[pi]=(playerTally[pi]||0)+skinsWon;winColor=PLAYER_COLORS[pi%PLAYER_COLORS.length];midTxt=`<span style="color:${winColor};font-weight:500;font-size:12px">${skinsWon} skin${skinsWon!==1?'s':''}</span>`;winTxt=`<span style="font-size:12px;font-weight:700;color:${winColor}">${displayName(pi)}</span>`;}
@@ -15355,7 +15640,12 @@ function _ninesGrid(r,fi,members,off,n){
     const numClr=live?'var(--color-text-primary)':'var(--color-text-tertiary)';
     const numWt=live?'600':'400';
     html+='<tr style="border-bottom:0.5px solid var(--color-border-tertiary)">';
-    html+='<td style="text-align:center;font-size:11px;font-weight:'+numWt+';color:'+numClr+';padding:6px 0">'+(k+1)+'</td>';
+    // off+k, not k+1: on a back nine the grid was numbering holes 10 to 18 as 1 to 9.
+    html+='<td style="text-align:center;font-size:11px;font-weight:'+numWt+';color:'+numClr+';padding:6px 0">'+(off+k+1)+'</td>';
+    if(_mpHoleDead(r,fi,off+k)){
+      html+='<td colspan="'+members.length+'" style="text-align:center;padding:6px 0"><span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary)">not played</span></td></tr>';
+      continue;
+    }
     members.forEach(function(_pi,i){
       if(!hc){html+='<td style="text-align:center;font-size:12px;color:var(--color-text-tertiary);padding:6px 0">&#183;</td>';return;}
       html+='<td style="text-align:center;font-size:12px;color:var(--color-text-secondary);padding:6px 0">'+hc.pts[i]+'</td>';
@@ -15387,7 +15677,7 @@ function _ninesFlightBlock(r,fi,labelHd){
     html+='<div style="display:flex;align-items:center;gap:10px"><span style="flex:1;font-size:13px;color:var(--color-text-primary)">'+displayName(roll.members[i])+'</span><span style="font-size:13px;color:var(--color-text-secondary)">'+roll.pts[i]+' pts</span><span style="font-size:13px;font-weight:600;color:'+_nClr+';width:70px;text-align:right">'+(_nNet===0?'$0.00':_nStr)+'</span></div>';
   });
   html+='</div>';
-  html+='<div style="padding:6px 14px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-tertiary)">'+roll.holes+' of '+_n+' holes scored</div>';
+  html+='<div style="padding:6px 14px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-tertiary)">'+roll.holes+' of '+fsHoleCount(r,fi)+' holes scored</div>';
   html+='</div>';
   html+='<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">';
   html+='<div style="padding:9px 14px;background:var(--color-background-secondary);display:flex;align-items:center;cursor:pointer" onclick="_ninesToggle(\''+key+'\')"><span style="flex:1;font-size:13px;font-weight:600;color:var(--color-text-primary)">Nines - Rd '+(r+1)+'</span><span style="font-size:12px;color:#1D9E75">'+(open?'&#9650;':'&#9660;')+'</span></div>';
@@ -15477,11 +15767,21 @@ function _renderHammerFlightBlock(r,fi,labelHd){
     html+=`<div style="padding:10px 14px;background:var(--color-background-secondary);cursor:pointer" onclick="toggleHammerGame('${hammerKey}')">`;
     html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">Match ${si+1} · H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</span><span style="color:#1D9E75;font-size:12px">${hammerExp?'▲':'▼'}</span></div>`;
     html+=`<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#1D9E75;margin-bottom:2px">TEAM A</div><div style="font-size:11px;font-weight:500;color:#1D9E75">${nameA}</div></div><div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">${nameB}</div></div></div>`;
-    html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Match Result: <span style="font-weight:500;color:${hammerNetClr}">${hammerNetLabel}</span></div>`;
+    const _hmTag=_segStopTag(r,fi,seg),_hmChip=_mpEndChip(_hmTag),_hmNote=_mpEndNote(r,fi,_hmTag);
+    html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Match Result: <span style="font-weight:500;color:${hammerNetClr}">${hammerNetLabel}</span>${_hmChip?`<span class="end-chip">${_hmChip}</span>`:''}</div>`;
+    if(_hmNote)html+=`<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:4px">${_hmNote}</div>`;
     html+=`</div>`;
     if(hammerExp){
     let carryPot=0;
     for(let h=seg.start;h<seg.end;h++){
+      // h is SEGMENT RELATIVE here, and hammerState is keyed the same way.
+      // A dead hole neither shows a pot nor advances the carry: the carry froze at the
+      // end hole, and doubling it through three holes nobody will play invented money on
+      // screen that settlement will never pay.
+      if(_mpHoleDead(r,fi,h+holeOffset(r))){
+        html+=`<div style="display:grid;grid-template-columns:28px 56px 70px auto;align-items:center;padding:5px 12px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px"><span style="font-size:11px;color:var(--color-text-tertiary)">H${h+holeOffset(r)+1}</span><span></span><span style="color:var(--color-text-tertiary);font-style:italic;font-size:11px">not played</span><span></span></div>`;
+        continue;
+      }
       const hs=STATE.hammerState?.[r]?.[fi]?.[h]||{throws:[],conceded:false,concedeVal:0};
       let pot=baseVal+carryPot;
       hs.throws.forEach(()=>{pot*=2;});
