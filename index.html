@@ -1707,7 +1707,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v120.15';
+const APP_VERSION='v120.22';
 
 // ===== THEME =====
 (function(){
@@ -4628,7 +4628,10 @@ async function removeCourseFromPanel(name){
 }
 async function homeRemoveCourse(name){if(!confirm('Remove '+name+' from catalog?'))return;delete CATALOG[name];try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}try{await fetch(SB_URL+'/rest/v1/courses?name=eq.'+encodeURIComponent(name),{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});}catch(e){}renderLibrarySection();}
 function startNewWeekend(){
-  WK=null;STATE=null;isReadOnly=false;viewingTripId=null;
+  // The teardown that used to sit here now runs in _twLaunch. Opening this wizard is
+  // not a decision to abandon the open trip - there is a Cancel on step 1, and it was
+  // useless while the trip had already been dropped before Cancel was ever drawn.
+  // v120.19.
   _twS={step:1,name:'',date:'',region:'',numRounds:4,selectedMembers:[],hdcpPct:80,netOffLow:false,courses:[],tees:[],games:{},buyIn:50,potTiebreak:'countback',potMethod:'netstroke'};
   const ws=document.getElementById('wizardScreen');
   ws.style.display='flex';
@@ -4960,6 +4963,9 @@ window._qrFinish=function(){_qrLaunchRound();};
 window._qrSkipGames=function(){_gsGames={};_qrLaunchRound();};
 
 function _qrLaunchRound(){
+  // MOVED HERE FROM startQuickRound, v120.19. Same ordering requirement as _twLaunch:
+  // above initState, or the team builders read the outgoing trip's foursomes.
+  WK=null;STATE=null;isReadOnly=false;viewingTripId=null;
   const n=_qrS.n;
   const cn=_qrS.course||Object.keys(CATALOG)[0];
   const holes=_qrS.holes;
@@ -5035,9 +5041,10 @@ function _qrLaunchRound(){
 }
 
 function startQuickRound(){
-  // Clear the previous trip the way startNewWeekend does. goHome()/showHome() leave WK
-  // and STATE populated, so without this a quick round starts on top of the last trip.
-  WK=null;STATE=null;isReadOnly=false;viewingTripId=null;
+  // The clear that used to sit here now runs in _qrLaunchRound. It was still needed -
+  // goHome()/showHome() leave WK and STATE populated and a new round must not start on
+  // top of the last trip - but needing it at LAUNCH is not the same as needing it at
+  // OPEN, and doing it at open made this wizard's Cancel a lie too. v120.19.
   _qrS={step:1,n:4,holes:'18',course:null,tee:null,players:[],selectedMembers:[],hdcpPct:0.8,netOffLow:false};
   _gsGames={};
   let modal=document.getElementById('qrModal');
@@ -6359,6 +6366,12 @@ window._twAddGuestSubmit=async function(gid){
 
 // ── _twLaunch: build WK/STATE from _twS and start the trip ──────────────────
 function _twLaunch(){
+  // MOVED HERE FROM startNewWeekend, v120.19. Must stay above initState: the
+  // *ForFlight team builders read STATE.roundFlights, so a stale STATE seeds this
+  // trip's Vegas/Skins/Hammer teams from the previous trip's foursomes. Committing
+  // to the new trip is the moment the old one stops mattering - not opening a
+  // wizard that has a Cancel on its first step.
+  WK=null;STATE=null;isReadOnly=false;viewingTripId=null;
   const s=_twS;
   const nP=s.selectedMembers.length;
   const nR=s.numRounds;
@@ -6440,25 +6453,48 @@ function resolveDisplayNames(players){
 function defaultTeams(r){const g=mpGamesForRound(r),n=WK.players.length,rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];const _s=k=>k<n?k:undefined;return Array(g).fill(null).map((_,gi)=>{const rot=rots[gi%3]||rots[0];return [rot[0].map(_s),rot[1].map(_s)];});}
 function calcMPHU(hi,r,fi,mi){fi=fi||0;const mpG=mpGamesForRound(r,fi),_th=roundHoleCount(r),gi=segForHole(hi-holeOffset(r),mpG,_th);const tm=STATE.mpTeams[r]?.[fi]?.[gi];if(!tm||!tm[0]||!tm[1])return null;const piA=tm[0][mi],piB=tm[1][mi];if(piA===undefined||piB===undefined)return null;const _vpHU=pi=>Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];if(!_vpHU(piA)||!_vpHU(piB))return null;const _pair=[piA,piB],_huLow=huNetOffMatchLow(r);const nA=_huLow?getNetOffLow(piA,hi,r,_pair):getNet(piA,hi,r),nB=_huLow?getNetOffLow(piB,hi,r,_pair):getNet(piB,hi,r);if(nA===null||nB===null)return null;const halved=nA===nB;return{bestA:nA,bestB:nB,aWins:!halved&&nA<nB,halved,tA:[piA],tB:[piB],nA:[nA],nB:[nB]};}
 function isHeadsUp(r){return WK.players.length===2||(WK.rounds[r]&&WK.rounds[r].mpFormat==='headsup');}
+// Fewer than four cannot field two pairs, so there is no match to draw. v120.20 made
+// the TEAMS correct for this case; without this the screen still showed an empty card
+// with a live Press button on it, which is money offered on a match nobody can play.
+// Read by both the hole card and the Games tab so they cannot disagree.
+function _mpTooSmall(r,fi){const n=(flightsForRound(r)[fi]||[]).length;return isHeadsUp(r)?(n<2||n===3):(n<4);}
+function _mpTooSmallNote(r,fi){const n=(flightsForRound(r)[fi]||[]).length;return isHeadsUp(r)?'Heads up needs 2 or 4 players in a foursome. This one has '+n+'.':'Match Play needs 4 players for 2v2. This foursome has '+n+'.';}
 function defaultHUTeams(r){const g=mpGamesForRound(r),n=WK.players.length;
 if(n<=2)return Array(g).fill(null).map(()=>[[0],[1]]);
 const rots=[[[0,2],[1,3]],[[0,1],[2,3]],[[0,1],[3,2]]];const _s=k=>k<n?k:undefined;return Array(g).fill(null).map((_,gi)=>{const rot=rots[gi%3]||rots[0];return [rot[0].map(_s),rot[1].map(_s)];});}
 // Per-foursome MP defaults: rotate THIS foursome's own members onto the slot pattern
 // (defaultTeams/defaultHUTeams hardcode indices 0-3; flighted must use the foursome's
 // global player indices). Single foursome -> members are all players -> identical output.
-function defaultTeamsForFlight(r,fi){const g=mpGamesForRound(r,fi),m=(flightsForRound(r)[fi]||[]),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];return Array(g).fill(null).map((_,gi)=>{const rot=rots[gi%3]||rots[0];return [rot[0].map(k=>m[k]),rot[1].map(k=>m[k])];});}
-function defaultHUTeamsForFlight(r,fi){const g=mpGamesForRound(r,fi),m=(flightsForRound(r)[fi]||[]);if(m.length<=2)return Array(g).fill(null).map(()=>[[m[0]],[m[1]]]);const rots=[[[0,2],[1,3]],[[0,1],[2,3]],[[0,1],[3,2]]];return Array(g).fill(null).map((_,gi)=>{const rot=rots[gi%3]||rots[0];return [rot[0].map(k=>m[k]),rot[1].map(k=>m[k])];});}
+// A foursome of fewer than four cannot field two pairs. Without this guard the rot
+// pattern indexed past the members and built [[a,b],[c,undefined]] - a team with a
+// phantom player in it. defaultHUTeamsForFlight, defaultVegasTeamsForFlight and
+// defaultSkinsTeamsForFlight all guard on member count; this one never did. v120.20.
+//
+// Empty rather than forced heads-up: forcing a format per foursome is per-foursome
+// mpFormat, which the v120.19 scope note holds behind an open question. This makes
+// the impossible state representable, it does not decide what should replace it.
+function defaultTeamsForFlight(r,fi){const g=mpGamesForRound(r,fi),m=(flightsForRound(r)[fi]||[]),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];if(m.length<4)return Array(g).fill(null).map(()=>[[],[]]);return Array(g).fill(null).map((_,gi)=>{const rot=rots[gi%3]||rots[0];return [rot[0].map(k=>m[k]),rot[1].map(k=>m[k])];});}
+function defaultHUTeamsForFlight(r,fi){const g=mpGamesForRound(r,fi),m=(flightsForRound(r)[fi]||[]);const _huNeed=m.length>2?4:2;if(m.length<_huNeed)return Array(g).fill(null).map(()=>[[],[]]);if(m.length<=2)return Array(g).fill(null).map(()=>[[m[0]],[m[1]]]);const rots=[[[0,2],[1,3]],[[0,1],[2,3]],[[0,1],[3,2]]];return Array(g).fill(null).map((_,gi)=>{const rot=rots[gi%3]||rots[0];return [rot[0].map(k=>m[k]),rot[1].map(k=>m[k])];});}
 function defaultVegasTeams(r){const g=vegasSegForRound(r),rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];return Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])));}
 function defaultVegasTeamsForFlight(r,fi){const g=vegasSegForRound(r,fi),m=(flightsForRound(r)[fi]||[]).slice(0,4);if(m.length<4)return Array(g).fill(null).map(()=>[[],[]]);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];return Array(g).fill(null).map((_,gi)=>{const rot=rots[gi%3]||rots[0];return [rot[0].map(k=>m[k]),rot[1].map(k=>m[k])];});}
 function defaultSkinsTeamsForFlight(r,fi){const g=skinsGamesForRound(r,fi),m=(flightsForRound(r)[fi]||[]).slice(0,4);if(m.length<4)return Array(g).fill(null).map(()=>[[],[]]);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];return Array(g).fill(null).map((_,gi)=>{const rot=rots[gi%3]||rots[0];return [rot[0].map(k=>m[k]),rot[1].map(k=>m[k])];});}
 function sanitizeTeams(r){
 const _vp=pi=>Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];
-function isValid(teams){if(!teams||!teams.length)return false;if(isHeadsUp(r)){
-const _np=WK.players.length;
+function isValid(teams,fi){if(!teams||!teams.length)return false;if(isHeadsUp(r)){
+// THIS FOURSOME's size, not the trip's. reconcileMPTeams has always used the
+// foursome; this asked WK.players.length, so a legal 2-man 1v1 sitting inside a
+// 4-player trip was judged by the 2v2 rule and rebuilt forever. v120.22.
+const _np=(flightsForRound(r)[fi]||[]).length;
+if(_np<2||_np===3)return teams.every(game=>!!game&&Array.isArray(game[0])&&Array.isArray(game[1])&&game[0].length===0&&game[1].length===0);
 if(_np<=2)return teams.every(game=>{if(!game||!game[0]||!game[1])return false;return game[0].length===1&&game[1].length===1&&game[0][0]!==game[1][0]&&_vp(game[0][0])&&_vp(game[1][0]);});
-return teams.every(game=>{if(!game||!game[0]||!game[1])return false;if(game[0].length!==2||game[1].length!==2)return false;const all=[game[0][0],game[0][1],game[1][0],game[1][1]];return new Set(all).size===4&&all.every(_vp);});}return teams.every(game=>{if(!game||!game[0]||!game[1])return false;const all=[game[0][0],game[0][1],game[1][0],game[1][1]];return all.length===4&&new Set(all).size===4&&all.every(_vp);});}
+return teams.every(game=>{if(!game||!game[0]||!game[1])return false;if(game[0].length!==2||game[1].length!==2)return false;const all=[game[0][0],game[0][1],game[1][0],game[1][1]];return new Set(all).size===4&&all.every(_vp);});}// Too small for two pairs: empty IS the valid state, and has to be accepted or the
+// round's teams get thrown away and rebuilt forever. Accepted only for a foursome
+// that genuinely cannot play - a four-man group handed empty teams still gets
+// rebuilt, which mpsize M-D1 pins.
+if((flightsForRound(r)[fi]||[]).length<4)return teams.every(game=>!!game&&Array.isArray(game[0])&&Array.isArray(game[1])&&game[0].length===0&&game[1].length===0);
+return teams.every(game=>{if(!game||!game[0]||!game[1])return false;const all=[game[0][0],game[0][1],game[1][0],game[1][1]];return all.length===4&&new Set(all).size===4&&all.every(_vp);});}
 function isValidFlat(teams){if(!teams||!teams.length)return false;return teams.every(game=>{if(!game||!game[0]||!game[1])return false;const all=[game[0][0],game[0][1],game[1][0],game[1][1]];return all.length===4&&new Set(all).size===4&&all.every(_vp);});}
-const _flS=flightsForRound(r);const _mtOk=Array.isArray(STATE.mpTeams[r])&&STATE.mpTeams[r].length===_flS.length&&STATE.mpTeams[r].every(function(fl){return isValid(fl);});if(!_mtOk)STATE.mpTeams[r]=_flS.map(function(_,fi){return isHeadsUp(r)?defaultHUTeamsForFlight(r,fi):defaultTeamsForFlight(r,fi);});
+const _flS=flightsForRound(r);const _mtOk=Array.isArray(STATE.mpTeams[r])&&STATE.mpTeams[r].length===_flS.length&&STATE.mpTeams[r].every(function(fl,fi){return isValid(fl,fi);});if(!_mtOk)STATE.mpTeams[r]=_flS.map(function(_,fi){return isHeadsUp(r)?defaultHUTeamsForFlight(r,fi):defaultTeamsForFlight(r,fi);});
 }
 function defaultFlights(nP){var a=[];for(var i=0;i<nP;i++)a.push(i);return [a];}
 // THE roster sweep. Adding or removing a player invalidates every per-round structure
@@ -6685,7 +6721,7 @@ function _updateActionRow(){
   }
   const saveBtn=document.getElementById('actSaveBtn');
   if(saveBtn){
-    const _maxH=holeOffset(r)+roundHoleCount(r)-1;
+    const _maxH=_navLastHole(r,_curFi(r));
     saveBtn.textContent=hi===_maxH?'Finish Round':'Save & Continue';
   }
 }
@@ -7065,6 +7101,31 @@ function fsHoleCount(r,fi){
   return _clampEnd(raw[fi],full);
 }
 function fsEndedShort(r,fi){return fsHoleCount(r,fi)<roundHoleCount(r);}
+// NAVIGATION BOUND. The last hole the CURRENT foursome can still score. Two sites
+// asked roundHoleCount instead, so a group that ended at 6 in an 18-hole round got
+// walked onto hole 7 by its own Save button and never saw 'Finish Round' at all.
+//
+// Takes the foursome rather than resolving one, because the two callers want
+// different answers and the difference should be readable where they are called.
+//
+//   saveHole and the Save button pass _curFi  - foursome 0 when nobody has picked.
+//   The arrows pass _navFi                    - NULL when nobody has picked.
+//
+// saveHole sits three lines below a guard that already resolves through _curFi, and
+// an advance that disagrees with the guard beside it walks the user onto a hole Save
+// then refuses. The arrows have no such neighbour, and capping them pre-pick would
+// hand foursome 0's answer to somebody who may well be in foursome 2. v120.17.
+//
+// No branch is needed for the null: fsHoleCount already answers a null fi with the
+// full round, which is exactly the pre-pick rule. One contract, two call sites.
+//
+// Derived per call, never cached: resuming a round raises fsHoleCount back up and
+// a stored bound would still be holding the old one.
+function _navLastHole(r,fi){return holeOffset(r)+fsHoleCount(r,fi)-1;}
+// The foursome whose length bounds NAVIGATION, or null when nobody has picked one.
+// _fsPickPending is false on a single-flight round, so a solo round that ended early
+// still caps - the cap is about the round's length, not about having foursomes.
+function _navFi(r){return _fsPickPending(r)?null:_curFi(r);}
 // RESUME POSITION. Where an opened trip lands, and where a round switch or foursome
 // pick lands inside a round. Pure and argument-fed on purpose: the trip-open caller
 // runs mid-hydration, before global WK and STATE exist, so it cannot reach
@@ -8721,6 +8782,7 @@ function renderMPHoleBox(){
   const _fi=isMultiFlight(r)?(getFlightPick(r)||0):0;
   const mpG=mpGamesForRound(r,_fi),si=segForHole(Math.max(0,hi-holeOffset(r)),mpG,roundHoleCount(r));
   if(!gameOnFs('mp',r,_fi)){wrap.innerHTML='';return;}
+  if(_mpTooSmall(r,_fi)){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Match Play</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">${_mpTooSmallNote(r,_fi)}</div></div>`;return;}
   if(!STATE.mpTeams[r]||!STATE.mpTeams[r][_fi]||!STATE.mpTeams[r][_fi][si]){reconcileMPTeams(r);}
   if(!STATE.mpTeams[r]||!STATE.mpTeams[r][_fi]||!STATE.mpTeams[r][_fi][si]){wrap.innerHTML='';return;}
   const tA=STATE.mpTeams[r][_fi][si][0],tB=STATE.mpTeams[r][_fi][si][1];
@@ -8914,14 +8976,23 @@ function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap')
 function renderHoleDots(){const r=STATE.currentRound;const nHoles=roundHoleCount(r);const off=holeOffset(r);const _need=_flightNeedIdxs(r);
   // Holes past this foursome's end were never played. They stay tappable so a score can
   // still be corrected after the fact; they just stop reading as merely blank.
+  //
+  // PRE-PICK THERE IS NO "THIS FOURSOME". _srFi collapses a null pick onto foursome 0,
+  // which is fine for laying the grid out and wrong for making a claim: it hatched three
+  // specific holes as dead for a user who might be in foursome 2. v120.17 made that
+  // audible rather than introducing it - leaving the pre-pick arrows uncapped meant the
+  // strip called a hole gone while the arrow above it walked straight onto it. The strip
+  // ROW already chose silence over foursome 0's answer in v119.35; the dots now match it.
+  // They still all render and all stay tappable - that is the soft cap's only route to a
+  // stale score, and fspick P-J5/P-J5e hold it. v120.18.
   const _srFi=(typeof getFlightPick==='function'?getFlightPick(r):0)||0;
   const _srEnd=off+fsHoleCount(r,_srFi);
-  const _srShort=fsEndedShort(r,_srFi);
+  const _srShort=!_fsPickPending(r)&&fsEndedShort(r,_srFi);
   const makeDot=(i)=>{const done=STATE.scores[r][i]&&_need.every(function(pi){return STATE.scores[r][i][pi]!==null;});return'<div class="hdot'+(done?' done':'')+(_srShort&&i>=_srEnd?' sr-void':'')+(i===STATE.currentHole?' cur':'')+'" onclick="jumpHole('+i+')">'+(i+1)+'</div>';};let html='';if(nHoles<=9){html='<div class="hole-dots-row">'+Array.from({length:nHoles},(_,i)=>makeDot(i+off)).join('')+'</div>';}else{const front=Array.from({length:9},(_,i)=>makeDot(i)).join('');const back=Array.from({length:nHoles-9},(_,i)=>makeDot(i+9)).join('');html='<div class="hole-dots-row">'+front+'</div><div class="hole-dots-row">'+back+'</div>';}  // Placement B: a quiet link, not a filled button, and only in the window where
   // ending is meaningful. A mis-tap opens the sheet and nothing else.
   const _srDone=_fsScoredThrough(r,_srFi);
   const _srOk=!_fsPickPending(r)&&canEditTrip()&&!isRoundLocked(r)&&!(STATE.settledRounds||[]).includes(r);
-  if(_srShort&&!_fsPickPending(r)){
+  if(_srShort){
     // Informational, so it reads louder than the destructive direction does. The whole
     // row is the tap target and it opens the round status sheet rather than acting.
     html+='<div class="sr-striprow" style="cursor:pointer" onclick="_srStatusSheet('+r+')">'+
@@ -8936,8 +9007,8 @@ function renderHoleDots(){const r=STATE.currentRound;const nHoles=roundHoleCount
   // a device that may well pick foursome 1, and the grid then never opens for the group
   // the user actually joined.
   if(!_fsPickPending(r))_srAutoExpand(r,_srFi);}
-function jumpHole(i){STATE.razzleToastOk=false;STATE.currentHole=i;updateHoleUI();}
-function changeHole(d){const r=STATE.currentRound,curHole=STATE.currentHole,_maxHi=holeOffset(r)+roundHoleCount(r)-1,nextHole=Math.max(holeOffset(r),Math.min(_maxHi,curHole+d));const _chfi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(d>0&&gameOnFs('razzle',r,_chfi)&&razzleMatchClosedOnHole(r,curHole)&&!isRoundLocked(r)){const _cms=calcRazzle(r,_chfi);const _closedM=_cms.find(m=>m.closedOnHole===curHole);const _nextMi=_closedM?_closedM.mi+1:_cms.length;const _teamsSet=STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r]&&STATE.razzleMatchTeams[r][_chfi]&&STATE.razzleMatchTeams[r][_chfi][_nextMi];if(!_teamsSet){showRazzleTeamModal(r,nextHole);return;}}if(d>0){if(!STATE.razzleHWM)STATE.razzleHWM={};const hwm=(STATE.razzleHWM[r]&&STATE.razzleHWM[r][_chfi]!==undefined)?STATE.razzleHWM[r][_chfi]:-1;if(nextHole>hwm){if(!STATE.razzleHWM[r])STATE.razzleHWM[r]={};STATE.razzleHWM[r][_chfi]=nextHole;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}}else{STATE.razzleToastOk=false;}STATE.currentHole=nextHole;updateHoleUI();}
+function jumpHole(i){const r=STATE.currentRound,_lo=holeOffset(r);if(!(i>=_lo&&i<=_lo+roundHoleCount(r)-1))return;STATE.razzleToastOk=false;STATE.currentHole=i;updateHoleUI();}
+function changeHole(d){const r=STATE.currentRound,curHole=STATE.currentHole,_maxHi=Math.max(_navLastHole(r,_navFi(r)),curHole),nextHole=Math.max(holeOffset(r),Math.min(_maxHi,curHole+d));const _chfi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(d>0&&gameOnFs('razzle',r,_chfi)&&razzleMatchClosedOnHole(r,curHole)&&!isRoundLocked(r)){const _cms=calcRazzle(r,_chfi);const _closedM=_cms.find(m=>m.closedOnHole===curHole);const _nextMi=_closedM?_closedM.mi+1:_cms.length;const _teamsSet=STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r]&&STATE.razzleMatchTeams[r][_chfi]&&STATE.razzleMatchTeams[r][_chfi][_nextMi];if(!_teamsSet){showRazzleTeamModal(r,nextHole);return;}}if(d>0){if(!STATE.razzleHWM)STATE.razzleHWM={};const hwm=(STATE.razzleHWM[r]&&STATE.razzleHWM[r][_chfi]!==undefined)?STATE.razzleHWM[r][_chfi]:-1;if(nextHole>hwm){if(!STATE.razzleHWM[r])STATE.razzleHWM[r]={};STATE.razzleHWM[r][_chfi]=nextHole;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}}else{STATE.razzleToastOk=false;}STATE.currentHole=nextHole;updateHoleUI();}
 function _fsPillOutside(e){
   var p=document.getElementById('fsPill');
   if(p&&!p.contains(e.target)){p.classList.remove('open');document.removeEventListener('click',_fsPillOutside,true);}
@@ -9008,9 +9079,9 @@ function updateHoleUI(){
   document.getElementById('holeLabel').textContent='Hole '+(hi+1);
   var _voPill=document.getElementById('viewOnlyPill');if(_voPill)_voPill.style.display=(!_fsPickPending(r)&&_pencilViewerLocked(r,_curFi(r)))?'inline-flex':'none';
   const _yds=hole.yardage||0;const _ydStr=_yds>0?' · '+_yds+' yds':'';document.getElementById('holeMeta').textContent='Par '+hole.par+_ydStr+' · Hdcp '+hole.si;
-  const _minHole=holeOffset(r),_maxHole=holeOffset(r)+roundHoleCount(r)-1;
+  const _minHole=holeOffset(r),_maxHole=_navLastHole(r,_navFi(r));
   document.getElementById('prevBtn').disabled=hi===_minHole;
-  document.getElementById('nextBtn').disabled=hi===_maxHole;
+  document.getElementById('nextBtn').disabled=hi>=_maxHole;
   // saveBtn label managed by _updateActionRow
   // Lock/Unlock button
   let lb=document.getElementById('lockRoundBtn');
@@ -9048,7 +9119,7 @@ function saveHole(){if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRou
     showMsg('This round ended at hole '+fsHoleCount(r,_shFi)+'. Tap Resume round to keep playing.');
     return;
   }
-  if(!_flightNeedIdxs(r).every(function(pi){return STATE.scores[r][hi][pi]!==null;})){showMsg('Enter all scores first.');return;}if(gameOn('wolf',r)){const _wfi=isMultiFlight(r)?getFlightPick(r):0;if(_wfi!==null&&gameOnFs('wolf',r,_wfi)&&(flightsForRound(r)[_wfi]||[]).length>=4&&!wolfPicksForRound(r,_wfi)[hi]){showMsg('Wolf still needs a pick for this hole. Choose a partner, go lone, or go blind.');return;}}autoSave();s2WriteActive();if(hi<holeOffset(r)+roundHoleCount(r)-1)changeHole(1);else setView('board');}
+  if(!_flightNeedIdxs(r).every(function(pi){return STATE.scores[r][hi][pi]!==null;})){showMsg('Enter all scores first.');return;}if(gameOn('wolf',r)){const _wfi=isMultiFlight(r)?getFlightPick(r):0;if(_wfi!==null&&gameOnFs('wolf',r,_wfi)&&(flightsForRound(r)[_wfi]||[]).length>=4&&!wolfPicksForRound(r,_wfi)[hi]){showMsg('Wolf still needs a pick for this hole. Choose a partner, go lone, or go blind.');return;}}autoSave();s2WriteActive();if(hi<_navLastHole(r,_curFi(r)))changeHole(1);else setView('board');}
 // ONE clear path. _actClear and resetHole held byte-identical copies of this logic, and
 // BOTH cleared the whole roster and EVERY foursome's per-hole game state. In a multi-foursome
 // round that wiped the other group's scores, hammer throw, wolf pick and snake holder out of
@@ -13644,6 +13715,7 @@ function renderMPRound(){
   if(!STATE.mpExpanded)STATE.mpExpanded={};
   let html=``;
   const _mpFl=flightsForRound(r);const _mpMulti=_mpFl.length>1;let _mpSel=(STATE.mpViewFlight===undefined?-1:STATE.mpViewFlight);if(_mpMulti){html+='<div class="gf-filter" style="margin:0 0 10px">';_mpFl.forEach((_,i)=>{html+='<button class="'+(_mpSel===i?'on':'')+'" onclick="_mpViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});html+='<button class="'+(_mpSel===-1?'on':'')+'" onclick="_mpViewFilterPick(-1)">Both</button></div>';}for(let _fi=0;_fi<_mpFl.length;_fi++){if(_mpMulti&&_mpSel!==-1&&_mpSel!==_fi)continue;const mpG=mpGamesForRound(r,_fi),segs=getSegments(mpG,roundHoleCount(r));if(_mpMulti){html+='<div style="display:flex;align-items:center;gap:7px;padding:8px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,_fi)+'</span></div>';}
+  if(_mpTooSmall(r,_fi)){html+='<div class="section-card" style="margin-bottom:10px;padding:10px 14px;font-size:12px;color:var(--color-text-secondary)">'+_mpTooSmallNote(r,_fi)+'</div>';continue;}
   segs.forEach((seg,si)=>{
     const tm=STATE.mpTeams[r][_fi][si];if(!tm)return;
     const tA=tm[0],tB=tm[1];
