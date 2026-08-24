@@ -1707,7 +1707,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v120.22';
+const APP_VERSION='v120.26';
 
 // ===== THEME =====
 (function(){
@@ -3696,6 +3696,23 @@ function gameNetNote(gid,r,fi){
     if(!netting)return{html:full.html,warn:false,change:true};
     const pools=fbPools(r);
     if(!pools.length)return null;
+    // BOTH LANE: fi is null. The old code fell through to pools[0] and to wide=false, so a
+    // round with a pot in each foursome named ONLY the first pot's low man and then called
+    // him "Your foursome" on a view that is showing every foursome at once.
+    //
+    // Four-Ball differs from the netOffFlightLow arm above in one way that matters: a pot can
+    // legitimately span the whole field. fbPools tags that case with fi===null. So when there
+    // is exactly ONE pot, a single name IS true for everyone on screen and withholding it
+    // would be the worse answer. Only a multi-pot round has no single true name.
+    if(multi&&fi==null){
+      if(pools.length>1)return{html:'Strokes off <b>each Four-Ball pot\'s own low man</b>.',warn:false,change:false};
+      const p0=pools[0];
+      if(!p0||!p0.players.length)return null;
+      const low0=p0.players.reduce(function(a,pi){return courseHdcp(pi,r)<courseHdcp(a,r)?pi:a;},p0.players[0]);
+      return{html:'Strokes off <b>the Four-Ball pot\'s low man</b> ('+displayName(low0)+'). '
+        +(p0.fi==null?('All '+p0.players.length+' players, across foursomes.'):('Foursome '+(p0.fi+1)+' only.')),
+        warn:false,change:false};
+    }
     const mem=(multi&&fi!=null)?(flightsForRound(r)[fi]||[]):null;
     const pool=mem?pools.find(function(p){return p.players.some(function(pi){return mem.indexOf(pi)>=0;});}):pools[0];
     if(!pool||!pool.players.length)return null;
@@ -3713,6 +3730,18 @@ function gameNetNote(gid,r,fi){
   }
 
   if(STATE.netOffFlightLow){
+    // BOTH LANE: fi is null, and the old code answered that with two independent fallbacks
+    // that disagreed. Membership fell back to the WHOLE FIELD, so `low` was the field's low
+    // man; the label fell back to index 0, so it printed "Foursome 1's". The banner therefore
+    // named the field low and attributed him to Foursome 1. Those two wrongs cancel only when
+    // the lowest handicap happens to sit in Foursome 1, which is why it read correctly on the
+    // Shaker Cup roster and hid for this long. Put the field low in Foursome 2 and the banner
+    // names a man who is the netting basis for neither foursome on screen.
+    //
+    // netOffFlightLow is settled ON: each foursome nets off its OWN low man. On the Both lane
+    // there is no single name that is true for both, so state the rule and name nobody. The
+    // per-foursome lanes still name the man, and they were always correct.
+    if(multi&&fi==null)return{html:'Strokes off <b>each foursome\'s own low man</b>.',warn:false,change:true};
     const mem=(multi&&fi!=null?(flightsForRound(r)[fi]||[]):WK.players.map(function(_,pi){return pi;})).filter(_vpi);
     if(!mem.length)return null;
     const low=mem.reduce(function(a,pi){return effHdcpForFlight(pi,r,mem)<effHdcpForFlight(a,r,mem)?pi:a;},mem[0]);
@@ -8653,9 +8682,7 @@ function renderRazzleRound(){
   if(!multi){el.innerHTML=_renderRazzleFlightBlock(r,0,null);return;}
   if(STATE.razzleViewFlight===undefined||STATE.razzleViewFlight===null)STATE.razzleViewFlight=-1;
   let sel=STATE.razzleViewFlight;if(sel!==-1&&sel>=fl.length)sel=0;
-  let fh='<div class="gf-filter" style="margin:0 0 10px">';
-  fl.forEach((g,i)=>{fh+='<button class="'+(sel===i?'on':'')+'" onclick="_razzleViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});
-  fh+='<button class="'+(sel===-1?'on':'')+'" onclick="_razzleViewFilterPick(-1)">Both</button></div>';
+  let fh='';
   const toRender=sel===-1?fl.map((_,i)=>i):[sel];
   let html=fh;
   toRender.forEach(fi=>{const labelHd=(sel===-1)?'<div class="gf-blk-lbl"><span class="bd" style="background:'+_flightsAccent0(fi)+'"></span>Foursome '+(fi+1)+'</div>':null;html+=_renderRazzleFlightBlock(r,fi,labelHd);});
@@ -10285,11 +10312,10 @@ function renderWolfBox(){
   wrap.innerHTML=html;
 }
 
-function _wolfViewFilterPick(sel){STATE.wolfViewFlight=sel;renderGamesContent();}
-function _snakeViewFilterPick(sel){STATE.snakeViewFlight=sel;renderGamesContent();}
-function _mpViewFilterPick(sel){STATE.mpViewFlight=sel;renderGamesContent();}
-function _skinsViewFilterPick(sel){STATE.skinsViewFlight=sel;renderGamesContent();}
-function _razzleViewFilterPick(sel){STATE.razzleViewFlight=sel;renderGamesContent();}
+// The seven per-game view-filter pick handlers lived here through v120.22. Each set its
+// own STATE key and then called renderGamesContent, which resets that key from the lane
+// on its first line, so none of them could take effect. Removed in v120.23 along with
+// the pills that called them. The lane bar (switchGamesLane) is the live control.
 // Shared sliding-pill positioner for every .gf-filter bar (games, setup, scorecard grid).
 // Auto-injects a .gf-pill and animates it under the active button. Because the filter
 // handlers re-render the bar DOM, we remember the last geometry per bar signature and
@@ -10331,7 +10357,12 @@ function _gfSlide(){
   });
 }
 var _gfRaf=null;
-function _gfScheduleSlide(){if(_gfRaf)return;_gfRaf=requestAnimationFrame(function(){_gfRaf=null;_gfSlide();});}
+// Two pill systems exist. .gf-filter bars are re-placed by _gfSlide off a MutationObserver,
+// so they survive any re-render. .fb-seg bars were positioned only by _gsOpenSetupModal and
+// the resize handler, so clicking a segment re-rendered the setup body, destroyed the
+// injected .fb-pill, and nothing put it back until the modal was reopened. Driving both from
+// the same already-throttled frame retires the whole class rather than this one instance.
+function _gfScheduleSlide(){if(_gfRaf)return;_gfRaf=requestAnimationFrame(function(){_gfRaf=null;_gfSlide();try{_fbAllPills();}catch(e){}});}
 (function _gfInitObserver(){
   function _start(){
     try{
@@ -10342,8 +10373,7 @@ function _gfScheduleSlide(){if(_gfRaf)return;_gfRaf=requestAnimationFrame(functi
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',_start);else _start();
 })();
-function _hammerViewFilterPick(sel){STATE.hammerViewFlight=sel;renderGamesContent();}
-function _vegViewFilterPick(sel){STATE.vegasViewFlight=sel;renderGamesContent();}
+
 // One foursome's grid + standings, exactly today's markup, scoped to flightPlayers.
 // labelHd, when set, prefixes a colored-dot "Foursome N" header above the pair
 // (Both mode); when null the header stays exactly as it is today (single view).
@@ -10432,9 +10462,7 @@ function renderWolfRound(){
   if(STATE.wolfViewFlight===undefined||STATE.wolfViewFlight===null)STATE.wolfViewFlight=0;
   let sel=STATE.wolfViewFlight;
   if(sel!==-1&&sel>=fl.length)sel=0;
-  let filterHtml='<div class="gf-filter" style="margin:0 0 10px">';
-  fl.forEach((g,i)=>{filterHtml+='<button class="'+(sel===i?'on':'')+'" onclick="_wolfViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});
-  filterHtml+='<button class="'+(sel===-1?'on':'')+'" onclick="_wolfViewFilterPick(-1)">Both</button></div>';
+  let filterHtml='';
   const toRender=sel===-1?fl.map((_,i)=>i):[sel];
   let html=filterHtml;
   toRender.forEach(fi=>{
@@ -12755,8 +12783,20 @@ function renderFourBallRound(){
     return;
   }
   const net=calcRoundFourBall(r);
+  // A FIELD-scope pot carries fi===null and genuinely belongs to every foursome, so it
+  // shows on every lane. Only a foursome-scoped pot can belong to someone else.
+  const _fbSel=(STATE.fbViewFlight===undefined?-1:STATE.fbViewFlight);
+  const _shown=pools.filter(function(p){return _fbSel===-1||p.fi==null||p.fi===_fbSel;});
+  // Never blank the surface. If the lane has no pot of its own, say so rather than
+  // rendering an empty card, which is the v120.21 shape.
+  if(!_shown.length){
+    el.innerHTML='<div class="section-card"><div class="section-hd"><span>Four-Ball</span></div>'
+      +'<div class="fb-note">Foursome '+(_fbSel+1)+' is not playing Four-Ball this round. '
+      +'Switch to Both to see the other groups.</div></div>';
+    return;
+  }
   let h='';
-  pools.forEach(function(pool){
+  _shown.forEach(function(pool){
     const rows=fbStandings(pool,r);
     const pot=d.ante*pool.players.length;
     const title='Four-Ball'+(pool.fi!=null?(' &middot; Foursome '+(pool.fi+1)):'')+' &middot; '+roundLabel(r);
@@ -12882,6 +12922,24 @@ function _gameLaneNote(id,r,lane){
   return _bad===_lens.length?_note:(_note+' in every foursome');
 }
 function _gsLane(){return STATE.gamesLane===undefined?'both':STATE.gamesLane;}
+// The Foursome bar at the top of the Games tab is the single answer to "which foursome",
+// and _gsSyncLaneToViews forces every per-game view key to follow it. Through v120.22 each
+// game panel also drew its own Foursome pills, which could not change anything: the pick
+// handler set the key and then called renderGamesContent, whose first statement reset it.
+// The pills always highlighted correctly because they mirrored the lane, which is why the
+// deadness was invisible. v120.23 removed them. This line replaces them, and matters most
+// inside the setup modal, where the real bar is behind the overlay and cannot be seen.
+function _gsLaneLabel(r){
+  if(flightsForRound(r).length<2)return '';
+  const l=_gsLane();
+  return (l==='both'?'Applies to all foursomes':'Applies to Foursome '+(l+1))
+    +'. Set by the Foursome bar on the Games tab.';
+}
+function _gsLaneLabelHtml(r){
+  const t=_gsLaneLabel(r);
+  if(!t)return '';
+  return '<div style="font-size:11px;color:var(--color-text-tertiary);margin:8px 0 6px">'+t+'</div>';
+}
 function _gsEnsureFs(r){const rd=WK.rounds[r];const nf=flightsForRound(r).length;if(!Array.isArray(rd.fsGames))rd.fsGames=[];while(rd.fsGames.length<nf)rd.fsGames.push({});for(let i=0;i<rd.fsGames.length;i++){if(!rd.fsGames[i]||typeof rd.fsGames[i]!=='object')rd.fsGames[i]={};}return rd.fsGames;}
 function _gsIsShared(def,r){return def.tripLevel?!!WK[def.onField]:!!(WK.rounds[r]&&WK.rounds[r][def.onField]);}
 function _gsLaneOn(def,r,lane){if(lane==='both')return _gsIsOn(def,r);if(def.tripLevel)return !!WK[def.onField];const rd=WK.rounds[r];if(rd&&rd[def.onField]===true)return true;const fs=rd&&Array.isArray(rd.fsGames)?rd.fsGames[lane]:null;return !!(fs&&fs[def.onField]===true);}
@@ -13332,7 +13390,7 @@ function _gsSkinsSetupBody(r){
   if(WK.skinsFmt==='team'){
     if(!STATE.skinsTeams)STATE.skinsTeams=WK.rounds.map((_,ri)=>flightsForRound(ri).map((_f,fi)=>defaultSkinsTeamsForFlight(ri,fi)));
     {let _skFl=flightsForRound(r);let _skMulti=_skFl.length>1;let _skSel=(STATE.skinsViewFlight===undefined||STATE.skinsViewFlight===null?-1:STATE.skinsViewFlight);
-    if(_skMulti){h+='<div class="gf-filter" style="margin:8px 0 4px">';_skFl.forEach((_,i)=>{h+='<button class="'+(_skSel===i?'on':'')+'" onclick="_skinsViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});h+='<button class="'+(_skSel===-1?'on':'')+'" onclick="_skinsViewFilterPick(-1)">Both</button></div>';}
+    h+=_gsLaneLabelHtml(r);
     for(let _fi=0;_fi<_skFl.length;_fi++){
       if(_skMulti&&_skSel!==-1&&_skSel!==_fi)continue;
       const _mem=_skFl[_fi]||[];
@@ -13352,7 +13410,7 @@ function _gsRazzleSetupBody(r){
   const _rzFl=flightsForRound(r);const _rzMulti=_rzFl.length>1;
   let _rzSel=(STATE.razzleViewFlight===undefined||STATE.razzleViewFlight===null?-1:STATE.razzleViewFlight);
   let h='';
-  if(_rzMulti){h+='<div class="gf-filter" style="margin:2px 0 8px">';_rzFl.forEach((_,i)=>{h+='<button class="'+(_rzSel===i?'on':'')+'" onclick="_razzleViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});h+='<button class="'+(_rzSel===-1?'on':'')+'" onclick="_razzleViewFilterPick(-1)">Both</button></div>';}
+  h+=_gsLaneLabelHtml(r);
   for(let _fi=0;_fi<_rzFl.length;_fi++){
     if(_rzMulti&&_rzSel!==-1&&_rzSel!==_fi)continue;
     const _mem=_rzFl[_fi]||[];
@@ -13402,7 +13460,7 @@ function _gsVegasSetupBody(r){
   let h=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Segments</span><select class="ie-sel" onchange="setVegaSegsForRound(${r},parseInt(this.value))">${segOptionHtml(roundHoleCount(r),vG)}</select></div>`;
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per point</span>$<input class="ie-num" type="number" placeholder="${Number(_gsStakePh('vegasVal',r,WK.vegasVal)).toFixed(2)}" value="${_gsStakeVal('vegasVal',r)}" step="0.25" style="width:80px" oninput="_gsStakeSet('vegasVal',${r},this.value);autoSave();s2WriteActive();"/></div>`;
   {let _vgFl=flightsForRound(r);let _vgMulti=_vgFl.length>1;let _vgSel=(STATE.vegasViewFlight===undefined||STATE.vegasViewFlight===null?-1:STATE.vegasViewFlight);
-  if(_vgMulti){h+='<div class="gf-filter" style="margin:8px 0 4px">';_vgFl.forEach((_,i)=>{h+='<button class="'+(_vgSel===i?'on':'')+'" onclick="_vegViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});h+='<button class="'+(_vgSel===-1?'on':'')+'" onclick="_vegViewFilterPick(-1)">Both</button></div>';}
+  h+=_gsLaneLabelHtml(r);
   for(let _fi=0;_fi<_vgFl.length;_fi++){
     if(_vgMulti&&_vgSel!==-1&&_vgSel!==_fi)continue;
     const _mem=_vgFl[_fi]||[];
@@ -13479,7 +13537,7 @@ function _gsMPSetupBody(r){
     +`style="flex:1;padding:7px 8px;font-size:12px;text-align:center;cursor:pointer;${_hu?'background:#1D9E75;color:#E1F5EE;font-weight:500':'background:var(--color-background-secondary);color:var(--color-text-secondary)'}">Heads up</div>`
     +`</div>`;
   }
-  const _mpFl=flightsForRound(r);const _mpMulti=_mpFl.length>1;let _mpSel=(STATE.mpViewFlight===undefined?-1:STATE.mpViewFlight);if(_mpMulti){h+='<div class="gf-filter" style="margin:8px 0 4px">';_mpFl.forEach((_,i)=>{h+='<button class="'+(_mpSel===i?'on':'')+'" onclick="_mpViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});h+='<button class="'+(_mpSel===-1?'on':'')+'" onclick="_mpViewFilterPick(-1)">Both</button></div>';}for(let _fi=0;_fi<_mpFl.length;_fi++){if(_mpMulti&&_mpSel!==-1&&_mpSel!==_fi)continue;const _mem=_mpFl[_fi]||[];if(_mpMulti){h+='<div style="display:flex;align-items:center;gap:7px;padding:6px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,_fi)+'</span></div>';}h+=getSegments(mpGamesForRound(r,_fi),_th_mp).map((seg,si)=>{const tm=STATE.mpTeams[r]?.[_fi]?.[si];if(!tm)return'';if(_hu){const _nMatches=tm[0].length;const a0=tm[0][0],a1=tm[0][1],b0=tm[1][0],b1=tm[1][1];return`<div class="team-game-row">`+`<div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}-${seg.end}</div></div>`+`<div style="flex:1">`+`<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">`+`<span style="font-size:11px;color:#1D9E75;width:44px">M1:</span>`+`<select class="team-dropdown" onchange="setDropHU(${si},0,0,parseInt(this.value),${r},${_fi})">${pOpts(a0,_mem)}</select>`+`<span style="font-size:11px;color:var(--color-text-tertiary)">vs</span>`+`<select class="team-dropdown" onchange="setDropHU(${si},1,0,parseInt(this.value),${r},${_fi})">${pOpts(b0,_mem)}</select>`+`</div>`+(_nMatches>1?`<div style="display:flex;align-items:center;gap:4px">`+`<span style="font-size:11px;color:#185FA5;width:44px">M2:</span>`+`<select class="team-dropdown" onchange="setDropHU(${si},0,1,parseInt(this.value),${r},${_fi})">${pOpts(a1,_mem)}</select>`+`<span style="font-size:11px;color:var(--color-text-tertiary)">vs</span>`+`<select class="team-dropdown" onchange="setDropHU(${si},1,1,parseInt(this.value),${r},${_fi})">${pOpts(b1,_mem)}</select>`+`</div>`:'')+`</div></div>`;}else{const[a0,a1]=tm[0],[b0,b1]=tm[1];return`<div class="team-game-row">`+`<div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}-${seg.end}</div></div>`+`<div style="flex:1">`+`<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">`+`<span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span>`+`<select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},false,${_fi})">${pOpts(a0,_mem)}</select>`+`<select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},false,${_fi})">${pOpts(a1,_mem)}</select>`+`</div>`+`<div style="display:flex;align-items:center;gap:4px">`+`<span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span>`+`<select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},false,${_fi})">${pOpts(b0,_mem)}</select>`+`<select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},false,${_fi})">${pOpts(b1,_mem)}</select>`+`</div></div></div>`;}}).join('');}
+  const _mpFl=flightsForRound(r);const _mpMulti=_mpFl.length>1;let _mpSel=(STATE.mpViewFlight===undefined?-1:STATE.mpViewFlight);h+=_gsLaneLabelHtml(r);for(let _fi=0;_fi<_mpFl.length;_fi++){if(_mpMulti&&_mpSel!==-1&&_mpSel!==_fi)continue;const _mem=_mpFl[_fi]||[];if(_mpMulti){h+='<div style="display:flex;align-items:center;gap:7px;padding:6px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,_fi)+'</span></div>';}h+=getSegments(mpGamesForRound(r,_fi),_th_mp).map((seg,si)=>{const tm=STATE.mpTeams[r]?.[_fi]?.[si];if(!tm)return'';if(_hu){const _nMatches=tm[0].length;const a0=tm[0][0],a1=tm[0][1],b0=tm[1][0],b1=tm[1][1];return`<div class="team-game-row">`+`<div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}-${seg.end}</div></div>`+`<div style="flex:1">`+`<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">`+`<span style="font-size:11px;color:#1D9E75;width:44px">M1:</span>`+`<select class="team-dropdown" onchange="setDropHU(${si},0,0,parseInt(this.value),${r},${_fi})">${pOpts(a0,_mem)}</select>`+`<span style="font-size:11px;color:var(--color-text-tertiary)">vs</span>`+`<select class="team-dropdown" onchange="setDropHU(${si},1,0,parseInt(this.value),${r},${_fi})">${pOpts(b0,_mem)}</select>`+`</div>`+(_nMatches>1?`<div style="display:flex;align-items:center;gap:4px">`+`<span style="font-size:11px;color:#185FA5;width:44px">M2:</span>`+`<select class="team-dropdown" onchange="setDropHU(${si},0,1,parseInt(this.value),${r},${_fi})">${pOpts(a1,_mem)}</select>`+`<span style="font-size:11px;color:var(--color-text-tertiary)">vs</span>`+`<select class="team-dropdown" onchange="setDropHU(${si},1,1,parseInt(this.value),${r},${_fi})">${pOpts(b1,_mem)}</select>`+`</div>`:'')+`</div></div>`;}else{const[a0,a1]=tm[0],[b0,b1]=tm[1];return`<div class="team-game-row">`+`<div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}-${seg.end}</div></div>`+`<div style="flex:1">`+`<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">`+`<span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span>`+`<select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},false,${_fi})">${pOpts(a0,_mem)}</select>`+`<select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},false,${_fi})">${pOpts(a1,_mem)}</select>`+`</div>`+`<div style="display:flex;align-items:center;gap:4px">`+`<span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span>`+`<select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},false,${_fi})">${pOpts(b0,_mem)}</select>`+`<select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},false,${_fi})">${pOpts(b1,_mem)}</select>`+`</div></div></div>`;}}).join('');}
   if(_hu){h+=`<div class="setup-row"><div style="flex:1"><div style="font-size:13px;color:var(--color-text-secondary)">Net off match low</div><div style="font-size:11px;color:var(--color-text-tertiary);margin-top:1px">On: higher handicap gets the difference. Off: full handicap.</div></div><label class="toggle"><input type="checkbox" ${huNetOffMatchLow(r)?'checked':''} onchange="WK.rounds[${r}].mpHUNetOffMatchLow=this.checked;autoSave();s2WriteActive();renderScorecard();renderBanner();renderMPHoleBox();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>`;}if(!_hu){h+=`<div class="setup-row" style="gap:10px"><span style="font-size:13px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.mpSettle=this.value;autoSave();s2WriteActive()"><option value="perplayer"${(WK.mpSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.mpSettle==='perteam'?' selected':''}>Per team</option></select></div>`;}
   // Unfinished match. The key has been read, defaulted and persisted since v119.30 with
   // no writer anywhere, so an undecided segment always went to the leader and nobody
@@ -13513,7 +13571,7 @@ function _gsHammerSetupBody(r){
   let h=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Segments</span><select class="ie-sel" onchange="setHammerSegsForRound(${r},parseInt(this.value))">${segOptionHtml(roundHoleCount(r),hSegs)}</select></div>`;
   h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per hole</span>$<input class="ie-num" type="number" placeholder="${_gsStakePh('hammerVal',r,WK.hammerVal||2)}" value="${_gsStakeVal('hammerVal',r)}" step="0.25" style="width:80px" oninput="_gsStakeSet('hammerVal',${r},this.value);autoSave();s2WriteActive();"/></div>`;
   {let _hgFl=flightsForRound(r);let _hgMulti=_hgFl.length>1;let _hgSel=(STATE.hammerViewFlight===undefined||STATE.hammerViewFlight===null?-1:STATE.hammerViewFlight);
-  if(_hgMulti){h+='<div class="gf-filter" style="margin:8px 0 4px">';_hgFl.forEach((_,i)=>{h+='<button class="'+(_hgSel===i?'on':'')+'" onclick="_hammerViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});h+='<button class="'+(_hgSel===-1?'on':'')+'" onclick="_hammerViewFilterPick(-1)">Both</button></div>';}
+  h+=_gsLaneLabelHtml(r);
   for(let _fi=0;_fi<_hgFl.length;_fi++){
     if(_hgMulti&&_hgSel!==-1&&_hgSel!==_fi)continue;
     const _mem=_hgFl[_fi]||[];
@@ -13591,7 +13649,11 @@ function renderGamesTab(){
   gameSel.innerHTML=activeGames.map(def=>`<button class="game-pill${def.id===STATE.gamesViewGame?' active':''}" onclick="switchGamesGame('${def.id}')">${def.label}${(_curLane!=='both'&&_gsIsShared(def,r))?' <span class=\"gp-all\">BOTH</span>':''}</button>`).join('')+(canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+</button>':'');
   renderGamesContent();
 }
-function _gsSyncLaneToViews(){const _lv=(_gsLane()==='both')?-1:_gsLane();STATE.mpViewFlight=_lv;STATE.vegasViewFlight=_lv;STATE.skinsViewFlight=_lv;STATE.snakeViewFlight=_lv;STATE.razzleViewFlight=_lv;STATE.wolfViewFlight=_lv;STATE.hammerViewFlight=_lv;}
+// Four-Ball was the eighth game and the only one with no view key, so its round render
+// showed every pot on every lane while the strokes banner directly above it was already
+// lane-scoped. Reading "Your foursome" over another foursome's pot is the contradiction
+// this closes. See v120.26.
+function _gsSyncLaneToViews(){const _lv=(_gsLane()==='both')?-1:_gsLane();STATE.mpViewFlight=_lv;STATE.vegasViewFlight=_lv;STATE.skinsViewFlight=_lv;STATE.snakeViewFlight=_lv;STATE.razzleViewFlight=_lv;STATE.wolfViewFlight=_lv;STATE.hammerViewFlight=_lv;STATE.fbViewFlight=_lv;}
 function _gsStakeVal(key,r){const lane=_gsLane();if(lane==='both')return WK.rounds[r][key]!=null?WK.rounds[r][key]:'';const fs=Array.isArray(WK.rounds[r].fsGames)?WK.rounds[r].fsGames[lane]:null;return (fs&&fs[key]!=null)?fs[key]:'';}
 // What this box inherits if you leave it blank. Both lane inherits from the trip;
 // a foursome lane inherits from the round, which may itself inherit from the trip.
@@ -13638,9 +13700,7 @@ function renderGamesContent(){
       if(STATE.snakeViewFlight===undefined||STATE.snakeViewFlight===null)STATE.snakeViewFlight=0;
       let _snkSel=STATE.snakeViewFlight;
       if(_snkSel!==-1&&_snkSel>=_snkFl.length)_snkSel=0;
-      let _snkOut='<div class="gf-filter" style="margin:0 0 10px">';
-      _snkFl.forEach((_,i)=>{_snkOut+='<button class="'+(_snkSel===i?'on':'')+'" onclick="_snakeViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});
-      _snkOut+='<button class="'+(_snkSel===-1?'on':'')+'" onclick="_snakeViewFilterPick(-1)">Both</button></div>';
+      let _snkOut='';
       const _snkTo=_snkSel===-1?_snkFl.map((_,i)=>i):[_snkSel];
       _snkTo.forEach(fi=>{
         if(_snkSel===-1){
@@ -13714,7 +13774,7 @@ function renderMPRound(){
   const _huRnd=isHeadsUp(r);
   if(!STATE.mpExpanded)STATE.mpExpanded={};
   let html=``;
-  const _mpFl=flightsForRound(r);const _mpMulti=_mpFl.length>1;let _mpSel=(STATE.mpViewFlight===undefined?-1:STATE.mpViewFlight);if(_mpMulti){html+='<div class="gf-filter" style="margin:0 0 10px">';_mpFl.forEach((_,i)=>{html+='<button class="'+(_mpSel===i?'on':'')+'" onclick="_mpViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});html+='<button class="'+(_mpSel===-1?'on':'')+'" onclick="_mpViewFilterPick(-1)">Both</button></div>';}for(let _fi=0;_fi<_mpFl.length;_fi++){if(_mpMulti&&_mpSel!==-1&&_mpSel!==_fi)continue;const mpG=mpGamesForRound(r,_fi),segs=getSegments(mpG,roundHoleCount(r));if(_mpMulti){html+='<div style="display:flex;align-items:center;gap:7px;padding:8px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,_fi)+'</span></div>';}
+  const _mpFl=flightsForRound(r);const _mpMulti=_mpFl.length>1;let _mpSel=(STATE.mpViewFlight===undefined?-1:STATE.mpViewFlight);for(let _fi=0;_fi<_mpFl.length;_fi++){if(_mpMulti&&_mpSel!==-1&&_mpSel!==_fi)continue;const mpG=mpGamesForRound(r,_fi),segs=getSegments(mpG,roundHoleCount(r));if(_mpMulti){html+='<div style="display:flex;align-items:center;gap:7px;padding:8px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,_fi)+'</span></div>';}
   if(_mpTooSmall(r,_fi)){html+='<div class="section-card" style="margin-bottom:10px;padding:10px 14px;font-size:12px;color:var(--color-text-secondary)">'+_mpTooSmallNote(r,_fi)+'</div>';continue;}
   segs.forEach((seg,si)=>{
     const tm=STATE.mpTeams[r][_fi][si];if(!tm)return;
@@ -14080,9 +14140,7 @@ function renderVegasRound(){
   if(!multi){el.innerHTML=_renderVegasFlightBlock(r,0,null);return;}
   if(STATE.vegasViewFlight===undefined||STATE.vegasViewFlight===null)STATE.vegasViewFlight=-1;
   let sel=STATE.vegasViewFlight;if(sel!==-1&&sel>=fl.length)sel=0;
-  let fh='<div class="gf-filter" style="margin:0 0 10px">';
-  fl.forEach((g,i)=>{fh+='<button class="'+(sel===i?'on':'')+'" onclick="_vegViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});
-  fh+='<button class="'+(sel===-1?'on':'')+'" onclick="_vegViewFilterPick(-1)">Both</button></div>';
+  let fh='';
   const toRender=sel===-1?fl.map((_,i)=>i):[sel];
   let html=fh;
   toRender.forEach(fi=>{const labelHd=(sel===-1)?'<div class="gf-blk-lbl"><span class="bd" style="background:'+_flightsAccent0(fi)+'"></span>Foursome '+(fi+1)+'</div>':null;html+=_renderVegasFlightBlock(r,fi,labelHd);});
@@ -15047,9 +15105,7 @@ function renderSkinsRound(){
   if(!multi){el.innerHTML=_renderSkinsFlightBlock(r,0,null);return;}
   if(STATE.skinsViewFlight===undefined||STATE.skinsViewFlight===null)STATE.skinsViewFlight=-1;
   let sel=STATE.skinsViewFlight;if(sel!==-1&&sel>=fl.length)sel=0;
-  let fh='<div class="gf-filter" style="margin:0 0 10px">';
-  fl.forEach((g,i)=>{fh+='<button class="'+(sel===i?'on':'')+'" onclick="_skinsViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});
-  fh+='<button class="'+(sel===-1?'on':'')+'" onclick="_skinsViewFilterPick(-1)">Both</button></div>';
+  let fh='';
   const toRender=sel===-1?fl.map((_,i)=>i):[sel];
   let html=fh;
   toRender.forEach(fi=>{const labelHd=(sel===-1)?'<div class="gf-blk-lbl"><span class="bd" style="background:'+_flightsAccent0(fi)+'"></span>Foursome '+(fi+1)+'</div>':null;html+=_renderSkinsFlightBlock(r,fi,labelHd);});
@@ -15807,9 +15863,7 @@ function renderHammerRound(){
   if(!multi){el.innerHTML=_renderHammerFlightBlock(r,0,null);return;}
   if(STATE.hammerViewFlight===undefined||STATE.hammerViewFlight===null)STATE.hammerViewFlight=-1;
   let sel=STATE.hammerViewFlight;if(sel!==-1&&sel>=fl.length)sel=0;
-  let fh='<div class="gf-filter" style="margin:0 0 10px">';
-  fl.forEach((g,i)=>{fh+='<button class="'+(sel===i?'on':'')+'" onclick="_hammerViewFilterPick('+i+')">Foursome '+(i+1)+'</button>';});
-  fh+='<button class="'+(sel===-1?'on':'')+'" onclick="_hammerViewFilterPick(-1)">Both</button></div>';
+  let fh='';
   const toRender=sel===-1?fl.map((_,i)=>i):[sel];
   let html=fh;
   toRender.forEach(fi=>{const labelHd=(sel===-1)?'<div class="gf-blk-lbl"><span class="bd" style="background:'+_flightsAccent0(fi)+'"></span>Foursome '+(fi+1)+'</div>':null;html+=_renderHammerFlightBlock(r,fi,labelHd);});
