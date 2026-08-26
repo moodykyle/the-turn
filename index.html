@@ -1707,7 +1707,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v120.30';
+const APP_VERSION='v120.32';
 
 // ===== THEME =====
 (function(){
@@ -7861,8 +7861,12 @@ function fbTeamHole(team,hi,r,poolPlayers){
   return best;
 }
 // Per-hole team nets plus the total, over this round's active holes only.
-function fbTeamCard(team,r,poolPlayers){
-  const off=holeOffset(r),n=roundHoleCount(r),holes=[];
+function fbTeamCard(team,r,poolPlayers,pool){
+  // THE POT, NOT THE FOURSOME. A field-scope pot has fi null and covers the shortest
+  // group; capping per-foursome instead would score one team over 18 and another over 6
+  // and then rank them against each other. Cap the ITERATION only - Four-Ball has no
+  // segments, so there is nothing here that could be re-divided.
+  const off=holeOffset(r),n=fbPoolHoleCount(r,pool),holes=[];
   const ch=(WK.rounds[r]&&WK.rounds[r].course&&WK.rounds[r].course.holes)||[];
   let tot=0,played=0,parPlayed=0;
   for(let k=0;k<n;k++){
@@ -7877,7 +7881,7 @@ function fbTeamCard(team,r,poolPlayers){
 // Countback: back 9, then last 6, then last 3, then 18. Lower wins. Returns a
 // comparable tuple; only consulted when fbTie==='countback'.
 function fbCountback(card,r){
-  const n=roundHoleCount(r),h=card.holes,sum=function(a,b){let s=0;for(let i=a;i<b&&i<n;i++)s+=(h[i]==null?99:h[i]);return s;};
+  const h=card.holes,n=h.length,sum=function(a,b){let s=0;for(let i=a;i<b&&i<n;i++)s+=(h[i]==null?99:h[i]);return s;};
   return[sum(Math.max(0,n-9),n),sum(Math.max(0,n-6),n),sum(Math.max(0,n-3),n),sum(0,n)];
 }
 // Rank a pool's teams. Returns [{team,card,key}] sorted best first, where key is what
@@ -7885,7 +7889,7 @@ function fbCountback(card,r){
 function fbRank(pool,r){
   const d=fbDefaults(r);
   const rows=pool.teams.map(function(t){
-    const card=fbTeamCard(t,r,pool.players);
+    const card=fbTeamCard(t,r,pool.players,pool);
     // Leading term: a team that has not teed off must never outrank one that has.
     // Without it a blank card totals 0, which is the lowest score there is.
     const unplayed=card.played===0?1:0;
@@ -7910,16 +7914,35 @@ function _fbSplitCents(amt,n){
 // A pool is only a result when every team in it has a score on every hole. Best ball
 // means one partner covering a hole is enough, so this tolerates a pickup; it stalls
 // only when an entire team blanked a hole, which is genuinely not a finished game.
+function fbPoolFlights(r,pool){
+  // Copy only. See the note above fbPoolHoleCount; these two answer different questions and
+  // must not be collapsed into one without moving money.
+  if(pool&&pool.fi!=null)return[pool.fi];
+  const fl=flightsForRound(r),out=[];
+  ((pool&&pool.players)||[]).forEach(function(pi){
+    for(let fi=0;fi<fl.length;fi++){
+      if((fl[fi]||[]).indexOf(pi)>=0){if(out.indexOf(fi)<0)out.push(fi);break;}
+    }
+  });
+  return out;
+}
+
+function fbPoolHoleCount(r,pool){
+  // How many holes this POT covers. A pot spanning both foursomes covers the SHORTEST
+  // group's holes: two teams from two groups cannot be ranked against each other on
+  // to-par figures computed over different hole counts. poolHoleCount already answers
+  // the no-end-holes case with the full round, so there is no second branch here.
+  return poolHoleCount(r,(pool&&pool.fi!=null)?[pool.fi]:null);
+}
+
 function fbPoolComplete(pool,r){
   // A pool spans whichever foursomes its teams came from. fbPools gives fi:null for a
   // field-scope pool, which means every foursome, and poolHoleCount reads null the
   // same way. So the length is the minimum over exactly the groups in this game, which
   // is the same rule standings use over the whole field.
-  const need=fsEndHolesRaw(r)
-    ? poolHoleCount(r,(pool&&pool.fi!=null)?[pool.fi]:null)
-    : roundHoleCount(r);
+  const need=fbPoolHoleCount(r,pool);
   if(!need)return false;
-  return pool.teams.every(function(t){return fbTeamCard(t,r,pool.players).played===need;});
+  return pool.teams.every(function(t){return fbTeamCard(t,r,pool.players,pool).played===need;});
 }
 // The money. Returns a zero-sum net array positioned by GLOBAL player index, which is
 // the only contract settlement has. Everything is integer cents until the final divide.
@@ -10043,7 +10066,11 @@ function calcNinesPoints(r,fi,throughHole){
   const fp=flightsForRound(r)[fi]||[];
   const tot=fp.map(function(){return 0;});
   if(fp.length!==3)return{members:fp.slice(),pts:tot,holes:0};
-  const _off=holeOffset(r),_n=roundHoleCount(r);
+  // This threesome's own hole count. Nines has no segments, so _n is used for nothing
+  // but the walk and the default end, and both must stop where the group stopped. An
+  // explicit throughHole past the end hole is still bounded by the loop below, which is
+  // what stops the in-hole box rolling extra points when you navigate to a dead hole.
+  const _off=holeOffset(r),_n=fsHoleCount(r,fi);
   const thru=(throughHole===undefined)?(_off+_n-1):throughHole;
   let holes=0;
   for(let h=_off;h<=thru&&h<_off+_n;h++){
@@ -10061,13 +10088,18 @@ function wolfHoleReady(hi,r,fi){
 }
 function calcWolfPoints(r,throughHole,fi){
   const through=throughHole!==undefined?throughHole:17;
+  // The foursome's end hole, absolute. wolfHoleReady already refuses a hole that is
+  // missing a net, so an ordinary rained-off hole never scored anyway; this bites only
+  // when real scores sit past the end hole. It also bounds the walk to the round, which
+  // the literal 17 never did: a front-nine round used to walk holes 10 to 18.
+  const _w8End=holeOffset(r)+fsHoleCount(r,fi);
   const flightPlayers=flightsForRound(r)[fi]||[];
   const pts=flightPlayers.map(pi=>({pi,pts:0}));
   const picks=wolfPicksForRound(r,fi);
   const blindMult=roundValFs('wolfBlindMult',r,fi,WK.wolfBlindMult)||2;
   const loneMode=roundValFs('wolfLoneMode',r,fi,WK.wolfLoneMode||'A');
   const ptsByPi={};pts.forEach(p=>{ptsByPi[p.pi]=p;});
-  for(let hi=0;hi<=through;hi++){
+  for(let hi=0;hi<=through&&hi<_w8End;hi++){
     const pick=picks[hi];
     if(!pick)continue;
     // Absence is not a score. See wolfHoleReady. This subsumes the wolfNet/partnerNet null
@@ -12871,7 +12903,7 @@ function renderFourBallRound(){
       if(pick)lead=pick;
     }
     if(lead&&lead.card.played>0){
-      const off=holeOffset(r),nh=roundHoleCount(r);
+      const off=holeOffset(r),nh=fbPoolHoleCount(r,pool);
       const _hdr='Team '+fbTeamNo(r,lead.team)+' &middot; '+lead.team.map(function(pi){return displayName(pi);}).join(' + ');
       h+='<div class="section-card"><div class="section-hd"><span>'+_hdr+'</span>'
         +(rows.length>1?'<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">tap a team above</span>':'')+'</div>';
@@ -12907,6 +12939,11 @@ function renderFourBallRound(){
       h+=trow+'</table></div>';
       const netOff=!!(STATE.netOffFlightLow||STATE.netOffLow);
       let capTxt='Green is the net that counted.';
+      if(nh<roundHoleCount(r)){
+        capTxt+=(fbPoolFlights(r,pool).length>1)
+          ? ' Scored over '+nh+' holes, the shortest group in this pot.'
+          : ' Scored over '+nh+' holes, where this foursome stopped.';
+      }
       if(netOff&&pool.players.length){
         const low=pool.players.reduce(function(a,pi){return courseHdcp(pi,r)<courseHdcp(a,r)?pi:a;},pool.players[0]);
         capTxt+=' All nets off '+displayName(low)+', low of the '+pool.players.length+'.';
