@@ -1707,7 +1707,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v120.32';
+const APP_VERSION='v120.34';
 
 // ===== THEME =====
 (function(){
@@ -7156,6 +7156,28 @@ function fsHoleCount(r,fi){
   return _clampEnd(raw[fi],full);
 }
 function fsEndedShort(r,fi){return fsHoleCount(r,fi)<roundHoleCount(r);}
+// Which foursome a player sits in for this round, or null when the round's flights do not
+// hold him.
+//
+// NULL, NOT -1, AND THE DIFFERENCE IS THE WHOLE POINT. fsHoleCount(r,null) already returns
+// the full round count, so an unplaced player counts exactly the holes he counted before
+// this cap existed. -1 would index past the end of fsEndHoles, come back undefined, and
+// _clampEnd would quietly hand back the full count anyway - the same answer by accident
+// instead of on purpose. roundFlights can lag the roster, so "in no foursome" is a state
+// real data reaches and the neutral answer is the only safe one.
+//
+// The only reverse lookup in the file, and it exists for exactly one game. Every other
+// game is scoped to a foursome and already has an fi in hand at the loop. Two's Club is a
+// trip-wide pot walked per player across every round, and gameOn special-cases 'twos' to
+// read a trip flag, so nothing in its call chain knows which group a man was in.
+function _fsOfPlayer(r,pi){
+  const fls=flightsForRound(r);
+  for(let fi=0;fi<fls.length;fi++){
+    const m=fls[fi];
+    if(Array.isArray(m)&&m.indexOf(pi)>=0)return fi;
+  }
+  return null;
+}
 // NAVIGATION BOUND. The last hole the CURRENT foursome can still score. Two sites
 // asked roundHoleCount instead, so a group that ended at 6 in an 18-hole round got
 // walked onto hole 7 by its own Save button and never saw 'Finish Round' at all.
@@ -7429,8 +7451,26 @@ function twosStaleNote(){
   if(!twosSettleStale())return '';
   return 'Scores changed after Two\u2019s Club was settled. What was paid no longer matches who made the 2s. Unsettle and settle again to correct it.';
 }
-function calcTwos(){return WK.players.map((_,pi)=>{let c=0;WK.rounds.forEach((_,r)=>{if(!inStandingsRound(r))return;const _off_t=holeOffset(r),_n_t=roundHoleCount(r);for(let h=_off_t;h<_off_t+_n_t;h++)if(STATE.scores[r][h]&&STATE.scores[r][h][pi]===2)c++;});return c;});}
-function calcTwosDetail(){return WK.players.map((_,pi)=>{const hits=[];WK.rounds.forEach((_,r)=>{if(!inStandingsRound(r))return;const _off_td=holeOffset(r),_n_td=roundHoleCount(r);for(let h=_off_td;h<_off_td+_n_td;h++)if(STATE.scores[r][h]&&STATE.scores[r][h][pi]===2)hits.push(roundLabel(r)+' H'+(h+1));});return hits;});}
+// NO STANDINGS GATE, AND ITS REMOVAL IN v120.34 WAS A PAYOUT FIX. calcTwos used to skip any
+// round outside the weekend standings, which made Two's Club the only game of the ten that
+// refused to pay on a round the field did not finish. Games in an E9 play for money - that is
+// what the E9 setup screen decides and what the Emergency Rounds help says - and the
+// under-nine rule that also lives in inStandingsRound is a standings-integrity rule nobody
+// chooses. A rained-out Saturday was silently not paying its 2s.
+//
+// THE PER-FOURSOME CAP IS NOW THE ONLY THING BOUNDING THIS GAME. Everything a 2 needs to pay
+// is here: the round's own holes, and the player's own group's end hole. There is no second
+// guard behind it any more, so do not weaken this one.
+//
+// The cap is per PLAYER, because the pot is. Netting it off the field minimum instead would
+// throw away a 2 the full foursome really made on hole 15, which is the wrong fix and the
+// one this game invites.
+function calcTwos(){return WK.players.map((_,pi)=>{let c=0;WK.rounds.forEach((_,r)=>{const _off_t=holeOffset(r),_n_t=roundHoleCount(r),_fi_t=_fsOfPlayer(r,pi);for(let h=_off_t;h<_off_t+_n_t;h++){if(_mpHoleDead(r,_fi_t,h))continue;if(STATE.scores[r][h]&&STATE.scores[r][h][pi]===2)c++;}});return c;});}
+// The hits list under the money row. Same bounds as calcTwos, deliberately: a 2 the pot did
+// not pay must not be listed as one it did, and one it DID pay must not be missing. Lost its
+// standings gate in v120.34 alongside calcTwos; the two must move together or the list and
+// the money disagree.
+function calcTwosDetail(){return WK.players.map((_,pi)=>{const hits=[];WK.rounds.forEach((_,r)=>{const _off_td=holeOffset(r),_n_td=roundHoleCount(r),_fi_td=_fsOfPlayer(r,pi);for(let h=_off_td;h<_off_td+_n_td;h++){if(_mpHoleDead(r,_fi_td,h))continue;if(STATE.scores[r][h]&&STATE.scores[r][h][pi]===2)hits.push(roundLabel(r)+' H'+(h+1));}});return hits;});}
 function renderBanner(){document.getElementById('banner').innerHTML='';}
 function helpAccordionHtml(){
   const sections=[
@@ -13789,7 +13829,11 @@ function renderGamesContent(){
     const _twHoles=[];
     for(let _h=_off_tw;_h<_off_tw+_n_tw;_h++){
       const _hs=STATE.scores[_tr][_h];
-      if(_hs&&_hs.some(s=>s===2))_twHoles.push(_h);
+      // A LIVE 2 only. v120.31 capped Four-Ball's money without capping its board and the
+      // board printed the word undefined. The board here is this grid, so it caps with the
+      // money or not at all. A hole whose only 2s sit past their own foursome's end is not a
+      // row with a blank in it, it is a hole those players never played.
+      if(_hs&&_hs.some((s,pi)=>s===2&&!_mpHoleDead(_tr,_fsOfPlayer(_tr,pi),_h)))_twHoles.push(_h);
     }
     let _twBodyHtml='';
     if(_twHoles.length===0){
@@ -13808,7 +13852,12 @@ function renderGamesContent(){
         _twBodyHtml+=`<tr>`;
         _twBodyHtml+=`<td style="font-size:12px;color:var(--color-text-secondary);padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary)">H${_h+1}</td>`;
         WK.players.forEach((_,pi)=>{
-          const _g=_scores&&_scores[pi]!==null?_scores[pi]:null;
+          // Past his own end hole this man has no score to show, whatever the row holds.
+          // Falls through to the same tertiary dash a blank cell already draws: in a
+          // one-character column that is the honest mark, and the row header still says
+          // which hole it was.
+          const _dead_tw=_mpHoleDead(_tr,_fsOfPlayer(_tr,pi),_h);
+          const _g=(!_dead_tw&&_scores&&_scores[pi]!==null)?_scores[pi]:null;
           const _isTwo=_g===2;
           const _cell=_g===null?((!_anyPlayed)?'<span style="color:var(--color-text-tertiary)">-</span>':'<span style="color:var(--color-text-tertiary)">-</span>'):_isTwo?`<span style="font-weight:600;color:#1D9E75">2 ✓</span>`:`<span style="color:var(--color-text-tertiary)">${_g}</span>`;
           _twBodyHtml+=`<td style="text-align:center;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary)">${_cell}</td>`;
@@ -14408,11 +14457,25 @@ function calcRoundSkins(r){
   });
   return{gameResults,net};
 }
+// The per-round settle sheet's own summary line. It had no bounds at all: it walked the whole
+// eighteen-row score array, so on a back-nine round it counted 2s from a front nine the round
+// does not contain. That one is reachable without any stale data.
+//
+// NOT FILTERED BY inStandingsRound, DELIBERATELY. This is the sheet for THAT round, and a
+// round out of standings still shows who made a 2 in it. calcTwos is the pot and does filter.
+// Two questions, two functions. Do not unify them.
 function calcRoundTwos(r){
   const n=WK.players.length,twos=Array(n).fill(0);
-  STATE.scores[r].forEach((h,hi)=>{
-    h.forEach((g,pi)=>{if(g===2)twos[pi]++;});
-  });
+  const _off_rt=holeOffset(r),_n_rt=roundHoleCount(r);
+  for(let h=_off_rt;h<_off_rt+_n_rt;h++){
+    const row=STATE.scores[r][h];
+    if(!row)continue;
+    for(let pi=0;pi<n;pi++){
+      if(row[pi]!==2)continue;
+      if(_mpHoleDead(r,_fsOfPlayer(r,pi),h))continue;
+      twos[pi]++;
+    }
+  }
   return twos;
 }
 function isRoundComplete(r){
