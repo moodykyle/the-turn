@@ -1207,6 +1207,15 @@ body.force-light{
 .fs-pick-prompt .fpp-t{font-size:14px;font-weight:600;color:var(--color-text-primary);margin-bottom:12px;}
 .fs-pick-opt{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:11px;margin-bottom:8px;cursor:pointer;text-align:left;}
 .fs-pick-opt .fpo-who{font-size:11px;color:var(--color-text-secondary);margin-left:auto;}
+.fs-launch-pad{padding:22px 14px;text-align:center;}
+.fs-launch-pad .fpp-t{font-size:14px;font-weight:600;color:var(--color-text-primary);margin-bottom:12px;}
+.fs-launch-pad .lp-primary{justify-content:center;font-weight:500;color:#E1F5EE;background:#0F6E56;border-color:#0F6E56;}
+.lp-tools{margin-top:14px;padding-top:14px;border-top:0.5px solid var(--color-border-tertiary);}
+.lp-tool{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:11px 14px;
+  background:rgba(29,158,117,0.10);border:0.5px solid rgba(29,158,117,0.45);border-radius:11px;
+  margin-bottom:8px;cursor:pointer;font-size:13px;font-weight:500;color:#0F6E56;text-align:left;}
+.lp-tool .lp-sub{font-size:11px;font-weight:400;color:var(--color-text-secondary);}
+
 </style>
 </head>
 <body>
@@ -1575,7 +1584,7 @@ body.force-light{
     </div>
     <div id="gsBothModal" class="gs-add-picker" onclick="if(event.target===this)window._gsCloseBothModal()">
       <div class="gs-add-picker-inner">
-        <div class="gs-add-picker-hd">Both foursomes</div>
+        <div class="gs-add-picker-hd">All foursomes</div>
         <div style="padding:4px 16px 14px;font-size:13px;color:var(--color-text-secondary);line-height:1.55">Games added here apply to every foursome this round. To give one group its own games, switch to a foursome.</div>
         <div style="padding:0 16px 16px"><button onclick="window._gsCloseBothModal()" style="width:100%;padding:11px;border:none;border-radius:var(--border-radius-md);background:#1D9E75;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Got it</button></div>
       </div>
@@ -1583,7 +1592,7 @@ body.force-light{
     <div id="gsIndepConfirm" class="gs-add-picker" onclick="if(event.target===this)window._gsCancelIndep()">
       <div class="gs-add-picker-inner">
         <div class="gs-add-picker-hd">Set games per foursome?</div>
-        <div style="padding:4px 16px 14px;font-size:13px;color:var(--color-text-secondary);line-height:1.55">This round&#39;s games become per-foursome. Each group can run its own games; shared (Both) games still apply to everyone.</div>
+        <div style="padding:4px 16px 14px;font-size:13px;color:var(--color-text-secondary);line-height:1.55">This round&#39;s games become per-foursome. Each group can run its own games; shared (All) games still apply to everyone.</div>
         <div style="display:flex;gap:8px;padding:0 16px 16px">
           <button onclick="window._gsCancelIndep()" style="flex:1;padding:11px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-size:14px;cursor:pointer;font-family:inherit">Cancel</button>
           <button onclick="window._gsConfirmIndepGo()" style="flex:1;padding:11px;border:none;border-radius:var(--border-radius-md);background:#1D9E75;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Set per foursome</button>
@@ -1678,6 +1687,37 @@ function _curFi(r){return getFlightPick(r)||0;}
 // has to tell them apart: before a pick there is no pencil to claim, no foursome to be a
 // viewer of, and no game box that belongs to anybody. v119.34.
 var _FS_GAME_WRAP_IDS=['hammerBoxWrap','wolfBoxWrap','fbBoxWrap','snakeEntryWrap','skinsBoxWrap','razzleBoxWrap','mpBoxWrap','vegasBoxWrap','ninesBoxWrap'];
+// The pad's own pending test. Deliberately SEPARATE from _fsPickPending, which is false
+// on a single-flight round on purpose (see _navFi) because the navigation caps depend on
+// it. Folding these together would reroute the caps, which are money protection.
+// getFlightPick is likewise untouched: it returns 0 for a single flight without reading
+// storage, and ~30 call sites use it to choose fi for game math.
+function _launchPadPending(r){
+  if(typeof isMultiFlight==='function'&&isMultiFlight(r))return getFlightPick(r)===null;
+  try{return localStorage.getItem(_flightPickKey(r))===null;}catch(e){return false;}
+}
+window._lpStart=function(fi){
+  var r=STATE.currentRound;
+  setFlightPick(r,fi||0);
+  STATE.currentHole=_flightResumeHole(r,fi||0);
+  renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();
+};
+window._lpFoursomes=function(){
+  setView('setup');STATE.flightsViewRound=STATE.currentRound;setOptPanel('flights');
+};
+window._lpGames=function(){
+  // NO PICK IS COMMITTED HERE, deliberately. v121.3 committed one so the add picker would
+  // have a lane, and that single line made the entire pad disappear the moment the user
+  // tapped Select games - Configure foursomes went with it, unreachable. The Both lane
+  // applies to every foursome and needs no pick at all, so the commit was never necessary.
+  // The picker is not opened either: the + button on that tab is the door, and a wizard
+  // appearing unbidden is what this arc removed from the trip flow.
+  var r=STATE.currentRound;
+  STATE.gamesViewRound=r;
+  STATE.gamesLane='both';
+  setView('games');
+  if(typeof renderGamesTab==='function')renderGamesTab();
+};
 function _fsPickPending(r){if(typeof isMultiFlight!=='function'||!isMultiFlight(r))return false;return getFlightPick(r)===null;}
 // renderScorecard returns early at the picker, and five of the nine boxes are only
 // rendered from AFTER that return, so they keep whatever the last successful render left
@@ -1707,7 +1747,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v120.34';
+const APP_VERSION='v121.5';
 
 // ===== THEME =====
 (function(){
@@ -4699,7 +4739,7 @@ function _qrStepHtml(){
   const pill='<div style="display:inline-block;font-size:11px;font-weight:500;color:#1D9E75;background:rgba(29,158,117,0.12);border-radius:4px;padding:2px 8px;margin-bottom:10px">'+(window._pendingGroupId?'Group Round':'Individual Round')+'</div>';
   const card='background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);overflow:hidden;width:340px;max-width:calc(100vw - 32px)';
   // Dots
-  const dots=Array.from({length:5},(_,i)=>'<div style="width:7px;height:7px;border-radius:50%;background:'+(_qrS.step===i+1?'#1D9E75':'var(--color-border-secondary)')+'"></div>').join('');
+  const dots=Array.from({length:4},(_,i)=>'<div style="width:7px;height:7px;border-radius:50%;background:'+(_qrS.step===i+1?'#1D9E75':'var(--color-border-secondary)')+'"></div>').join('');
   const dotsRow='<div style="display:flex;justify-content:center;gap:6px;padding:12px 0 4px">'+dots+'</div>';
 
   if(_qrS.step===1){
@@ -4850,40 +4890,7 @@ function _qrStepHtml(){
       +'<div onclick="window._qrBack()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">← Back</div>'
       +'</div>';
   }
-
-  if(_qrS.step===5){
-    if(_qrS.n===1){_qrFinish();return '';}
-    const games=['Match Play','Vegas','Skins','Razzle Dazzle','Wolf','Hammer',"Two's Club",'Snake','Four-Ball'];
-    let gameRows=games.map(function(g,i){
-      const _note=_gameFieldNote(g,_qrS.n);const greyed=!!_note;const on=!greyed&&!!_gsGames[g];
-      const isLast=i===games.length-1;
-      const _qrNeedLbl=_note?'<span style="font-size:11px;color:var(--color-text-tertiary);margin-right:8px">'+_note+'</span>':'';
-      return'<div '+(greyed?'':'onclick="window._qrToggleGame('+i+')"')+' style="display:flex;align-items:center;padding:11px 12px;'+(isLast?'':'border-bottom:0.5px solid var(--color-border-tertiary);')+(greyed?'opacity:0.35;':'cursor:pointer;')+'">'
-        +'<div style="width:3px;height:28px;border-radius:1px;background:'+(on?'#1D9E75':'transparent')+';margin-right:10px;flex-shrink:0"></div>'
-        +'<div style="flex:1;font-size:13px;color:var(--color-text-'+(on?'primary':'secondary')+')">'+g+'</div>'
-        +_qrNeedLbl
-        +'<div onclick="event.stopPropagation();window._qrToggleGame('+i+')" style="width:42px;height:24px;border-radius:12px;background:'+(on?'#1D9E75':'var(--color-border-secondary)')+';position:relative;cursor:pointer;flex-shrink:0">'
-        +'<span style="position:absolute;top:2px;'+(on?'right':'left')+':2px;width:20px;height:20px;border-radius:50%;background:#fff"></span></div></div>';
-    }).join('');
-    return'<div style="'+card+';max-height:90vh;overflow-y:auto">'+dotsRow
-      +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">Games</div><div style="font-size:12px;color:var(--color-text-secondary);margin-top:3px">Change games, stakes, or any setting in the Games tab after the round starts.</div></div>'
-      +'<div style="padding:6px 0"><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;margin:8px 16px">'+gameRows+'</div>'
-      +'</div>'
-      +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrFinish()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Start Round \u2192</button></div>'
-      +'<div onclick="window._qrBack()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Back</div>'
-      +'</div>';
-  }
-  return '';
 }
-
-window._qrToggleGame=function(i){
-  const games=['Match Play','Vegas','Skins','Razzle Dazzle','Wolf','Hammer',"Two's Club",'Snake','Four-Ball'];
-  const g=games[i];if(!g)return;
-  if(_gameFieldNote(g,_qrS.n))return;
-  if(_gsGames[g])delete _gsGames[g];
-  else _gsGames[g]=true;
-  _qrRender();
-};
 window._qrPickCourse=function(cn){
   _qrS.course=cn;
   const c=CATALOG[cn];
@@ -4958,7 +4965,10 @@ window._qrSetHoles=function(el){_qrS.holes=el.dataset.val;_qrRender();};
 window._qrSetN=function(el){_qrS.n=parseInt(el.dataset.val);_qrRender();};
 window._qrSet=function(key,val){_qrS[key]=val;_qrRender();};
 window._qrBack=function(){
-  if(_qrS.step>1){
+  // Group mode never entered step 1, so Back must floor at 2 or it lands on a question
+  // whose answer _qrNext throws away.
+  var _qrFloor=window._pendingGroupId?2:1;
+  if(_qrS.step>_qrFloor){
     _qrS.step--;
     _qrRender();
     if(_qrS.step===3&&_qrS.players&&_qrS.players.length){
@@ -5002,9 +5012,16 @@ window._qrNext=function(){
     }
     _gsGames={};
     if(_qrS.n===1){_qrS.step=4;_qrRender();return;}
+    // _gsGames stays an EMPTY object rather than being removed. _gsApplyToWK and
+    // _gsApplyToRound still run at launch and at add-round and are no-ops on {}.
+    // Ripping the apply path out would touch money-adjacent setup for no benefit, and
+    // add-round and the E9 wizard still populate it.
   }
   if(_qrS.step===4){_qrS.hdcpPct=parseFloat(document.getElementById('qrHdcpPct')?.value||80)/100;_qrS.netOffLow=document.getElementById('qrNetOffLow')?.checked||false;}
-  if(_qrS.step<5){_qrS.step++;_qrRender();}
+  // The games step is gone: games are chosen on the launch pad, after the foursomes
+  // exist and _gameLaneNote can gate them per group. Step 4 is now the last.
+  if(_qrS.step<4){_qrS.step++;_qrRender();return;}
+  _qrLaunchRound();
 };
 
 window._qrFinish=function(){_qrLaunchRound();};
@@ -5093,7 +5110,12 @@ function startQuickRound(){
   // goHome()/showHome() leave WK and STATE populated and a new round must not start on
   // top of the last trip - but needing it at LAUNCH is not the same as needing it at
   // OPEN, and doing it at open made this wizard's Cancel a lie too. v120.19.
-  _qrS={step:1,n:4,holes:'18',course:null,tee:null,players:[],selectedMembers:[],hdcpPct:0.8,netOffLow:false};
+  // Group mode derives n from the member picker, so the count step asks a question whose
+  // answer _qrNext discards. Skip it and seat the ceiling as the selection cap. Standalone
+  // mode has no members to pick from and keeps the step, where n decides how many
+  // name-and-handicap rows step 3 renders.
+  var _qrGroupMode=!!window._pendingGroupId;
+  _qrS={step:_qrGroupMode?2:1,n:_qrGroupMode?TW_MAX_PLAYERS:4,holes:'18',course:null,tee:null,players:[],selectedMembers:[],hdcpPct:0.8,netOffLow:false};
   _gsGames={};
   let modal=document.getElementById('qrModal');
   if(!modal){
@@ -5782,7 +5804,7 @@ function buildCourseFields(){const nR=parseInt(document.getElementById('numRound
 // ── Trip Wizard Modal (_tw) ─────────────────────────────────────────────────
 // _twS: wizard state object
 // step 1=Trip setup, 2=Players, 3=Handicap, 4=Courses, 5=Money & games
-const TW_MAX_PLAYERS=12;
+const TW_MAX_PLAYERS=40;
 let _twS={step:1,name:'',date:'',region:'',numRounds:4,selectedMembers:[],hdcpPct:80,netOffLow:false,courses:[],tees:[],games:{},buyIn:50,potTiebreak:'countback',potMethod:'netstroke'};
 const _TW_TOTAL_STEPS=5;
 
@@ -5973,21 +5995,10 @@ function _twStep4Html(){
 
 // Step 5: Money & games
 function _twStep5Html(){
-  const games=['Match Play','Vegas','Skins','Razzle Dazzle','Wolf','Hammer',"Two's Club",'Snake','Four-Ball'];
-  const _twN=(_twS.selectedMembers||[]).length;
-  let gameRows=games.map((g,i)=>{
-    const _note=_gameFieldNote(g,_twN);const greyed=!!_note;const on=!greyed&&!!_twS.games[g];
-    const isLast=i===games.length-1;
-    const _needLbl=_note?`<span style="font-size:11px;color:var(--color-text-tertiary);margin-right:8px;">${_note}</span>`:'';
-    const _rowClick=greyed?'':`onclick="window._twToggleGameIdx(${i})"`;
-    const _cursor=greyed?'opacity:0.5;':'cursor:pointer;';
-    const _toggle=greyed?`<div style="width:42px;height:24px;border-radius:12px;background:var(--color-border-secondary);position:relative;flex-shrink:0;"><span style="position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;opacity:0.6;"></span></div>`:`<div onclick="event.stopPropagation();window._twToggleGameIdx(${i})" style="width:42px;height:24px;border-radius:12px;background:${on?'#1D9E75':'var(--color-border-secondary)'};position:relative;cursor:pointer;flex-shrink:0;"><span style="position:absolute;top:2px;${on?'right':'left'}:2px;width:20px;height:20px;border-radius:50%;background:#fff;"></span></div>`;
-    return`<div ${_rowClick} style="display:flex;align-items:center;padding:11px 12px;${isLast?'':'border-bottom:0.5px solid var(--color-border-tertiary);'}${_cursor}">`+
-      `<div style="width:3px;height:28px;border-radius:1px;background:${on?'#1D9E75':'transparent'};margin-right:10px;flex-shrink:0;"></div>`+
-      `<div style="flex:1;font-size:13px;color:var(--color-text-${on?'primary':'secondary'});">${g}</div>`+
-      _needLbl+_toggle+`</div>`;
-  }).join('');
-  return _twHeader('New trip','Money and games','')+
+  // Games left this step in v121.3; the weekend bet did not. Buy-in, winner and tiebreak
+  // are read out of here by _twNext.
+  return _twHeader('New trip','Money','')+
+
     `<div style="padding:14px 20px 10px;">`+
     `<div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px;">Weekend bet</div>`+
     `<div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;margin-bottom:14px;">`+
@@ -6005,9 +6016,7 @@ function _twStep5Html(){
     `<option value="split"${_twS.potTiebreak==='split'?' selected':''}>Split the pot</option>`+
     `<option value="manual"${_twS.potTiebreak==='manual'?' selected':''}>Decide it ourselves</option>`+
     `</select></div></div>`+
-    `<div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px;">Games</div>`+
-    `<div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;margin-bottom:10px;">${gameRows}</div>`+
-    `<div style="font-size:11px;color:var(--color-text-tertiary);line-height:1.5;">Games apply to every round. Once the trip starts, change games, stakes, or any setting for any round in the Games tab.</div>`+
+    `<div style="font-size:11px;color:var(--color-text-tertiary);line-height:1.5;">Pick games once the trip starts. Each foursome chooses its own from the Games tab.</div>`+
     `</div>`+
     _twFooter('Start trip','Back');
 }
@@ -6258,14 +6267,6 @@ window._twToggleMember=function(memberId){
   _twRender();
 };
 
-window._twToggleGameIdx=function(i){
-  const games=['Match Play','Vegas','Skins','Razzle Dazzle','Wolf','Hammer',"Two's Club",'Snake','Four-Ball'];
-  const g=games[i];if(!g)return;
-  if(_gameFieldNote(g,(_twS.selectedMembers||[]).length))return;
-  if(_twS.games[g])delete _twS.games[g];
-  else _twS.games[g]=true;
-  _twRender();
-};
 window._twToggleGame=function(gameName){
   if(_twS.games[gameName])delete _twS.games[gameName];
   else _twS.games[gameName]=true;
@@ -6551,7 +6552,18 @@ return teams.every(game=>{if(!game||!game[0]||!game[1])return false;const all=[g
 function isValidFlat(teams){if(!teams||!teams.length)return false;return teams.every(game=>{if(!game||!game[0]||!game[1])return false;const all=[game[0][0],game[0][1],game[1][0],game[1][1]];return all.length===4&&new Set(all).size===4&&all.every(_vp);});}
 const _flS=flightsForRound(r);const _mtOk=Array.isArray(STATE.mpTeams[r])&&STATE.mpTeams[r].length===_flS.length&&STATE.mpTeams[r].every(function(fl,fi){return isValid(fl,fi);});if(!_mtOk)STATE.mpTeams[r]=_flS.map(function(_,fi){return isHeadsUp(r)?defaultHUTeamsForFlight(r,fi):defaultTeamsForFlight(r,fi);});
 }
-function defaultFlights(nP){var a=[];for(var i=0;i<nP;i++)a.push(i);return [a];}
+function defaultFlights(nP){
+  if(nP<=4){var a=[];for(var i=0;i<nP;i++)a.push(i);return [a];}
+  var g=Math.ceil(nP/4),base=Math.floor(nP/g),rem=nP%g,out=[],pi=0;
+  for(var k=0;k<g;k++){var size=base+(k<rem?1:0),grp=[];
+    for(var j=0;j<size;j++)grp.push(pi++);
+    out.push(grp);}
+  return out;}
+function _flightsForNewRound(prevIdx){
+  var prev=(prevIdx>=0&&STATE.roundFlights&&STATE.roundFlights[prevIdx])?STATE.roundFlights[prevIdx]:null;
+  return (prev&&prev.length>1)?JSON.parse(JSON.stringify(prev)):defaultFlights(WK.players.length);
+}
+
 // THE roster sweep. Adding or removing a player invalidates every per-round structure
 // keyed by player index, and there were THREE copies of the fix-up: addPlayer had one,
 // removePlayer had one, and confirmAddPlayer - the ONLY path a button actually reaches -
@@ -7480,7 +7492,7 @@ function helpAccordionHtml(){
     {id:'htp-members',title:'Members, Roles & Claiming',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Members.</strong> A group has two kinds of players. <strong>Full members</strong> have their own account and manage their own profile. <strong>Managed players</strong> are added by an admin with Add Guest, who fills in their name, handicap, and Venmo so they can be scored and paid like anyone else even before they sign up. A managed player shows a dashed avatar until they claim their spot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Roles.</strong> The group admin controls setup: courses, games, dollar amounts, and who is in. Everyone else can enter scores but cannot change a trip's setup. An admin can also name a <strong>trip admin</strong>, granting edit rights for one specific trip without making that person a group admin.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6"><strong>Claiming your spot.</strong> If an admin added you as a managed player before you had your own account, you can claim that record when you sign up. Join with the group code and the app asks "is one of these you?", listing the unclaimed players. Pick yourself and your new login links to that record, so every past score, game, and dollar comes with you and no duplicate player appears. If none of them is you, choose "None of these, I'm new" to join fresh. Only one person can ever claim a given player, and the group code gates the whole thing.</p>`},
     {id:'htp-handicaps',title:'Handicaps & the Snapshot',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Strokes come from a <strong>Course Handicap</strong>, worked out per course with the standard WHS formula: Index x (Slope / 113) + (Course Rating - Par). When you import a course from the database its slope and rating come in automatically; for a custom course you enter them from the scorecard for the tee box you are playing. The tee box matters, since the wrong rating produces the wrong strokes.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6"><strong>The snapshot.</strong> When a player is added to a trip, that trip takes a one-time snapshot of their handicap and uses its own copy for the whole trip. Updating a profile handicap later never touches a trip already in progress. A trip's handicap can still be edited directly in Preferences &gt; Players, but doing so can retroactively change completed rounds within that trip. That snapshot is what the info icon on a trip's Players panel points at.</p>`},
     {id:'htp-setup',title:'Trips & Rounds',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Every round is scored the same way. What differs is whether it sits inside a group and how many rounds it spans.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>New Trip</strong> is a multi-round event inside a group. A four-step setup covers details (name, date, players, rounds), players, courses, and games &amp; money. Everything stays adjustable in Preferences once the trip starts.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Group Round</strong> is a single one-off round inside a group, without the multi-round trip setup. It appears alongside that group's trips.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Individual Round</strong> is a single round not tied to any group. These collect under <strong>Your Rounds</strong> on your home screen, with your three most recent shown at the top. A group round and an individual round use the same round setup; the only difference is whether a group is attached.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A single round, group or individual, runs with as few as 1 player.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6"><strong>Courses.</strong> Every round needs a course, assigned during setup. Search for one by name and the app finds it locally or pulls it from the online course database, filling in slope, rating, and pars automatically. You can also add a custom course by hand. Any course you use is saved for reuse. To change a round's course, or add one after a trip has started, use Preferences &gt; Courses.</p>`},
-    {id:'htp-foursomes',title:'Foursomes',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A trip can hold up to 12 players, which is more than fit in one group. Split the field into foursomes: each group plays its own games, for its own money, on its own card.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Set them in Preferences &gt; Foursomes. <b>Each round keeps its own foursomes</b>, so you can reshuffle the groups every day without touching the rounds already played.</p><div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin:14px 0 6px">Moving players</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Tap a player to move them to another group, or swap them with someone. There is no need to empty a seat first: a move is a move, and a swap trades both players at once. <b>Auto-split</b> deals the whole field out evenly by handicap in one tap, which is usually all you need.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Every player is always in exactly one foursome. Groups do not have to be equal, and a group of five is allowed, though the app will say so.</p><div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin:14px 0 6px">Games run per foursome</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Most games are scoped to a foursome: Foursome 1 can play Wolf and Skins while Foursome 2 plays Vegas and Hammer. Each group settles its own pot, and nobody is on the hook for a game they were not in.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Two things are trip-wide instead: the <b>weekend bet</b>, and <b>Two's Club</b>. Four-Ball can be either: add it to one foursome and it is that group's game, or add it in the <b>Both</b> lane and it is available to the whole trip.</p><div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin:14px 0 6px">You are always playing two competitions</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">This is the part worth understanding, because everything else follows from it.</p><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);padding:10px 12px;margin:10px 0;font-size:12px;color:var(--color-text-secondary);line-height:1.6"><b>Your foursome games</b> are side money against the three players you are walking with.<br><br><b>The weekend</b> is everyone. Every player in the trip is competing on cumulative net for the standings and the pot, no matter which group they are in.</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">You are in both, on the same swing. The card you post feeds your foursome's games and the weekend leaderboard at once.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Games need enough players <b>in the foursome</b>, not just in the trip. Wolf, Vegas, Razzle Dazzle and Four-Ball need four. If you turn Wolf on and then split into a five and a three, Wolf simply will not run for the group of three.</p><div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin:14px 0 6px">So you have two sets of strokes</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><b>Strokes are always given relative to the best player you are playing against.</b> That player plays off scratch and everyone else gets the difference. Two competitions, two opponents, two allowances.</p><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);padding:10px 12px;margin:10px 0;font-size:12px;color:var(--color-text-secondary);line-height:1.6">In a <b>foursome game</b>, your strokes come off your foursome's best player.<br><br>For the <b>weekend</b>, your strokes come off the best player in the whole trip.</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">So the same player, on the same hole, can carry one stroke for the Skins in his group and two for the weekend card. Neither is wrong. They are two different contests, exactly like playing a club medal and a side match on the same swing.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The app labels every stroke with the pot it belongs to, so you never have to work it out. <b>F1</b> means your foursome, <b>FIELD</b> means everyone. The grid view shows the weekend card, and the hole view shows the game you are playing. Tap the <b>i</b> by the course name and it will name the exact player you are netting off.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Four-Ball is the one game that can be either. Left alone it plays inside your foursome like everything else; set its Scope to <b>Field</b> and all eight play for one pot, on the same strokes as the weekend. Field is only offered when every foursome is playing Four-Ball. If only one group has it on, that group is the pot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">The scorecard follows whichever game is live in your group. If Four-Ball is the only money on, the card nets off the Four-Ball pot. If a foursome game is also running, the card stays on the foursome low and the Four-Ball box shows its own strokes with a note saying so. Tap the <b>i</b> next to the course name at any time and it will tell you exactly who you are netting off.</p>`},
+    {id:'htp-foursomes',title:'Foursomes',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A trip can hold up to 40 players, which is more than fit in one group. Split the field into foursomes: each group plays its own games, for its own money, on its own card.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Set them in Preferences &gt; Foursomes. <b>Each round keeps its own foursomes</b>, so you can reshuffle the groups every day without touching the rounds already played.</p><div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin:14px 0 6px">Moving players</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Tap a player to move them to another group, or swap them with someone. There is no need to empty a seat first: a move is a move, and a swap trades both players at once. <b>Auto-split</b> deals the whole field out evenly by handicap in one tap, which is usually all you need.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Every player is always in exactly one foursome. Groups do not have to be equal, and a group of five is allowed, though the app will say so.</p><div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin:14px 0 6px">Games run per foursome</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Most games are scoped to a foursome: Foursome 1 can play Wolf and Skins while Foursome 2 plays Vegas and Hammer. Each group settles its own pot, and nobody is on the hook for a game they were not in.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Two things are trip-wide instead: the <b>weekend bet</b>, and <b>Two's Club</b>. Four-Ball can be either: add it to one foursome and it is that group's game, or add it in the <b>All</b> lane and it is available to the whole trip.</p><div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin:14px 0 6px">You are always playing two competitions</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">This is the part worth understanding, because everything else follows from it.</p><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);padding:10px 12px;margin:10px 0;font-size:12px;color:var(--color-text-secondary);line-height:1.6"><b>Your foursome games</b> are side money against the three players you are walking with.<br><br><b>The weekend</b> is everyone. Every player in the trip is competing on cumulative net for the standings and the pot, no matter which group they are in.</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">You are in both, on the same swing. The card you post feeds your foursome's games and the weekend leaderboard at once.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Games need enough players <b>in the foursome</b>, not just in the trip. Wolf, Vegas, Razzle Dazzle and Four-Ball need four. If you turn Wolf on and then split into a five and a three, Wolf simply will not run for the group of three.</p><div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin:14px 0 6px">So you have two sets of strokes</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><b>Strokes are always given relative to the best player you are playing against.</b> That player plays off scratch and everyone else gets the difference. Two competitions, two opponents, two allowances.</p><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);padding:10px 12px;margin:10px 0;font-size:12px;color:var(--color-text-secondary);line-height:1.6">In a <b>foursome game</b>, your strokes come off your foursome's best player.<br><br>For the <b>weekend</b>, your strokes come off the best player in the whole trip.</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">So the same player, on the same hole, can carry one stroke for the Skins in his group and two for the weekend card. Neither is wrong. They are two different contests, exactly like playing a club medal and a side match on the same swing.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The app labels every stroke with the pot it belongs to, so you never have to work it out. <b>F1</b> means your foursome, <b>FIELD</b> means everyone. The grid view shows the weekend card, and the hole view shows the game you are playing. Tap the <b>i</b> by the course name and it will name the exact player you are netting off.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Four-Ball is the one game that can be either. Left alone it plays inside your foursome like everything else; set its Scope to <b>Field</b> and all eight play for one pot, on the same strokes as the weekend. Field is only offered when every foursome is playing Four-Ball. If only one group has it on, that group is the pot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">The scorecard follows whichever game is live in your group. If Four-Ball is the only money on, the card nets off the Four-Ball pot. If a foursome game is also running, the card stays on the foursome low and the Four-Ball box shows its own strokes with a note saying so. Tap the <b>i</b> next to the course name at any time and it will tell you exactly who you are netting off.</p>`},
     {id:'htp-emergency',title:'Emergency Rounds',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">An Emergency Round bolts an unplanned round onto a trip already in progress, for when the group decides to play an extra 9 or 18. Add one from Preferences &gt; Trip Setup.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">You choose the course, the holes (18, front 9, or back 9), whether it counts toward standings, and its games. Rounds that count are labeled Rd 5, Rd 6, and so on. Rounds that do not count are labeled E9 or E18 and act as money-only side games: they still show in scoring and money, but stay out of the leaderboard and weekend bet.</p>`},
     {id:'htp-scoring',title:'Entering Scores',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Enter gross scores hole by hole on the Scores screen; net scores calculate automatically. Once every hole is in, a <strong>Lock Round</strong> button appears, and locking freezes the scores.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">You can optionally net every score off the group's low handicap, set in Preferences &gt; Trip Setup. Heads Up match play uses its own setting instead, which can be set for the round or per foursome: by default each 1v1 nets off the lower handicap of the two players in that match, so only the higher handicap gets strokes; turn Net off match low off in the Match Play setup to have both players use their full handicap.</p>`},
     {id:'htp-shortened',title:'Rounds That End Early',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Weather, darkness, or a group that has simply had enough. When play stops before the last hole, tell the app where it stopped instead of leaving blank holes behind.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>The Money screen is where you do it.</strong> A round still waiting on scores offers <strong>Play called early? End the round here</strong>. Pick the last hole everyone finished, and on a multi-foursome round pick who stopped: each foursome ends at its own hole, so one group can quit at 11 while another plays all 18. The Scores screen offers the same thing under the hole grid, which opens by tapping the <strong>Hole 9 of 18</strong> bar.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">An ended round shows an <strong>Ended at 11</strong> chip on its Money round card. Tap the chip for <strong>Round status</strong>: where each foursome stopped, the weekend setting, and <strong>Resume round</strong> if play starts back up. Resuming loses nothing already entered. On the scorecard the holes that were never played turn grey, and scores cannot be entered on them until you resume.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>The games settle normally.</strong> Most of them simply run out of holes: a skin still carrying when play stops is never won and nobody pays for it, and a Match Play or Vegas segment that never started reads Not played. Two games have an opinion about a unit left unfinished. <strong>Match Play</strong> awards an undecided segment to whoever was ahead. <strong>Razzle Dazzle</strong> voids an unfinished final match by default, or hands it to the leader if you set <strong>Unfinished final match</strong> to Leader wins in its setup.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Standings use the shortest foursome.</strong> If one group stops at 11 and another finishes 18, the weekend leaderboard counts 11 holes for everybody, so nobody gains or loses ground on holes their group never faced. A round needs at least 9 holes to count at all. Below that it sits out the weekend tally unless you turn <strong>Count toward the weekend</strong> on from Round status.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Scores already entered past the end hole are not deleted, and every game except Razzle Dazzle keeps counting them. The end sheet warns you when it finds them. Clear them first if they were entered by mistake.</p>`},
@@ -7536,17 +7548,20 @@ function renderScorecard(){
     return;
   }
   let _fp=0;
+  // THE LAUNCH PAD. Drawn whenever this round has no pick yet, INCLUDING a single foursome -
+  // that is the case the old prompt could never reach, and the reason a four-man round had
+  // no route to game selection once games left the wizard. _launchPadPending is separate
+  // from _fsPickPending on purpose; see its definition.
+  if(_launchPadPending(r)){
+    _fsBlankGameBoxes();
+    document.getElementById('scorecard').innerHTML=_launchPadHtml(r);
+    return;
+  }
   if(isMultiFlight(r)){
     _fp=getFlightPick(r);
     if(_fp===null){
       _fsBlankGameBoxes();
-      const _fl=flightsForRound(r);
-      let _promptHtml='<div class="fs-pick-prompt"><div class="fpp-t">Select your foursome</div>';
-      for(let _fi=0;_fi<_fl.length;_fi++){
-        _promptHtml+='<div class="fs-pick-opt" onclick="_fsPillPick('+_fi+')">Foursome '+(_fi+1)+'<span class="fpo-who">'+flightMemberInitials(r,_fi)+'</span></div>';
-      }
-      _promptHtml+='</div>';
-      document.getElementById('scorecard').innerHTML=_promptHtml;
+      document.getElementById('scorecard').innerHTML=_launchPadHtml(r);
       return;
     }
   }
@@ -9773,6 +9788,30 @@ function reconcileWolfOrder(r){
 // foursomes yet. Wolf needs groups of four, so neither the tee-order editor nor the
 // scorecard can render meaningfully until foursomes exist. compact=true is the in-setup
 // variant; false is the full Scores-screen prompt. Button jumps to the Foursomes editor.
+function _launchPadHtml(r){
+  var fl=(typeof flightsForRound==='function')?flightsForRound(r):[[]];
+  var multi=fl.length>1;
+  var h='<div class="fs-launch-pad">';
+  h+='<div class="fpp-t">'+(multi?'Select your foursome':'Ready to play')+'</div>';
+  if(multi){
+    for(var fi=0;fi<fl.length;fi++){
+      h+='<div class="fs-pick-opt" onclick="_fsPillPick('+fi+')">Foursome '+(fi+1)
+        +'<span class="fpo-who">'+flightMemberInitials(r,fi)+'</span></div>';
+    }
+  } else {
+    // NOT "Start scoring": that label belongs to the action row's _pencilClaim, which is a
+    // different action. This button only opens the card, exactly as a foursome row does on
+    // a multi-group round.
+    h+='<div class="lp-start fs-pick-opt lp-primary" onclick="window._lpStart(0)">Go to the scorecard</div>';
+  }
+  h+='<div class="lp-tools">';
+  h+='<div class="lp-tool lp-foursomes" onclick="window._lpFoursomes()">Configure foursomes'
+    +'<span class="lp-sub">Move players between groups</span></div>';
+  h+='<div class="lp-tool lp-games" onclick="window._lpGames()">Select games'
+    +'<span class="lp-sub">Choose what this group is playing for</span></div>';
+  h+='</div></div>';
+  return h;
+}
 function _wolfNeedsFoursomesHtml(compact){
   var msg='This trip has more than 4 players. Set your foursomes first so each group plays its own games.';
   var btn='<button style="background:#0F6E56;color:#E1F5EE;border:none;padding:10px 18px;border-radius:var(--border-radius-md);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit" onclick="setView(\'setup\');STATE.flightsViewRound=STATE.currentRound;setOptPanel(\'flights\')">Set Foursomes</button>';
@@ -10581,7 +10620,7 @@ function renderWolfRound(){
 
 function renderTeamsPanel(){/* Stage 3: Game Setup tab eliminated. Scoring config + Weekend bet moved into renderWeekendPanel(). Per-game setup is migrating into the Games tab. This stub remains so any stray legacy caller does not throw. */}
 function setDropSkins(gameIdx,slot,pIdx,roundIdx,fi){fi=fi||0;if(isReadOnly)return;if(_pencilViewerLocked(roundIdx,fi))return;if(!STATE.skinsTeams||!STATE.skinsTeams[roundIdx]||!STATE.skinsTeams[roundIdx][fi])return;const teams=STATE.skinsTeams[roundIdx][fi][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();}
-function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span style="display:inline-flex;align-items:center;gap:6px">Active players<button onclick="window._snapshotInfo()" aria-label="About these handicaps" style="background:transparent;border:none;padding:0;cursor:pointer;line-height:1;display:inline-flex;align-items:center"><i class="ti ti-info-circle" style="font-size:15px;color:#5f7385"></i></button></span></div>`;WK.players.forEach((p,i)=>{const eff=effHdcp(i,r);html+=`<div class="setup-row"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><input class="inline-edit" value="${p.name}" style="flex:1;min-width:60px" onchange="if(!canEditTrip())return;WK.players[${i}].name=this.value;WK.players[${i}].ini=this.value.substring(0,2).toUpperCase();renderPlayersPanel();renderScorecard();renderBanner();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin:0 3px">idx</span><input class="ie-num" type="text" value="${sbHcpDisplay(p.idx)}" style="width:70px" onchange="if(!canEditTrip())return;WK.players[${i}].idx=idxFromInput(this.value,0);renderPlayersPanel();renderScorecard();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px;white-space:nowrap">→ ${chDisplay(eff)}</span>${WK.players.length>2?`<button class="btn-danger" onclick="removePlayer(${i})">✕</button>`:''}</div>`;});if(WK.players.length<12&&canEditTrip()){html+=`<div class="ap-addrow" onclick="window._apOpen()"><i class="ti ti-plus" style="font-size:15px"></i> Add player</div>`;}html+=`</div>`;
+function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span style="display:inline-flex;align-items:center;gap:6px">Active players<button onclick="window._snapshotInfo()" aria-label="About these handicaps" style="background:transparent;border:none;padding:0;cursor:pointer;line-height:1;display:inline-flex;align-items:center"><i class="ti ti-info-circle" style="font-size:15px;color:#5f7385"></i></button></span></div>`;WK.players.forEach((p,i)=>{const eff=effHdcp(i,r);html+=`<div class="setup-row"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><input class="inline-edit" value="${p.name}" style="flex:1;min-width:60px" onchange="if(!canEditTrip())return;WK.players[${i}].name=this.value;WK.players[${i}].ini=this.value.substring(0,2).toUpperCase();renderPlayersPanel();renderScorecard();renderBanner();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin:0 3px">idx</span><input class="ie-num" type="text" value="${sbHcpDisplay(p.idx)}" style="width:70px" onchange="if(!canEditTrip())return;WK.players[${i}].idx=idxFromInput(this.value,0);renderPlayersPanel();renderScorecard();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px;white-space:nowrap">→ ${chDisplay(eff)}</span>${WK.players.length>2?`<button class="btn-danger" onclick="removePlayer(${i})">✕</button>`:''}</div>`;});if(WK.players.length<TW_MAX_PLAYERS&&canEditTrip()){html+=`<div class="ap-addrow" onclick="window._apOpen()"><i class="ti ti-plus" style="font-size:15px"></i> Add player</div>`;}html+=`</div>`;
     document.getElementById('opt-panel-players').innerHTML=html;
 }
 
@@ -10669,7 +10708,7 @@ function renderFlightsPanel(){
 function _flightsMutate(r,fn){
   if(!canEditTrip())return;
   if(!STATE.roundFlights)STATE.roundFlights=WK.rounds.map(()=>defaultFlights(WK.players.length));
-  while(STATE.roundFlights.length<WK.rounds.length)STATE.roundFlights.push(defaultFlights(WK.players.length));
+  while(STATE.roundFlights.length<WK.rounds.length)STATE.roundFlights.push(_flightsForNewRound(STATE.roundFlights.length-1));
   fn(STATE.roundFlights[r]);
   STATE.roundFlights[r]=_fsNormalize(STATE.roundFlights[r],WK.players.length);
   reconcileWolfOrder(r);
@@ -10781,14 +10820,14 @@ window._fsTapPlayer=function(r,pi){
 };
 function toggleEditPanel(eid,btnId){const panel=document.getElementById(eid);const btn=document.getElementById(btnId);const display=document.getElementById(eid+'_display');if(!panel)return;const isOpen=panel.style.display!=='none';panel.style.display=isOpen?'none':'block';if(display)display.style.display=isOpen?'flex':'none';if(btn)btn.style.display=isOpen?'inline-block':'none';if(isOpen){const mc=eid.match(/^ce_(.+)$/);if(mc){const cname=mc[1].replace(/_/g,' ');if(CATALOG[cname])saveCourse(cname);}renderPlayersPanel();}}
 function toggleAddPlayerRow(){const row=document.getElementById('addPlayerRow');const btn=document.getElementById('addPlayerToggleBtn');if(!row)return;const opening=row.style.display==='none';row.style.display=opening?'block':'none';if(btn)btn.style.display=opening?'none':'inline-block';if(opening)setTimeout(function(){var el=document.getElementById('apFirst');if(el)el.focus();},50);}
-function confirmAddPlayer(){if(!canEditTrip())return;var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=idxFromInput(document.getElementById('apIdx')?document.getElementById('apIdx').value:'',10);if(!first){alert('Enter a first name.');return;}if(WK.players.length>=12)return;var c=pickColor();var newP={pid:s2NewTok(),name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};_seatPlayer(newP);}
+function confirmAddPlayer(){if(!canEditTrip())return;var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=idxFromInput(document.getElementById('apIdx')?document.getElementById('apIdx').value:'',10);if(!first){alert('Enter a first name.');return;}if(WK.players.length>=TW_MAX_PLAYERS)return;var c=pickColor();var newP={pid:s2NewTok(),name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};_seatPlayer(newP);}
 // Every roster add lands here: the wizard-equivalent seating sequence, in one place.
 // Pads each round's score rows for the new column, reconciles flights and every game
 // off the new membership, then renders and writes. Returns false when the add is
 // refused so callers can leave their sheet open.
 function _seatPlayer(newP){
   if(!canEditTrip())return false;
-  if(WK.players.length>=12)return false;
+  if(WK.players.length>=TW_MAX_PLAYERS)return false;
   var allPlayers=WK.players.concat([newP]);resolveDisplayNames(allPlayers);
   WK.players.push(newP);
   WK.rounds.forEach(function(_,r){STATE.scores[r].forEach(function(h){h.push(null);});});
@@ -10823,7 +10862,7 @@ function _apAvailableMembers(){
 window._apClose=function(){var el=document.getElementById('apSheet');if(el)el.remove();};
 window._apOpen=async function(){
   if(!canEditTrip())return;
-  if(WK.players.length>=12){alert('This trip is full at 12 players.');return;}
+  if(WK.players.length>=TW_MAX_PLAYERS){alert('This trip is full at '+TW_MAX_PLAYERS+' players.');return;}
   var gid=WK._groupId;
   // Cold cache on a freshly loaded trip. Fetch before painting, or the sheet opens
   // claiming the group is empty when it is not.
@@ -10926,7 +10965,7 @@ window._apGuestSubmit=async function(){
   _seatPlayer({pid:s2NewTok(),name:full,first:first,last:last,venmo:venmo,
     member_id:memberId,idx:hp.value,bg:c.bg,fg:c.fg,ini:''});
 };
-function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=12)return;const c=pickColor(),i=WK.players.length;WK.players.push({pid:s2NewTok(),name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));});_rosterReconcileAll();if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();autoSave();s2WriteActive();}
+function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=TW_MAX_PLAYERS)return;const c=pickColor(),i=WK.players.length;WK.players.push({pid:s2NewTok(),name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));});_rosterReconcileAll();if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();autoSave();s2WriteActive();}
 function removePlayer(idx){if(!canEditTrip())return;if(WK.players.length<=2){alert('Need at least 2 players.');return;}
 // Capture BEFORE the splice. The players row MUST be deleted too: s2ReadTrip sizes the
 // roster from playerRows.length, so a surviving row resurrects the player on reload.
@@ -11481,7 +11520,7 @@ window._wkSetCourse=function(ri,cn){
   }
   s2MarkDirty(['trip']);autoSave();s2WriteActive();renderWeekendPanel();
 };
-function addRound(){if(!canEditTrip())return;const cn=document.getElementById('newRoundCourse')?.value||Object.keys(CATALOG)[0];WK.rounds.push({rid:s2NewTok(),courseName:cn,course:CATALOG[cn]});const nP=WK.players.length;STATE.scores.push(Array(18).fill(null).map(()=>Array(nP).fill(null)));const g=WK.mpGamesDefault;WK.mpGamesPerRound.push(g);WK.vegasSegsPerRound.push(WK.vegasSegsDefault);if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=[];WK.skinsGamesPerRound.push(0);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams.push([Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);const vg=vegasSegForRound(WK.rounds.length-1);STATE.vegTeams.push([Array(vg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);if(!STATE.hammerTeams)STATE.hammerTeams=[];STATE.hammerTeams.push([defaultHammerTeams(WK.rounds.length-1)]);if(!STATE.hammerState)STATE.hammerState=[];STATE.hammerState.push([Array(18).fill(null)]);if(!WK.hammerSegsPerRound)WK.hammerSegsPerRound=[];WK.hammerSegsPerRound.push(WK.hammerSegsDefault||1);if(!STATE.pressState)STATE.pressState=[];STATE.pressState.push([[]]);if(!STATE.skinsTeams)STATE.skinsTeams=[];const sg=skinsGamesForRound(WK.rounds.length-1);STATE.skinsTeams.push([Array(sg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);const _newR=WK.rounds.length-1;if(_newR>0&&STATE.roundFlights[_newR-1]&&STATE.roundFlights[_newR-1].length>1){STATE.roundFlights[_newR]=JSON.parse(JSON.stringify(STATE.roundFlights[_newR-1]));}reconcileWolfOrder(_newR);reconcileSnakeHolders(_newR);reconcileMPTeams(_newR);reconcileVegasTeams(_newR);reconcileHammerTeams(_newR);reconcileSkinsTeams(_newR);reconcileRazzleOrder(_newR);reconcileFBTeams(_newR);renderWeekendPanel();}
+function addRound(){if(!canEditTrip())return;const cn=document.getElementById('newRoundCourse')?.value||Object.keys(CATALOG)[0];WK.rounds.push({rid:s2NewTok(),courseName:cn,course:CATALOG[cn]});const nP=WK.players.length;STATE.scores.push(Array(18).fill(null).map(()=>Array(nP).fill(null)));const g=WK.mpGamesDefault;WK.mpGamesPerRound.push(g);WK.vegasSegsPerRound.push(WK.vegasSegsDefault);if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=[];WK.skinsGamesPerRound.push(0);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams.push([Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);const vg=vegasSegForRound(WK.rounds.length-1);STATE.vegTeams.push([Array(vg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);if(!STATE.hammerTeams)STATE.hammerTeams=[];STATE.hammerTeams.push([defaultHammerTeams(WK.rounds.length-1)]);if(!STATE.hammerState)STATE.hammerState=[];STATE.hammerState.push([Array(18).fill(null)]);if(!WK.hammerSegsPerRound)WK.hammerSegsPerRound=[];WK.hammerSegsPerRound.push(WK.hammerSegsDefault||1);if(!STATE.pressState)STATE.pressState=[];STATE.pressState.push([[]]);if(!STATE.skinsTeams)STATE.skinsTeams=[];const sg=skinsGamesForRound(WK.rounds.length-1);STATE.skinsTeams.push([Array(sg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);const _newR=WK.rounds.length-1;STATE.roundFlights[_newR]=_flightsForNewRound(_newR-1);reconcileWolfOrder(_newR);reconcileSnakeHolders(_newR);reconcileMPTeams(_newR);reconcileVegasTeams(_newR);reconcileHammerTeams(_newR);reconcileSkinsTeams(_newR);reconcileRazzleOrder(_newR);reconcileFBTeams(_newR);renderWeekendPanel();}
 function launchE9(){
   _e9State={step:1,cn:null,nineHole:null,inStandings:false,tee:null,pendingCn:null};
   _showE9Modal();
@@ -11708,8 +11747,8 @@ function _e9SaveNewCourse(){
 function _gsRefresh(){
   const em=document.getElementById('e9Modal');
   if(em&&em.style.display!=='none'&&_e9State.step===4){_showE9Modal();}
-  // Also re-render QR modal if on games step
-  if(_qrS&&_qrS.step===5){_qrRender();}
+  // The quick-round wizard had a games step here; v121.3 removed it. Nothing in that
+  // wizard reacts to a game-config change any more.
 }
 function _e9AutoTee(cn){
   const c=CATALOG[cn];
@@ -11762,7 +11801,7 @@ function addE9Round(){
   // Foursomes: inherit the prior round's split (or default to a single foursome, which then
   // prompts on the Scores screen). Mirrors addRound so added rounds are not left unsplit.
   if(!STATE.roundFlights)STATE.roundFlights=[];
-  const _inhF=(insertAt>0&&STATE.roundFlights[insertAt-1]&&STATE.roundFlights[insertAt-1].length>1)?JSON.parse(JSON.stringify(STATE.roundFlights[insertAt-1])):defaultFlights(WK.players.length);
+  const _inhF=_flightsForNewRound(insertAt-1);
   STATE.roundFlights.splice(insertAt,0,_inhF);
   STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);
   reconcileWolfOrder(insertAt);reconcileSnakeHolders(insertAt);reconcileMPTeams(insertAt);reconcileVegasTeams(insertAt);reconcileHammerTeams(insertAt);reconcileSkinsTeams(insertAt);reconcileRazzleOrder(insertAt);reconcileFBTeams(insertAt);
@@ -12787,7 +12826,7 @@ function _gsFourBallSetupBody(r){
     h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Scope'
       +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Who is in the pot</span></span>'
       +'<span style="font-size:13px;color:var(--color-text-primary)">'+_play.map(function(fi){return 'Foursome '+(fi+1);}).join(', ')+'</span></div>';
-    h+='<div class="fb-note">Four-Ball is on for '+(_play.length===1?('<b>Foursome '+(_play[0]+1)+'</b> only'):('<b>'+_play.length+' foursomes</b>'))+', so the pot is that group. Add Four-Ball in the <b>Both</b> lane to open a Field pot across the whole trip.</div>';
+    h+='<div class="fb-note">Four-Ball is on for '+(_play.length===1?('<b>Foursome '+(_play[0]+1)+'</b> only'):('<b>'+_play.length+' foursomes</b>'))+', so the pot is that group. Add Four-Ball in the <b>All</b> lane to open a Field pot across the whole trip.</div>';
   }
   // 4-man teams inside a foursome leaves one team per group with nobody to play, and
   // fbPools drops it. Silent no-op otherwise.
@@ -12895,7 +12934,7 @@ function renderFourBallRound(){
   if(!_shown.length){
     el.innerHTML='<div class="section-card"><div class="section-hd"><span>Four-Ball</span></div>'
       +'<div class="fb-note">Foursome '+(_fbSel+1)+' is not playing Four-Ball this round. '
-      +'Switch to Both to see the other groups.</div></div>';
+      +'Switch to All to see the other groups.</div></div>';
     return;
   }
   let h='';
@@ -13721,7 +13760,7 @@ function renderGamesTab(){
   renderRdPicker('ctxRdSel',r,'switchGamesRound',false);
   const _mf=isMultiFlight(r);
   const _laneBar=document.getElementById('gamesLaneBar');
-  if(_laneBar){if(_mf){const _fl=flightsForRound(r);let _lh='<div class="gf-filter">';_fl.forEach((_,fi)=>{_lh+='<button class="'+(_gsLane()===fi?'on':'')+'" onclick="switchGamesLane('+fi+')">Foursome '+(fi+1)+'</button>';});_lh+='<button class="'+(_gsLane()==='both'?'on':'')+'" onclick="switchGamesLane(\'both\')">Both</button></div>';var _cap=(_gsLane()==='both')?'Games added here apply to all foursomes.':('Foursome '+(_gsLane()+1)+' plays these plus any shared (Both) games.');_lh+='<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:6px;line-height:1.4">'+_cap+'</div>';_laneBar.innerHTML=_lh;}else{_laneBar.innerHTML='';if(_gsLane()!=='both')STATE.gamesLane='both';}}
+  if(_laneBar){if(_mf){const _fl=flightsForRound(r);let _lh='<div class="gf-filter">';_fl.forEach((_,fi)=>{_lh+='<button class="'+(_gsLane()===fi?'on':'')+'" onclick="switchGamesLane('+fi+')">Foursome '+(fi+1)+'</button>';});_lh+='<button class="'+(_gsLane()==='both'?'on':'')+'" onclick="switchGamesLane(\'both\')">All</button></div>';var _cap=(_gsLane()==='both')?'Games added here apply to all foursomes.':('Foursome '+(_gsLane()+1)+' plays these plus any shared (All) games.');_lh+='<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:6px;line-height:1.4">'+_cap+'</div>';_laneBar.innerHTML=_lh;}else{_laneBar.innerHTML='';if(_gsLane()!=='both')STATE.gamesLane='both';}}
   const _curLane=_mf?_gsLane():'both';
   const activeGames=GAME_DEFS.filter(def=>_gsLaneOn(def,r,_curLane));
   const gameSel=document.getElementById('gamesGameSel');
@@ -16482,22 +16521,45 @@ function dismissSplash(){
   s.style.opacity='0';
   setTimeout(()=>{s.style.display='none';},500);
 }
+const BOOT_TIMEOUT_MS=12000;
+var _bootSettled=false;
+function _bootSettle(reason){
+  if(_bootSettled)return;
+  _bootSettled=true;
+  try{console.error('[boot] fallback:',reason);}catch(e){}
+  try{dismissSplash();}catch(e){}
+  try{
+    if(typeof sbCurrentUser==='function'&&sbCurrentUser()){
+      if(typeof renderGroupList==='function')renderGroupList();
+      sbRouteAfterAuth();
+    } else { sbShowLogin(); }
+  }catch(e){ try{sbShowLogin();}catch(e2){} }
+}
+setTimeout(function(){
+  var s=document.getElementById('splashScreen');
+  var stillUp=s&&s.style.display!=='none'&&s.style.opacity!=='0';
+  if(stillUp)_bootSettle('timed out after '+BOOT_TIMEOUT_MS+'ms');
+  else _bootSettled=true;
+},BOOT_TIMEOUT_MS);
 loadLib(); // sync cache load first so library is available immediately
 const _splashStart=Date.now();
 updateThemeUI();
 // Auth gate - check session before showing app
-sbInit().then(authed => {
+sbInit().catch(e=>{_bootSettle('sbInit rejected: '+(e&&e.message));return null;}).then(authed => {
+  if(_bootSettled)return;
   if (!authed) {
     // No session - show login, dismiss splash
     const elapsed=Date.now()-_splashStart;
     const remain=Math.max(0,2800-elapsed);
-    setTimeout(()=>{ dismissSplash(); sbShowLogin(); }, remain);
+    setTimeout(()=>{ if(_bootSettled)return; _bootSettled=true; dismissSplash(); sbShowLogin(); }, remain);
     return;
   }
   // Session exists - proceed to app
   sbStartSessionKeepalive();
-  Promise.all([loadCourses()]).then(()=>{
-    syncOnLoad().then(()=>{
+  Promise.all([loadCourses()]).catch(e=>{_bootSettle('loadCourses rejected: '+(e&&e.message));return null;}).then(()=>{
+    if(_bootSettled)return;
+    syncOnLoad().catch(e=>{_bootSettle('syncOnLoad rejected: '+(e&&e.message));return null;}).then(()=>{
+      if(_bootSettled)return;
       renderGroupList();
       const elapsed=Date.now()-_splashStart;
       // Mid-round resume: a live crumb means the user is coming back to score. Keep the
@@ -16509,7 +16571,8 @@ sbInit().then(authed => {
       const _splashMin=_hasCrumb?1200:2800;
       const remain=Math.max(0,_splashMin-elapsed);
       setTimeout(()=>{
-        if(!_hasCrumb)dismissSplash();
+        if(_bootSettled)return;
+        if(!_hasCrumb){_bootSettled=true;dismissSplash();}
         sbRouteAfterAuth();
       }, remain);
     });
