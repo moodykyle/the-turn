@@ -1747,7 +1747,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v121.5';
+const APP_VERSION='v121.6';
 
 // ===== THEME =====
 (function(){
@@ -13782,7 +13782,7 @@ function renderGamesTab(){
         _emptyMsg='No shared games this round.<br><span style="color:var(--color-text-tertiary);font-size:12px">'+_elsewhere.join(' ')+'</span>';
       }else if(typeof _curLane==='number'&&(_elsewhere.length||_shared.length)){
         const _bits=[];
-        if(_shared.length)_bits.push('Shared with both foursomes: '+_shared.join(', ')+'.');
+        if(_shared.length)_bits.push('Shared with all foursomes: '+_shared.join(', ')+'.');
         _elsewhere.forEach(function(e){_bits.push(e);});
         _emptyMsg='No games for Foursome '+(_curLane+1)+' yet.<br><span style="color:var(--color-text-tertiary);font-size:12px">'+_bits.join(' ')+'</span>';
       }
@@ -13793,7 +13793,7 @@ function renderGamesTab(){
   if(!STATE.gamesViewGame||!activeGames.find(g=>g.id===STATE.gamesViewGame)){
     STATE.gamesViewGame=activeGames[0].id;
   }
-  gameSel.innerHTML=activeGames.map(def=>`<button class="game-pill${def.id===STATE.gamesViewGame?' active':''}" onclick="switchGamesGame('${def.id}')">${def.label}${(_curLane!=='both'&&_gsIsShared(def,r))?' <span class=\"gp-all\">BOTH</span>':''}</button>`).join('')+(canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+</button>':'');
+  gameSel.innerHTML=activeGames.map(def=>`<button class="game-pill${def.id===STATE.gamesViewGame?' active':''}" onclick="switchGamesGame('${def.id}')">${def.label}${(_curLane!=='both'&&_gsIsShared(def,r))?' <span class=\"gp-all\">ALL</span>':''}</button>`).join('')+(canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+</button>':'');
   renderGamesContent();
 }
 // Four-Ball was the eighth game and the only one with no view key, so its round render
