@@ -318,6 +318,10 @@ body.force-light .rd-sel{background:#FAFAF8;border-radius:10px;margin:0.5rem 1re
 .toggle input:checked+.toggle-slider:before{transform:translateX(18px);}
 .hdcp-badge{font-size:10px;background:var(--color-background-info);color:var(--color-text-info);border-radius:var(--border-radius-md);padding:1px 6px;margin-left:4px;}
 .twos-badge{font-size:10px;background:#FAEEDA;color:#633806;border-radius:var(--border-radius-md);padding:1px 6px;margin-left:4px;}
+.gr-tick{font-size:10px;color:#1D9E75;margin-left:4px;font-weight:700;}
+.gr-chip{display:flex;align-items:center;justify-content:center;gap:6px;font-size:10px;letter-spacing:0.05em;font-weight:700;padding:5px 0;margin:14px 0 0;border-radius:var(--border-radius-md);}
+.gr-chip.on{background:#E1F5EE;color:#0F6E56;}
+.gr-chip.off{background:var(--color-background-secondary);color:var(--color-text-tertiary);font-weight:600;letter-spacing:0.04em;}
 .lb-row{display:grid;grid-template-columns:22px 32px minmax(0,1fr) 42px 34px 12px;gap:10px;align-items:center;padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary);}
 .lb-row:last-child{border-bottom:none;}
 .lb-rank{font-size:13px;color:var(--color-text-secondary);}
@@ -1747,7 +1751,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v121.6';
+const APP_VERSION='v121.26';
 
 // ===== THEME =====
 (function(){
@@ -2066,6 +2070,11 @@ async function s2WriteActive(){
           ...(rd.fbPays!=null&&{fbPays:rd.fbPays}),
           ...(rd.fbSplit!=null&&{fbSplit:rd.fbSplit}),
           ...(rd.fbTie!=null&&{fbTie:rd.fbTie}),
+          ...(rd.fbFive43!=null&&{fbFive43:rd.fbFive43}),
+          ...(rd.fbGross!=null&&{fbGross:rd.fbGross}),
+          ...(rd.grindersOn!=null&&{grindersOn:rd.grindersOn}),
+          ...(rd.grindersAnte!=null&&{grindersAnte:rd.grindersAnte}),
+          ...(rd.grindersNet!=null&&{grindersNet:rd.grindersNet}),
           ...(Array.isArray(rd.fbTeams)&&rd.fbTeams.length&&{fbTeams:rd.fbTeams}),
           ...(rd.pressesOn!=null&&{pressesOn:rd.pressesOn}),
           ...(rd.pressVal!=null&&{pressVal:rd.pressVal}),
@@ -2439,6 +2448,11 @@ async function s2ReadTrip(tripId){
         ...(rd.fbPays!=null&&{fbPays:rd.fbPays}),
         ...(rd.fbSplit!=null&&{fbSplit:rd.fbSplit}),
         ...(rd.fbTie!=null&&{fbTie:rd.fbTie}),
+        ...(rd.fbFive43!=null&&{fbFive43:rd.fbFive43}),
+        ...(rd.fbGross!=null&&{fbGross:rd.fbGross}),
+        ...(rd.grindersOn!=null&&{grindersOn:rd.grindersOn}),
+        ...(rd.grindersAnte!=null&&{grindersAnte:rd.grindersAnte}),
+        ...(rd.grindersNet!=null&&{grindersNet:rd.grindersNet}),
         ...(Array.isArray(rd.fbTeams)&&rd.fbTeams.length&&{fbTeams:rd.fbTeams}),
         ...(rd.pressesOn!=null&&{pressesOn:rd.pressesOn}),
         ...(rd.pressVal!=null&&{pressVal:rd.pressVal}),
@@ -3727,12 +3741,15 @@ function showMsg(m){
 // This does NOT change any calculation. It states what the calculation already does.
 function gameNetNote(gid,r,fi){
   if(!WK||!WK.rounds||!WK.rounds[r])return null;
-  if(gid==='snake'||gid==='twos')return null;
+  if(gid==='snake'||gid==='twos'||gid==='grinders')return null;
   const netting=!!(STATE.netOffFlightLow||STATE.netOffLow);
   const multi=isMultiFlight(r);
   const full={html:'Everyone plays their <b>full handicap</b>. No strokes come off a low man.',warn:false,change:true};
 
   if(gid==='fourball'){
+    // GROSS HAS NO NETTING STORY. Returning the full-handicap line here would be just
+    // as wrong as naming a low man: neither is happening.
+    if(fbDefaults(r).gross)return{html:'Scored on <b>gross</b> scores. No handicap strokes.',warn:false,change:true};
     if(!netting)return{html:full.html,warn:false,change:true};
     const pools=fbPools(r);
     if(!pools.length)return null;
@@ -7618,7 +7635,7 @@ function renderScorecard(){
   let _huPairNet=null;if(gameOnFs('mp',r,_fp)&&isHeadsUp(r)&&huNetOffMatchLow(r,_fp)){const _siHU=segForHole(hi-holeOffset(r),mpGamesForRound(r,_fp),roundHoleCount(r));const _tmHU=STATE.mpTeams[r]?.[_fp]?.[_siHU];if(_tmHU&&_tmHU[0]&&_tmHU[1]){_huPairNet={};for(let _mi=0;_mi<_tmHU[0].length;_mi++){const _pa=_tmHU[0][_mi],_pb=_tmHU[1][_mi];if(_pa!==undefined&&_pb!==undefined){_huPairNet[_pa]=[_pa,_pb];_huPairNet[_pb]=[_pa,_pb];}}}}
   // Snake holder for the ACTIVE foursome at this hole (the card only shows that foursome).
   const _snkHolder=gameOnFs('snake',r,_fp)?currentSnakeHolderForFlight(r,hi,_fp):null;
-  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const roStyle=_pvLock?'pointer-events:none':((isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':(_deadH?'pointer-events:none':''));const _rowDim=_pvLock?'opacity:0.42;':(_deadH?'opacity:0.42;':'');const _minusBtn=(_pvLock||_deadH)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_pvLock?'<i class="ti ti-lock" style="font-size:16px;color:var(--color-text-secondary);margin-left:2px" aria-hidden="true"></i>':(_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('');
+  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const grTick=gameOn('grinders',r)&&grPlayerOk(r,i,hi)?`<span class="gr-tick" title="Par or better">&#10003;</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const roStyle=_pvLock?'pointer-events:none':((isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':(_deadH?'pointer-events:none':''));const _rowDim=_pvLock?'opacity:0.42;':(_deadH?'opacity:0.42;':'');const _minusBtn=(_pvLock||_deadH)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_pvLock?'<i class="ti ti-lock" style="font-size:16px;color:var(--color-text-secondary);margin-left:2px" aria-hidden="true"></i>':(_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}${grTick}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('')+_grHoleChip(r,_fp,hi);
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
   try{renderNinesBox();}catch(ne){console.error('renderNinesBox error:',ne);const nw=document.getElementById('ninesBoxWrap');if(nw)nw.innerHTML='';}
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
@@ -7738,7 +7755,10 @@ function fbDefaults(r){const rd=WK.rounds[r]||{};return{
   ante:rd.fbAnte!=null?+rd.fbAnte:5,
   pays:rd.fbPays===2?2:1,
   split:rd.fbSplit===60?60:70,
-  tie:rd.fbTie==='countback'?'countback':'split'};}
+  tie:rd.fbTie==='countback'?'countback':'split',
+  // NET UNLESS ASKED. Four-Ball has always scored net and every round in the app was
+  // created under that assumption, so the absence of the key has to keep meaning net.
+  gross:rd.fbGross===true};}
 // Default pairing: walk each foursome in order, chunking by team size. For 4-man
 // field play this reproduces the foursomes themselves, which is the obvious default.
 function defaultFBTeams(r){
@@ -7901,19 +7921,71 @@ function fbPools(r){
 // Kyle's rule: the pool defines the zero. The round decides WHETHER you net off the
 // low man; the pool decides WHO the low man is. Neither flag set means full handicap.
 function fbNet(pi,hi,r,poolPlayers){
+  // GROSS SHORT-CIRCUITS EVERYTHING. Not "net with a zero handicap" - the raw score,
+  // before the pool baseline, before the trip's net-off-low preference, before the
+  // handicap percentage. Every one of those is a handicap decision and gross has none.
+  if(fbDefaults(r).gross){
+    const s=(STATE.scores[r]&&STATE.scores[r][hi])?STATE.scores[r][hi][pi]:null;
+    return s==null?null:s;
+  }
   const off=!!(STATE.netOffFlightLow||STATE.netOffLow);
   return off?getNetOffLow(pi,hi,r,poolPlayers):getNet(pi,hi,r);
 }
-// Team score on a hole is the best ball: the lowest net among members who have a
-// score. All members blank means the hole does not count for that team.
-function fbTeamHole(team,hi,r,poolPlayers){
-  let best=null;
+// ONE par lookup for the whole Four-Ball subsystem. fbTeamCard used to carry its own
+// copy; two copies of a fact is how Four-Ball's on-flag ended up wrong once already.
+function _fbHolePar(r,hi){
+  const ch=(WK.rounds[r]&&WK.rounds[r].course&&WK.rounds[r].course.holes)||[];
+  return (ch[hi]&&ch[hi].par!=null)?ch[hi].par:4;
+}
+// 5-4-3: par 5 wants the best two balls, par 4 the best three, par 3 all four.
+// Anything else is one ball, which is the best-ball this game has always played.
+function fbBallsForPar(par){return par===5?2:(par===4?3:(par===3?4:1));}
+// LEGALITY, NOT THE STORED KEY. A round can carry fbFive43 from a config that has
+// since been narrowed to 2-man teams or foursome scope, and reading rd.fbFive43 raw
+// would then score a two-man team against a three-ball requirement. _setFBOpt also
+// deletes the key on both of those transitions; this is the second lock, deliberately.
+// Every read in the app goes through here.
+function fbFive43(r){
+  const rd=(WK.rounds&&WK.rounds[r])||{};
+  if(rd.fbFive43!==true)return false;
+  const d=fbDefaults(r);
+  return d.size===4&&d.scope==='field';
+}
+// WHICH balls counted, as positions within the team, best first and ties broken by
+// team order so the answer is stable. The math and the scorecard box both read this,
+// so a highlighted ball can never disagree with the score it produced.
+function fbCountingIdx(team,hi,r,poolPlayers){
+  const need=fbFive43(r)?fbBallsForPar(_fbHolePar(r,hi)):1,rows=[];
   for(let i=0;i<team.length;i++){
     const n=fbNet(team[i],hi,r,poolPlayers);
-    if(n===null)continue;
-    if(best===null||n<best)best=n;
+    if(n!==null)rows.push([n,i]);
   }
-  return best;
+  if(!rows.length)return[];
+  rows.sort(function(a,b){return a[0]-b[0]||a[1]-b[1];});
+  return rows.slice(0,need).map(function(x){return x[1];});
+}
+// NOTE, because this was tried the other way and reversed on a device.
+// A tie-INCLUSIVE highlight (green everything at or better than the last counting ball)
+// was rejected: on a hole with two 3s and two 4s needing three balls it lights all four,
+// and the reader cannot tell which three made the score. The colour exists to answer
+// exactly that. fbCountingIdx is the single answer - N balls, ties broken by team order
+// - and both render surfaces read it, so a highlighted ball is always a ball that was
+// actually summed.
+// Team score on a hole. At need 1 this returns the single lowest net, byte-identical
+// to the best ball this returned before 5-4-3 existed - the OFF path is the same code
+// path, not a second branch that could drift from it.
+//
+// A BALL SHORT SUBSTITUTES NET TRIPLE BOGEY. The two obvious alternatives are both
+// wrong: voiding the hole stalls fbPoolComplete and pays nobody, and summing only the
+// balls that exist makes a blank IMPROVE the team's score. Net triple is wrong in
+// neither direction. All members blank is still an unplayed hole and returns null.
+function fbTeamHole(team,hi,r,poolPlayers){
+  const par=_fbHolePar(r,hi),need=fbFive43(r)?fbBallsForPar(par):1;
+  const idx=fbCountingIdx(team,hi,r,poolPlayers);
+  if(!idx.length)return null;
+  let tot=0;
+  for(let k=0;k<need;k++)tot+=(k<idx.length?fbNet(team[idx[k]],hi,r,poolPlayers):par+3);
+  return tot;
 }
 // Per-hole team nets plus the total, over this round's active holes only.
 function fbTeamCard(team,r,poolPlayers,pool){
@@ -7922,14 +7994,22 @@ function fbTeamCard(team,r,poolPlayers,pool){
   // and then rank them against each other. Cap the ITERATION only - Four-Ball has no
   // segments, so there is nothing here that could be re-divided.
   const off=holeOffset(r),n=fbPoolHoleCount(r,pool),holes=[];
-  const ch=(WK.rounds[r]&&WK.rounds[r].course&&WK.rounds[r].course.holes)||[];
+  // Hoisted: the answer cannot change hole to hole, and fbRank keys on toPar.
+  const f43=fbFive43(r);
   let tot=0,played=0,parPlayed=0;
   for(let k=0;k<n;k++){
     const hi=off+k,v=fbTeamHole(team,hi,r,poolPlayers);
     holes.push(v);
     // Par accrues only on holes the team actually played. Counting par for an unplayed
     // hole would score a blank as even and flatter a team that has not teed off.
-    if(v!==null){tot+=v;played++;parPlayed+=(ch[hi]&&ch[hi].par!=null)?ch[hi].par:4;}
+    //
+    // UNDER 5-4-3 THE PAR SCALES WITH THE BALL COUNT. A team score summing three balls
+    // on a par 4 is against 12, not 4. fbRank sorts on toPar, so getting this wrong
+    // moves money on any board that is not yet complete.
+    if(v!==null){
+      const hp=_fbHolePar(r,hi);
+      tot+=v;played++;parPlayed+=hp*(f43?fbBallsForPar(hp):1);
+    }
   }
   return{holes:holes,total:tot,played:played,par:parPlayed,toPar:tot-parPlayed};
 }
@@ -12513,7 +12593,11 @@ const GAME_DEFS=[
   {id:'snake',label:'Snake',onField:'snakeOn',tripLevel:false,team:false},
   {id:'fourball',label:'Four-Ball',onField:'fbOn',tripLevel:false,team:true},
   {id:'nines',label:'Nines',onField:'ninesOn',tripLevel:false,team:false},
-  {id:'twos',label:"Two's Club",onField:'twosOn',tripLevel:true,team:false}
+  {id:'twos',label:"Two's Club",onField:'twosOn',tripLevel:true,team:false},
+  // Grinders is scored per FOURSOME (every member par or better) but paid from one
+  // FIELD pot, so it is not tripLevel and not team. gameFlagKey's default mapping
+  // gives it grindersOn with no special case.
+  {id:'grinders',label:'Grinders',onField:'grindersOn',tripLevel:false,team:false}
 ];
 function _gsIsOn(def,r){return def.tripLevel?!!WK[def.onField]:!!(WK.rounds[r]&&WK.rounds[r][def.onField]);}
 function _gsSetOn(def,r,on,lane){
@@ -12553,6 +12637,281 @@ function _fbEligibleN(r){
   const fl=flightsForRound(r);
   return fbFlights(r).reduce(function(s,fi){return s+((fl[fi]||[]).length);},0);
 }
+// ================= GRINDERS =================
+// A foursome earns a GRINDER on a hole when every member of that group is par or
+// better. Every player antes into ONE FIELD POT. The pot is divided by the TOTAL
+// grinders earned across every group, and each group collects its own count times
+// that unit, split evenly among its members.
+//
+//   unit = pot / total across the field       group payout = count * unit
+//
+// THE DIVISOR FLOATS AND THE POT DOES NOT. Nobody knows what a grinder is worth until
+// the last group finishes: an easy day where the field grinds twenty holes makes each
+// one cheap, a brutal day where it grinds three makes each one huge. You are not
+// competing against a number, you are competing for share against the other groups.
+//
+// WHY THE POT CANNOT BE PER-FOURSOME, because this is the "simplification" waiting to
+// be made by someone reading this cold: a group's own count would be both the
+// numerator AND the entire divisor, so every group would receive exactly its own ante
+// back on every possible set of scores. There is no game. Field-wide or not at all.
+//
+// NO BLOOD ON ZERO (Kyle, 2026-08-29). If the whole field earns nothing the divisor is
+// zero, the pot returns, and every player nets exactly zero. Never a divide by zero.
+function grDefaults(r){
+  const rd=(WK.rounds&&WK.rounds[r])||{};
+  return{
+    ante:rd.grindersAnte!=null?+rd.grindersAnte:10,
+    // NET BY DEFAULT. A gross game is one the high handicaps cannot contribute to.
+    net:rd.grindersNet===false?false:true
+  };
+}
+// The netting baseline. Grinders is a FIELD pot, so the pool is every player and the
+// zero is the field low man - the same rule fbNet applies to a field-scope Four-Ball
+// pool. A per-foursome baseline would let two groups grind against different zeros
+// and then divide one pot between them.
+function grNet(pi,hi,r){
+  const off=!!(STATE.netOffFlightLow||STATE.netOffLow);
+  const all=WK.players.map(function(_,i){return i;});
+  return off?getNetOffLow(pi,hi,r,all):getNet(pi,hi,r);
+}
+// Par or better for EVERY member. A missing score cannot grind: the group did not
+// finish the hole, so it did not earn anything. That degrades safely - unlike a format
+// that needs a substitute score, a blank here simply denies one hole to one group and
+// can never stall settlement.
+// ONE definition of "par or better", read by the money AND by the scorecard. The
+// scorecard needs it per player to draw the ticks; the pot needs it per group. A second
+// copy on the render side would drift the moment the net/gross setting moved, and the
+// card would be marking a grinder the pot did not pay.
+function grPlayerOk(r,pi,hi){
+  if(!WK||!WK.rounds||!WK.rounds[r])return false;
+  const raw=(STATE.scores[r]&&STATE.scores[r][hi])?STATE.scores[r][hi][pi]:null;
+  if(raw==null)return false;
+  const v=grDefaults(r).net?grNet(pi,hi,r):raw;
+  return v!==null&&v<=_fbHolePar(r,hi);
+}
+function grIsGrinder(r,fi,hi){
+  if(!WK||!WK.rounds||!WK.rounds[r])return false;
+  const mem=(flightsForRound(r)[fi]||[]).filter(_vpi);
+  if(!mem.length)return false;
+  for(let i=0;i<mem.length;i++){
+    if(!grPlayerOk(r,mem[i],hi))return false;
+  }
+  return true;
+}
+// The chip above the player rows. Reports the group, because the group is what earns it.
+function _grHoleChip(r,fi,hi){
+  if(!gameOn('grinders',r))return '';
+  const mem=(flightsForRound(r)[(fi==null?0:fi)]||[]).filter(_vpi);
+  if(!mem.length)return '';
+  let ok=0;
+  mem.forEach(function(pi){if(grPlayerOk(r,pi,hi))ok++;});
+  if(ok===mem.length)return '<div class="gr-chip on">GRINDER</div>';
+  // ALWAYS DRAWN, INCLUDING AT ZERO. Suppressing it here is what made the score buttons
+  // jump: the chip appeared when the first player posted par and vanished again on a
+  // correction, reflowing the row under the user's thumb while they were tapping it.
+  // A quiet permanent row is cheaper than a moving target.
+  return '<div class="gr-chip off">GRINDER '+ok+' of '+mem.length+'</div>';
+}
+// Every foursome's count, the field total, and the unit. Reported even when the round
+// is incomplete so the Games tab can show a live count; the MONEY is gated separately
+// in calcRoundGrinders, because the unit is not knowable until everyone is in.
+function calcGrindersDetail(r){
+  const fl=flightsForRound(r),off=holeOffset(r),n=poolHoleCount(r,null);
+  const counts=fl.map(function(){return 0;});
+  const holes=fl.map(function(){return[];});
+  for(let fi=0;fi<fl.length;fi++){
+    for(let k=0;k<n;k++){
+      const hi=off+k,g=grIsGrinder(r,fi,hi);
+      holes[fi].push(g?hi:null);
+      if(g)counts[fi]++;
+    }
+  }
+  const total=counts.reduce(function(a,b){return a+b;},0);
+  const d=grDefaults(r);
+  const players=fl.reduce(function(a,m){return a+m.filter(_vpi).length;},0);
+  const pot=d.ante*players;
+  return{counts:counts,total:total,pot:pot,players:players,
+         unit:total>0?pot/total:0,holes:holes};
+}
+// The money. Zero-sum array positioned by GLOBAL player index, integer cents until the
+// final divide, which is the only contract settlement has.
+function calcRoundGrinders(r){
+  const net=Array(WK.players.length).fill(0);
+  if(!gameOn('grinders',r))return net;
+  const d=grDefaults(r),anteC=Math.round(d.ante*100);
+  if(!(anteC>0))return net;
+  // A partial board is not a result. The divisor spans the whole field, so a group
+  // still on the course can change what every other group's grinders are worth.
+  if(!isRoundComplete(r))return net;
+  const det=calcGrindersDetail(r);
+  // NO BLOOD. Nobody ground anything, so the pot goes back untouched.
+  if(det.total<=0)return net;
+  const fl=flightsForRound(r);
+  const potC=anteC*det.players;
+  let handed=0;
+  const rows=[];
+  for(let fi=0;fi<fl.length;fi++){
+    const mem=(fl[fi]||[]).filter(_vpi);
+    if(!mem.length)continue;
+    // Integer cents, floor here and hand the remainder out below, so the pot closes
+    // exactly rather than losing a cent to rounding on every group.
+    const share=Math.floor(potC*det.counts[fi]/det.total);
+    handed+=share;
+    rows.push({mem:mem,share:share});
+  }
+  // The floor remainder goes to the groups that ground the most, most first. Any rule
+  // works as long as it is deterministic and the total closes; this one is at least
+  // defensible out loud.
+  let rem=potC-handed;
+  const order=rows.map(function(x,i){return i;}).sort(function(a,b){
+    return rows[b].share-rows[a].share||a-b;});
+  for(let k=0;k<order.length&&rem>0;k++){rows[order[k]].share++;rem--;}
+  rows.forEach(function(row){
+    const per=_fbSplitCents(row.share,row.mem.length);
+    row.mem.forEach(function(pi,i){net[pi]+=(per[i]-anteC)/100;});
+  });
+  return net;
+}
+// The Grinders round view. Ranked by count, because that is what decides the money, and
+// the unit is stated outright: the whole game is that the pot is fixed while the divisor
+// floats, and a player who cannot see the divisor cannot see why his grinder is worth
+// what it is worth.
+function renderGrindersRound(){
+  const el=document.getElementById('gamesContent');
+  if(!el)return;
+  const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
+  // ASSIGN, NEVER APPEND. renderGamesContent appends the Setup accordion after this
+  // runs, so anything left here from the previously viewed game stays on screen.
+  if(!gameOn('grinders',r)){el.innerHTML='';return;}
+  const det=calcGrindersDetail(r),fl=flightsForRound(r),d=grDefaults(r);
+  const net=calcRoundGrinders(r);
+  const done=isRoundComplete(r);
+  // ONE column spec, built once and used by the header and every row, so they cannot
+  // drift apart. Money only exists as a column when there is money to put in it.
+  const _cols=done?4:3;
+  const _GRID='display:grid;grid-template-columns:repeat('+_cols+',minmax(0,1fr));column-gap:'
+    +(done?8:10)+'px;align-items:center;padding:11px;';
+  const _HD='font-size:10px;color:var(--color-text-tertiary);letter-spacing:0.04em;text-align:center;';
+  let h='<div class="section-card"><div class="section-hd" style="display:flex;justify-content:space-between;align-items:center">'
+    +'<span>Grinders - '+roundLabel(r)+'</span>'
+    +'<span style="font-weight:400;color:var(--color-text-tertiary);text-transform:none;font-size:11px">Pot '+_fbMoney(det.pot)+'</span></div>';
+  h+='<div style="padding:9px 13px;font-size:11px;color:var(--color-text-tertiary);border-bottom:0.5px solid var(--color-border-tertiary)">';
+  if(det.total===0){
+    h+='No grinders in the field yet. Nobody wins or loses if that holds.';
+  }else{
+    // COUNT FIRST. It is the divisor, so it is the thing that moves the figure beside it.
+    h+=det.total+' in the field &middot; <span style="color:var(--color-text-primary)">'
+      +_fbMoney(det.unit)+'</span> a grinder &middot; '+_fbMoney(d.ante)+' ante'
+      +(done?'':' &middot; so far');
+  }
+  h+='</div>';
+  h+='<div style="'+_GRID+'padding:7px 11px;border-bottom:0.5px solid var(--color-border-tertiary)">'
+    +'<span style="'+_HD+'">FOURSOME</span>'
+    +'<span style="'+_HD+'">GRINDERS</span>'
+    +'<span style="'+_HD+'">HOLES</span>'
+    // "EACH", not "MONEY": the figure below is per player, and a bare MONEY label is
+    // what let this column be read as the group's total.
+    +(done?('<span style="'+_HD+'">NET EACH</span>'):'')+'</div>';
+  // Ranked by count. Ties keep foursome order, which is the only stable answer.
+  const rows=fl.map(function(mem,fi){
+    return{fi:fi,mem:(mem||[]).filter(_vpi),n:det.counts[fi]||0};
+  }).filter(function(x){return x.mem.length;});
+  rows.sort(function(a,b){return b.n-a.n||a.fi-b.fi;});
+  rows.forEach(function(row,i){
+    // PER PLAYER, and specifically net[mem[0]] - the same figure the Bets tab quotes,
+    // so the two tabs agree to the cent by construction rather than by coincidence.
+    // The group total is a number nobody pays: four people pay a quarter of it each.
+    const grp=row.mem.length?net[row.mem[0]]:0;
+    const col=grp>0?'#1D9E75':(grp<0?'var(--color-text-secondary)':'var(--color-text-tertiary)');
+    // Coloured by whether it is zero, NEVER by rank. Two groups on the same count must
+    // look the same; anything else is the sort order pretending to be a result.
+    const nCol=row.n>0?'var(--color-text-primary)':'var(--color-text-tertiary)';
+    const holes=(det.holes[row.fi]||[]).filter(function(x){return x!==null;})
+      .map(function(hi){return hi+1;});
+    h+='<div style="'+_GRID+(i?'border-top:0.5px solid var(--color-border-tertiary);':'')+'">'
+      // Label centred over the initials, which are clipped rather than allowed to push
+      // the grid. A five-man foursome truncates its initials before it truncates holes.
+      +'<span style="min-width:0;text-align:center">'
+        +'<span style="font-size:13px;color:var(--color-text-primary);display:block">F'+(row.fi+1)+'</span>'
+        +'<span style="font-size:10px;color:var(--color-text-tertiary);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+        +row.mem.map(function(pi){return WK.players[pi].ini;}).join('&middot;')+'</span></span>'
+      // Big number, then what it is worth. The same shape as the money cell beside it.
+      +'<span style="text-align:center"><span style="font-size:17px;font-weight:600;color:'+nCol+';display:block">'+row.n+'</span>'
+      // No take line on a group that ground nothing: "$0.00" reads as a settled figure
+      // when it is just an absence, and the holes cell already says "none".
+      +((det.total>0&&row.n>0)?('<span style="font-size:10px;color:var(--color-text-tertiary);display:block">'+_fbMoney(row.n*det.unit)+'</span>'):'')
+      +'</span>'
+      // WRAPS, does not ellipsis: a group on a run is the row people argue about.
+      +'<span style="font-size:11px;color:'+(holes.length?'var(--color-text-secondary)':'var(--color-text-tertiary)')
+        +';text-align:center;line-height:1.35">'+(holes.length?holes.join(', '):'none')+'</span>'
+      // NET on top, coloured, because it is the only figure with a real sign. The share
+      // BEFORE the ante sits underneath in grey: it is what makes -$5.55 legible without
+      // anyone doing the subtraction in their head.
+      +(done?('<span style="text-align:center">'
+        +'<span style="font-size:12px;font-weight:600;color:'+col+';display:block">'+_fbMoney(grp)+'</span>'
+        +'<span style="font-size:10px;color:var(--color-text-tertiary);display:block">'
+        +_fbMoney(grp+d.ante)+' back</span></span>'):'')
+      +'</div>';
+  });
+  h+='</div>';
+  el.innerHTML=h;
+}
+// Has this foursome finished every hole the pot covers? Used only for the "still to
+// finish" line, so it stays out of calcRoundGrinders' completion gate.
+function _grFlightDone(r,fi){
+  const off=holeOffset(r),n=poolHoleCount(r,null);
+  const mem=(flightsForRound(r)[fi]||[]).filter(_vpi);
+  if(!mem.length)return true;
+  for(let k=0;k<n;k++){
+    const hi=off+k;
+    for(let i=0;i<mem.length;i++){
+      const s=(STATE.scores[r]&&STATE.scores[r][hi])?STATE.scores[r][hi][mem[i]]:null;
+      if(s==null)return false;
+    }
+  }
+  return true;
+}
+window._setGROpt=function(r,key,val){
+  if(!canEditTrip())return;
+  const rd=WK.rounds[r];if(!rd)return;
+  if(key==='grindersAnte'){
+    // Placeholder pattern, as fbAnte: an empty box means the default, so clearing
+    // removes the override instead of stamping zero.
+    if(val===''||val==null){delete rd.grindersAnte;}
+    else{const v=parseFloat(val);rd.grindersAnte=isNaN(v)?0:Math.max(0,v);}
+  }
+  else if(key==='grindersNet'){
+    if(val===false||val===0||val==='0')rd.grindersNet=false;else delete rd.grindersNet;
+  }
+  autoSave();s2WriteActive();_gsRefreshAfterEdit();
+};
+function _gsGrindersSetupBody(r){
+  const d=grDefaults(r),det=calcGrindersDetail(r);
+  const seg=function(key,opts){
+    let s='<div class="fb-seg">';
+    opts.forEach(function(o){
+      const on=(''+o.v)===(''+o.cur)?' fb-active':'';
+      s+='<button class="'+on.trim()+'" onclick="window._setGROpt('+r+',\''+key+'\','+(o.v==='1'?'true':'false')+')">'+o.t+'</button>';
+    });
+    return s+'</div>';
+  };
+  let h='';
+  h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Ante'
+    +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Each player, into one pot for the whole field</span></span>'
+    +'<input type="number" inputmode="decimal" value="'+(WK.rounds[r]&&WK.rounds[r].grindersAnte!=null?WK.rounds[r].grindersAnte:'')+'" placeholder="'+d.ante+'" '
+    +'onchange="window._setGROpt('+r+',\'grindersAnte\',this.value)" '
+    +'style="width:74px;text-align:right;font-size:13px;padding:5px 7px;border-radius:6px;border:0.5px solid var(--color-border-tertiary);background:transparent;color:var(--color-text-primary)"></div>';
+  h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Scoring'
+    +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Par or better, net or gross</span></span>'
+    +seg('grindersNet',[{v:'1',t:'Net',cur:d.net?'1':'0'},{v:'0',t:'Gross',cur:d.net?'1':'0'}])+'</div>';
+  h+='<div class="fb-note">Your foursome grinds a hole when <b>every</b> player in the group makes par or better. '
+    +'The pot is divided by the total grinders every foursome earns, so a grinder is worth more on a hard day and less on an easy one. '
+    +'If nobody in the field grinds a single hole, the pot is returned and nobody wins or loses.</div>';
+  if(det.total>0){
+    h+='<div class="fb-note">So far: <b>'+det.total+'</b> across the field, worth '+_fbMoney(det.unit)+' each.</div>';
+  }
+  return h;
+}
 window._setFBOpt=function(r,key,val){
   if(!canEditTrip())return;
   const rd=WK.rounds[r];if(!rd)return;
@@ -12563,8 +12922,12 @@ window._setFBOpt=function(r,key,val){
     if(val===''||val==null){delete rd.fbAnte;}
     else{const v=parseFloat(val);rd.fbAnte=isNaN(v)?0:Math.max(0,v);}
   }
-  else if(key==='fbTeamSize'){rd.fbTeamSize=(val===4||val==='4')?4:2;rd.fbTeams=defaultFBTeams(r);}
-  else if(key==='fbScope'){rd.fbScope=(val==='fs')?'fs':'field';rd.fbTeams=defaultFBTeams(r);}
+  // Narrowing the config CLEARS 5-4-3 rather than leaving a key that only fbFive43's
+  // legality check stands between and a mis-scored team.
+  else if(key==='fbTeamSize'){rd.fbTeamSize=(val===4||val==='4')?4:2;if(rd.fbTeamSize!==4)delete rd.fbFive43;rd.fbTeams=defaultFBTeams(r);}
+  else if(key==='fbScope'){rd.fbScope=(val==='fs')?'fs':'field';if(rd.fbScope!=='field')delete rd.fbFive43;rd.fbTeams=defaultFBTeams(r);}
+  else if(key==='fbFive43'){if(val===true||val===1||val==='1')rd.fbFive43=true;else delete rd.fbFive43;}
+  else if(key==='fbGross'){if(val===true||val===1||val==='1')rd.fbGross=true;else delete rd.fbGross;}
   else if(key==='fbPays')rd.fbPays=(val===2||val==='2')?2:1;
   else if(key==='fbSplit')rd.fbSplit=(val===60||val==='60')?60:70;
   else if(key==='fbTie')rd.fbTie=(val==='countback')?'countback':'split';
@@ -12735,20 +13098,31 @@ function renderFBBox(){
     +'<span>Four-Ball - H'+(hi+1)+'</span>'
     +'<span style="font-weight:400;color:var(--color-text-tertiary);text-transform:none;font-size:11px">Pot '+_fbMoney(pot)+'</span></div>';
   // This hole, for the teams sitting in front of you.
+  const _f43box=fbFive43(r);
+  const _nBalls=_f43box?fbBallsForPar(_fbHolePar(r,hi)):1;
+  const _ballTag=(_nBalls>=4)?('all '+_nBalls):('best '+_nBalls);
   h+='<div style="padding:8px 12px 4px">';
   mine.forEach(function(t){
     const ti=fbTeamNo(r,t)-1;
     const v=fbTeamHole(t,hi,r,pool.players);
     const names=t.map(function(pi){return WK.players[pi].ini;}).join(' + ');
-    const nets=t.map(function(pi){
+    // WHICH BALLS TO HIGHLIGHT. The old rule was n===v, which works only while the team
+    // score IS one player's net. Under 5-4-3 it is a sum, no single net equals it, and
+    // that rule would mark nothing. fbCountingIdx is the same answer the score came from.
+    const _cnt=fbCountingIdx(t,hi,r,pool.players);
+    const nets=t.map(function(pi,_ti){
       const n=fbNet(pi,hi,r,pool.players);
-      const best=(n!==null&&v!==null&&n===v);
+      const best=(n!==null&&_cnt.indexOf(_ti)>=0);
       const col=best?'#1D9E75':'var(--color-text-tertiary)';
       const wt=best?'700':'400';
       return '<span style="color:'+col+';font-weight:'+wt+'">'+(n===null?'-':n)+'</span>';
     }).join('<span style="color:var(--color-text-tertiary);margin:0 3px">/</span>');
     h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0">'
-      +'<span style="font-size:13px;color:var(--color-text-primary)">Team '+(ti+1)+'<span style="color:var(--color-text-tertiary);font-size:11px;margin-left:6px">'+names+'</span></span>'
+      +'<span style="font-size:13px;color:var(--color-text-primary)">Team '+(ti+1)+'<span style="color:var(--color-text-tertiary);font-size:11px;margin-left:6px">'+names+'</span>'
+      // The number that answers "why are only two of these green". It changes with the
+      // par, which is exactly what a static 5-4-3 in the title cannot tell anyone.
+      +(_f43box?('<span style="color:var(--color-text-tertiary);font-size:10px;margin-left:6px">'+_ballTag+'</span>'):'')
+      +'</span>'
       +'<span style="font-size:13px">'+nets+'<span style="color:var(--color-text-tertiary);margin:0 6px">=</span>'
       +'<span style="font-weight:700;color:var(--color-text-primary)">'+(v===null?'-':v)+'</span></span></div>';
   });
@@ -12775,7 +13149,6 @@ function renderFBBox(){
           +' <span style="color:var(--color-text-tertiary);font-size:10px">thru '+row.card.played+'</span>')
         :'<span style="color:var(--color-text-tertiary)">-</span>')+'</span></div>';
   });
-  if(!done)h+='<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:5px;line-height:1.4">Provisional. The pot pays when every team finishes.</div>';
   // Say what the zero is. When a foursome game is also live, the scorecard above is on
   // a DIFFERENT zero and cannot show both, so name that rather than let it puzzle anyone.
   const netOn=!!(STATE.netOffFlightLow||STATE.netOffLow);
@@ -12811,9 +13184,24 @@ function _gsFourBallSetupBody(r){
     return s+'</div>';
   };
   let h='';
+  // The subtitle is a claim about how the game scores, so it has to follow the format.
+  // Leaving it at "best ball" while 5-4-3 is on is the same fault class as the Both
+  // rename: copy that was accurate before the feature and contradicts it afterwards.
+  const f43=fbFive43(r);
   h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Team size'
-    +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Best ball of the team, every hole</span></span>'
+    +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">'
+    +(f43?'Best two, three or four balls by par':'Best ball of the team, every hole')+'</span></span>'
     +seg('fbTeamSize',[{v:2,t:'2-man',cur:d.size},{v:4,t:'4-man',cur:d.size}])+'</div>';
+  // 5-4-3 is offered ONLY where it is legal, so the control cannot write a flag into a
+  // config that fbFive43 would then refuse to honour.
+  if(d.size===4&&d.scope==='field'){
+    h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Format'
+      +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">How many balls count on each hole</span></span>'
+      +seg('fbFive43',[{v:'0',t:'Best ball',cur:f43?'1':'0'},{v:'1',t:'5-4-3',cur:f43?'1':'0'}])+'</div>';
+    if(f43){
+      h+='<div class="fb-note">Par 5 counts the best <b>two</b> balls, par 4 the best <b>three</b>, par 3 <b>all four</b>. A player with no score counts as net triple bogey, so enter a number for anyone who picks up.</div>';
+    }
+  }
   // Scope is a choice only when every group is playing. Otherwise the pot IS the
   // foursome, and a pill that cannot change anything is worse than no pill.
   const _play=fbFlights(r),_nfl=flightsForRound(r).length;
@@ -12836,8 +13224,16 @@ function _gsFourBallSetupBody(r){
   }
   // The baseline is the single thing most likely to be misunderstood, so it is
   // stated in the UI with the actual low man named, not left implied.
+  h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Scoring'
+    +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Handicap strokes, or raw scores</span></span>'
+    +seg('fbGross',[{v:'0',t:'Net',cur:d.gross?'1':'0'},{v:'1',t:'Gross',cur:d.gross?'1':'0'}])+'</div>';
   const netOff=!!(STATE.netOffFlightLow||STATE.netOffLow);
-  if(!netOff){
+  // EVERY NETTING SENTENCE BELOW IS FALSE UNDER GROSS. They are not merely unhelpful:
+  // naming a low man on a round that gives no strokes tells a player something untrue
+  // about how his money is being decided.
+  if(d.gross){
+    h+='<div class="fb-note">Scored on <b>gross</b> scores. No handicap strokes, no low man, everyone plays the card as written.</div>';
+  }else if(!netOff){
     h+='<div class="fb-note">Everyone plays their <b>full course handicap</b>. Turn on net-off-low in Preferences to score off the low man instead.</div>';
   }else if(pools.length===1&&pools[0].players.length){
     const low=pools[0].players.reduce(function(a,pi){return courseHdcp(pi,r)<courseHdcp(a,r)?pi:a;},pools[0].players[0]);
@@ -12944,11 +13340,6 @@ function renderFourBallRound(){
     const title='Four-Ball'+(pool.fi!=null?(' &middot; Foursome '+(pool.fi+1)):'')+' &middot; '+roundLabel(r);
     const done=fbPoolComplete(pool,r);
     h+='<div class="section-card game-on"><div class="section-hd"><span>'+title+'</span><span>Pot '+_fbMoney(pot)+'</span></div>';
-    if(!done){
-      const need=roundHoleCount(r);
-      const short=rows.filter(function(x){return x.card.played<need;}).length;
-      h+='<div class="fb-note">Round in progress. '+short+' team'+(short===1?'':'s')+' still to finish, so the pot has not been awarded. Standings below are provisional.</div>';
-    }
     rows.forEach(function(row){
       const pos=row.pos;
       const names=row.team.map(function(pi){return displayName(pi);}).join(' + ');
@@ -12995,7 +13386,19 @@ function renderFourBallRound(){
       for(let k=0;k<nh;k++)hd+='<th style="'+_c+';text-align:center;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:10px;font-weight:600">'+(off+k+1)+'</th>';
       hd+='<th style="padding:4px 6px;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:10px;font-weight:600;border-left:0.5px solid var(--color-border-secondary)">Tot</th></tr>';
       h+=hd;
-      lead.team.forEach(function(pi){
+      // PAR, under the hole numbers. Orients the whole grid: every figure below it is
+      // read against this, and under 5-4-3 it is what the target row is derived from.
+      const _f43=fbFive43(r);
+      let prow='<tr><td style="'+_s+';background:var(--color-background-secondary);color:var(--color-text-tertiary)">Par</td>';
+      let ptot=0;
+      for(let k=0;k<nh;k++){
+        const hp=_fbHolePar(r,off+k);
+        ptot+=hp;
+        prow+='<td style="'+_c+';text-align:center;color:var(--color-text-tertiary);background:var(--color-background-secondary)">'+hp+'</td>';
+      }
+      prow+='<td style="padding:4px 6px;text-align:center;color:var(--color-text-tertiary);background:var(--color-background-secondary);border-left:0.5px solid var(--color-border-secondary)">'+ptot+'</td></tr>';
+      h+=prow;
+      lead.team.forEach(function(pi,_ti){
         const p=WK.players[pi];
         let row='<tr><td style="'+_s+';background:var(--color-background-primary);color:'+p.bg+'">'+p.ini+'</td>';
         let tot=0;
@@ -13003,7 +13406,11 @@ function renderFourBallRound(){
           const hi=off+k;
           const mine=fbNet(pi,hi,r,pool.players);
           const team=lead.card.holes[k];
-          const counted=(mine!==null&&team!==null&&mine===team);
+          // WAS mine===team, which only works while the team score IS one player's net.
+          // Under 5-4-3 it is a sum, no single net equals it, and this grid painted
+          // every ball grey on a device. Exactly the counted set, ties by list order.
+          const _cnt=fbCountingIdx(lead.team,hi,r,pool.players);
+          const counted=(mine!==null&&team!==null&&_cnt.indexOf(_ti)>=0);
           if(mine!==null)tot+=mine;
           const col=counted?'#1D9E75':'var(--color-text-tertiary)';
           const wt=counted?'700':'400';
@@ -13015,26 +13422,50 @@ function renderFourBallRound(){
       let trow='<tr><td style="'+_s+';background:var(--color-background-secondary);color:var(--color-text-primary)">TM</td>';
       for(let k=0;k<nh;k++){const v=lead.card.holes[k];trow+='<td style="'+_c+';text-align:center;font-weight:600;background:var(--color-background-secondary)">'+(v===null?'-':v)+'</td>';}
       trow+='<td style="padding:4px 6px;text-align:center;font-weight:700;background:var(--color-background-secondary);border-left:0.5px solid var(--color-border-secondary)">'+lead.card.total+'</td></tr>';
-      h+=trow+'</table></div>';
+      h+=trow;
+      // THE TARGET, under the team's own row so the comparison is vertical and needs no
+      // arithmetic. ONLY under 5-4-3: at one ball a hole this is the Par row again, and
+      // drawing it twice would be padding.
+      if(_f43){
+        let grow='<tr><td style="'+_s+';background:var(--color-background-secondary);color:var(--color-text-tertiary)">Tgt</td>';
+        for(let k=0;k<nh;k++){
+          const hp=_fbHolePar(r,off+k);
+          // DASH WHERE TM DASHES. lead.card.par accrues only on played holes, so printing
+          // a target on a hole nobody has played gives a row whose cells do not sum to its
+          // own total. The team has not played that hole yet and is not against anything.
+          const _tg=(lead.card.holes[k]===null)?'-':(hp*fbBallsForPar(hp));
+          grow+='<td style="'+_c+';text-align:center;color:var(--color-text-tertiary);background:var(--color-background-secondary)">'+_tg+'</td>';
+        }
+        // lead.card.par is the exact figure fbRank sorts on, so this total and the
+        // leaderboard's to-par can be checked against each other by eye.
+        grow+='<td style="padding:4px 6px;text-align:center;font-weight:700;color:var(--color-text-tertiary);background:var(--color-background-secondary);border-left:0.5px solid var(--color-border-secondary)">'+lead.card.par+'</td></tr>';
+        h+=grow;
+      }
+      h+='</table></div>';
       const netOff=!!(STATE.netOffFlightLow||STATE.netOffLow);
-      let capTxt='Green is the net that counted.';
+      // The caption is a claim about the scoring, so it has to follow the format. One
+      // ball counts under best ball and two, three or four under 5-4-3.
+      // A LIST, NOT A PARAGRAPH. The par lines carry the whole format in three glances,
+      // and they double as the definition of the Tgt row, which used to need a sentence
+      // of its own. The low man is NOT named here: the Games tab prints it in a banner
+      // directly above this card, and a card that repeats its own page is a card nobody
+      // finishes reading.
+      let capTxt=fbFive43(r)
+        ? 'Green are the scores that count<br>Par 5s - Best two scores<br>Par 4s - Best three scores<br>Par 3s - All four scores'
+        : 'Green is the score that counts';
+      // Kept: money-relevant, rare, and nothing else says a pot covers fewer holes than
+      // the round it sits in.
       if(nh<roundHoleCount(r)){
         capTxt+=(fbPoolFlights(r,pool).length>1)
-          ? ' Scored over '+nh+' holes, the shortest group in this pot.'
-          : ' Scored over '+nh+' holes, where this foursome stopped.';
-      }
-      if(netOff&&pool.players.length){
-        const low=pool.players.reduce(function(a,pi){return courseHdcp(pi,r)<courseHdcp(a,r)?pi:a;},pool.players[0]);
-        capTxt+=' All nets off '+displayName(low)+', low of the '+pool.players.length+'.';
-      }else{
-        capTxt+=' Full course handicap.';
+          ? '<br>Scored over '+nh+' holes, the shortest group in this pot'
+          : '<br>Scored over '+nh+' holes, where this foursome stopped';
       }
       h+='<div class="fb-cap">'+capTxt+'</div></div>';
     }
   });
   el.innerHTML=h;
 }
-const GAME_KEY={'Match Play':'mp','Vegas':'vegas','Skins':'skins','Razzle Dazzle':'razzle','Wolf':'wolf','Hammer':'hammer',"Two's Club":'twos','Snake':'snake','Four-Ball':'fourball','Nines':'nines'};
+const GAME_KEY={'Match Play':'mp','Vegas':'vegas','Skins':'skins','Razzle Dazzle':'razzle','Wolf':'wolf','Hammer':'hammer',"Two's Club":'twos','Snake':'snake','Four-Ball':'fourball','Nines':'nines','Grinders':'grinders'};
 // The group sizes each game can actually SEAT. Absent from this table means the
 // game runs at any number. Every player-count question in the build derives from
 // here, including the reason strings, so there is one place to be wrong.
@@ -13267,7 +13698,19 @@ function _gsRefreshAfterEdit(){
   // by config functions shared across multiple games.
   const v=document.getElementById('view-games');
   if(v&&v.style.display!=='none')renderGamesContent();
-  if(document.getElementById('gsSetupModal')&&window._gsSetupGameId)window._gsOpenSetupModal(window._gsSetupGameId);
+  // REPAINT THE BODY, DO NOT REBUILD THE SHEET. _gsOpenSetupModal removes the existing
+  // modal and constructs a new one, which destroys the Done button mid-tap: pressing it
+  // blurs the ante input, the input commits on change, and the change lands here. The
+  // sheet must outlive its own contents. Falls back to a full rebuild only if the body
+  // is missing, which means the sheet is not the shape this expects.
+  const _sm=document.getElementById('gsSetupModal');
+  if(_sm&&window._gsSetupGameId){
+    const _sb=_sm.querySelector('.gs-setup-body');
+    const _sd=GAME_DEFS.find(function(d){return d.id===window._gsSetupGameId;});
+    const _sr=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
+    if(_sb&&_sd){_sb.innerHTML=_gsSetupBody(_sd,_sr);setTimeout(_fbAllPills,0);}
+    else window._gsOpenSetupModal(window._gsSetupGameId);
+  }
 }
 // The confirm sheet. Scope is a choice every time because the declaration is per
 // foursome; Everyone is the shortcut for the common case.
@@ -13497,6 +13940,7 @@ function _gsSetupBody(def,r){
   // Per-game real Setup controls. Migrated one game at a time per the
   // Stage 3 build order. Games not yet migrated fall through to a
   // placeholder body in the default branch.
+  if(def.id==='grinders')return _gsGrindersSetupBody(r);
   if(def.id==='snake')return _gsSnakeSetupBody(r);
   if(def.id==='skins')return _gsSkinsSetupBody(r);
   if(def.id==='razzle')return _gsRazzleSetupBody(r);
@@ -13838,6 +14282,7 @@ function renderGamesContent(){
   else if(g==='wolf')renderWolfRound();
   else if(g==='fourball')renderFourBallRound();
   else if(g==='nines')renderNinesRound();
+  else if(g==='grinders')renderGrindersRound();
   if(g==='snake'){
     const _snkFl=flightsForRound(r);
     const _snkEl=document.getElementById('gamesContent');
@@ -14586,6 +15031,7 @@ function settleRound(r){
   }
   if(gameOn('snake',r)){calcSnakeNetAllFlights(r).forEach((v,i)=>{snapNet[i]+=v;});}
   if(gameOn('fourball',r)){calcRoundFourBall(r).forEach((v,i)=>{snapNet[i]+=v;});}
+  if(gameOn('grinders',r)){calcRoundGrinders(r).forEach((v,i)=>{snapNet[i]+=v;});}
   if(gameOn('nines',r)){calcNinesNetAllFlights(r).forEach((v,i)=>{snapNet[i]+=v;});}
   // Wolf. This was MISSING from snapNet entirely, so settling a Wolf round wrote its money
   // out of the ledger: the round card kept rendering live roundNet (with Wolf) while the
@@ -14710,6 +15156,7 @@ function renderMoney(){
     snakeNetByRound[r].forEach((v,i)=>roundNet[i]+=v);
     wolfNetR.forEach((v,i)=>roundNet[i]+=v);
     if(gameOn('fourball',r))calcRoundFourBall(r).forEach((v,i)=>roundNet[i]+=v);
+    if(gameOn('grinders',r))calcRoundGrinders(r).forEach((v,i)=>roundNet[i]+=v);
     if(gameOn('nines',r))calcNinesNetAllFlights(r).forEach((v,i)=>roundNet[i]+=v);
     if(gameOn('hammer',r)){flightsForRound(r).forEach((_hfpR,fi)=>{if(_fsOff('hammer',r,fi))return;getSegments(hammerSegsForRound(r,fi)).forEach((_,si)=>{const res=calcHammerSegResult(r,si,fi);if(!res)return;const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;const payout=roundValFs('hammerPayout',r,fi,WK.hammerPayout||'perplayer');const sv=payout==='perteam'?0.5:1;const nv=(res.netA-res.netB)*sv;tm[0].forEach(pi=>{roundNet[pi]+=nv;});tm[1].forEach(pi=>{roundNet[pi]-=nv;});});});}
     // Use snapshotted amounts for settled rounds so mid-weekend payouts don't double-count
@@ -14998,6 +15445,35 @@ function renderMoney(){
     }
 
 
+    // ---- Grinders ----
+    if(gameOn('grinders',r)){
+      const _grD=grDefaults(r);
+      const _grDet=calcGrindersDetail(r);
+      const _grNet=calcRoundGrinders(r);
+      const _grFl=flightsForRound(r);
+      const _grDone=isRoundComplete(r);
+      const _grTerms='$'+_grD.ante+'/player \u00b7 pot $'+_grDet.pot.toFixed(2)
+        +(_grDet.total>0?(' \u00b7 '+_grDet.total+' in the field'):'');
+      html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary)">Grinders <span style="font-weight:400;color:var(--color-text-tertiary)">${_grTerms}</span></div>`;
+      if(!_grDone){
+        // The divisor spans every group, so a group still out there changes what all of
+        // these are worth. Say so rather than showing figures that will move.
+        html+=`<div style="padding:7px 12px;font-size:11px;color:var(--color-text-tertiary);border-bottom:0.5px solid var(--color-border-tertiary)">Round unfinished, pot not awarded.</div>`;
+      }
+      const _grRows=_grFl.map(function(mem,fi){return{fi:fi,mem:(mem||[]).filter(_vpi),n:_grDet.counts[fi]||0};})
+        .filter(function(x){return x.mem.length;});
+      _grRows.sort(function(a,b){return b.n-a.n||a.fi-b.fi;});
+      _grRows.forEach(function(row){
+        const per=_grNet[row.mem[0]]||0;
+        const names=row.mem.map(function(pi){return displayName(pi);}).join(' & ');
+        const money=_grDone?((per>0?'+$':'-$')+Math.abs(per).toFixed(2)+' ea'):'';
+        const mcol=per>0.0001?'#1D9E75':(per<-0.0001?'#D85A30':'var(--color-text-tertiary)');
+        html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">`
+          +`<span style="font-size:12px;color:var(--color-text-primary)">Foursome ${row.fi+1}<span style="color:var(--color-text-tertiary);font-size:11px;margin-left:6px">${names}</span></span>`
+          +`<span style="font-size:12px"><span style="color:var(--color-text-secondary)">${row.n}</span>`
+          +`<span style="color:${mcol};margin-left:8px">${money}</span></span></div>`;
+      });
+    }
     // ---- Four-Ball ----
     if(gameOn('fourball',r)){
       const _fbD=fbDefaults(r);
@@ -16194,7 +16670,7 @@ function renderSettle(){
   const _awardNote=potAwardNote(_award);
 
   // Build audit per player
-  const auditGolf=WK.players.map(()=>({pot:0,mp:[],vegas:[],skins:[],razzle:[],wolf:[],hammer:[],fourball:[],settled:[],twos:0,total:0}));
+  const auditGolf=WK.players.map(()=>({pot:0,mp:[],vegas:[],skins:[],razzle:[],wolf:[],hammer:[],fourball:[],grinders:[],settled:[],twos:0,total:0}));
   const _psA=potSnap();
   if(allDone&&!WK.isQuickRound){potRankData.forEach((d)=>{auditGolf[d.pi].pot=_psA?_psA.snapNet[d.pi]:_award.amts[d.pi];});}
   WK.rounds.forEach((_,r)=>{
@@ -16259,6 +16735,18 @@ function renderSettle(){
         if(net!==0)auditGolf[pi].wolf.push({label:roundLabel(r),val:net,desc:wPts[pi].pts+(wPts[pi].pts>0?' pts won':' pts lost')});
       });
     }
+    if(gameOn('grinders',r)){
+      const _grN=calcRoundGrinders(r);
+      const _grD=calcGrindersDetail(r);
+      const _grFl=flightsForRound(r);
+      WK.players.forEach((_,pi)=>{
+        if(_grN[pi]===0)return;
+        const _gfi=_grFl.findIndex(function(m){return (m||[]).indexOf(pi)>=0;});
+        const _gc=_gfi>=0?_grD.counts[_gfi]:0;
+        auditGolf[pi].grinders.push({label:roundLabel(r),val:_grN[pi],
+          desc:_gc+(_gc===1?' grinder':' grinders')+' of '+_grD.total+' in the field'});
+      });
+    }
     if(gameOn('fourball',r)){
       const _fbN=calcRoundFourBall(r);
       const _fbPools=fbPools(r);
@@ -16297,7 +16785,7 @@ function renderSettle(){
       calcNinesNetAllFlights(r).forEach((v,i)=>{ninesNet[i]+=v;});
     });
   }
-  auditGolf.forEach((a,i)=>{a.total=a.pot+a.mp.reduce((s,x)=>s+x.val,0)+a.vegas.reduce((s,x)=>s+x.val,0)+a.skins.reduce((s,x)=>s+x.val,0)+a.razzle.reduce((s,x)=>s+x.val,0)+a.wolf.reduce((s,x)=>s+x.val,0)+a.hammer.reduce((s,x)=>s+x.val,0)+a.fourball.reduce((s,x)=>s+x.val,0)+a.settled.reduce((s,x)=>s+x.val,0)+a.twos+snakeNet[i]+ninesNet[i];});
+  auditGolf.forEach((a,i)=>{a.total=a.pot+a.mp.reduce((s,x)=>s+x.val,0)+a.vegas.reduce((s,x)=>s+x.val,0)+a.skins.reduce((s,x)=>s+x.val,0)+a.razzle.reduce((s,x)=>s+x.val,0)+a.wolf.reduce((s,x)=>s+x.val,0)+a.hammer.reduce((s,x)=>s+x.val,0)+a.fourball.reduce((s,x)=>s+x.val,0)+a.grinders.reduce((s,x)=>s+x.val,0)+a.settled.reduce((s,x)=>s+x.val,0)+a.twos+snakeNet[i]+ninesNet[i];});
 
   const expNet=calcExpNetPerPlayer();
   const totalNet=auditGolf.map((a,i)=>a.total+expNet[i]);
@@ -16460,6 +16948,12 @@ function renderSettle(){
     if(gameOnAny('fourball')&&a.fourball.length){
       html+=catHdr('Four-Ball',fbSum);
             a.fourball.forEach(x=>{html+=subRow(x.label,x.desc,x.val);});
+      html+=`</div></div>`;
+    }
+    const grSum=a.grinders.reduce((s,x)=>s+x.val,0);
+    if(gameOnAny('grinders')&&a.grinders.length){
+      html+=catHdr('Grinders',grSum);
+            a.grinders.forEach(x=>{html+=subRow(x.label,x.desc,x.val);});
       html+=`</div></div>`;
     }
 
