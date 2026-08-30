@@ -1751,7 +1751,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v121.26';
+const APP_VERSION='v121.28';
 
 // ===== THEME =====
 (function(){
@@ -4969,11 +4969,18 @@ window._qrImportCourse=async function(i){
   const dispName=c.club_name+(c.course_name&&c.course_name!==c.club_name?' - '+c.course_name:'');
   const existing=Object.keys(CATALOG).find(function(n){return CATALOG[n].external_id===c.id;});
   const name=existing||dispName;
-  const male=c.tees&&c.tees.male||[];const female=c.tees&&c.tees.female||[];
+  const male=_gcaTeeList(c.tees&&c.tees.male),female=_gcaTeeList(c.tees&&c.tees.female);
   const defTee=male.length>1?male[1]:(male[0]||female[0]);
-  const gender=male.includes(defTee)?'male':'female';
-  const entry=_gcaResolveTee(c,gender,defTee&&defTee.tee_name||'');
+  const gender=male.indexOf(defTee)>=0?'male':'female';
+  const entry=defTee?_gcaResolveTee(c,gender,defTee.tee_name||''):null;
   if(entry){CATALOG[name]=entry;if(!existing)await saveNewCourse(name);else await saveCourse(name);}
+  else{
+    // NEVER LEAVE THE SHEET ON "Importing...". A course whose tee data this app cannot
+    // read is a real outcome, and the user needs to be told so they can add it by hand
+    // rather than watch a spinner that will not resolve.
+    if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">No usable tee data for this course. Add it by hand in Preferences &gt; Courses.</div>';
+    return;
+  }
   window._qrPickCourse(name);
 };
 window._qrClose=function(){const m=document.getElementById('qrModal');if(m)m.style.display='none';};
@@ -11456,7 +11463,16 @@ function renderWeekendPanel(){
     const _qrCn=WK.rounds[0].courseName;
     const _qrNh=WK.rounds[0].nineHole;
     const _qrNewName=courseDisp(_qrCn)+(_qrNh==='front'?' - Front 9':_qrNh==='back'?' - Back 9':' - 18 Holes');
-    if(WK.name!==_qrNewName){
+    // A RENAME OPTS OUT OF THE RESYNC. This block exists so a quick round's title follows
+    // its course when the course changes; it has no way to tell that from a name the user
+    // chose, and it was overwriting deliberate renames AND marking them dirty, so the
+    // overwrite reached every other device.
+    //
+    // Inferred from the name rather than stored, because a flag would need a new column on
+    // trips - trip-level fields are named columns, not the round whitelists. Every
+    // auto-generated name ends in exactly one of these three suffixes.
+    const _qrAuto=/ - (18 Holes|Front 9|Back 9)$/.test(WK.name||'');
+    if(_qrAuto&&WK.name!==_qrNewName){
       WK.name=_qrNewName;
       const _mt=document.getElementById('mainTitle');
       if(_mt)_mt.textContent=WK.name;
@@ -11465,7 +11481,7 @@ function renderWeekendPanel(){
   }
   const _fmt=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};
   // --- Trip details ---
-  let html=`<div class="section-card"><div class="section-hd">Trip details</div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Name</span><input class="inline-edit" value="${WK.name}" onchange="WK.name=this.value;document.getElementById('mainTitle').textContent=WK.name"/></div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Date</span><input class="inline-edit" type="date" value="${WK.date}" max="2099-12-31" onchange="WK.date=this.value;const _f=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' \u00b7 '+_f(WK.date)):WK.region||_f(WK.date)||''"/></div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Region</span><input class="inline-edit" value="${WK.region||''}" placeholder="e.g. Pinehurst" onchange="WK.region=this.value;const _f=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' \u00b7 '+_f(WK.date)):WK.region||_f(WK.date)||''"/></div></div>`;
+  let html=`<div class="section-card"><div class="section-hd">Trip details</div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Name</span><input class="inline-edit" value="${WK.name}" onchange="WK.name=this.value;document.getElementById('mainTitle').textContent=WK.name;autoSave();s2MarkDirty(['trip']);s2WriteActive()"/></div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Date</span><input class="inline-edit" type="date" value="${WK.date}" max="2099-12-31" onchange="WK.date=this.value;autoSave();s2MarkDirty(['trip']);s2WriteActive();const _f=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' \u00b7 '+_f(WK.date)):WK.region||_f(WK.date)||''"/></div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Region</span><input class="inline-edit" value="${WK.region||''}" placeholder="e.g. Pinehurst" onchange="WK.region=this.value;autoSave();s2MarkDirty(['trip']);s2WriteActive();const _f=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' \u00b7 '+_f(WK.date)):WK.region||_f(WK.date)||''"/></div></div>`;
 
   // --- Rounds (unified: regular + E-rounds, with tee picker + Add Round) ---
   const _tripCourseNames=[...WK.rounds.filter(r=>r.courseName).map(r=>r.courseName),...(WK.stagedCourses||[])].filter((v,i,a)=>a.indexOf(v)===i);
@@ -11923,9 +11939,14 @@ function _gcaTeeToHoles(tee){
   return(tee.holes||[]).map(h=>({par:h.par||4,si:h.handicap||0,yardage:h.yardage||0}));
 }
 // Build the flat CATALOG entry from a chosen tee
+// ONE coercion, read by the resolver and by the importer. The course API does not
+// guarantee that tees.male is a list: at least one club returns an OBJECT keyed by tee
+// name, and `|| []` cannot see that because an object is truthy. Array.isArray can.
+// Real arrays pass through untouched, so nothing about a healthy record changes.
+function _gcaTeeList(v){return Array.isArray(v)?v:[];}
 function _gcaResolveTee(apiCourse,gender,teeName){
   const tees=apiCourse.tees||{};
-  const list=(gender==='female'?tees.female:tees.male)||[];
+  const list=_gcaTeeList(gender==='female'?tees.female:tees.male);
   const tee=list.find(t=>t.tee_name===teeName)||list[0];
   if(!tee)return null;
   return{
@@ -12055,11 +12076,15 @@ window._e9ImportCourse=async function(i){
   const displayName=c.club_name+(c.course_name&&c.course_name!==c.club_name?' - '+c.course_name:'');
   const existing=Object.keys(CATALOG).find(n=>CATALOG[n].external_id===c.id);
   const name=existing||displayName;
-  const male=c.tees?.male||[];const female=c.tees?.female||[];
+  const male=_gcaTeeList(c.tees&&c.tees.male),female=_gcaTeeList(c.tees&&c.tees.female);
   const defTee=male.length>1?male[1]:(male[0]||female[0]);
-  const gender=male.includes(defTee)?'male':'female';
-  const entry=_gcaResolveTee(c,gender,defTee?.tee_name||'');
+  const gender=male.indexOf(defTee)>=0?'male':'female';
+  const entry=defTee?_gcaResolveTee(c,gender,defTee.tee_name||''):null;
   if(entry){CATALOG[name]=entry;if(!existing)await saveNewCourse(name);else await saveCourse(name);}
+  else{
+    if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">No usable tee data for this course. Add it by hand below.</div>';
+    return;
+  }
   _e9Pick('cn',name);_e9AutoTee(name);
   document.getElementById('e9CourseSearch').value='';
   if(el)el.innerHTML='';
