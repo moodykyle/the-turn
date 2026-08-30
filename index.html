@@ -1189,6 +1189,7 @@ body.force-light{
 .fb-note b{color:var(--color-text-primary);font-weight:600;}
 .fb-pl{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);}
 .fb-pl.w{background:#1D9E75;color:#fff;border-color:#1D9E75;}
+.fb-pl.q{color:var(--color-text-tertiary);font-weight:600;}
 .fb-lbrow{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary);}
 .fb-lbrow:last-child{border-bottom:none;}
 .fb-lbrow.win{background:rgba(29,158,117,0.06);}
@@ -1751,7 +1752,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v121.28';
+const APP_VERSION='v121.29';
 
 // ===== THEME =====
 (function(){
@@ -13335,6 +13336,20 @@ function _gsFourBallSetupBody(r){
   h+='</div>';
   return h;
 }
+// A Four-Ball team line is four names in one div, and left to itself the break lands
+// wherever the glyphs run out - which at Carolina Golf Club put "M." on line one and
+// "Hodge" on line two. Forcing the break after every SECOND name means a break can only
+// ever follow a separator, so no name is ever cut and every four-man row is the same
+// height. Two names stay on one line; three read 2 + 1; five read 2 + 2 + 1.
+// Display only: the separator, the order and the names themselves are unchanged.
+function _fbTeamLine(team){
+  var out='';
+  for(var i=0;i<team.length;i++){
+    out+=displayName(team[i]);
+    if(i<team.length-1)out+=' +'+(i%2===1?'<br>':' ');
+  }
+  return out;
+}
 function renderFourBallRound(){
   const el=document.getElementById('gamesContent');
   if(!el)return;
@@ -13364,10 +13379,17 @@ function renderFourBallRound(){
     const pot=d.ante*pool.players.length;
     const title='Four-Ball'+(pool.fi!=null?(' &middot; Foursome '+(pool.fi+1)):'')+' &middot; '+roundLabel(r);
     const done=fbPoolComplete(pool,r);
+    // Before the first score every team ties at zero, so fbStandings returns position 1
+    // for all of them and the card renders four pills reading 1 - four winners. The
+    // number is arithmetically right and says nothing, so it is withheld until there is
+    // something to rank on. Same reason 'no scores yet' stops printing once per row: it
+    // is a fact about the pot, not about any team in it.
+    const anyPlayed=rows.some(function(x){return x.card.played>0;});
     h+='<div class="section-card game-on"><div class="section-hd"><span>'+title+'</span><span>Pot '+_fbMoney(pot)+'</span></div>';
+    if(!anyPlayed)h+='<div class="fb-note">No scores yet. Positions appear once the first hole is posted.</div>';
     rows.forEach(function(row){
       const pos=row.pos;
-      const names=row.team.map(function(pi){return displayName(pi);}).join(' + ');
+      const names=_fbTeamLine(row.team);
       const per=net[row.team[0]];
       const cls=per>0.0001?'money-pos':(per<-0.0001?'money-neg':'money-nil');
       const played=row.card.played>0;
@@ -13379,9 +13401,9 @@ function renderFourBallRound(){
       const thru=played?('net '+row.card.total+' &middot; thru '+row.card.played+(row.card.played<need?' of '+need:'')):'no scores yet';
       const winner=(pos===1&&played&&done);
       h+='<div class="fb-lbrow'+(winner?' win':'')+(sel?' fb-sel':'')+'" onclick="window._fbShowCard('+tno+')" style="cursor:pointer">'
-        +'<div class="fb-lbl"><span class="fb-pl'+(winner?' w':'')+'">'+pos+'</span>'
+        +'<div class="fb-lbl"><span class="fb-pl'+(winner?' w':'')+(anyPlayed?'':' q')+'">'+(anyPlayed?pos:'&ndash;')+'</span>'
         +'<div><div class="fb-lbn">'+names+'</div>'
-        +'<div class="fb-lbs">'+thru+'</div></div></div>'
+        +(anyPlayed?('<div class="fb-lbs">'+thru+'</div>'):'')+'</div></div>'
         +'<div class="fb-lbr"><span class="fb-lbt" style="color:'+(played?_fbParCol(row.card.toPar):'var(--color-text-tertiary)')+'">'+(played?_fbToPar(row.card.toPar):'-')+'</span>'
         +'<span class="'+cls+'" style="font-size:12px;font-weight:500">'+(done&&played?(_fbMoney(per)+' ea'):'')+'</span></div></div>';
     });
