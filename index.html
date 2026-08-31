@@ -1477,7 +1477,7 @@ body.force-light{
 
   <!-- WIZARD -->
   <div id="wizardScreen" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9000;display:none;align-items:center;justify-content:center;overflow-y:auto;padding:16px;">
-    <div id="twInner" style="background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);width:100%;max-width:420px;overflow:hidden;">
+    <div id="twInner" style="background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);width:100%;max-width:420px;max-height:90vh;overflow-y:auto;overflow-x:hidden;">
       <div id="twBody"></div>
     </div>
   </div>
@@ -1752,7 +1752,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v121.29';
+const APP_VERSION='v121.37';
 
 // ===== THEME =====
 (function(){
@@ -2077,6 +2077,7 @@ async function s2WriteActive(){
           ...(rd.grindersAnte!=null&&{grindersAnte:rd.grindersAnte}),
           ...(rd.grindersNet!=null&&{grindersNet:rd.grindersNet}),
           ...(Array.isArray(rd.fbTeams)&&rd.fbTeams.length&&{fbTeams:rd.fbTeams}),
+          ...(rd.fbTeamsManual!=null&&{fbTeamsManual:rd.fbTeamsManual}),
           ...(rd.pressesOn!=null&&{pressesOn:rd.pressesOn}),
           ...(rd.pressVal!=null&&{pressVal:rd.pressVal}),
           ...(rd.autoPressOn!=null&&{autoPressOn:rd.autoPressOn}),
@@ -2455,6 +2456,7 @@ async function s2ReadTrip(tripId){
         ...(rd.grindersAnte!=null&&{grindersAnte:rd.grindersAnte}),
         ...(rd.grindersNet!=null&&{grindersNet:rd.grindersNet}),
         ...(Array.isArray(rd.fbTeams)&&rd.fbTeams.length&&{fbTeams:rd.fbTeams}),
+        ...(rd.fbTeamsManual!=null&&{fbTeamsManual:rd.fbTeamsManual}),
         ...(rd.pressesOn!=null&&{pressesOn:rd.pressesOn}),
         ...(rd.pressVal!=null&&{pressVal:rd.pressVal}),
         ...(rd.autoPressOn!=null&&{autoPressOn:rd.autoPressOn}),
@@ -3286,6 +3288,7 @@ function _claimSheet(code,rows){
   ov.id='claimSheet';
   ov.style.cssText='position:fixed;inset:0;z-index:10002;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;justify-content:center';
   var card=document.createElement('div');
+  card.id='_clCard';
   card.style.cssText='width:100%;max-width:440px;background:#132019;border-top:0.5px solid #24352c;border-radius:16px 16px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box';
   var rowsHtml='';
   for(var i=0;i<rows.length;i++){
@@ -3337,9 +3340,79 @@ window._claimPick=function(i){
     else{var nm=(_claimS.rows[i]&&_claimS.rows[i].display_name)||'';var fn=(nm.split(/\s+/)[0])||nm;ok.textContent='Join as '+fn;}
   }
 };
+// Case-folded, punctuation and spacing removed, so "D. King" and "Dan King" compare as
+// the same shape.
+function _clNorm(s){
+  return (s==null?'':''+s).toLowerCase().replace(/[^a-z ]+/g,' ').replace(/\s+/g,' ').trim();
+}
+// Does one of the unclaimed players look like the person doing the joining?
+// LAST NAME ALONE IS NOT ENOUGH. Two Kings in one group is ordinary, and a prompt that
+// fires on every shared surname is a prompt people learn to tap through, which is worse
+// than no prompt at all. So the last names must match AND the first names must match, or
+// one of them must be an initial of the other.
+// Nicknames are deliberately out: Dan against Daniel, Mike against Michael. A short-form
+// table would catch those and would also start firing on people who are not the same
+// person, and the plain rule already covers the case this was built for.
+function _claimNameMatch(rows){
+  var me=(typeof sbCurrentUser==='function')?sbCurrentUser():null;
+  if(!me||!Array.isArray(rows))return -1;
+  var mine=_clNorm((me.user_metadata||{}).full_name).split(' ').filter(Boolean);
+  // One word is not a name to match on. Profile capture runs before any of this, so an
+  // empty name here means something unusual happened and the quiet path is the right one.
+  if(mine.length<2)return -1;
+  var mF=mine[0],mL=mine[mine.length-1];
+  for(var i=0;i<rows.length;i++){
+    var r=_clNorm(rows[i]&&rows[i].display_name).split(' ').filter(Boolean);
+    if(r.length<2)continue;
+    var rF=r[0],rL=r[r.length-1];
+    if(rL!==mL)continue;
+    if(rF===mF)return i;
+    if(rF.length===1&&rF===mF.charAt(0))return i;
+    if(mF.length===1&&mF===rF.charAt(0))return i;
+  }
+  return -1;
+}
+// Shown only when someone confirms "None of these" while a name matches. There is no way
+// to join two records afterwards - join_group with a claim id is the only thing that ever
+// attaches a user to an existing member, and it runs once, here - so this sheet is the
+// last moment the two can be the same person.
+function _claimSecondLook(mi){
+  var card=document.getElementById('_clCard');
+  if(!card){_claimS.confirmed=true;window._claimConfirm();return;}
+  var nm=_clEsc((_claimS.rows[mi]||{}).display_name||'');
+  card.innerHTML='<div style="display:flex;justify-content:center;margin-bottom:12px"><div style="width:42px;height:42px;border-radius:50%;background:rgba(29,158,117,0.15);display:flex;align-items:center;justify-content:center"><i class="ti ti-user-check" style="font-size:20px;color:#1D9E75"></i></div></div>'
+    +'<div style="text-align:center;font-size:16px;font-weight:500;color:#e8efe9;margin-bottom:6px">Quick check</div>'
+    +'<div style="text-align:center;font-size:13px;color:#a9b8b0;line-height:1.5;margin-bottom:16px">There is already a '+nm+' in this group. Is that you?</div>'
+    +'<div style="display:flex;align-items:center;gap:12px;padding:13px 12px;border:0.5px solid #1D9E75;border-radius:10px;background:rgba(29,158,117,0.08);margin-bottom:14px">'
+    +'<div style="width:34px;height:34px;border-radius:50%;background:rgba(29,158,117,0.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#1D9E75;flex-shrink:0">'+_claimIni((_claimS.rows[mi]||{}).display_name)+'</div>'
+    +'<div style="flex:1;font-size:14px;color:#e8efe9;font-weight:500">'+nm+'</div></div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button id="_clNo" style="flex:1;font-size:14px;font-weight:500;color:#c2cdc6;background:transparent;border:0.5px solid #2c3a33;padding:11px 0;border-radius:10px">No, I&#39;m new</button>'
+    +'<button id="_clYes" style="flex:1.4;font-size:14px;font-weight:500;color:#E1F5EE;background:#1D9E75;border:none;padding:11px 0;border-radius:10px">That&#39;s me</button>'
+    +'</div>';
+  card.querySelector('#_clNo').addEventListener('click',function(){window._claimSecondNo();});
+  card.querySelector('#_clYes').addEventListener('click',function(){window._claimSecondYes(mi);});
+}
+window._claimSecondNo=function(){
+  if(!_claimS)return;
+  _claimS.confirmed=true;
+  window._claimConfirm();
+};
+window._claimSecondYes=function(mi){
+  if(!_claimS)return;
+  _claimS.sel=mi;
+  _claimS.confirmed=true;
+  window._claimConfirm();
+};
 window._claimClose=function(){var ov=document.getElementById('claimSheet');if(ov)ov.remove();_claimS=null;};
 window._claimConfirm=async function(){
   if(!_claimS||_claimS.busy||_claimS.sel===null)return;
+  // Only on the way out as a new player, and only once. Picking yourself off the list asks
+  // nothing extra, and neither does a second attempt after the first was answered.
+  if(_claimS.sel===-1&&!_claimS.confirmed){
+    var _mi=_claimNameMatch(_claimS.rows);
+    if(_mi>=0){_claimSecondLook(_mi);return;}
+  }
   _claimS.busy=true;
   var code=_claimS.code;
   var claimId=_claimS.sel===-1?null:_claimS.rows[_claimS.sel].member_id;
@@ -4738,19 +4811,28 @@ function startNewWeekend(){
   // not a decision to abandon the open trip - there is a Cancel on step 1, and it was
   // useless while the trip had already been dropped before Cancel was ever drawn.
   // v120.19.
+  _twLastStep=null;
   _twS={step:1,name:'',date:'',region:'',numRounds:4,selectedMembers:[],hdcpPct:80,netOffLow:false,courses:[],tees:[],games:{},buyIn:50,potTiebreak:'countback',potMethod:'netstroke'};
   const ws=document.getElementById('wizardScreen');
   ws.style.display='flex';
   _twRender();
 }
 // ── Quick Round Modal (fully self-contained, 4 steps) ──
-let _qrS={step:1,n:4,holes:'18',course:null,tee:null,players:[],selectedMembers:[]}; // QR state
+let _qrS={step:1,n:4,holes:'18',course:null,tee:null,players:[],selectedMembers:[],name:''}; // QR state
 
+let _qrLastStep=null;
 function _qrRender(){
   const modal=document.getElementById('qrModal');
   if(!modal)return;
   const inner=modal.querySelector('.qr-inner');
-  if(inner)inner.innerHTML=_qrStepHtml();
+  if(!inner)return;
+  const old=inner.firstElementChild;
+  const keep=(_qrLastStep===_qrS.step)&&old;
+  const y=keep?old.scrollTop:0;
+  inner.innerHTML=_qrStepHtml();
+  _qrLastStep=_qrS.step;
+  const nw=inner.firstElementChild;
+  if(nw)nw.scrollTop=y;
 }
 
 function _qrStepHtml(){
@@ -4800,8 +4882,19 @@ function _qrStepHtml(){
         +'</div>'
         +'<div id="qrCourseResults" style="margin-top:6px"></div>'
         +'</div>';
+    var _nmTyped=!!(_qrS.name||'').trim();
+    var nameSection=_qrS.course
+      ?'<div style="padding:12px 20px;border-bottom:0.5px solid var(--color-border-tertiary)">'
+        +'<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:5px">Round name</div>'
+        +'<input id="qrRoundName" class="text-input" style="width:100%;margin:0;font-size:14px" '
+        +'value="'+_clEsc(_qrRoundName())+'" oninput="window._qrSetName(this)">'
+        +'<div id="qrNameHint" style="font-size:11px;color:var(--color-text-tertiary);margin-top:5px;line-height:1.5">'
+        +(_nmTyped?'Your name. Clear the field to go back to the course name.':'Follows the course until you change it.')
+        +'</div></div>'
+      :'';
     return'<div style="'+card+'">'+dotsRow
       +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">Course &amp; holes</div></div>'
+      +nameSection
       +courseSection
       +holesRows
       +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
@@ -4838,10 +4931,19 @@ function _qrStepHtml(){
           +'<div style="flex:1;font-size:13px;'+(sel?'font-weight:500;':'')+'color:var(--color-text-'+(sel?'primary':'secondary')+')">'+m.display_name+meTag+mgtTag+'</div>'
           +hcpEl+checkEl+'</div>';
       });
+      const _qAll=members.length>0&&members.every(function(m){
+        return (_qrS.selectedMembers||[]).some(function(s){return s.member_id===m.member_id;});});
+      const _qBulk=members.length>1
+        ?'<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 20px 4px">'
+          +'<span style="font-size:11px;color:var(--color-text-tertiary)">'+members.length+' in this group</span>'
+          +'<span onclick="window._qrSelectAll('+(_qAll?0:1)+')" style="font-size:12px;font-weight:500;color:#1D9E75;cursor:pointer;padding:4px 2px">'
+          +(_qAll?'Clear':'Select all')+'</span></div>'
+        :'';
       const selCount=(_qrS.selectedMembers||[]).length;
       const countLabel=selCount===0?'None selected':selCount+' selected'+(selCount>_qrS.n?' - max '+_qrS.n:'');
       return'<div style="'+card+';max-height:90vh;overflow-y:auto">'+dotsRow
         +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">Players</div><div style="font-size:12px;color:var(--color-text-secondary);margin-top:3px">Pick who is playing from '+(grp?grp.name:'your group')+'.</div></div>'
+        +_qBulk
         +rows
         +'<div style="padding:10px 20px;border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:12px"><div style="font-size:12px;color:var(--color-text-secondary)">'+countLabel+'</div></div>'
         +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
@@ -4986,6 +5088,30 @@ window._qrImportCourse=async function(i){
 };
 window._qrClose=function(){const m=document.getElementById('qrModal');if(m)m.style.display='none';};
 window._qrCancel=function(){window._pendingGroupId=null;window._qrClose();};
+// What the round is called when nobody says otherwise. Identical to what v121.35 stamped
+// on at launch, so a wizard run where the field is never touched produces the same name it
+// always did.
+function _qrAutoName(){
+  if(!_qrS.course)return '';
+  var h=_qrS.holes;
+  return courseDisp(_qrS.course)+(h==='front'?' - Front 9':h==='back'?' - Back 9':' - 18 Holes');
+}
+// The name shown and saved. An empty field is not a nameless round: clearing it hands the
+// name back to the course rather than saving a blank title.
+function _qrRoundName(){
+  var t=(_qrS.name||'').trim();
+  return t?t:_qrAutoName();
+}
+// Typing claims the name, exactly as hand-picking Four-Ball teams claims the roster: from
+// then on the course picker must not quietly rename the round underneath the person who
+// named it. Clearing the field releases the claim.
+window._qrSetName=function(el){
+  _qrS.name=el.value;
+  var hint=document.getElementById('qrNameHint');
+  if(hint)hint.textContent=(el.value||'').trim()
+    ?'Your name. Clear the field to go back to the course name.'
+    :'Follows the course until you change it.';
+};
 window._qrSetHoles=function(el){_qrS.holes=el.dataset.val;_qrRender();};
 window._qrSetN=function(el){_qrS.n=parseInt(el.dataset.val);_qrRender();};
 window._qrSet=function(key,val){_qrS[key]=val;_qrRender();};
@@ -5020,6 +5146,28 @@ window._qrToggleMember=function(memberId){
   const idx=_qrS.selectedMembers.findIndex(function(s){return s.member_id===memberId;});
   if(idx>=0){_qrS.selectedMembers.splice(idx,1);}
   else{if(_qrS.selectedMembers.length>=_qrS.n)return;_qrS.selectedMembers.push({member_id:m.member_id,display_name:m.display_name,hcp_index:m.hcp_index,venmo:m.venmo||'',user_id:m.user_id||null});}
+  _qrRender();
+};
+window._qrSelectAll=function(on){
+  const gid=window._pendingGroupId;
+  const grp=gid?_groupCache[gid]:null;
+  const members=(grp?._members)||[];
+  if(!_qrS.selectedMembers)_qrS.selectedMembers=[];
+  (_qrS.selectedMembers||[]).forEach(function(s){
+    const el=document.getElementById('qrhcp_'+s.member_id);
+    if(el)s.hcp_index=idxFromInput(el.value,(s.hcp_index!=null?s.hcp_index:0));
+  });
+  if(!on){_qrS.selectedMembers=[];}
+  else{
+    const prev=_qrS.selectedMembers.slice();
+    _qrS.selectedMembers=[];
+    members.forEach(function(m){
+      if(_qrS.selectedMembers.length>=_qrS.n)return;
+      const was=prev.find(function(s){return s.member_id===m.member_id;});
+      _qrS.selectedMembers.push({member_id:m.member_id,display_name:m.display_name,
+        hcp_index:was?was.hcp_index:m.hcp_index,venmo:m.venmo||'',user_id:m.user_id||null});
+    });
+  }
   _qrRender();
 };
 window._qrNext=function(){
@@ -5096,7 +5244,7 @@ function _qrLaunchRound(){
 
   WK={
     _id:Date.now()+'',
-    name:courseDisp(cn)+(nineHole==='front'?' - Front 9':nineHole==='back'?' - Back 9':' - 18 Holes'),
+    name:_qrRoundName(),
     date:today,region:'',players,
     rounds:[round],
     hdcpPct:_qrS.hdcpPct||0.8,
@@ -5140,7 +5288,7 @@ function startQuickRound(){
   // mode has no members to pick from and keeps the step, where n decides how many
   // name-and-handicap rows step 3 renders.
   var _qrGroupMode=!!window._pendingGroupId;
-  _qrS={step:_qrGroupMode?2:1,n:_qrGroupMode?TW_MAX_PLAYERS:4,holes:'18',course:null,tee:null,players:[],selectedMembers:[],hdcpPct:0.8,netOffLow:false};
+  _qrS={step:_qrGroupMode?2:1,n:_qrGroupMode?TW_MAX_PLAYERS:4,holes:'18',course:null,tee:null,players:[],selectedMembers:[],name:'',hdcpPct:0.8,netOffLow:false};
   _gsGames={};
   let modal=document.getElementById('qrModal');
   if(!modal){
@@ -5153,9 +5301,10 @@ function startQuickRound(){
     document.body.appendChild(modal);
   }
   modal.style.display='flex';
+  _qrLastStep=null;
   _qrRender();
 }
-function startQuickRoundWithPlayers(n){_qrS={step:1,n:n,holes:'18',course:null,tee:null};startQuickRound();}
+function startQuickRoundWithPlayers(n){_qrS={step:1,n:n,holes:'18',course:null,tee:null,name:''};startQuickRound();}
 function renderTripList(){
   // Render from blob immediately for instant display
   _renderTripListFromData(loadTrips());
@@ -5833,10 +5982,20 @@ const TW_MAX_PLAYERS=40;
 let _twS={step:1,name:'',date:'',region:'',numRounds:4,selectedMembers:[],hdcpPct:80,netOffLow:false,courses:[],tees:[],games:{},buyIn:50,potTiebreak:'countback',potMethod:'netstroke'};
 const _TW_TOTAL_STEPS=5;
 
+let _twLastStep=null;
 function _twRender(){
   const inner=document.getElementById('twBody');
   if(!inner)return;
+  // Every tap on a player rewrites the whole step, and a fresh innerHTML has no scroll
+  // position - so picking someone below the fold threw the list back to the top and you
+  // had to scroll down again for the next one. Restore only WITHIN a step: arriving at a
+  // new step should start at the top, the way a new screen does.
+  const sc=document.getElementById('twInner');
+  const keep=(_twLastStep===_twS.step)&&sc;
+  const y=keep?sc.scrollTop:0;
   inner.innerHTML=_twStepHtml();
+  _twLastStep=_twS.step;
+  if(sc)sc.scrollTop=y;
 }
 
 function _twDots(){
@@ -5924,13 +6083,21 @@ function _twStep2Html(){
     `<div style="width:34px;height:34px;border-radius:50%;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ti-plus" style="font-size:18px;color:var(--color-text-secondary);"></i></div>`+
     `<div><div style="font-size:13px;color:var(--color-text-secondary);">Add guest</div><div style="font-size:11px;color:var(--color-text-tertiary);">Saved to the group for future trips</div></div>`+
   `</div>`;
+  const _allSel=members.length>0&&members.every(function(m){
+    return _twS.selectedMembers.some(function(s){return s.member_id===m.member_id;});});
+  const _bulk=members.length>1
+    ?`<div style="display:flex;align-items:center;justify-content:space-between;padding:2px 8px 6px;">`
+      +`<span style="font-size:11px;color:var(--color-text-tertiary);">${members.length} in this group</span>`
+      +`<span onclick="window._twSelectAll(${_allSel?0:1})" style="font-size:12px;font-weight:500;color:#1D9E75;cursor:pointer;padding:4px 2px;">${_allSel?'Clear':'Select all'}</span>`
+      +`</div>`
+    :'';
   const selCount=_twS.selectedMembers.length;
   const tooMany=selCount>TW_MAX_PLAYERS;
   const canNext=selCount>=2&&selCount<=TW_MAX_PLAYERS;
   const countLabel=selCount===0?'None selected':`${selCount} selected${tooMany?' - max '+TW_MAX_PLAYERS:''}`;
   return _twHeader('New trip','Players',`Pick who is playing from ${groupName}.`)+
     `<div id="tw_guestError" style="display:none;margin:8px 16px 0;padding:8px 12px;background:#FAEEDA;border:0.5px solid #EFB880;border-radius:var(--border-radius-md);font-size:12px;color:#633806;"></div>`+
-    `<div style="padding:6px 12px 6px;">${rows}</div>`+
+    `<div style="padding:6px 12px 6px;">${_bulk}${rows}</div>`+
     `<div style="padding:10px 20px 0;border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:12px;">`+
     `<div style="font-size:12px;color:${tooMany?'#C0392B':'var(--color-text-secondary)'};">${countLabel}</div></div>`+
     _twFooter('Next','Back');
@@ -6288,6 +6455,38 @@ window._twToggleMember=function(memberId){
       return;
     }
     _twS.selectedMembers.push({member_id:m.member_id,display_name:m.display_name,hcp_index:m.hcp_index,venmo:m.venmo||'',user_id:m.user_id||null});
+  }
+  _twRender();
+};
+
+// Select all / Clear. The in-flight handicap capture is not optional: the index inputs
+// only exist on selected rows, so without reading them first, typing an index and then
+// hitting Clear or Select all would silently discard it - the same reason
+// _twToggleMember does this before it touches the list.
+window._twSelectAll=function(on){
+  const gid=window._pendingGroupId;
+  const grp=gid?_groupCache[gid]:null;
+  const members=(grp?._members)||[];
+  _twS.selectedMembers.forEach(function(s){
+    const el=document.getElementById('tw_hcp_'+s.member_id);
+    if(el)s.hcp_index=idxFromInput(el.value,(s.hcp_index!=null?s.hcp_index:0));
+  });
+  if(!on){_twS.selectedMembers=[];}
+  else{
+    const prev=_twS.selectedMembers.slice();
+    _twS.selectedMembers=[];
+    members.forEach(function(m){
+      if(_twS.selectedMembers.length>=TW_MAX_PLAYERS)return;
+      // An index already edited on screen beats the one stored on the member record.
+      const was=prev.find(function(s){return s.member_id===m.member_id;});
+      _twS.selectedMembers.push({member_id:m.member_id,display_name:m.display_name,
+        hcp_index:was?was.hcp_index:m.hcp_index,venmo:m.venmo||'',user_id:m.user_id||null});
+    });
+    if(members.length>TW_MAX_PLAYERS){
+      const errEl=document.getElementById('tw_guestError');
+      if(errEl){errEl.textContent='Maximum '+TW_MAX_PLAYERS+' players per trip. Selected the first '+TW_MAX_PLAYERS+'.';
+        errEl.style.display='block';setTimeout(function(){errEl.style.display='none';},2500);}
+    }
   }
   _twRender();
 };
@@ -7779,6 +7978,15 @@ function defaultFBTeams(r){
 }
 // A team roster is valid only if every index is a real player, no player appears
 // twice, and every team is exactly the configured size. Anything else and we rebuild.
+// Two rosters are the same pairing when the same men sit together, whatever order the
+// teams or their members happen to be listed in. Comparing raw JSON would rebuild a
+// perfectly good roster because defaultFBTeams enumerated a foursome differently.
+function _fbTeamsKey(teams){
+  if(!Array.isArray(teams))return '';
+  return teams.map(function(t){
+    return (Array.isArray(t)?t:[]).slice().sort(function(a,b){return a-b;}).join(',');
+  }).sort().join('|');
+}
 function fbTeamsValid(teams,r){
   if(!Array.isArray(teams)||teams.length<2)return false;
   const d=fbDefaults(r),seen={};
@@ -7810,6 +8018,36 @@ function fbTeamsValid(teams,r){
       });
       if(!inside)return false;
     }
+  } else {
+    // FIELD SCOPE: COVERAGE. Every check above is about the men who are seated - real
+    // players, no duplicates, every team exactly size - and not one of them notices a man
+    // seated nowhere. That is how a 3-team roster survived on a 16-man field after a
+    // player was swapped an hour before the tee time: it answered every question it was
+    // asked, and the question that mattered was never put. Four men stood on the tee and
+    // were not in the game, and no toggle could shake it loose, because the roster kept
+    // coming back valid.
+    // A COUNT IS SUFFICIENT. The checks above already guarantee that k teams seat exactly
+    // k*size DISTINCT group players. When k is the most the field can support, those men
+    // are everyone the size can seat. An explicit per-player eligibility clause would be
+    // dead code and is deliberately absent: fbScopeEff reports 'field' only when EVERY
+    // foursome has the game on, and padFlights guarantees every group player sits in some
+    // foursome, so 'eligible' and _vpi are the same set. fbcover U-D pins both halves of
+    // that proof - if either stops holding, this needs a second clause.
+    // WHO OWNS THIS ROSTER. It was derived from the foursomes once and then user-owned
+    // forever, with nothing recording which - so a foursome edit left the teams behind and
+    // the screen still showed something that looked like the foursomes.
+    //   fbTeamsManual unset -> DERIVED. It must still BE the foursomes. Change a group and
+    //     the teams follow, which is what the screen has been implying all along.
+    //   fbTeamsManual set   -> HAND SET, by _fbSwap or _fbAutoPair. At field scope
+    //     auto-pair deliberately pairs across foursomes, so this is a real state and a
+    //     foursome edit must leave it alone. Only the structural checks above apply.
+    // Nothing counts seats here. In the derived case equality with the default is exact
+    // and subsumes a count. In the hand-set case a count is actively wrong: a user who
+    // traded one pair on a 14-man field would hold two teams while floor(14/4) demanded
+    // three, and the roster would be rebuilt out from under them on every sweep.
+    if(!(WK.rounds[r]||{}).fbTeamsManual){
+      if(_fbTeamsKey(teams)!==_fbTeamsKey(defaultFBTeams(r)))return false;
+    }
   }
   return true;
 }
@@ -7820,13 +8058,30 @@ function fbTeamsForRound(r){
 }
 // Rebuild the teams if a roster or foursome edit invalidated them. Same contract as
 // the other seven reconcilers, including the settled/locked early return.
+// THE ONLY WAY a Four-Ball roster goes back to being the foursomes. Rebuilding from
+// defaultFBTeams and dropping the claim are one action, not two that happen to appear
+// together, and v121.31 shipped proof: reconcileFBTeams cleared the flag, _setFBOpt did
+// not, so changing team size left a freshly derived roster still marked hand set. The
+// caption lied, the reset button offered to undo something already undone, and from that
+// point foursome edits silently stopped following - the very defect the flag was added to
+// fix, re-entering through a door nobody checked.
+// Remembering to pair two lines at four call sites is not a design. Any future writer that
+// rebuilds the roster calls this, and fbderive W-C1 asserts at the source that no other
+// site assigns defaultFBTeams to fbTeams.
+function _fbSetDerived(r){
+  const rd=WK.rounds&&WK.rounds[r];if(!rd)return;
+  rd.fbTeams=defaultFBTeams(r);
+  rd.fbTeamsManual=false;
+}
 function reconcileFBTeams(r){
   const rd=WK.rounds&&WK.rounds[r];if(!rd)return;
   if((STATE.settledRounds||[]).includes(r)||isRoundLocked(r))return;
   // Game off: leave the roster alone. Rebuilding it to [] here would quietly throw away a
   // custom pairing every time someone toggled the game off and back on.
   if(!gameOn('fourball',r))return;
-  if(!fbTeamsValid(rd.fbTeams,r))rd.fbTeams=defaultFBTeams(r);
+  // If a hand-built pairing did not hold up and was replaced, the user does not own what
+  // replaced it.
+  if(!fbTeamsValid(rd.fbTeams,r))_fbSetDerived(r);
 }
 // A pool is one pot: its players ante in, its teams compete, and its low man is the
 // netting baseline. Field scope is one pool of everyone; foursome scope is one pool
@@ -12950,8 +13205,8 @@ window._setFBOpt=function(r,key,val){
   }
   // Narrowing the config CLEARS 5-4-3 rather than leaving a key that only fbFive43's
   // legality check stands between and a mis-scored team.
-  else if(key==='fbTeamSize'){rd.fbTeamSize=(val===4||val==='4')?4:2;if(rd.fbTeamSize!==4)delete rd.fbFive43;rd.fbTeams=defaultFBTeams(r);}
-  else if(key==='fbScope'){rd.fbScope=(val==='fs')?'fs':'field';if(rd.fbScope!=='field')delete rd.fbFive43;rd.fbTeams=defaultFBTeams(r);}
+  else if(key==='fbTeamSize'){rd.fbTeamSize=(val===4||val==='4')?4:2;if(rd.fbTeamSize!==4)delete rd.fbFive43;_fbSetDerived(r);}
+  else if(key==='fbScope'){rd.fbScope=(val==='fs')?'fs':'field';if(rd.fbScope!=='field')delete rd.fbFive43;_fbSetDerived(r);}
   else if(key==='fbFive43'){if(val===true||val===1||val==='1')rd.fbFive43=true;else delete rd.fbFive43;}
   else if(key==='fbGross'){if(val===true||val===1||val==='1')rd.fbGross=true;else delete rd.fbGross;}
   else if(key==='fbPays')rd.fbPays=(val===2||val==='2')?2:1;
@@ -12982,6 +13237,17 @@ window._fbAutoPair=function(r){
     while(pool.length>=d.size){const t=[pool.shift()];while(t.length<d.size&&pool.length)t.push(pool.pop());out.push(t);}
     WK.rounds[r].fbTeams=out;
   }
+  // Auto-pair at field scope pools the WHOLE field and pairs strong with weak, which is
+  // deliberately not the foursomes. Claiming the roster is what stops the next foursome
+  // edit throwing that away.
+  WK.rounds[r].fbTeamsManual=true;
+  autoSave();s2WriteActive();_gsRefreshAfterEdit();
+};
+// Hand the roster back to the foursomes. Without this a single tap on the swap sheet would
+// claim the teams permanently and there would be no way to undo it.
+window._fbResetTeams=function(r){
+  if(!canEditTrip())return;
+  _fbSetDerived(r);
   autoSave();s2WriteActive();_gsRefreshAfterEdit();
 };
 // Swap sheet. Every pick is a TRADE, so the teams stay full and legal by construction:
@@ -13045,6 +13311,7 @@ window._fbSwap=function(r,ti,si,other){
   }
   if(!found)teams[ti][si]=other;   // was unassigned
   WK.rounds[r].fbTeams=teams;
+  WK.rounds[r].fbTeamsManual=true;
   autoSave();s2WriteActive();window._fbCloseSwap();_gsRefreshAfterEdit();
 };
 // Golf reads to par, not in absolutes. E, -3, +2.
@@ -13308,7 +13575,13 @@ function _gsFourBallSetupBody(r){
   // ---- teams ----
   h+='<div class="section-card" style="margin:12px 0 0">';
   const canEdit=canEditTrip()&&!isRoundLocked(r);
-  h+='<div class="section-hd"><span>Teams</span>'+(canEdit?'<button class="btn-sm" onclick="window._fbAutoPair('+r+')">Auto-pair</button>':'')+'</div>';
+  const _fbMan=!!WK.rounds[r].fbTeamsManual&&d.scope!=='fs';
+  let _hdBtns='';
+  if(canEdit){
+    if(_fbMan)_hdBtns+='<button class="btn-sm" onclick="window._fbResetTeams('+r+')">Reset to foursomes</button>';
+    _hdBtns+='<button class="btn-sm" onclick="window._fbAutoPair('+r+')">Auto-pair</button>';
+  }
+  h+='<div class="section-hd"><span>Teams</span><span style="display:flex;gap:6px">'+_hdBtns+'</span></div>';
   const fl=flightsForRound(r);
   const fsOf=function(pi){for(let i=0;i<fl.length;i++){if((fl[i]||[]).indexOf(pi)>=0)return i;}return -1;};
   teams.forEach(function(t,ti){
@@ -13332,7 +13605,10 @@ function _gsFourBallSetupBody(r){
   const assigned=teams.reduce(function(s,t){return s+t.length;},0);
   h+='<div class="fb-cap">'+assigned+' of '+n+' assigned, '+nTeams+' team'+(nTeams===1?'':'s')+' of '+d.size
     +(pools.length>1?(' across '+pools.length+' pots'):'')+'.'
-    +(canEdit?' Tap a player to swap.':'')+'</div>';
+    +(canEdit?' Tap a player to swap.':'')
+    +(d.scope!=='fs'?('<br>'+(_fbMan
+        ? 'Teams were set by hand. Foursome changes will not move them.'
+        : 'Teams follow your foursomes.')):'')+'</div>';
   h+='</div>';
   return h;
 }
