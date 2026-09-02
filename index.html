@@ -1188,12 +1188,17 @@ body.force-light{
 .fb-note{padding:9px 12px;font-size:11px;color:var(--color-text-secondary);line-height:1.5;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);}
 .fb-note b{color:var(--color-text-primary);font-weight:600;}
 .fb-pl{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);}
-.fb-pl.w{background:#1D9E75;color:#fff;border-color:#1D9E75;}
+.fb-pl.sel{background:#1D9E75;color:#fff;border-color:#1D9E75;}
 .fb-pl.q{color:var(--color-text-tertiary);font-weight:600;}
 .fb-lbrow{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary);}
 .fb-lbrow:last-child{border-bottom:none;}
-.fb-lbrow.win{background:rgba(29,158,117,0.06);}
-.fb-lbrow.fb-sel{background:rgba(29,158,117,0.13);box-shadow:inset 3px 0 0 #1D9E75;}
+.fb-lbrow.fb-sel,.gs-lanerow{background:rgba(29,158,117,0.13);}
+.fb-lbhint{flex:1;text-align:center;font-size:10px;font-weight:400;color:var(--color-text-tertiary);}
+.fb-cardhd{display:flex;align-items:center;gap:9px;min-width:0;}
+.fb-cardhd .fb-cardt{flex:none;display:flex;flex-direction:column;align-items:center;line-height:1.05;}
+.fb-cardhd .fb-cardk{font-size:8.5px;letter-spacing:0.09em;text-transform:uppercase;color:var(--color-text-tertiary);}
+.fb-cardhd .fb-cardv{font-size:18px;font-weight:700;color:var(--color-text-primary);}
+.fb-cardhd .fb-cardn{min-width:0;}
 .fb-lbrow:active{opacity:0.7;}
 .fb-lbl{display:flex;align-items:center;gap:9px;flex:1;}
 .fb-lbn{font-size:13.5px;font-weight:500;}
@@ -1752,7 +1757,31 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v121.37';
+const APP_VERSION='v122.9';
+// Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
+// feeding one cache meant the cached row shape depended on which fetch fired last;
+// venmo was absent on the ordinary home-screen path and the member sheet blanked it.
+// The membership fetch (by user_id, with the groups(...) join) is deliberately NOT
+// on this list: it answers "which groups am I in" and never writes _members.
+const GM_COLS='member_id,display_name,hcp_index,venmo,role,user_id,ghin_number,hcp_source,hcp_updated_at';
+
+// Settlement reads the handle THROUGH this, never off the player directly.
+// The trip snapshots venmo onto the player when the player is seated, so a trip seated
+// before v122.0 carries none and cannot heal itself. Fall back to the live member record.
+// Returns '' when there is genuinely no handle - callers must render that as absent
+// rather than inventing one, because an invented handle looks payable and is not.
+function _venmoFor(p){
+  var v=((p&&p.venmo)||'').replace(/^@+/,'').trim();
+  if(v)return v;
+  if(!p||!p.member_id)return '';
+  var gid=(typeof WK!=='undefined'&&WK)?WK._groupId:null;
+  if(!gid||typeof _groupCache==='undefined'||!_groupCache[gid])return '';
+  var ms=_groupCache[gid]._members||[];
+  for(var i=0;i<ms.length;i++){
+    if(ms[i]&&ms[i].member_id===p.member_id)return ((ms[i].venmo)||'').replace(/^@+/,'').trim();
+  }
+  return '';
+}
 
 // ===== THEME =====
 (function(){
@@ -2943,7 +2972,7 @@ window.sbSaveEditProfile = async function(){
   btn.disabled = true; btn.textContent = 'Saving...';
   try {
     await sbUpdateUser({ full_name: name, phone, venmo, hcp: hcpParsed.value, ghin: ghin });
-    try{const _pu=sbCurrentUser();if(_pu){const _pt=_sbSession?.access_token||SB_KEY;await fetch(SB_URL+'/rest/v1/group_members?user_id=eq.'+encodeURIComponent(_pu.id),{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+_pt,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({display_name:name,venmo:venmo,hcp_index:hcpParsed.value!=null?hcpParsed.value:null})});Object.keys(_groupCache).forEach(gid=>{if(_groupCache[gid]._members){const _mi=_groupCache[gid]._members.findIndex(m=>m.user_id===_pu.id);if(_mi>=0){_groupCache[gid]._members[_mi].display_name=name;_groupCache[gid]._members[_mi].venmo=venmo;_groupCache[gid]._members[_mi].hcp_index=hcpParsed.value!=null?hcpParsed.value:null;}}});}}catch(_pe){}
+    try{const _pu=sbCurrentUser();if(_pu){const _pt=_sbSession?.access_token||SB_KEY;await fetch(SB_URL+'/rest/v1/group_members?user_id=eq.'+encodeURIComponent(_pu.id),{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+_pt,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({display_name:name,venmo:venmo,hcp_index:hcpParsed.value!=null?hcpParsed.value:null,hcp_source:'manual'})});Object.keys(_groupCache).forEach(gid=>{if(_groupCache[gid]._members){const _mi=_groupCache[gid]._members.findIndex(m=>m.user_id===_pu.id);if(_mi>=0){_groupCache[gid]._members[_mi].display_name=name;_groupCache[gid]._members[_mi].venmo=venmo;_groupCache[gid]._members[_mi].hcp_index=hcpParsed.value!=null?hcpParsed.value:null;}}});}}catch(_pe){}
     document.getElementById('editProfOverlay').style.display = 'none';
     sbUpdateAvatar();
     try{var _ms=document.getElementById('meScreen');if(_ms&&_ms.style.display!=='none'&&window.renderMeScreen)window.renderMeScreen();}catch(e){}
@@ -4239,7 +4268,7 @@ async function _loadGroupMembersIntoDoor(gid,idPrefix){idPrefix=idPrefix||'hm-';
   if(!navigator.onLine)return;
   try{
     const tok=_sbSession?.access_token||SB_KEY;
-    const r=await fetch(SB_URL+'/rest/v1/group_members?group_id=eq.'+encodeURIComponent(gid)+'&select=member_id,display_name,hcp_index,role,user_id',{
+    const r=await fetch(SB_URL+'/rest/v1/group_members?group_id=eq.'+encodeURIComponent(gid)+'&select='+GM_COLS,{
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Accept':'application/json'}
     });
     if(!r.ok)return;
@@ -4266,7 +4295,7 @@ async function _loadGroupMembersIntoDoor(gid,idPrefix){idPrefix=idPrefix||'hm-';
 async function _loadGroupMembersIntoTile(gid){
   try{
     const tok=_sbSession?.access_token||SB_KEY;
-    const r=await fetch(SB_URL+'/rest/v1/group_members?group_id=eq.'+encodeURIComponent(gid)+'&select=member_id,display_name,hcp_index,role,user_id',{
+    const r=await fetch(SB_URL+'/rest/v1/group_members?group_id=eq.'+encodeURIComponent(gid)+'&select='+GM_COLS,{
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Accept':'application/json'}
     });
     if(!r.ok)return;
@@ -4459,7 +4488,7 @@ async function renderGroupPage(gid){
   if(!members.length){
     try{
       const tok=_sbSession?.access_token||SB_KEY;
-      const r=await fetch(SB_URL+'/rest/v1/group_members?group_id=eq.'+encodeURIComponent(gid)+'&select=member_id,display_name,hcp_index,role,venmo,user_id',{
+      const r=await fetch(SB_URL+'/rest/v1/group_members?group_id=eq.'+encodeURIComponent(gid)+'&select='+GM_COLS,{
         headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Accept':'application/json'}
       });
       if(r.ok){members=await r.json();if(_groupCache[gid])_groupCache[gid]._members=_sortMembers(members);}
@@ -4575,7 +4604,7 @@ window._gmSaveManaged = async function(gid,idx){
     const r=await fetch(SB_URL+'/rest/v1/group_members?member_id=eq.'+encodeURIComponent(m.member_id),{
       method:'PATCH',
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body:JSON.stringify({hcp_index:hp.value,venmo:venmo})
+      body:JSON.stringify({hcp_index:hp.value,venmo:venmo,hcp_source:'manual'})
     });
     if(!r.ok){
       let msg='Could not save.';
@@ -11212,7 +11241,7 @@ window._apOpen=async function(){
   if(gid&&_groupCache[gid]&&!(_groupCache[gid]._members||[]).length){
     try{
       var tok=_sbSession?.access_token||SB_KEY;
-      var rr=await fetch(SB_URL+'/rest/v1/group_members?group_id=eq.'+encodeURIComponent(gid)+'&select=member_id,display_name,hcp_index,role,venmo,user_id',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Accept':'application/json'}});
+      var rr=await fetch(SB_URL+'/rest/v1/group_members?group_id=eq.'+encodeURIComponent(gid)+'&select='+GM_COLS,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Accept':'application/json'}});
       if(rr.ok)_groupCache[gid]._members=_sortMembers(await rr.json());
     }catch(e){}
   }
@@ -13098,6 +13127,10 @@ function renderGrindersRound(){
     return{fi:fi,mem:(mem||[]).filter(_vpi),n:det.counts[fi]||0};
   }).filter(function(x){return x.mem.length;});
   rows.sort(function(a,b){return b.n-a.n||a.fi-b.fi;});
+  // -1 on the All tab, which highlights nothing: with no lane picked there is no row
+  // the tab refers to, and that absence is what makes the tabs read as having an off
+  // state rather than a default.
+  const _grSel=(_gsLane()==='both')?-1:_gsLane();
   rows.forEach(function(row,i){
     // PER PLAYER, and specifically net[mem[0]] - the same figure the Bets tab quotes,
     // so the two tabs agree to the cent by construction rather than by coincidence.
@@ -13109,7 +13142,7 @@ function renderGrindersRound(){
     const nCol=row.n>0?'var(--color-text-primary)':'var(--color-text-tertiary)';
     const holes=(det.holes[row.fi]||[]).filter(function(x){return x!==null;})
       .map(function(hi){return hi+1;});
-    h+='<div style="'+_GRID+(i?'border-top:0.5px solid var(--color-border-tertiary);':'')+'">'
+    h+='<div class="'+(row.fi===_grSel?'gs-lanerow':'')+'" style="'+_GRID+(i?'border-top:0.5px solid var(--color-border-tertiary);':'')+'">'
       // Label centred over the initials, which are clipped rather than allowed to push
       // the grid. A five-man foursome truncates its initials before it truncates holes.
       +'<span style="min-width:0;text-align:center">'
@@ -13424,16 +13457,18 @@ function renderFBBox(){
   h+='<div style="border-top:0.5px solid var(--color-border-tertiary);padding:7px 12px 9px">';
   h+='<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-tertiary);margin-bottom:5px">Standings</div>';
   const _fl=flightsForRound(r);
-  const _fsOfP=function(pi){for(let k=0;k<_fl.length;k++){if((_fl[k]||[]).indexOf(pi)>=0)return k;}return -1;};
-  rows.forEach(function(row){
+  const _fsTags=rows.map(function(row){return _fbFsOfTeam(r,row.team);});
+  const _tagsAddNothing=_fsTags.every(function(fk,i){
+    return fk.length===1&&fk[0]===fbTeamNo(r,rows[i].team);
+  });
+  rows.forEach(function(row,_ri){
     const pos=row.pos;
     const ti=fbTeamNo(r,row.team)-1;
     const played=row.card.played>0;
     const nm=row.team.map(function(pi){return WK.players[pi].ini;}).join('+');
-    // Which group each team sits in. Beats emphasis nobody can decode.
-    const fss={};row.team.forEach(function(pi){const f=_fsOfP(pi);if(f>=0)fss[f]=1;});
-    const fk=Object.keys(fss).map(function(x){return +x+1;});
-    const tag=(_fl.length>1&&fk.length)?('F'+fk.join('/F')):'';
+    // Which group each team sits in. Withheld when it only repeats the team number.
+    const fk=_fsTags[_ri];
+    const tag=(_fl.length>1&&fk.length&&!_tagsAddNothing)?('F'+fk.join('/F')):'';
     h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:12px">'
       +'<span style="color:var(--color-text-secondary)">'+pos+'. Team '+(ti+1)
       +'<span style="color:var(--color-text-tertiary);font-size:10px;margin-left:5px">'+nm+(tag?(' &middot; '+tag):'')+'</span></span>'
@@ -13618,6 +13653,17 @@ function _gsFourBallSetupBody(r){
 // ever follow a separator, so no name is ever cut and every four-man row is the same
 // height. Two names stay on one line; three read 2 + 1; five read 2 + 2 + 1.
 // Display only: the separator, the order and the names themselves are unchanged.
+// Which foursomes a team's players sit in, as 1-based numbers. One team drawn from one
+// group returns [3]; a manually split team returns [1,3]. Two callers need this: the
+// Scores standings tag, and the lane selection below. It is defined here so they cannot
+// drift, which is the failure this arc has hit more than any other.
+function _fbFsOfTeam(r,team){
+  const fl=flightsForRound(r),s={};
+  (team||[]).forEach(function(pi){
+    for(let k=0;k<fl.length;k++){if((fl[k]||[]).indexOf(pi)>=0){s[k]=1;break;}}
+  });
+  return Object.keys(s).map(function(x){return +x+1;});
+}
 function _fbTeamLine(team){
   var out='';
   for(var i=0;i<team.length;i++){
@@ -13661,7 +13707,28 @@ function renderFourBallRound(){
     // something to rank on. Same reason 'no scores yet' stops printing once per row: it
     // is a fact about the pot, not about any team in it.
     const anyPlayed=rows.some(function(x){return x.card.played>0;});
-    h+='<div class="section-card game-on"><div class="section-hd"><span>'+title+'</span><span>Pot '+_fbMoney(pot)+'</span></div>';
+    // Resolve the shown team BEFORE the rows, so each row can ask whether it is the
+    // one on display. Falls back to the leader when nothing is picked, and to nothing
+    // at all when no team has a card, since the tint points at a card below it.
+    // When a lane is picked and each team is exactly one foursome, that foursome's team
+    // is what you came to look at. Only applies where the mapping actually holds: at 2v2
+    // a foursome holds two teams and there is no single answer, so the leader stands.
+    let _laneRow=null;
+    if(_fbSel>=0){
+      const _cand=rows.filter(function(x){
+        const fk=_fbFsOfTeam(r,x.team);
+        return fk.length===1&&fk[0]===_fbSel+1;
+      });
+      if(_cand.length===1&&_cand[0].card.played>0)_laneRow=_cand[0];
+    }
+    let _shownRow=_laneRow||rows[0];
+    if(STATE.fbCard){
+      const _pick=rows.find(function(x){return fbTeamNo(r,x.team)===STATE.fbCard&&x.card.played>0;});
+      if(_pick)_shownRow=_pick;
+    }
+    const _hasCard=!!(_shownRow&&_shownRow.card.played>0);
+    const _shownNo=_hasCard?fbTeamNo(r,_shownRow.team):0;
+    h+='<div class="section-card game-on"><div class="section-hd"><span>'+title+'</span>'+(rows.length>1?'<span class="fb-lbhint">tap a team</span>':'')+'<span>Pot '+_fbMoney(pot)+'</span></div>';
     if(!anyPlayed)h+='<div class="fb-note">No scores yet. Positions appear once the first hole is posted.</div>';
     rows.forEach(function(row){
       const pos=row.pos;
@@ -13672,12 +13739,11 @@ function renderFourBallRound(){
       const tno=fbTeamNo(r,row.team);
       // The foursome's own round. Saying 'thru 15 of 18' about a round that ended at 15
       // reads as three holes still owed on a card whose pot has already been awarded.
-      const sel=(STATE.fbCard===tno);
+      const sel=(_hasCard&&tno===_shownNo);
       const need=(pool.fi!=null)?fsHoleCount(r,pool.fi):roundHoleCount(r);
-      const thru=played?('net '+row.card.total+' &middot; thru '+row.card.played+(row.card.played<need?' of '+need:'')):'no scores yet';
-      const winner=(pos===1&&played&&done);
-      h+='<div class="fb-lbrow'+(winner?' win':'')+(sel?' fb-sel':'')+'" onclick="window._fbShowCard('+tno+')" style="cursor:pointer">'
-        +'<div class="fb-lbl"><span class="fb-pl'+(winner?' w':'')+(anyPlayed?'':' q')+'">'+(anyPlayed?pos:'&ndash;')+'</span>'
+      const thru='Team '+tno+' &middot; '+(played?('net '+row.card.total+' &middot; thru '+row.card.played+(row.card.played<need?' of '+need:'')):'no scores yet');
+      h+='<div class="fb-lbrow'+(sel?' fb-sel':'')+'" onclick="window._fbShowCard('+tno+')" style="cursor:pointer">'
+        +'<div class="fb-lbl"><span class="fb-pl'+(sel?' sel':'')+(anyPlayed?'':' q')+'">'+(anyPlayed?pos:'&ndash;')+'</span>'
         +'<div><div class="fb-lbn">'+names+'</div>'
         +(anyPlayed?('<div class="fb-lbs">'+thru+'</div>'):'')+'</div></div>'
         +'<div class="fb-lbr"><span class="fb-lbt" style="color:'+(played?_fbParCol(row.card.toPar):'var(--color-text-tertiary)')+'">'+(played?_fbToPar(row.card.toPar):'-')+'</span>'
@@ -13690,16 +13756,12 @@ function renderFourBallRound(){
     h+='</div>';
     // Hole by hole for the SELECTED team, or the leader when nothing is picked. A team
     // with an empty card has nothing to show, so it falls back rather than render blank.
-    let lead=rows[0];
-    if(STATE.fbCard){
-      const pick=rows.find(function(x){return fbTeamNo(r,x.team)===STATE.fbCard&&x.card.played>0;});
-      if(pick)lead=pick;
-    }
+    const lead=_shownRow;
     if(lead&&lead.card.played>0){
       const off=holeOffset(r),nh=fbPoolHoleCount(r,pool);
-      const _hdr='Team '+fbTeamNo(r,lead.team)+' &middot; '+lead.team.map(function(pi){return displayName(pi);}).join(' + ');
+      const _hdr='<span class="fb-cardhd"><span class="fb-cardt"><span class="fb-cardk">Team</span><span class="fb-cardv">'+fbTeamNo(r,lead.team)+'</span></span><span class="fb-cardn">'+_fbTeamLine(lead.team)+'</span></span>';
       h+='<div class="section-card"><div class="section-hd"><span>'+_hdr+'</span>'
-        +(rows.length>1?'<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">tap a team above</span>':'')+'</div>';
+        +'</div>';
       // Initials only in the sticky column. Full names are already in the bar above, and a
       // wrapping "M. Richardson" was taking the width the holes needed.
       const _c='padding:4px 3px;border-right:0.5px solid var(--color-border-tertiary)';
@@ -13844,7 +13906,7 @@ function _gsLaneLabelHtml(r){
 function _gsEnsureFs(r){const rd=WK.rounds[r];const nf=flightsForRound(r).length;if(!Array.isArray(rd.fsGames))rd.fsGames=[];while(rd.fsGames.length<nf)rd.fsGames.push({});for(let i=0;i<rd.fsGames.length;i++){if(!rd.fsGames[i]||typeof rd.fsGames[i]!=='object')rd.fsGames[i]={};}return rd.fsGames;}
 function _gsIsShared(def,r){return def.tripLevel?!!WK[def.onField]:!!(WK.rounds[r]&&WK.rounds[r][def.onField]);}
 function _gsLaneOn(def,r,lane){if(lane==='both')return _gsIsOn(def,r);if(def.tripLevel)return !!WK[def.onField];const rd=WK.rounds[r];if(rd&&rd[def.onField]===true)return true;const fs=rd&&Array.isArray(rd.fsGames)?rd.fsGames[lane]:null;return !!(fs&&fs[def.onField]===true);}
-window.switchGamesLane=function(lane){STATE.gamesLane=lane;STATE.gamesViewGame=null;renderGamesTab();};
+window.switchGamesLane=function(lane){STATE.gamesLane=lane;STATE.fbCard=null;renderGamesTab();};
 function _gsShowBothModal(){const m=document.getElementById('gsBothModal');if(m)m.classList.add('visible');}
 window._gsCloseBothModal=function(){const m=document.getElementById('gsBothModal');if(m)m.classList.remove('visible');};
 let _gsPendingIndep=null;
@@ -17323,7 +17385,7 @@ function renderSettle(){
   // Transactions
   html+=`<div class="section-card"><div class="section-hd" style="color:var(--color-text-primary);font-weight:500">Minimum Transfers - Unsettled Balance</div>`;
   if(!txns.length)html+=`<div style="padding:16px 12px;text-align:center;color:#1D9E75;font-size:14px;font-weight:500">🎉 Everyone's square!</div>`;
-  else txns.forEach(t=>{const fr=WK.players[t.from],to=WK.players[t.to];const venmoHandle=(to.venmo||'').replace(/^@/,'')||to.name.toLowerCase();html+=`<div class="settle-txn"><div class="avatar" style="width:32px;height:32px;font-size:12px;background:${fr.bg};color:${fr.fg}">${fr.ini}</div><div style="flex:1;padding:0 8px"><div style="font-size:13px;font-weight:500">${fr.name} → ${to.name}</div><div style="font-size:11px;color:var(--color-text-secondary)">Venmo @${venmoHandle}</div></div><div class="settle-amt">$${t.amt.toFixed(2)}</div></div>`;});
+  else txns.forEach(t=>{const fr=WK.players[t.from],to=WK.players[t.to];const venmoHandle=_venmoFor(to);const venmoDiv=venmoHandle?('<div style="font-size:11px;color:var(--color-text-secondary);line-height:1.3">@'+venmoHandle+'</div>'):'';const nmFr=displayName(t.from);const nmTo=displayName(t.to);html+=`<div class="settle-txn"><div class="avatar" style="width:32px;height:32px;font-size:12px;background:${fr.bg};color:${fr.fg}">${fr.ini}</div><div style="font-size:13px;font-weight:500;white-space:nowrap;flex:none">${nmFr} →</div><div style="flex:1;min-width:0;text-align:left"><div style="font-size:13px;font-weight:500;line-height:1.3">${nmTo}</div>${venmoDiv}</div><div class="settle-amt">$${t.amt.toFixed(2)}</div></div>`;});
   html+='</div>';
   document.getElementById('settleContent').innerHTML=html;
 }
