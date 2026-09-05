@@ -1147,6 +1147,31 @@ body.force-light{
 .fs-nudge{display:flex;align-items:center;justify-content:center;width:32px;height:32px;flex-shrink:0;font-size:17px;color:var(--color-text-secondary);cursor:pointer;border-radius:var(--border-radius-sm);}
 .fs-nudge:active{background:var(--color-border-tertiary);}
 .fs-nudge.off{color:var(--color-border-secondary);cursor:default;}
+.pl-hd{display:grid;grid-template-columns:30px minmax(0,1fr) 70px 20px;gap:8px;align-items:center;padding:6px 12px;background:var(--color-background-secondary);font-size:9.5px;font-weight:700;letter-spacing:0.05em;color:var(--color-text-tertiary);text-transform:uppercase;}
+.pl-q{background:transparent;border:1px solid var(--color-text-tertiary);color:var(--color-text-tertiary);width:13px;height:13px;border-radius:50%;font-size:9px;font-weight:700;margin-left:4px;padding:0;cursor:pointer;line-height:1;font-family:inherit;vertical-align:middle;}
+.pl-row{display:grid;grid-template-columns:30px minmax(0,1fr) 70px 20px;gap:8px;align-items:center;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary);}
+.pl-chev{font-size:10px;color:var(--color-text-tertiary);text-align:center;cursor:pointer;background:transparent;border:none;padding:0;font-family:inherit;}
+.pl-chev.hot{color:#C2792B;}
+.pl-body{background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);padding:4px 0 10px;}
+.pl-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 12px 7px 50px;font-size:11.5px;color:var(--color-text-secondary);}
+.pl-note{display:block;line-height:1.55;}
+.pl-match{color:var(--color-text-tertiary);}
+.pl-why{padding:2px 12px 6px 50px;font-size:11px;color:var(--color-text-tertiary);line-height:1.55;}
+.pl-dot{width:6px;height:6px;border-radius:50%;background:#C2792B;flex-shrink:0;}
+.pl-pill{padding:3px 10px;font-size:11px;font-weight:600;border-radius:99px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font-family:inherit;cursor:pointer;}
+.pl-pill[disabled]{opacity:0.4;cursor:default;}
+.pl-blabel{font-size:9.5px;font-weight:700;letter-spacing:0.05em;color:var(--color-text-tertiary);text-transform:uppercase;padding:8px 12px 4px 50px;}
+.pl-rd{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:5px 12px 5px 50px;font-size:12px;color:var(--color-text-primary);}
+.pl-rd.done{color:var(--color-text-tertiary);}
+.pl-rd .frz{font-size:10px;color:var(--color-text-tertiary);}
+.pl-rd .val{font-weight:600;min-width:38px;text-align:right;}
+.pl-fld{padding:7px 12px 3px 50px;}
+.pl-flbl{display:block;font-size:9.5px;font-weight:700;letter-spacing:0.05em;color:var(--color-text-tertiary);text-transform:uppercase;margin-bottom:4px;}
+.pl-fin{width:100%;padding:8px 9px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-size:16px;font-family:inherit;}
+.pl-name{min-width:0;font-size:14px;color:var(--color-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pl-remove{margin:8px 12px 0 50px;padding:8px;font-size:12px;font-weight:600;border-radius:var(--border-radius-md);border:0.5px solid #D85A30;background:transparent;color:#D85A30;font-family:inherit;cursor:pointer;display:block;width:calc(100% - 62px);}
+.hm-sheet-fsub{font-size:11px;color:var(--color-text-tertiary);margin-top:3px;}
+.is-chip{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#8FE3C4;background:rgba(29,158,117,0.15);border:0.5px solid rgba(29,158,117,0.4);border-radius:99px;padding:4px 12px;margin-bottom:12px;}
 .ap-addrow{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;border-top:0.5px solid var(--color-border-tertiary);font-size:13px;color:#1D9E75;cursor:pointer;}
 .ap-addrow:active{background:var(--color-background-secondary);}
 .ap-sec{font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-text-tertiary);padding:10px 14px 6px;}
@@ -1757,7 +1782,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v122.9';
+const APP_VERSION='v123.9';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -1782,6 +1807,212 @@ function _venmoFor(p){
   }
   return '';
 }
+
+// The handicap counterpart to _venmoFor above, and deliberately the same shape.
+// Returns null on EVERY uncertainty rather than a partial object: no member_id, no group
+// on the trip, no cache loaded yet, no matching row, or a member row whose index is null.
+// Six of the eight states this can be in render nothing, so a caller only ever tests null.
+// A null hcp_index must NOT fall through to 0. A scratch index would read as real drift
+// against every snapshot in the trip and would offer to move money for no reason.
+function _memberHcpFor(p){
+  if(!p||!p.member_id)return null;
+  var gid=(typeof WK!=='undefined'&&WK)?WK._groupId:null;
+  if(!gid||typeof _groupCache==='undefined'||!_groupCache[gid])return null;
+  var ms=_groupCache[gid]._members||[];
+  for(var i=0;i<ms.length;i++){
+    var m=ms[i];
+    if(!m||m.member_id!==p.member_id)continue;
+    if(m.hcp_index==null)return null;
+    return {index:m.hcp_index,updatedAt:m.hcp_updated_at||null,ghin:m.ghin_number||''};
+  }
+  return null;
+}
+// Short date for the freshness and seat lines. Returns '' on null and on an unparseable
+// value, so a bad timestamp renders as an omitted clause rather than "Invalid Date".
+function _hcpDate(iso){
+  if(!iso)return '';
+  try{
+    var d=new Date(iso);
+    if(isNaN(d.getTime()))return '';
+    return d.getUTCDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()];
+  }catch(e){return '';}
+}
+// 'trip' locks every round to the index a player had when they were added to the trip.
+// 'round' lets each round use the index in force when that round starts, and freezes a
+// round's value once it finishes. Absent reads as 'trip', so every trip that existed
+// before this build behaves exactly as it did with no migration.
+function _hcpMode(){return (typeof WK!=='undefined'&&WK&&WK.hcpMode==='round')?'round':'trip';}
+
+// DELIBERATELY NOT ROUND-AWARE, two classes, recorded so this audit is not repeated:
+//
+// 1. TRIP-WIDE SURFACES. summaryStandings and the leaderboard's "(9.3)" beside a name
+//    describe the whole trip, not one round. In Round index mode there is no single
+//    number for them to show, and picking one round's would be arbitrary. They show the
+//    player's current index, which is at least a true statement about the player.
+//
+// 2. SORTS THAT DRIVE PAIRING. _fsAutoSplit and _fbAutoPair order players by index to
+//    build groups. Those run at the moment the button is pressed, to decide who plays
+//    together NEXT, so the live index is the right input. Feeding them a round's frozen
+//    index would make Auto-pair produce different groups depending on which round tab
+//    happened to be open, which is worse than the inconsistency it would fix.
+//
+// THE ONLY READER OF A PLAYER'S INDEX ON THE MONEY PATH.
+// In lock mode this returns the live value and the arithmetic below it is byte-identical
+// to v123.2, which is what neutral_harness proves. In follow mode a round holding a
+// frozen value returns it; a round holding none falls through to the live value, which is
+// exactly what "this round is still following" means.
+//
+// Snapshots are IGNORED in lock mode rather than deleted, so follow -> lock -> follow
+// restores what was frozen. Deleting on the switch would be irreversible for no gain.
+//
+// An absent snapshot must NOT fall back to a numeric default. Zero is a scratch player,
+// and it would read as real drift against every other index in the trip.
+function idxForRound(pi,r){
+  if(typeof WK==='undefined'||!WK||!WK.players||!WK.players[pi])return 0;
+  var live=WK.players[pi].idx;
+  if(_hcpMode()!=='round')return live;
+  var rd=WK.rounds?WK.rounds[r]:null;
+  var s=(rd&&rd.idxSnap)?rd.idxSnap[pi]:undefined;
+  return (s===undefined||s===null)?live:s;
+}
+
+// HAS THIS ROUND BEEN PLAYED, for the purposes of freezing a handicap.
+//
+// Deliberately NOT isRoundComplete. That function asks whether every SEATED player has
+// every score, which an administrative act can flip back to false: add a fifth player to
+// a trip and every finished round gains a null column for somebody who never played it,
+// so the round stops reading complete and the freeze silently stops applying. A finished
+// round then rescores for anyone who was not already frozen.
+//
+// This asks the question that actually matters: every player who has ANY score in this
+// round has all of them, and at least one player does. Somebody with no scores in a round
+// did not play it and cannot un-play it for everybody else. It is also what a player who
+// joins for rounds 2 to 4 should mean.
+//
+// isRoundComplete is untouched and still gates settlement.
+function _hcpRoundPlayed(r){
+  var sc=(typeof STATE!=='undefined'&&STATE.scores)?STATE.scores[r]:null;
+  if(!sc)return false;
+  var off,n;
+  try{off=holeOffset(r);n=roundHoleCount(r);}catch(e){return false;}
+  var np=(WK&&WK.players)?WK.players.length:0;
+  if(!np)return false;
+  var anyone=false;
+  for(var pi=0;pi<np;pi++){
+    var has=0,miss=0;
+    for(var hi=off;hi<off+n;hi++){
+      var row=sc[hi];
+      var v=row?row[pi]:null;
+      if(v===null||v===undefined)miss++;else has++;
+    }
+    if(!has)continue;          // never played this round, so not counted against it
+    if(miss)return false;      // played it and the card is incomplete
+    anyone=true;
+  }
+  return anyone;
+}
+
+// Does this round hold any score at all? Distinct from played: a round with seven holes
+// entered is neither played out nor untouched, and it is the case the warning exists for.
+function _plRoundHasScores(r){
+  var sc=(typeof STATE!=='undefined'&&STATE.scores)?STATE.scores[r]:null;
+  if(!sc)return false;
+  for(var h=0;h<sc.length;h++){
+    var row=sc[h];
+    if(!row)continue;
+    for(var q=0;q<row.length;q++)if(row[q]!==null&&row[q]!==undefined)return true;
+  }
+  return false;
+}
+
+// Returns the sentence to confirm, or '' when nothing would be rescored.
+// IT MUST NEVER PRINT A STROKE COUNT. There is no single number: standings run through
+// effHdcp, which nets off the field low, and games run through effHdcpForFlight, which
+// nets off the foursome's own low. Two bases on purpose. Add WK.hdcpPct and the nine-hole
+// halving and there are more. Worse, with netting on, changing one index can change who
+// the low man is and move EVERYBODY ELSE'S strokes, so a per-player figure would
+// understate the blast radius while looking precise.
+function _plIdxWarn(i,v){
+  if(typeof WK==='undefined'||!WK||!WK.players||!WK.players[i])return '';
+  var follow=_hcpMode()==='round',hit=[];
+  for(var r=0;r<(WK.rounds||[]).length;r++){
+    var done=false;try{done=_hcpRoundPlayed(r);}catch(e){done=false;}
+    var scored=_plRoundHasScores(r);
+    if(follow){if(!done&&scored)hit.push(r);}
+    else{if(done||scored)hit.push(r);}
+  }
+  if(!hit.length)return '';
+  var lbl=hit.map(function(r){return roundLabel(r);}).join(', ');
+  var many=hit.length>1;
+  return follow
+    ?lbl+(many?' are':' is')+' still in play and would be rescored. Rounds that have been played out are frozen and keep the index they were played off.'
+    :lbl+(many?' have':' has')+' scores already entered and would be rescored.';
+}
+// Heading for the confirm sheet. Separate from _plIdxWarn so that function keeps
+// returning a plain string, which is what the gates read.
+function _plIdxTitle(i,v){
+  return _hcpMode()==='round'?'A round is still in play':'Scores are already entered';
+}
+// In-app confirm, built on the same bottom-sheet shape as _infoSheet rather than on
+// confirm(). A native dialog on a phone reads "localhost:8080 says" and looks like a
+// browser error, which is the wrong frame for a decision about rescoring money.
+// ASYNCHRONOUS BY NECESSITY: a sheet cannot block, so callers pass a continuation
+// instead of testing a return value.
+function _plIdxGuard(i,v,go){
+  var m=_plIdxWarn(i,v);
+  if(!m){go();return;}
+  var ex=document.getElementById('plIdxSheet');if(ex)ex.remove();
+  var ov=document.createElement('div');
+  ov.id='plIdxSheet';
+  ov.style.cssText='position:fixed;inset:0;z-index:10002;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;justify-content:center';
+  var card=document.createElement('div');
+  card.style.cssText='width:100%;max-width:440px;background:#132019;border-top:0.5px solid #24352c;border-radius:16px 16px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box';
+  card.innerHTML='<div style="font-size:16px;font-weight:600;color:#e8efe9;margin-bottom:8px">'+_plIdxTitle(i,v)+'</div>'
+    +'<div style="font-size:13px;color:#a9b8b0;line-height:1.6;margin-bottom:16px">'+m+'</div>'
+    +'<button id="_plIdxGo" style="width:100%;font-size:14px;font-weight:600;color:#0c1712;background:#1D9E75;border:none;padding:12px 0;border-radius:10px;font-family:inherit">Change it</button>'
+    +'<button id="_plIdxNo" style="width:100%;font-size:13.5px;font-weight:500;color:#a9b8b0;background:transparent;border:0.5px solid #24352c;padding:11px 0;border-radius:10px;margin-top:8px;font-family:inherit">Leave it</button>';
+  ov.appendChild(card);
+  document.body.appendChild(ov);
+  function close(){ov.remove();}
+  // Dismissing without choosing is a refusal, so the panel is redrawn and the box goes
+  // back to the stored value rather than sitting on a number the trip is not using.
+  function refuse(){close();renderPlayersPanel();}
+  ov.addEventListener('click',function(e){if(e.target===ov)refuse();});
+  card.querySelector('#_plIdxNo').addEventListener('click',refuse);
+  card.querySelector('#_plIdxGo').addEventListener('click',function(){close();go();});
+}
+
+// THE ONLY WRITER OF A PLAYER'S INDEX. Both UI paths funnel here, and a gate asserts no
+// third site assigns .idx, because a third would bypass the freeze below.
+//
+// FREEZE ON THE WRITE, NOT ON COMPLETION. Completion is computed rather than an event -
+// isRoundComplete walks the scores - so there is no moment to hang a snapshot on. But a
+// finished round's number can only ever become wrong at the instant somebody changes the
+// index, so that instant is the only place the old value has to be captured. A round that
+// never sees a change never gets a snapshot, which is why lock mode writes none at all.
+function _plWriteIdx(i,v){
+  if(!canEditTrip())return;
+  var p=WK.players[i];
+  if(!p)return;
+  if(_hcpMode()==='round'){
+    for(var r=0;r<(WK.rounds||[]).length;r++){
+      var done=false;
+      try{done=_hcpRoundPlayed(r);}catch(e){done=false;}
+      if(!done)continue;
+      var rd=WK.rounds[r];
+      if(!rd.idxSnap)rd.idxSnap={};
+      // FREEZE EVERY PLAYER, not only the one being edited. A round that has been played
+      // out is settled history for the whole field, and freezing one player at a time
+      // leaves it half protected: the reproduction above had Kyle frozen and Doug not,
+      // in the same round. Doing the whole field on the first write closes that.
+      for(var q=0;q<WK.players.length;q++){
+        if(rd.idxSnap[q]===undefined||rd.idxSnap[q]===null)rd.idxSnap[q]=WK.players[q].idx;
+      }
+    }
+  }
+  WK.players[i].idx=v;
+}
+function _hcpModeLabel(){return _hcpMode()==='round'?'Round index':'Trip index';}
 
 // ===== THEME =====
 (function(){
@@ -1993,6 +2224,7 @@ async function s2WriteActive(){
         flighted_games:WK._flightedGames||[],
         buy_in:WK.buyIn||0,
         hdcp_pct:WK.hdcpPct||0.8,
+        hcp_mode:_hcpMode(),
         pot_method:WK.potMethod||'netstroke',
         pot_tiebreak:WK.potTiebreak||'countback',
         mp_on:gameOnAny('mp'),
@@ -2107,6 +2339,10 @@ async function s2WriteActive(){
           ...(rd.grindersNet!=null&&{grindersNet:rd.grindersNet}),
           ...(Array.isArray(rd.fbTeams)&&rd.fbTeams.length&&{fbTeams:rd.fbTeams}),
           ...(rd.fbTeamsManual!=null&&{fbTeamsManual:rd.fbTeamsManual}),
+          // Per-round, per-player-index state, which is the class fbTeamsManual was lost
+          // as. On BOTH serializers, and the gate asserts a save-and-reload round trip
+          // rather than the presence of the key.
+          ...(rd.idxSnap&&{idxSnap:rd.idxSnap}),
           ...(rd.pressesOn!=null&&{pressesOn:rd.pressesOn}),
           ...(rd.pressVal!=null&&{pressVal:rd.pressVal}),
           ...(rd.autoPressOn!=null&&{autoPressOn:rd.autoPressOn}),
@@ -2368,6 +2604,7 @@ async function s2ReadTrip(tripId){
       region:t.region||'',
       buyIn:t.buy_in||0,
       hdcpPct:t.hdcp_pct||0.8,
+      hcpMode:t.hcp_mode==='round'?'round':'trip',
       potMethod:t.pot_method||'netstroke',
       potTiebreak:t.pot_tiebreak||'countback',
       mpOn:!!t.mp_on,
@@ -2417,7 +2654,12 @@ async function s2ReadTrip(tripId){
         bg:p.bg_color||'#2e7d32',
         fg:p.fg_color||'#ffffff',
         ini:p.ini||'?',
-        member_id:p.member_id||null
+        member_id:p.member_id||null,
+        // READ ONLY in v123.0 and never written back, so it needs no serializer entry.
+        // players.created_at is `not null default now()`, player_id is a stable token from
+        // s2NewTok() rather than a positional key, and the upsert payload omits the column,
+        // so this is the seat time and survives every write.
+        seatedAt:p.created_at||null
       })),
       rounds:t.rounds_data.map(rd=>({
         ...(rd.rid&&{rid:rd.rid}),
@@ -2486,6 +2728,7 @@ async function s2ReadTrip(tripId){
         ...(rd.grindersNet!=null&&{grindersNet:rd.grindersNet}),
         ...(Array.isArray(rd.fbTeams)&&rd.fbTeams.length&&{fbTeams:rd.fbTeams}),
         ...(rd.fbTeamsManual!=null&&{fbTeamsManual:rd.fbTeamsManual}),
+        ...(rd.idxSnap&&{idxSnap:rd.idxSnap}),
         ...(rd.pressesOn!=null&&{pressesOn:rd.pressesOn}),
         ...(rd.pressVal!=null&&{pressVal:rd.pressVal}),
         ...(rd.autoPressOn!=null&&{autoPressOn:rd.autoPressOn}),
@@ -3480,18 +3723,43 @@ function _infoSheet(opts){
   var card=document.createElement('div');
   card.style.cssText='width:100%;max-width:440px;background:#132019;border-top:0.5px solid #24352c;border-radius:16px 16px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box';
   var iconHtml=opts.icon?'<div style="display:flex;justify-content:center;margin-bottom:12px"><div style="width:42px;height:42px;border-radius:50%;background:rgba(29,158,117,0.15);display:flex;align-items:center;justify-content:center"><i class="ti '+opts.icon+'" style="font-size:20px;color:#1D9E75"></i></div></div>':'';
+  var chipHtml=opts.chip?'<div style="text-align:center"><span class="is-chip">'+opts.chip+'</span></div>':'';
+  // opts.action is optional. It renders BELOW the OK button, so the primary dismiss stays
+  // in the same place it has always been and a second control cannot be hit by muscle
+  // memory. Tapping it closes the sheet first, because every action so far navigates.
+  var actHtml=(opts.action&&opts.action.label)
+    ?'<button id="_isAct" style="width:100%;font-size:13.5px;font-weight:500;color:#a9b8b0;background:transparent;border:0.5px solid #24352c;padding:10px 0;border-radius:10px;margin-top:8px;font-family:inherit">'+opts.action.label+'</button>'
+    :'';
   card.innerHTML=iconHtml
     +'<div style="text-align:center;font-size:16px;font-weight:500;color:#e8efe9;margin-bottom:6px">'+(opts.title||'')+'</div>'
-    +'<div style="text-align:center;font-size:13px;color:#a9b8b0;line-height:1.55;margin-bottom:16px">'+(opts.body||'')+'</div>'
-    +'<button id="_isOk" style="width:100%;font-size:14px;font-weight:500;color:#0c1712;background:#1D9E75;border:none;padding:11px 0;border-radius:10px">'+(opts.okLabel||'Got it')+'</button>';
+    +chipHtml
+    +'<div style="text-align:left;font-size:13px;color:#a9b8b0;line-height:1.55;margin-bottom:16px">'+(opts.body||'')+'</div>'
+    +'<button id="_isOk" style="width:100%;font-size:14px;font-weight:500;color:#0c1712;background:#1D9E75;border:none;padding:11px 0;border-radius:10px">'+(opts.okLabel||'Got it')+'</button>'
+    +actHtml;
   ov.appendChild(card);
   document.body.appendChild(ov);
   function close(){ov.remove();}
   ov.addEventListener('click',function(e){if(e.target===ov)close();});
   card.querySelector('#_isOk').addEventListener('click',close);
+  var _actEl=card.querySelector('#_isAct');
+  if(_actEl)_actEl.addEventListener('click',function(){close();try{opts.action.fn();}catch(e){}});
 }
+// Names the CURRENT mode and the other one, so the sheet teaches that there is a choice
+// rather than only describing today. "Added to this trip" is deliberate: _apSeatMember
+// reads m.hcp_index at seat time, so two players in one trip can hold indexes snapshotted
+// weeks apart. "Joined" was ambiguous between the group and the trip, and wrong about both.
 window._snapshotInfo=function(){
-  _infoSheet({icon:'ti-camera',title:'Handicap snapshot',body:'Handicaps here are a snapshot from when each player joined this trip. Editing one changes this trip only. It won&#39;t change anyone&#39;s profile, and updating a profile later won&#39;t change this trip.'});
+  var isTrip=_hcpMode()!=='round';
+  var body=isTrip
+    ?'Every round in this trip plays off one index per player, taken from the group when that player was added to this trip. <b>Changing it here changes every round, including any that are already finished.</b> It does not change anyone&#39;s profile.<br><br>The other mode, Round index, gives each round the index a player has when that round starts, and a round that has been played out keeps the index it was played off.'
+    :'Each round plays off the index a player has when that round starts. Once a round has been played out its indexes are frozen and never move again, even if somebody joins the trip later. Editing one here changes this trip only, not anyone&#39;s profile.<br><br>The other mode, Trip index, uses one index per player for the whole trip, so changing it there moves every round, played out or not.';
+  _infoSheet({icon:'ti-camera',title:'Handicap mode',chip:_hcpModeLabel(),body:body,
+    action:{label:'Change this in Trip Setup',fn:function(){
+      // Same anchor _gsNetJump already uses. The mode toggle lands INSIDE hdcpCard in
+      // v123.1, beside the other three answers to "how are handicaps working here", so
+      // there is no second id to keep in step.
+      setView('setup');setOptPanel('weekend');flashTo('hdcpCard',80);
+    }}});
 };
 
 async function _finishJoinFresh(code){
@@ -4545,7 +4813,7 @@ window.openMemberSheet = function(gid,idx){
   const cidx=idx%AVATAR_PALETTE.length;
   const c=AVATAR_PALETTE[cidx];
   const chip=isManaged?`<span class="hm-chip hm-chip-managed">Managed Player</span>`:(m.role==='admin'?`<span class="hm-chip hm-chip-admin">Admin</span>`:'');
-  function fld(k,v,muted){return`<div class="hm-sheet-field"><div class="hm-sheet-fk">${k}</div><div class="hm-sheet-fv${muted?' muted':''}">${v}</div></div>`;}
+  function fld(k,v,muted,sub){return`<div class="hm-sheet-field"${sub?' style="align-items:flex-start"':''}><div><div class="hm-sheet-fk">${k}</div>${sub?`<div class="hm-sheet-fsub">${sub}</div>`:''}</div><div class="hm-sheet-fv${muted?' muted':''}">${v}</div></div>`;}
   let action='';
   if(isMe){
     action=`<button class="hm-sheet-btn" style="margin-top:16px" onclick="window.closeHmMemberSheet();window.sbOpenEditProfile()">Edit Profile</button>
@@ -4563,15 +4831,25 @@ window.openMemberSheet = function(gid,idx){
   if(isAdmin&&isManaged){
     const _hv=m.hcp_index!=null?sbHcpDisplay(m.hcp_index):'';
     const _vv=m.venmo||'';
-    detail='<div class="hm-sheet-field"><div class="hm-sheet-fk">Handicap</div>'
+    const _gv=m.ghin_number?String(m.ghin_number):'';
+    const _fresh=_hcpDate(m.hcp_updated_at);
+    // ORDER IS SHARED WITH THE READ-ONLY BRANCH BELOW: handicap, GHIN, Venmo. The two
+    // used to disagree, so the same sheet reordered itself depending on who you tapped.
+    detail='<div class="hm-sheet-field" style="align-items:flex-start"><div><div class="hm-sheet-fk">Handicap index</div>'
+      +'<div class="hm-sheet-fsub">'+(_fresh?'Updated '+_fresh:'Never updated')+'</div></div>'
       +'<input class="ie-num" id="gmHcp" type="text" value="'+_hv.replace(/"/g,'&quot;')+'" placeholder="10.0" style="width:78px;text-align:center"/></div>'
+      +'<div class="hm-sheet-field"><div class="hm-sheet-fk">GHIN number</div>'
+      +'<input class="text-input" id="gmGhin" type="text" value="'+_gv.replace(/"/g,'&quot;')+'" placeholder="Optional" style="width:150px;font-size:13px;padding:6px 8px;text-align:center"/></div>'
+      +'<div style="font-size:11px;color:var(--color-text-tertiary);margin:-4px 0 0;line-height:1.5">Stored for later. Handicaps are not fetched from GHIN today.</div>'
       +'<div class="hm-sheet-field"><div class="hm-sheet-fk">Venmo</div>'
       +'<input class="text-input" id="gmVenmo" type="text" value="'+_vv.replace(/"/g,'&quot;')+'" placeholder="Not set" style="width:150px;font-size:13px;padding:6px 8px"/></div>'
       +'<div id="gmError" style="display:none;margin-top:10px;padding:8px 12px;background:#FAEEDA;border:0.5px solid #EFB880;border-radius:var(--border-radius-md);font-size:12px;color:#633806"></div>'
       +'<button class="hm-sheet-btn" id="gmSaveBtn" style="margin-top:14px" onclick="window._gmSaveManaged(\''+gid+'\','+idx+')">Save changes</button>';
   }else{
-    detail=fld('Venmo',m.venmo?'@'+m.venmo:'Not set',!m.venmo)
-      +fld('Handicap',m.hcp_index!=null?sbHcpDisplay(m.hcp_index):'--',m.hcp_index==null);
+    const _fresh2=_hcpDate(m.hcp_updated_at);
+    detail=fld('Handicap index',m.hcp_index!=null?sbHcpDisplay(m.hcp_index):'--',m.hcp_index==null,_fresh2?'Updated '+_fresh2:'Never updated')
+      +fld('GHIN number',m.ghin_number?String(m.ghin_number):'Not set',!m.ghin_number)
+      +fld('Venmo',m.venmo?'@'+m.venmo:'Not set',!m.venmo);
   }
   document.getElementById('hmMemberSheetBody').innerHTML=
      `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><div style="font-size:16px;font-weight:600;color:var(--color-text-primary)">Member</div><button style="width:28px;height:28px;border-radius:50%;background:var(--color-background-secondary);color:var(--color-text-secondary);border:none;font-size:14px;cursor:pointer" onclick="window.closeHmMemberSheet()">&#10005;</button></div>`
@@ -4596,29 +4874,37 @@ window._gmSaveManaged = async function(gid,idx){
   if(errEl)errEl.style.display='none';
   const raw=document.getElementById('gmHcp')?document.getElementById('gmHcp').value:'';
   const venmo=(document.getElementById('gmVenmo')?document.getElementById('gmVenmo').value:'').trim().replace(/^@+/,'');
+  const ghin=(document.getElementById('gmGhin')?document.getElementById('gmGhin').value:'').replace(/[^0-9]/g,'');
   const hp=sbParseHcp(raw);
   if(!hp.ok){showErr(hp.error);return;}
   if(btn){btn.disabled=true;btn.textContent='Saving...';}
+  // return=representation, not minimal. hcp_updated_at is set by a DB trigger, so the
+  // client cannot know the new value; the old code hand-set m.hcp_index and left the
+  // timestamp at its previous value, which was invisible until something read it.
+  let _saved=null;
   try{
     const tok=_sbSession?.access_token||SB_KEY;
     const r=await fetch(SB_URL+'/rest/v1/group_members?member_id=eq.'+encodeURIComponent(m.member_id),{
       method:'PATCH',
-      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body:JSON.stringify({hcp_index:hp.value,venmo:venmo,hcp_source:'manual'})
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify({hcp_index:hp.value,venmo:venmo,ghin_number:ghin||null,hcp_source:'manual'})
     });
     if(!r.ok){
       let msg='Could not save.';
       try{const e=await r.json();msg=e.message||msg;}catch(_){}
       throw new Error(msg);
     }
+    try{const _rows=await r.json();if(Array.isArray(_rows)&&_rows[0])_saved=_rows[0];}catch(_){}
   }catch(e){
     if(btn){btn.disabled=false;btn.textContent='Save changes';}
     showErr(e.message||'Could not save.');
     return;
   }
   // Local cache only after the write lands, so a failed PATCH never leaves the UI
-  // showing a value the server does not have.
-  m.hcp_index=hp.value;m.venmo=venmo;
+  // showing a value the server does not have. Merge what came BACK when we have it, so
+  // the trigger-written timestamp is the one the freshness line reads. The fallback keeps
+  // the old behaviour for a server that answers 2xx with no body.
+  Object.assign(m,_saved||{hcp_index:hp.value,venmo:venmo,ghin_number:ghin||null});
   _sortMembers(g._members);
   window.closeHmMemberSheet();
   renderGroupPage(gid);
@@ -5110,7 +5396,7 @@ window._qrImportCourse=async function(i){
     // NEVER LEAVE THE SHEET ON "Importing...". A course whose tee data this app cannot
     // read is a real outcome, and the user needs to be told so they can add it by hand
     // rather than watch a spinner that will not resolve.
-    if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">No usable tee data for this course. Add it by hand in Preferences &gt; Courses.</div>';
+    if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">No usable tee data for this course. Add it by hand in Settings &gt; Courses.</div>';
     return;
   }
   window._qrPickCourse(name);
@@ -7233,7 +7519,8 @@ const _RZ5MODES=[
 function roundValFs(key,r,fi,tripDefault){const rd=WK.rounds&&WK.rounds[r];if(rd&&rd.independentGames&&fi!=null&&Array.isArray(rd.fsGames)&&rd.fsGames[fi]&&rd.fsGames[fi][key]!==undefined)return rd.fsGames[fi][key];return roundVal(key,r,tripDefault);}
 function _fsOff(game,r,fi){const rd=WK.rounds&&WK.rounds[r];return !!(rd&&rd.independentGames&&!gameOnFs(game,r,fi));}
 const OPT_PANELS=['menu','weekend','players','flights','courses','info','htp'];
-function setOptPanel(p){STATE.optPanel=p;OPT_PANELS.forEach(n=>{const panel=document.getElementById('opt-panel-'+n);if(panel){panel.classList.remove('active');if(n===p)panel.classList.add('active');}});const back=document.getElementById('opt-back'),backT=document.getElementById('opt-back-title'),menuT=document.getElementById('opt-menu-title');const titles={weekend:(WK&&WK.isQuickRound)?'Round Setup':'Trip Setup',players:'Players',flights:'Foursomes',courses:'Courses',info:'Preferences',htp:'How It Works'};if(p==='menu'){if(back)back.style.display='none';if(menuT)menuT.style.display='';}else{if(back)back.style.display='';if(backT)backT.textContent=titles[p]||'';if(menuT)menuT.style.display='none';}renderOptPanel(p);_wireSimLongPress();}
+function setOptPanel(p){STATE.optPanel=p;OPT_PANELS.forEach(n=>{const panel=document.getElementById('opt-panel-'+n);if(panel){panel.classList.remove('active');if(n===p)panel.classList.add('active');}});const back=document.getElementById('opt-back'),backT=document.getElementById('opt-back-title'),menuT=document.getElementById('opt-menu-title');if(p==='players'&&typeof _plOpen!=='undefined')_plOpen={};
+  const titles={weekend:(WK&&WK.isQuickRound)?'Round Setup':'Trip Setup',players:'Players',flights:'Foursomes',courses:'Courses',info:'Preferences',htp:'How It Works'};if(p==='menu'){if(back)back.style.display='none';if(menuT)menuT.style.display='';}else{if(back)back.style.display='';if(backT)backT.textContent=titles[p]||'';if(menuT)menuT.style.display='none';}renderOptPanel(p);_wireSimLongPress();}
 function renderOptions(){setOptPanel('menu');}
 function _toggleSimMember(){
   if(!WK){return;}
@@ -7372,7 +7659,7 @@ function switchGamesRound(r){STATE.gamesViewRound=r;renderGamesTab();}
 function switchGamesGame(g){STATE.gamesViewGame=g;renderGamesTab();}
 function switchTeamsRound(r){STATE.teamsRound=r;renderTeamsPanel();}
 function _vpi(pi){return Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];}
-function courseHdcp(pi,r){if(!_vpi(pi))return 0;const course=WK.rounds[r].course;const slope=course.slope||113;const rating=course.rating!=null?course.rating:(CATALOG[WK.rounds[r].courseName]?.rating??null);const par=course.holes?course.holes.reduce((a,h)=>a+h.par,0):72;const base=WK.players[pi].idx*WK.hdcpPct*(slope/113);const adj=(rating!==null)?rating-par:0;return Math.round(base+adj);}
+function courseHdcp(pi,r){if(!_vpi(pi))return 0;const course=WK.rounds[r].course;const slope=course.slope||113;const rating=course.rating!=null?course.rating:(CATALOG[WK.rounds[r].courseName]?.rating??null);const par=course.holes?course.holes.reduce((a,h)=>a+h.par,0):72;const base=idxForRound(pi,r)*WK.hdcpPct*(slope/113);const adj=(rating!==null)?rating-par:0;return Math.round(base+adj);}
 function roundLabel(r){
   const rd=WK.rounds[r];
   const isRegular=!rd.isE9||(rd.isE9&&rd.inStandings);
@@ -7743,14 +8030,14 @@ function helpAccordionHtml(){
     {id:'htp-account',title:'Accounts & Profile',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Everyone plays under their own account. Your profile holds three things that matter: your <strong>display name</strong> (how you appear everywhere), your <strong>Venmo handle</strong> (used at settle-up time), and your <strong>handicap index</strong> (used to calculate strokes). Edit any of them anytime from your profile.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Your handicap index here is your baseline. When you are added to a trip, that trip takes its own snapshot of it and uses that value for the whole trip, so updating your index later never rewrites a trip you have already played. More on that under Handicaps.</p>`},
     {id:'htp-groups',title:'Groups',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A group is your circle of players: your regular foursome, your trip crew, your league. Trips and history live inside a group.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Create a group</strong> and you become its admin. The app gives you a join code to share.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Join a group</strong> by entering someone's code. That code is the only thing between an outsider and your group, so share it only with people you want in.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">You can belong to as many groups as you like. They are listed on your home screen.</p>`},
     {id:'htp-members',title:'Members, Roles & Claiming',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Members.</strong> A group has two kinds of players. <strong>Full members</strong> have their own account and manage their own profile. <strong>Managed players</strong> are added by an admin with Add Guest, who fills in their name, handicap, and Venmo so they can be scored and paid like anyone else even before they sign up. A managed player shows a dashed avatar until they claim their spot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Roles.</strong> The group admin controls setup: courses, games, dollar amounts, and who is in. Everyone else can enter scores but cannot change a trip's setup. An admin can also name a <strong>trip admin</strong>, granting edit rights for one specific trip without making that person a group admin.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6"><strong>Claiming your spot.</strong> If an admin added you as a managed player before you had your own account, you can claim that record when you sign up. Join with the group code and the app asks "is one of these you?", listing the unclaimed players. Pick yourself and your new login links to that record, so every past score, game, and dollar comes with you and no duplicate player appears. If none of them is you, choose "None of these, I'm new" to join fresh. Only one person can ever claim a given player, and the group code gates the whole thing.</p>`},
-    {id:'htp-handicaps',title:'Handicaps & the Snapshot',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Strokes come from a <strong>Course Handicap</strong>, worked out per course with the standard WHS formula: Index x (Slope / 113) + (Course Rating - Par). When you import a course from the database its slope and rating come in automatically; for a custom course you enter them from the scorecard for the tee box you are playing. The tee box matters, since the wrong rating produces the wrong strokes.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6"><strong>The snapshot.</strong> When a player is added to a trip, that trip takes a one-time snapshot of their handicap and uses its own copy for the whole trip. Updating a profile handicap later never touches a trip already in progress. A trip's handicap can still be edited directly in Preferences &gt; Players, but doing so can retroactively change completed rounds within that trip. That snapshot is what the info icon on a trip's Players panel points at.</p>`},
-    {id:'htp-setup',title:'Trips & Rounds',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Every round is scored the same way. What differs is whether it sits inside a group and how many rounds it spans.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>New Trip</strong> is a multi-round event inside a group. A four-step setup covers details (name, date, players, rounds), players, courses, and games &amp; money. Everything stays adjustable in Preferences once the trip starts.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Group Round</strong> is a single one-off round inside a group, without the multi-round trip setup. It appears alongside that group's trips.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Individual Round</strong> is a single round not tied to any group. These collect under <strong>Your Rounds</strong> on your home screen, with your three most recent shown at the top. A group round and an individual round use the same round setup; the only difference is whether a group is attached.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A single round, group or individual, runs with as few as 1 player.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6"><strong>Courses.</strong> Every round needs a course, assigned during setup. Search for one by name and the app finds it locally or pulls it from the online course database, filling in slope, rating, and pars automatically. You can also add a custom course by hand. Any course you use is saved for reuse. To change a round's course, or add one after a trip has started, use Preferences &gt; Courses.</p>`},
-    {id:'htp-foursomes',title:'Foursomes',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A trip can hold up to 40 players, which is more than fit in one group. Split the field into foursomes: each group plays its own games, for its own money, on its own card.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Set them in Preferences &gt; Foursomes. <b>Each round keeps its own foursomes</b>, so you can reshuffle the groups every day without touching the rounds already played.</p><div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin:14px 0 6px">Moving players</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Tap a player to move them to another group, or swap them with someone. There is no need to empty a seat first: a move is a move, and a swap trades both players at once. <b>Auto-split</b> deals the whole field out evenly by handicap in one tap, which is usually all you need.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Every player is always in exactly one foursome. Groups do not have to be equal, and a group of five is allowed, though the app will say so.</p><div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin:14px 0 6px">Games run per foursome</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Most games are scoped to a foursome: Foursome 1 can play Wolf and Skins while Foursome 2 plays Vegas and Hammer. Each group settles its own pot, and nobody is on the hook for a game they were not in.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Two things are trip-wide instead: the <b>weekend bet</b>, and <b>Two's Club</b>. Four-Ball can be either: add it to one foursome and it is that group's game, or add it in the <b>All</b> lane and it is available to the whole trip.</p><div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin:14px 0 6px">You are always playing two competitions</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">This is the part worth understanding, because everything else follows from it.</p><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);padding:10px 12px;margin:10px 0;font-size:12px;color:var(--color-text-secondary);line-height:1.6"><b>Your foursome games</b> are side money against the three players you are walking with.<br><br><b>The weekend</b> is everyone. Every player in the trip is competing on cumulative net for the standings and the pot, no matter which group they are in.</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">You are in both, on the same swing. The card you post feeds your foursome's games and the weekend leaderboard at once.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Games need enough players <b>in the foursome</b>, not just in the trip. Wolf, Vegas, Razzle Dazzle and Four-Ball need four. If you turn Wolf on and then split into a five and a three, Wolf simply will not run for the group of three.</p><div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin:14px 0 6px">So you have two sets of strokes</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><b>Strokes are always given relative to the best player you are playing against.</b> That player plays off scratch and everyone else gets the difference. Two competitions, two opponents, two allowances.</p><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);padding:10px 12px;margin:10px 0;font-size:12px;color:var(--color-text-secondary);line-height:1.6">In a <b>foursome game</b>, your strokes come off your foursome's best player.<br><br>For the <b>weekend</b>, your strokes come off the best player in the whole trip.</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">So the same player, on the same hole, can carry one stroke for the Skins in his group and two for the weekend card. Neither is wrong. They are two different contests, exactly like playing a club medal and a side match on the same swing.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The app labels every stroke with the pot it belongs to, so you never have to work it out. <b>F1</b> means your foursome, <b>FIELD</b> means everyone. The grid view shows the weekend card, and the hole view shows the game you are playing. Tap the <b>i</b> by the course name and it will name the exact player you are netting off.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Four-Ball is the one game that can be either. Left alone it plays inside your foursome like everything else; set its Scope to <b>Field</b> and all eight play for one pot, on the same strokes as the weekend. Field is only offered when every foursome is playing Four-Ball. If only one group has it on, that group is the pot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">The scorecard follows whichever game is live in your group. If Four-Ball is the only money on, the card nets off the Four-Ball pot. If a foursome game is also running, the card stays on the foursome low and the Four-Ball box shows its own strokes with a note saying so. Tap the <b>i</b> next to the course name at any time and it will tell you exactly who you are netting off.</p>`},
-    {id:'htp-emergency',title:'Emergency Rounds',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">An Emergency Round bolts an unplanned round onto a trip already in progress, for when the group decides to play an extra 9 or 18. Add one from Preferences &gt; Trip Setup.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">You choose the course, the holes (18, front 9, or back 9), whether it counts toward standings, and its games. Rounds that count are labeled Rd 5, Rd 6, and so on. Rounds that do not count are labeled E9 or E18 and act as money-only side games: they still show in scoring and money, but stay out of the leaderboard and weekend bet.</p>`},
-    {id:'htp-scoring',title:'Entering Scores',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Enter gross scores hole by hole on the Scores screen; net scores calculate automatically. Once every hole is in, a <strong>Lock Round</strong> button appears, and locking freezes the scores.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">You can optionally net every score off the group's low handicap, set in Preferences &gt; Trip Setup. Heads Up match play uses its own setting instead, which can be set for the round or per foursome: by default each 1v1 nets off the lower handicap of the two players in that match, so only the higher handicap gets strokes; turn Net off match low off in the Match Play setup to have both players use their full handicap.</p>`},
+    {id:'htp-handicaps',title:'Handicaps',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Strokes come from a <strong>Course Handicap</strong>, worked out per course with the standard WHS formula: Index x (Slope / 113) + (Course Rating - Par). When you import a course from the database its slope and rating come in automatically; for a custom course you enter them from the scorecard for the tee box you are playing. The tee box matters, since the wrong rating produces the wrong strokes.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>The snapshot.</strong> When a player is added to a trip, that trip takes a copy of their handicap index from the group at that moment and uses its own copy from then on. Updating a group or profile handicap later never reaches back into a trip already under way. Two players in the same trip can therefore be playing off numbers copied weeks apart, which is what a snapshot means.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Two modes, set per trip.</strong> Settings &gt; Trip Setup &gt; Handicap has a pair of switches, called Round Setup on a one-off round that decide how a trip treats those numbers over several rounds.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Trip index</strong> is the default. One index per player for the whole trip. You can edit it in Settings &gt; Players at any time, and changing it re-scores <em>every</em> round, including rounds that are already played out. That is deliberate: it is the mode for fixing a number that was wrong from the start.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Round index</strong> lets the number move between rounds. Each round is played off whatever index a player has when that round starts. Once a round has been played out, its indexes are <strong>frozen</strong>: they never move again, whatever you change afterwards, and whoever joins the trip later. Expand any player in Settings &gt; Players to see a round-by-round list showing exactly what each round is being played off, with frozen rounds marked.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Neither mode calculates a handicap. Golf's official index comes from a scoring record over many rounds, not from one weekend, so The Turn never invents one. What Round index does is let a number somebody else has updated take effect from the next round rather than the next trip.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>When it moves money.</strong> Changing an index re-scores holes that already have scores in them, so the app asks first and names the rounds that would be affected. It will not tell you how many strokes change, because there is no single answer: the weekend standings take strokes off the low man in the field, while games inside a foursome take them off the low man in that foursome, and moving one player's index can change who those low men are.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6"><strong>Keeping it current.</strong> If a player's group index has moved since the trip copied it, their row in Settings &gt; Players says so and offers to match it. This is only offered while it can be taken safely, and never once it would re-score golf that has already been played.</p>`},
+    {id:'htp-setup',title:'Trips & Rounds',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Every round is scored the same way. What differs is whether it sits inside a group and how many rounds it spans.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>New Trip</strong> is a multi-round event inside a group. A four-step setup covers details (name, date, players, rounds), players, courses, and games &amp; money. Everything stays adjustable in Preferences once the trip starts.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Group Round</strong> is a single one-off round inside a group, without the multi-round trip setup. It appears alongside that group's trips.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Individual Round</strong> is a single round not tied to any group. These collect under <strong>Your Rounds</strong> on your home screen, with your three most recent shown at the top. A group round and an individual round use the same round setup; the only difference is whether a group is attached.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A single round, group or individual, runs with as few as 1 player.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6"><strong>Courses.</strong> Every round needs a course, assigned during setup. Search for one by name and the app finds it locally or pulls it from the online course database, filling in slope, rating, and pars automatically. You can also add a custom course by hand. Any course you use is saved for reuse. To change a round's course, or add one after a trip has started, use Settings &gt; Courses.</p>`},
+    {id:'htp-foursomes',title:'Foursomes',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A trip can hold up to 40 players, which is more than fit in one group. Split the field into foursomes: each group plays its own games, for its own money, on its own card.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Set them in Settings &gt; Foursomes. <b>Each round keeps its own foursomes</b>, so you can reshuffle the groups every day without touching the rounds already played.</p><div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin:14px 0 6px">Moving players</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Tap a player to move them to another group, or swap them with someone. There is no need to empty a seat first: a move is a move, and a swap trades both players at once. <b>Auto-split</b> deals the whole field out evenly by handicap in one tap, which is usually all you need.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Every player is always in exactly one foursome. Groups do not have to be equal, and a group of five is allowed, though the app will say so.</p><div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin:14px 0 6px">Games run per foursome</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Most games are scoped to a foursome: Foursome 1 can play Wolf and Skins while Foursome 2 plays Vegas and Hammer. Each group settles its own pot, and nobody is on the hook for a game they were not in.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Two things are trip-wide instead: the <b>weekend bet</b>, and <b>Two's Club</b>. Four-Ball can be either: add it to one foursome and it is that group's game, or add it in the <b>All</b> lane and it is available to the whole trip.</p><div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin:14px 0 6px">You are always playing two competitions</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">This is the part worth understanding, because everything else follows from it.</p><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);padding:10px 12px;margin:10px 0;font-size:12px;color:var(--color-text-secondary);line-height:1.6"><b>Your foursome games</b> are side money against the three players you are walking with.<br><br><b>The weekend</b> is everyone. Every player in the trip is competing on cumulative net for the standings and the pot, no matter which group they are in.</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">You are in both, on the same swing. The card you post feeds your foursome's games and the weekend leaderboard at once.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Games need enough players <b>in the foursome</b>, not just in the trip. Wolf, Vegas, Razzle Dazzle and Four-Ball need four. If you turn Wolf on and then split into a five and a three, Wolf simply will not run for the group of three.</p><div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin:14px 0 6px">So you have two sets of strokes</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><b>Strokes are always given relative to the best player you are playing against.</b> That player plays off scratch and everyone else gets the difference. Two competitions, two opponents, two allowances.</p><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);padding:10px 12px;margin:10px 0;font-size:12px;color:var(--color-text-secondary);line-height:1.6">In a <b>foursome game</b>, your strokes come off your foursome's best player.<br><br>For the <b>weekend</b>, your strokes come off the best player in the whole trip.</div><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">So the same player, on the same hole, can carry one stroke for the Skins in his group and two for the weekend card. Neither is wrong. They are two different contests, exactly like playing a club medal and a side match on the same swing.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">The app labels every stroke with the pot it belongs to, so you never have to work it out. <b>F1</b> means your foursome, <b>FIELD</b> means everyone. The grid view shows the weekend card, and the hole view shows the game you are playing. Tap the <b>i</b> by the course name and it will name the exact player you are netting off.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Four-Ball is the one game that can be either. Left alone it plays inside your foursome like everything else; set its Scope to <b>Field</b> and all eight play for one pot, on the same strokes as the weekend. Field is only offered when every foursome is playing Four-Ball. If only one group has it on, that group is the pot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">The scorecard follows whichever game is live in your group. If Four-Ball is the only money on, the card nets off the Four-Ball pot. If a foursome game is also running, the card stays on the foursome low and the Four-Ball box shows its own strokes with a note saying so. Tap the <b>i</b> next to the course name at any time and it will tell you exactly who you are netting off.</p>`},
+    {id:'htp-emergency',title:'Emergency Rounds',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">An Emergency Round bolts an unplanned round onto a trip already in progress, for when the group decides to play an extra 9 or 18. Add one from Settings &gt; Trip Setup.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">You choose the course, the holes (18, front 9, or back 9), whether it counts toward standings, and its games. Rounds that count are labeled Rd 5, Rd 6, and so on. Rounds that do not count are labeled E9 or E18 and act as money-only side games: they still show in scoring and money, but stay out of the leaderboard and weekend bet.</p>`},
+    {id:'htp-scoring',title:'Entering Scores',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Enter gross scores hole by hole on the Scores screen; net scores calculate automatically. Once every hole is in, a <strong>Lock Round</strong> button appears, and locking freezes the scores.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">You can optionally net every score off the group's low handicap, set in Settings &gt; Trip Setup. Heads Up match play uses its own setting instead, which can be set for the round or per foursome: by default each 1v1 nets off the lower handicap of the two players in that match, so only the higher handicap gets strokes; turn Net off match low off in the Match Play setup to have both players use their full handicap.</p>`},
     {id:'htp-shortened',title:'Rounds That End Early',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Weather, darkness, or a group that has simply had enough. When play stops before the last hole, tell the app where it stopped instead of leaving blank holes behind.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>The Money screen is where you do it.</strong> A round still waiting on scores offers <strong>Play called early? End the round here</strong>. Pick the last hole everyone finished, and on a multi-foursome round pick who stopped: each foursome ends at its own hole, so one group can quit at 11 while another plays all 18. The Scores screen offers the same thing under the hole grid, which opens by tapping the <strong>Hole 9 of 18</strong> bar.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">An ended round shows an <strong>Ended at 11</strong> chip on its Money round card. Tap the chip for <strong>Round status</strong>: where each foursome stopped, the weekend setting, and <strong>Resume round</strong> if play starts back up. Resuming loses nothing already entered. On the scorecard the holes that were never played turn grey, and scores cannot be entered on them until you resume.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>The games settle normally.</strong> Most of them simply run out of holes: a skin still carrying when play stops is never won and nobody pays for it, and a Match Play or Vegas segment that never started reads Not played. Two games have an opinion about a unit left unfinished. <strong>Match Play</strong> awards an undecided segment to whoever was ahead. <strong>Razzle Dazzle</strong> voids an unfinished final match by default, or hands it to the leader if you set <strong>Unfinished final match</strong> to Leader wins in its setup.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Standings use the shortest foursome.</strong> If one group stops at 11 and another finishes 18, the weekend leaderboard counts 11 holes for everybody, so nobody gains or loses ground on holes their group never faced. A round needs at least 9 holes to count at all. Below that it sits out the weekend tally unless you turn <strong>Count toward the weekend</strong> on from Round status.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Scores already entered past the end hole are not deleted, and every game except Razzle Dazzle keeps counting them. The end sheet warns you when it finds them. Clear them first if they were entered by mistake.</p>`},
-    {id:'htp-games',title:'Games',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">There are a thousand golf games, and a thousand variations of each. This app covers a common handful, played the way described below. If your group plays them differently, most dollar values and settings are adjustable. More games will be added over time.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Turn games on in the trip or round setup, or from the Games screen once you are playing. Anything switched on in the wizard applies to every round; after a trip is created you can also add or drop games for a single round.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A round can be split into 1, 2, or 3 segments with rotating pairings, configurable per game, and settlement can be per player or split between teammates.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">With more than four players, the field is split into <b>foursomes</b> and each group plays its own games for its own money. Wolf, Vegas, Razzle Dazzle and Four-Ball need four players in a foursome. Match Play and Hammer also play heads-up with two. Nines needs exactly three. Skins, Snake and Two's Club will run with any number. Two's Club and the weekend bet always span the whole trip. Four-Ball can too, if you set its Scope to Field.</p><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Skins</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Win a hole outright (lowest net score) to claim the skin. Tied holes carry the value forward and accumulate.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Played as Team 2v2 by default, where one team must beat the other's best ball. Individual Skins is also available, with every player competing on their own.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">In Individual, every skin settles across the whole pool: each skin you win collects the per-skin value from every other player in your group, and every skin anyone else wins costs you that value. Example: at $5/skin in a foursome, a skin pays its winner $15 (three players x $5). Win 4 skins while the others win 12 between them and you break exactly even: $60 collected, $60 paid.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Razzle Dazzle</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A rotating team game. Four players split into two teams of two, with pairings rotating each match. First team to 3 points wins the match pot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Each hole awards up to 2 points: 1 for low team combined net, 1 for low individual net across all four players.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Three bonuses: <strong>Sweep</strong> (3 points in 2 holes), <strong>5-hole bonus</strong> (match reaches hole 5 without a winner), and <strong>Birdie bonus</strong> (per birdie, net or gross). All amounts configurable.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Match Play</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Teams (default):</strong> two teams of two play hole by hole on best-ball net. The lower best-ball net wins the hole (1 point); ties are halved (0.5 each).</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Heads Up</strong> is an alternate format available in Preferences with 4 players: instead of one 2v2 match, each game runs two simultaneous 1v1 matches with their own pairings and results, settling independently. 2-player rounds are always Heads Up.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6"><strong>Presses</strong> are configurable and apply per match.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Vegas</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Each team combines their two net scores into a two-digit number, lower score first, so net 3 and net 5 becomes 35. The team with the lower number wins the point difference.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">A birdie or better flips the other team's digits (35 becomes 53), which can swing a hole hard. Dollar value is set per point.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Wolf</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A per-hole rotating game. One player is the Wolf each hole and either takes a partner as the others tee off or goes lone wolf against the field. Points-based, with a dollar amount set per point.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Rotation:</strong> a fixed 4-hole rotation, defaulting to the player order set at setup. Holes 17 and 18 use Last Place Wolf, where the player with the fewest points becomes wolf.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Partner wolf:</strong> watching drives in order, the Wolf can claim a player as a partner, but must decide before the next player tees off. Wolf plus partner against the other two. Winner by individual low net (best ball) or combined net, configurable.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Lone wolf:</strong> the Wolf passes on every drive and plays alone, 1 vs 3. Scoring configurable: wolf net vs the best net of the other three, or wolf net doubled vs the sum of the best two nets.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Blind wolf:</strong> the Wolf declares he is playing alone before any tee shots. Same as lone wolf, points multiplied (default 2x).</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6"><strong>Points:</strong> partner win, 1 pt each. Lone wolf win, 3 pts to the wolf and minus 1 to each other player. Lone wolf loss, wolf loses 3 and others gain 1 each. Blind wolf multiplies those. Tied holes push.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Hammer</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A per-hole doubling game, played 2v2 with four players or heads-up 1v1 with two. At any point on a hole a side can throw the hammer to double the stakes. The other side must accept and play on at double, or concede and pay the current value right away.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A hole with no hammer is worth the base value; each accepted hammer doubles it. Maximum hammers per hole is configurable.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Two throw modes set who can throw and when. <strong>Anyone Anytime</strong> lets either side throw at any point. <strong>Alternating</strong> starts each hole open to either side; once a side throws, the right to throw passes to the other side for the rest of that hole. Every hole starts fresh.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Scoring is configurable: <strong>Best Ball</strong> (the lower net of the pair) or <strong>Combined Net</strong> (both nets added). It applies to hole winners and concede decisions alike. Heads-up simply uses each player's own net.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Halved holes (tied, no concede) either carry the full value forward or reset to base, configurable. Played in segments, with teams rotating each segment.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Four-Ball</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;font-size:12.5px;color:var(--color-text-secondary);line-height:1.6">Best ball. Everyone plays their own ball, and on each hole the team takes its <b>lowest net score</b> and throws the rest away. Low team total over the round wins the pot. Nobody has to play well every hole, they just have to not both blow up on the same one.<br><br><b>Teams.</b> 2-man or 4-man. Set them in the Games tab, or let the app pair them. Tap any player to swap two teams around.<br><br><b>The pot.</b> Every player antes. One pot for the whole field, or a separate pot inside each foursome. Pays the winner, or first and second on a configurable split. Ties split evenly, or can be broken on a back-nine countback.<br><br><b>Nothing pays until every team in the pot has finished.</b> A team that has not teed off is not leading, it is simply unplayed, and the pot sits unawarded until the last card is in.<br><br>Standings are shown to par, not as a raw net total, because a team through 3 holes and a team through 4 cannot be compared any other way.<br><br><b>Scope.</b> Foursome is the default: each group plays for its own pot, and strokes come off that group's best player, exactly like every other game. Set it to Field and all eight play for one pot, which means strokes then come off the best player in the trip. See Foursomes.</div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Snake</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A putting side game. Assign the snake each hole to whoever 3-putted. The first holder sets the starting pot, and each transfer grows it (doubles or a flat increment).</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Whoever holds the snake at the end of the round pays out, either the holder paying each other player, or the holder paying a pot that splits among the rest.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector(\'.htp-car\');var open=b.style.display===\'none\';b.style.display=open?\'block\':\'none\';if(c)c.textContent=open?\'\u25b2\':\'\u25bc\';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Nines</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Also called 5-3-1 or the nine point game. Built for a threesome, and the app will only run it with exactly three in a foursome. Nine points are contested on every hole and the most points at the end wins.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Scoring:</strong> low net takes 5, middle 3, high 1. Strokes come off the foursome low man, the same as every other foursome game.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Ties:</strong> tied players add the points for the places they occupy and split them evenly. Two tie for low, that is 5 and 3 shared, so 4 each and 1 for the high man. Two tie for high, that is 3 and 1 shared, so 5 for the low man and 2 each. All three tie, 3 apiece. Every hole still adds up to nine.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Blitz:</strong> optional, off by default. Beat both opponents by two or more on a hole and you take all nine, with nothing for the other two.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Money:</strong> you pay the point difference to each of the other two players. Set the rate per point in the Games tab.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">A hole scores nothing until all three have posted. Unplayed holes never move money.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Two's Club</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Every player contributes a fixed amount to a pot at the start of the weekend. Anyone who makes a net 2 on a par 3 shares the pot equally with any others who also make a 2.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">No 2s all weekend, no blood.</p></div></div>`},
-    {id:'htp-weekend',title:'Winning the Weekend',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Each player's buy-in funds the <strong>Weekend Pot</strong>. The winner takes the pot (minus their own buy-in); everyone else loses theirs. The winner is decided by either <strong>net stroke play</strong> (lowest cumulative net) or <strong>match play points</strong> (most points), set in Preferences &gt; Trip Setup, the same method that drives the Standings leaderboard.</p>`},
+    {id:'htp-games',title:'Games',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">There are a thousand golf games, and a thousand variations of each. This app covers a common handful, played the way described below. If your group plays them differently, most dollar values and settings are adjustable. More games will be added over time.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Games live on the <strong>Games</strong> screen. Tap <strong>+ Add Game</strong> to switch one on, and tap a game that is already running to change its stakes or drop it. A game belongs to a round rather than to the trip, so you can play Skins on Friday and Wolf on Saturday, and adding one to a round leaves the other rounds alone. Two&#39;s Club and the weekend bet are the exceptions and run across the whole trip.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A round can be split into 1, 2, or 3 segments with rotating pairings, configurable per game, and settlement can be per player or split between teammates.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">With more than four players, the field is split into <b>foursomes</b> and each group plays its own games for its own money. Wolf, Vegas, Razzle Dazzle and Four-Ball need four players in a foursome. Match Play and Hammer also play heads-up with two. Nines needs exactly three. Skins, Snake, Grinders and Two's Club will run with any number. Two's Club and the weekend bet always span the whole trip. Grinders is always one pot across the field. Four-Ball can span the trip too, if you set its Scope to Field.</p><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Skins</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Win a hole outright (lowest net score) to claim the skin. Tied holes carry the value forward and accumulate.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Played as Team 2v2 by default, where one team must beat the other's best ball. Individual Skins is also available, with every player competing on their own.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">In Individual, every skin settles across the whole pool: each skin you win collects the per-skin value from every other player in your group, and every skin anyone else wins costs you that value. Example: at $5/skin in a foursome, a skin pays its winner $15 (three players x $5). Win 4 skins while the others win 12 between them and you break exactly even: $60 collected, $60 paid.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Razzle Dazzle</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A rotating team game. Four players split into two teams of two, with pairings rotating each match. First team to 3 points wins the match pot.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Each hole awards up to 2 points: 1 for low team combined net, 1 for low individual net across all four players.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Three bonuses: <strong>Sweep</strong> (3 points in 2 holes), <strong>5-hole bonus</strong> (match reaches hole 5 without a winner), and <strong>Birdie bonus</strong> (per birdie, net or gross). All amounts configurable.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Match Play</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Teams (default):</strong> two teams of two play hole by hole on best-ball net. The lower best-ball net wins the hole (1 point); ties are halved (0.5 each).</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Heads Up</strong> is an alternate format available in Preferences with 4 players: instead of one 2v2 match, each game runs two simultaneous 1v1 matches with their own pairings and results, settling independently. 2-player rounds are always Heads Up.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6"><strong>Presses</strong> are configurable and apply per match.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Vegas</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Each team combines their two net scores into a two-digit number, lower score first, so net 3 and net 5 becomes 35. The team with the lower number wins the point difference.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">A birdie or better flips the other team's digits (35 becomes 53), which can swing a hole hard. Dollar value is set per point.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Wolf</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A per-hole rotating game. One player is the Wolf each hole and either takes a partner as the others tee off or goes lone wolf against the field. Points-based, with a dollar amount set per point.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Rotation:</strong> a fixed 4-hole rotation, defaulting to the player order set at setup. Holes 17 and 18 use Last Place Wolf, where the player with the fewest points becomes wolf.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Partner wolf:</strong> watching drives in order, the Wolf can claim a player as a partner, but must decide before the next player tees off. Wolf plus partner against the other two. Winner by individual low net (best ball) or combined net, configurable.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Lone wolf:</strong> the Wolf passes on every drive and plays alone, 1 vs 3. Scoring configurable: wolf net vs the best net of the other three, or wolf net doubled vs the sum of the best two nets.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Blind wolf:</strong> the Wolf declares he is playing alone before any tee shots. Same as lone wolf, points multiplied (default 2x).</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6"><strong>Points:</strong> partner win, 1 pt each. Lone wolf win, 3 pts to the wolf and minus 1 to each other player. Lone wolf loss, wolf loses 3 and others gain 1 each. Blind wolf multiplies those. Tied holes push.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Hammer</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A per-hole doubling game, played 2v2 with four players or heads-up 1v1 with two. At any point on a hole a side can throw the hammer to double the stakes. The other side must accept and play on at double, or concede and pay the current value right away.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A hole with no hammer is worth the base value; each accepted hammer doubles it. Maximum hammers per hole is configurable.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Two throw modes set who can throw and when. <strong>Anyone Anytime</strong> lets either side throw at any point. <strong>Alternating</strong> starts each hole open to either side; once a side throws, the right to throw passes to the other side for the rest of that hole. Every hole starts fresh.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Scoring is configurable: <strong>Best Ball</strong> (the lower net of the pair) or <strong>Combined Net</strong> (both nets added). It applies to hole winners and concede decisions alike. Heads-up simply uses each player's own net.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Halved holes (tied, no concede) either carry the full value forward or reset to base, configurable. Played in segments, with teams rotating each segment.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Four-Ball</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;font-size:12.5px;color:var(--color-text-secondary);line-height:1.6">Best ball. Everyone plays their own ball, and on each hole the team takes its <b>lowest net score</b> and throws the rest away. Low team total over the round wins the pot. Nobody has to play well every hole, they just have to not both blow up on the same one.<br><br><b>Teams.</b> 2-man or 4-man. Set them in the Games tab, or let the app pair them. Tap any player to swap two teams around.<br><br><b>The pot.</b> Every player antes. One pot for the whole field, or a separate pot inside each foursome. Pays the winner, or first and second on a configurable split. Ties split evenly, or can be broken on a back-nine countback.<br><br><b>Nothing pays until every team in the pot has finished.</b> A team that has not teed off is not leading, it is simply unplayed, and the pot sits unawarded until the last card is in.<br><br>Standings are shown to par, not as a raw net total, because a team through 3 holes and a team through 4 cannot be compared any other way.<br><br><b>Scope.</b> Foursome is the default: each group plays for its own pot, and strokes come off that group's best player, exactly like every other game. Set it to Field and all eight play for one pot, which means strokes then come off the best player in the trip. See Foursomes.<br><br><b>5-4-3.</b> An optional twist on how many balls count, available only with 4-man teams playing for a field pot. Instead of one best ball on every hole, the number that counts is set by the hole's par: <b>two</b> balls on a par 5, <b>three</b> on a par 4, <b>four</b> on a par 3. The team's hole score is the sum of that many best nets, and par for the hole becomes par times the same number, so a par 4 where three balls count is played against 12.<br><br>It changes the game completely. Best ball rewards one player catching fire; 5-4-3 rewards a team with no passengers, and the par 3s are where it is won and lost, because every single ball counts. A team a ball short on a hole has the missing ball scored as a net triple bogey rather than ignored.<br><br>The scorecard box highlights which balls counted on the current hole, so a team can see why a number is what it is. Turning it on needs 4-man teams and Field scope; narrowing either afterwards switches it back off rather than leaving a two-man team scored against a three-ball hole.</div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Snake</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A putting side game. Assign the snake each hole to whoever 3-putted. The first holder sets the starting pot, and each transfer grows it (doubles or a flat increment).</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Whoever holds the snake at the end of the round pays out, either the holder paying each other player, or the holder paying a pot that splits among the rest.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector(\'.htp-car\');var open=b.style.display===\'none\';b.style.display=open?\'block\':\'none\';if(c)c.textContent=open?\'\u25b2\':\'\u25bc\';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Nines</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Also called 5-3-1 or the nine point game. Built for a threesome, and the app will only run it with exactly three in a foursome. Nine points are contested on every hole and the most points at the end wins.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Scoring:</strong> low net takes 5, middle 3, high 1. Strokes come off the foursome low man, the same as every other foursome game.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Ties:</strong> tied players add the points for the places they occupy and split them evenly. Two tie for low, that is 5 and 3 shared, so 4 each and 1 for the high man. Two tie for high, that is 3 and 1 shared, so 5 for the low man and 2 each. All three tie, 3 apiece. Every hole still adds up to nine.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Blitz:</strong> optional, off by default. Beat both opponents by two or more on a hole and you take all nine, with nothing for the other two.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Money:</strong> you pay the point difference to each of the other two players. Set the rate per point in the Games tab.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">A hole scores nothing until all three have posted. Unplayed holes never move money.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Grinders</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">A team game for people who do not have a team. Your <strong>foursome</strong> earns a grinder on a hole when <em>every</em> player in it is par or better. Not the best ball, not three of the four. Everybody.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>The pot is the whole field.</strong> Every player antes, once, into a single pot. What a grinder is worth is not the ante and is not knowable while you are playing: the pot is divided by the total number of grinders earned by <em>every</em> group in the trip, and each group then collects its own count multiplied by that figure, split evenly among its members.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">That is the point of the game. A group that grinds out six of them still gets paid less per grinder if the rest of the field also had a good day, and a group that manages two on a brutal afternoon can clean up. You are not playing the other groups hole by hole, you are betting on your foursome being steadier than they were. Nothing settles until the last card is in, because until then nobody knows the divisor.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px"><strong>Net by default.</strong> Par or better means <em>net</em> par or better, with strokes taken off the low man in the field, since the pot is field-wide. There is a gross toggle if you want it, but net is the default on purpose: a gross game is one the higher handicaps cannot contribute to, and this game only works if every player in the group can.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6"><strong>No blood.</strong> If the entire field fails to earn a single grinder, the pot goes back. Everybody nets exactly zero and nobody quietly keeps it.</p></div></div><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;overflow:hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--color-background-secondary)" onclick="(function(el){var b=el.nextElementSibling;var c=el.querySelector('.htp-car');var open=b.style.display==='none';b.style.display=open?'block':'none';if(c)c.textContent=open?'\u25b2':'\u25bc';})(this) "><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Two's Club</span><span class="htp-car" style="font-size:11px;color:#1D9E75">\u25bc</span></div><div style="display:none;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)"><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Every player contributes a fixed amount to a pot at the start of the weekend. Anyone who makes a net 2 on a par 3 shares the pot equally with any others who also make a 2.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">No 2s all weekend, no blood.</p></div></div>`},
+    {id:'htp-weekend',title:'Winning the Weekend',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Each player's buy-in funds the <strong>Weekend Pot</strong>. The winner takes the pot (minus their own buy-in); everyone else loses theirs. The winner is decided by either <strong>net stroke play</strong> (lowest cumulative net) or <strong>match play points</strong> (most points), set in Settings &gt; Trip Setup, the same method that drives the Standings leaderboard.</p>`},
     {id:'htp-money',title:'Money & Settlement',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Golf results calculate as you play. The Money screen has three areas: <strong>Bets</strong> shows the golf game money round by round, <strong>Expenses</strong> tracks shared costs and side bets, and <strong>Recap</strong> pulls everything into each player's full picture.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">All figures are net. The app finds the fewest transfers that settle everyone up and lists them, with Venmo handles, in Recap. Each area has its own <strong>Settle</strong> button to snapshot amounts and mark what has been paid.</p>`},
     {id:'htp-data',title:'Data, Sync & Offline',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:8px">Everything syncs to the cloud automatically, so opening the app on any device shows the current state.</p><p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Reliable offline play is still on the roadmap. When you are on a weak signal, it is worth confirming a round has synced once you are back on a solid connection.</p>`},
     {id:'htp-version',title:'Version',body:`<p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">Version <strong>${APP_VERSION}</strong></p>`},
@@ -10992,10 +11279,154 @@ function renderWolfRound(){
 
 function renderTeamsPanel(){/* Stage 3: Game Setup tab eliminated. Scoring config + Weekend bet moved into renderWeekendPanel(). Per-game setup is migrating into the Games tab. This stub remains so any stray legacy caller does not throw. */}
 function setDropSkins(gameIdx,slot,pIdx,roundIdx,fi){fi=fi||0;if(isReadOnly)return;if(_pencilViewerLocked(roundIdx,fi))return;if(!STATE.skinsTeams||!STATE.skinsTeams[roundIdx]||!STATE.skinsTeams[roundIdx][fi])return;const teams=STATE.skinsTeams[roundIdx][fi][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();}
-function renderPlayersPanel(){const r=STATE.currentRound;let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span style="display:inline-flex;align-items:center;gap:6px">Active players<button onclick="window._snapshotInfo()" aria-label="About these handicaps" style="background:transparent;border:none;padding:0;cursor:pointer;line-height:1;display:inline-flex;align-items:center"><i class="ti ti-info-circle" style="font-size:15px;color:#5f7385"></i></button></span></div>`;WK.players.forEach((p,i)=>{const eff=effHdcp(i,r);html+=`<div class="setup-row"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div><input class="inline-edit" value="${p.name}" style="flex:1;min-width:60px" onchange="if(!canEditTrip())return;WK.players[${i}].name=this.value;WK.players[${i}].ini=this.value.substring(0,2).toUpperCase();renderPlayersPanel();renderScorecard();renderBanner();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin:0 3px">idx</span><input class="ie-num" type="text" value="${sbHcpDisplay(p.idx)}" style="width:70px" onchange="if(!canEditTrip())return;WK.players[${i}].idx=idxFromInput(this.value,0);renderPlayersPanel();renderScorecard();autoSave()"/><span style="font-size:11px;color:var(--color-text-secondary);flex-shrink:0;margin-left:4px;white-space:nowrap">→ ${chDisplay(eff)}</span>${WK.players.length>2?`<button class="btn-danger" onclick="removePlayer(${i})">✕</button>`:''}</div>`;});if(WK.players.length<TW_MAX_PLAYERS&&canEditTrip()){html+=`<div class="ap-addrow" onclick="window._apOpen()"><i class="ti ti-plus" style="font-size:15px"></i> Add player</div>`;}html+=`</div>`;
-    document.getElementById('opt-panel-players').innerHTML=html;
+// Expansion state. Keyed on the player's STABLE pid, never on the positional index:
+// removePlayer splices the array and shifts every pi above the removed one, so a
+// pi-keyed open row would silently reopen against a different player.
+var _plOpen={};
+// The two rows are one setting, so either one sets the mode outright rather than
+// toggling. Tapping the row you are already on is a no-op, not a way to reach neither.
+window._setHcpMode=function(m){
+  if(!canEditTrip())return;
+  WK.hcpMode=(m==='round')?'round':'trip';
+  autoSave();s2WriteActive();renderWeekendPanel();renderScorecard();renderBanner();
+};
+window._plToggle=function(pid){_plOpen[pid]=!_plOpen[pid];renderPlayersPanel();};
+window._plEditIdx=function(i,raw){
+  if(!canEditTrip())return;
+  var v=idxFromInput(raw,WK.players[i]?WK.players[i].idx:0);
+  if(v===(WK.players[i]||{}).idx){renderPlayersPanel();return;}
+  _plIdxGuard(i,v,function(){
+    _plWriteIdx(i,v);renderPlayersPanel();renderScorecard();autoSave();
+  });
+};
+// Writes idx through the SAME expression the row's own input already uses, so nothing
+// downstream of courseHdcp sees a path it has not seen since this panel shipped.
+window._plUseIdx=function(i,v){if(!canEditTrip())return;_plIdxGuard(i,v,function(){_plWriteIdx(i,v);renderPlayersPanel();renderScorecard();autoSave();});};
+// THE OLD INLINE HANDLER WAS INERT, and had been since first/last were introduced.
+// It set p.name and p.ini and nothing else, but:
+//   displayName() returns `${p.first[0]}. ${p.last}` whenever both exist, so every other
+//     screen kept reading the old name;
+//   the players upsert serializes first_name:p.first||<fallback>, and the fallback cannot
+//     fire while p.first is set, so the DB never saw the edit;
+//   the hydrate rebuilds p.name from first_name and last_name, so a reload reverted it;
+//   resolveDisplayNames rewrites p.name from first and last on any path that runs it.
+// Four mechanisms, all reading first/last. Writing p.name alone could never persist.
+// It also set ini by substring(0,2), which disagrees with the first-initial-plus-last
+// rule everywhere else: editing a name turned KM into KY.
+// COMMITS ON `input`, NOT `change`, AND NEVER REBUILDS ITS OWN CONTAINER.
+// v123.1 did both the other way and the edit was lost on device every time: `change`
+// fires on blur, and the handler called renderPlayersPanel(), which replaces the
+// innerHTML the focused input lives in. The input was destroyed by the same interaction
+// that was supposed to commit it, so the value never landed and the redraw showed the
+// old name back. grinders_harness G-N1 and G-N2 document this exact shape on the ante
+// field, and it does not reproduce in Node, which has no blur and no keyboard.
+// `input` fires per keystroke, so nothing depends on the blur surviving.
+var _plNameT=null;
+window._plSetName=function(i,v){
+  if(!canEditTrip())return;
+  var p=WK.players[i];
+  if(!p)return;
+  var t=String(v||'').trim();
+  // An empty box mid-edit is somebody clearing it to retype. Write nothing and, above
+  // all, DO NOT re-render: that would destroy the input they are still typing in, which
+  // is the whole defect this function was rewritten to fix.
+  if(!t)return;
+  var parts=t.split(/\s+/).filter(Boolean);
+  p.first=parts[0]||'';
+  p.last=parts.slice(1).join(' ');
+  p.name=t;
+  var fi=(p.first[0]||'').toUpperCase(),li=(p.last[0]||'').toUpperCase();
+  p.ini=fi&&li?fi+li:(fi||li||t.substring(0,2).toUpperCase());
+  // Repaint the two nodes that depend on the name, by id, leaving the input alone.
+  var _av=document.getElementById('plav_'+(p.pid||('i'+i)));
+  if(_av)_av.textContent=p.ini;
+  var _nm=document.getElementById('plnm_'+(p.pid||('i'+i)));
+  if(_nm)_nm.textContent=t;
+  // Debounced, so a nine letter surname is one save and one scorecard repaint rather
+  // than nine. renderScorecard and renderBanner are not cheap and neither is the write.
+  if(_plNameT)clearTimeout(_plNameT);
+  _plNameT=setTimeout(function(){
+    _plNameT=null;
+    renderScorecard();renderBanner();autoSave();s2WriteActive();
+  },600);
+};
+// Trip-wide, not per player: p.idx is one number for the whole trip, so one player's
+// change rescores the rounds every other player is in too.
+function _plAnyRoundDone(){
+  if(!WK||!WK.rounds)return false;
+  for(var r=0;r<WK.rounds.length;r++){try{if(isRoundComplete(r))return true;}catch(e){}}
+  return false;
 }
-
+function renderPlayersPanel(){
+  const canEd=canEditTrip();
+  const anyDone=_plAnyRoundDone();
+  const nR=(WK.rounds||[]).length;
+  let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span>Players</span><span style="font-size:11px;color:var(--color-text-tertiary)">Mode: ${_hcpModeLabel()}</span></div>`;
+  html+=`<div class="pl-hd"><span></span><span>Player</span><span style="text-align:center">Index<button class="pl-q" onclick="window._snapshotInfo()" aria-label="About these handicaps">?</button></span><span></span></div>`;
+  WK.players.forEach((p,i)=>{
+    const pid=p.pid||('i'+i);
+    const open=!!_plOpen[pid];
+    const live=_memberHcpFor(p);
+    const drifted=!!(live&&Number(live.index)!==Number(p.idx));
+    // Once ANY round is finished the trip index cannot move without rescoring it, so
+    // there is nothing to act on and nothing to point at. v123.0 showed the line with a
+    // disabled button and a paragraph explaining why the button was dead, which is a
+    // prompt that exists only to be refused. Hidden outright, chevron included.
+    const showDrift=!anyDone;
+    // Built from first and last rather than p.name, so the box holds the real full name
+    // whatever resolveDisplayNames may have left in p.name.
+    const fullName=((p.first||'')+(p.last?' '+p.last:'')).trim()||p.name||'';
+    html+=`<div class="pl-row">`
+      +`<div class="avatar" id="plav_${pid}" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div>`
+      +`<div class="pl-name" id="plnm_${pid}">${fullName}</div>`
+      +`<input class="ie-num" type="text" value="${sbHcpDisplay(p.idx)}" style="width:70px;text-align:center" onchange="window._plEditIdx(${i},this.value)"/>`
+      +`<button class="pl-chev${(drifted&&showDrift)?' hot':''}" onclick="window._plToggle('${pid}')" aria-label="Player details">${open?'&#9650;':'&#9660;'}</button>`
+      +`</div>`;
+    if(open){
+      const seat=_hcpDate(p.seatedAt);
+      const who=p.first||p.name||'this player';
+      // Lock mode states ONE sentence rather than listing a row per round. Four rows all
+      // reading the same number with the finished ones greyed would say those rounds are
+      // protected, and in this mode they are not: editing idx rescores every round.
+      const rw=nR===1?'This round plays':(nR+' rounds play');
+      const _follow=_hcpMode()==='round';
+      html+=`<div class="pl-body">`;
+      // Name editing lives HERE now, labelled. In the row it was a bare borderless input
+      // that read as text, so nobody knew it was editable.
+      if(canEd)html+=`<div class="pl-fld"><label class="pl-flbl">Name</label>`
+        +`<input class="pl-fin" value="${fullName}" oninput="window._plSetName(${i},this.value)"/></div>`;
+      if(_follow){
+        // The per-round list exists ONLY in follow mode. In lock mode there is one number,
+        // and four rows all reading it with the finished ones greyed would say those
+        // rounds are protected when editing the index rescores them.
+        html+=`<div class="pl-blabel">By round</div>`;
+        (WK.rounds||[]).forEach((rd,ri)=>{
+          let _dn=false;try{_dn=_hcpRoundPlayed(ri);}catch(e){_dn=false;}
+          html+=`<div class="pl-rd${_dn?' done':''}"><span>${roundLabel(ri)}${rd.courseName?' &middot; '+rd.courseName:''}</span>`
+            +`<span class="frz">${_dn?'frozen':(_plRoundHasScores(ri)?'in play':'')}</span>`
+            +`<span class="val">${sbHcpDisplay(idxForRound(i,ri))}</span></div>`;
+        });
+        if(seat)html+=`<div class="pl-line pl-note">Added to the trip ${seat}.</div>`;
+      }else{
+        html+=`<div class="pl-line pl-note">${rw} off ${sbHcpDisplay(p.idx)}${seat?', taken from the group '+seat+' when '+who+' was added to the trip':''}. Changing it moves all ${nR===1?'of them':'three'.replace('three',String(nR))}.</div>`;
+      }
+      if(showDrift&&live&&!drifted){
+        html+=`<div class="pl-line pl-match">Matches the group index</div>`;
+      }else if(showDrift&&drifted){
+        const when=_hcpDate(live.updatedAt);
+        html+=`<div class="pl-line"><span class="pl-dot"></span>`
+          +`<span>Group index <b style="color:var(--color-text-primary)">${sbHcpDisplay(live.index)}</b>${when?', updated '+when:''}</span>`
+          +(canEd?`<button class="pl-pill" onclick="window._plUseIdx(${i},${live.index})">Use it</button>`:'')
+          +`</div>`;
+      }
+      if(WK.players.length>2&&canEd)html+=`<button class="pl-remove" onclick="removePlayer(${i})">Remove from trip</button>`;
+      html+=`</div>`;
+    }
+  });
+  if(WK.players.length<TW_MAX_PLAYERS&&canEd){html+=`<div class="ap-addrow" onclick="window._apOpen()"><i class="ti ti-plus" style="font-size:15px"></i> Add player</div>`;}
+  html+=`</div>`;
+  document.getElementById('opt-panel-players').innerHTML=html;
+}
 function switchFlightsRound(r){STATE.flightsViewRound=r;renderFlightsPanel();}
 function _flightsAccent(i){return ['#3B82F6','#1D9E75','#F59E0B','#8B5CF6','#EC4899'][i%5];}
 // ================= FOURSOMES =================
@@ -11060,7 +11491,7 @@ function renderFlightsPanel(){
       html+='<div class="fs-prow"'+click+' style="'+(editable?'cursor:pointer':'')+'">'
         +'<div class="fs-slot-dot" style="width:30px;height:30px;font-size:11px;background:'+p.bg+';color:'+p.fg+'">'+p.ini+'</div>'
         +'<span style="font-size:14px;flex:1">'+displayName(pi)+'</span>'
-        +'<span style="font-size:12px;color:var(--color-text-secondary);margin-right:2px">'+sbHcpDisplay(p.idx)+'</span>'
+        +'<span style="font-size:12px;color:var(--color-text-secondary);margin-right:2px">'+sbHcpDisplay(idxForRound(pi,r))+'</span>'
         +upEl+dnEl
         +'</div>';
     });
@@ -11183,7 +11614,7 @@ window._fsTapPlayer=function(r,pi){
       h+='<div class="fs-sh-row" onclick="window._fsSwap('+r+','+pi+','+o.q+')">'
         +'<div class="fs-slot-dot" style="width:30px;height:30px;font-size:11px;background:'+op.bg+';color:'+op.fg+'">'+op.ini+'</div>'
         +'<span style="font-size:14px;flex:1">'+displayName(o.q)+'</span>'
-        +'<span style="font-size:11px;color:var(--color-text-tertiary)">F'+(o.g+1)+' \u00b7 '+sbHcpDisplay(op.idx)+'</span></div>';
+        +'<span style="font-size:11px;color:var(--color-text-tertiary)">F'+(o.g+1)+' \u00b7 '+sbHcpDisplay(idxForRound(o.pi,r))+'</span></div>';
     });
   }
   h+='<div style="padding:12px 14px 18px"><button style="width:100%;padding:11px;font-size:14px;font-weight:500;border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);font-family:inherit;cursor:pointer" onclick="window._fsCloseSheet()">Cancel</button></div>';
@@ -11346,7 +11777,22 @@ if(_deadPid){
   s2DeleteWhere('scores','player_id=eq.'+encodeURIComponent(_deadPid));
   s2DeleteWhere('players','player_id=eq.'+encodeURIComponent(_deadPid));
 }
-WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=STATE.mpTeams.map(function(rd){return fixTeams(rd);});STATE.vegTeams=STATE.vegTeams.map(function(rd){return fixTeams(rd);});if(STATE.skinsTeams)STATE.skinsTeams=STATE.skinsTeams.map(function(rd){return fixTeams(rd);});if(STATE.hammerTeams)STATE.hammerTeams=STATE.hammerTeams.map(function(rd){return fixTeams(rd);});WK.rounds.forEach(function(rd){if(Array.isArray(rd.fbTeams))rd.fbTeams=rd.fbTeams.map(function(t){return t.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(STATE.roundFlights)STATE.roundFlights=STATE.roundFlights.map(function(fls){return fls.map(function(fl){return fl.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';_rosterReconcileAll();renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
+WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});
+// idxSnap is keyed on pi, which is POSITIONAL, and the splice above shifts every index
+// down by one. Without this the frozen handicap of the player above the removed one is
+// silently handed to whoever moves into that slot, and it is invisible until settlement.
+// Same shape as the team arrays fixed immediately below.
+WK.rounds.forEach(function(rd){
+  if(!rd||!rd.idxSnap)return;
+  var out={};
+  Object.keys(rd.idxSnap).forEach(function(k){
+    var pi=Number(k);
+    if(pi===idx)return;                 // the removed player's snapshot goes with them
+    out[pi>idx?pi-1:pi]=rd.idxSnap[k];
+  });
+  rd.idxSnap=out;
+});
+function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=STATE.mpTeams.map(function(rd){return fixTeams(rd);});STATE.vegTeams=STATE.vegTeams.map(function(rd){return fixTeams(rd);});if(STATE.skinsTeams)STATE.skinsTeams=STATE.skinsTeams.map(function(rd){return fixTeams(rd);});if(STATE.hammerTeams)STATE.hammerTeams=STATE.hammerTeams.map(function(rd){return fixTeams(rd);});WK.rounds.forEach(function(rd){if(Array.isArray(rd.fbTeams))rd.fbTeams=rd.fbTeams.map(function(t){return t.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(STATE.roundFlights)STATE.roundFlights=STATE.roundFlights.map(function(fls){return fls.map(function(fl){return fl.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';_rosterReconcileAll();renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
 // Trip admin management handlers
 var _tripAdminPickerMembers=[];
 window._tripAdminAdd=function(idx){
@@ -11795,7 +12241,9 @@ function renderWeekendPanel(){
   html+=`<div class="section-card"><div class="section-hd">Rounds</div>${orderedRounds.map(roundRow).join('')}<div style="padding:11px 14px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="launchE9()" style="width:100%;background:transparent;border:1px dashed #1D9E75;color:#1D9E75;padding:10px;border-radius:var(--border-radius-md);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">+ Add Round</button></div><div style="font-size:11px;color:var(--color-text-tertiary);padding:0 14px 12px;line-height:1.5">A round that does not count toward standings is labeled E9 or E18.</div></div>`;
 
   // --- Handicap ---
-  html+=`<div class="section-card" id="hdcpCard" style="margin-bottom:14px"><div class="section-hd">Handicap</div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net off low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffLow?'checked':''} onchange="STATE.netOffLow=this.checked;autoSave();s2WriteActive();renderWeekendPanel();renderScorecard();renderBanner()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net games off foursome low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffFlightLow?'checked':''} onchange="STATE.netOffFlightLow=this.checked;autoSave();s2WriteActive();renderScorecard();renderBanner();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px"><span style="font-size:12px;color:var(--color-text-secondary)">Handicap adjustment</span><div style="display:flex;align-items:center;gap:4px"><select class="ie-sel" style="width:76px" onchange="WK.hdcpPct=parseInt(this.value)/100;autoSave();s2WriteActive();renderWeekendPanel();renderScorecard()">${(()=>{const _c=Math.round(WK.hdcpPct*100);const _o=[100,95,90,85,80,75,70,65,60,55,50];return(_o.includes(_c)?_o:[_c,..._o]).map(v=>`<option value="${v}"${v===_c?' selected':''}>${v}%</option>`).join('');})()}</select></div></div></div>`;
+  html+=`<div class="section-card" id="hdcpCard" style="margin-bottom:14px"><div class="section-hd">Handicap</div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net off low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffLow?'checked':''} onchange="STATE.netOffLow=this.checked;autoSave();s2WriteActive();renderWeekendPanel();renderScorecard();renderBanner()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net games off foursome low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffFlightLow?'checked':''} onchange="STATE.netOffFlightLow=this.checked;autoSave();s2WriteActive();renderScorecard();renderBanner();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px"><span style="font-size:12px;color:var(--color-text-secondary)">Handicap adjustment</span><div style="display:flex;align-items:center;gap:4px"><select class="ie-sel" style="width:76px" onchange="WK.hdcpPct=parseInt(this.value)/100;autoSave();s2WriteActive();renderWeekendPanel();renderScorecard()">${(()=>{const _c=Math.round(WK.hdcpPct*100);const _o=[100,95,90,85,80,75,70,65,60,55,50];return(_o.includes(_c)?_o:[_c,..._o]).map(v=>`<option value="${v}"${v===_c?' selected':''}>${v}%</option>`).join('');})()}</select></div></div>`
+  +`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-primary)">Trip index<span style="display:block;font-size:11px;color:var(--color-text-secondary);margin-top:1px">One index per player for the whole trip. Changing it changes every round, finished ones included.</span></span><label class="toggle"><input type="checkbox" ${_hcpMode()!=='round'?'checked':''} onchange="window._setHcpMode('trip')"><span class="toggle-slider"></span></label></div>`
+  +`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-primary)">Round index<span style="display:block;font-size:11px;color:var(--color-text-secondary);margin-top:1px">Each round plays off the index a player has when that round starts. Once played out, a round is frozen.</span></span><label class="toggle"><input type="checkbox" ${_hcpMode()==='round'?'checked':''} onchange="window._setHcpMode('round')"><span class="toggle-slider"></span></label></div></div>`;
 
   // --- Weekend bet ---
   // Pot tiebreak. Locked once the pot is settled: the rule that decided the money must not
@@ -13300,7 +13748,7 @@ window._fbOpenSwap=function(r,ti,si){
     +'<div style="font-size:14px;font-weight:500;color:#E1F5EE">'+curName+'</div></div></div>';
   h+='<div class="fb-sh-sec">Keep</div>';
   h+='<div class="fb-sh-row sel"><div class="fb-av" style="background:'+curP.bg+';color:'+curP.fg+'">'+curP.ini+'</div>'
-    +'<span class="fb-pnm">'+curName+'</span><span class="fb-phc">'+sbHcpDisplay(WK.players[cur].idx)+'</span></div>';
+    +'<span class="fb-pnm">'+curName+'</span><span class="fb-phc">'+sbHcpDisplay(idxForRound(cur,r))+'</span></div>';
   h+='<div class="fb-sh-sec">Swap with</div>';
   h+='<div style="font-size:11px;color:var(--color-text-secondary);padding:0 14px 4px;line-height:1.5">Picking a player already on a team trades places with them.</div>';
   const where={};
@@ -13320,7 +13768,7 @@ window._fbOpenSwap=function(r,ti,si){
     h+='<div class="fb-sh-row'+(off?' dis':'')+'"'+click+'>'
       +'<div class="fb-av" style="background:'+p.bg+';color:'+p.fg+'">'+p.ini+'</div>'
       +'<span class="fb-pnm">'+displayName(pi)+'</span>'
-      +'<span class="fb-phc">'+sbHcpDisplay(p.idx)+' &middot; '+why+'</span></div>';
+      +'<span class="fb-phc">'+sbHcpDisplay(idxForRound(pi,r))+' &middot; '+why+'</span></div>';
   });
   h+='<div style="padding:12px 14px 18px"><button style="width:100%;padding:11px;font-size:14px;font-weight:500;border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);font-family:inherit;cursor:pointer" onclick="window._fbCloseSwap()">Cancel</button></div>';
   h+='</div></div>';
@@ -13622,7 +14070,7 @@ function _gsFourBallSetupBody(r){
   teams.forEach(function(t,ti){
     const fss={};t.forEach(function(pi){const f=fsOf(pi);if(f>=0)fss[f]=1;});
     const split=Object.keys(fss).length>1;
-    const hcs=t.map(function(pi){return sbHcpDisplay(WK.players[pi].idx);}).join(' + ');
+    const hcs=t.map(function(pi){return sbHcpDisplay(idxForRound(pi,r));}).join(' + ');
     h+='<div class="fb-tm"><div class="fb-tm-hd"><span class="fb-tm-nm">Team '+(ti+1)+'</span>'
       +'<span class="fb-tm-mt">'+hcs+(split?'<span class="fb-tag">split F'+(Object.keys(fss).map(function(x){return +x+1;}).join('/F'))+'</span>':'')+'</span></div>';
     t.forEach(function(pi,si){
@@ -13632,7 +14080,7 @@ function _gsFourBallSetupBody(r){
       h+='<div class="fb-prow"'+click+'>'
         +'<div class="fb-av" style="background:'+p.bg+';color:'+p.fg+'">'+p.ini+'</div>'
         +'<span class="fb-pnm">'+displayName(pi)+(fl.length>1&&f>=0?'<span class="fb-tag">F'+(f+1)+'</span>':'')+'</span>'
-        +'<span class="fb-phc">'+sbHcpDisplay(p.idx)+'</span>'
+        +'<span class="fb-phc">'+sbHcpDisplay(idxForRound(pi,r))+'</span>'
         +(canEdit?'<span class="fb-chev">&rsaquo;</span>':'')+'</div>';
     });
     h+='</div>';
@@ -17486,7 +17934,11 @@ function showRoundDetails(){
   // Build player rows
   const playerRows=_fpPlayers.map((pi)=>{
     const p=WK.players[pi];
-    const idx=p.idx;
+    // ROUND-AWARE. This sheet describes ONE round, so it must show the index that round
+    // is played off, not the player's current one. wkndIdx and every stroke figure below
+    // derive from this, so a live read here made the whole table describe a round that
+    // was not the one on screen.
+    const idx=idxForRound(pi,r);
     const wkndIdx=+(idx*WK.hdcpPct).toFixed(1);
     const ch=courseHdcp(pi,r);
     const eff=_effOf(pi);
