@@ -1147,12 +1147,27 @@ body.force-light{
 .fs-nudge{display:flex;align-items:center;justify-content:center;width:32px;height:32px;flex-shrink:0;font-size:17px;color:var(--color-text-secondary);cursor:pointer;border-radius:var(--border-radius-sm);}
 .fs-nudge:active{background:var(--color-border-tertiary);}
 .fs-nudge.off{color:var(--color-border-secondary);cursor:default;}
-.pl-hd{display:grid;grid-template-columns:30px minmax(0,1fr) 70px 20px;gap:8px;align-items:center;padding:6px 12px;background:var(--color-background-secondary);font-size:9.5px;font-weight:700;letter-spacing:0.05em;color:var(--color-text-tertiary);text-transform:uppercase;}
+.pl-hd{display:grid;grid-template-columns:30px minmax(0,1fr) 104px 20px;gap:8px;align-items:center;white-space:nowrap;padding:6px 12px;background:var(--color-background-secondary);font-size:9.5px;font-weight:700;letter-spacing:0.05em;color:var(--color-text-tertiary);text-transform:uppercase;}
 .pl-q{background:transparent;border:1px solid var(--color-text-tertiary);color:var(--color-text-tertiary);width:13px;height:13px;border-radius:50%;font-size:9px;font-weight:700;margin-left:4px;padding:0;cursor:pointer;line-height:1;font-family:inherit;vertical-align:middle;}
-.pl-row{display:grid;grid-template-columns:30px minmax(0,1fr) 70px 20px;gap:8px;align-items:center;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary);}
+.pl-row{display:grid;grid-template-columns:30px minmax(0,1fr) 104px 20px;gap:8px;align-items:center;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary);}
 .pl-chev{font-size:10px;color:var(--color-text-tertiary);text-align:center;cursor:pointer;background:transparent;border:none;padding:0;font-family:inherit;}
 .pl-chev.hot{color:#C2792B;}
 .pl-body{background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);padding:4px 0 10px;}
+.pl-idx{font-size:14px;font-weight:600;text-align:center;color:var(--color-text-primary);}
+.pl-idx .set{font-size:8.5px;font-weight:700;color:var(--color-text-tertiary);display:block;letter-spacing:0.05em;margin-top:1px;}
+.pl-fin.num{width:96px;text-align:center;}
+.pl-sub{font-size:11.5px;color:var(--color-text-secondary);line-height:1.55;padding:6px 12px 0 50px;}
+.pl-sub .act{color:#1D9E75;font-weight:600;cursor:pointer;}
+.pl-rd .was{color:var(--color-text-tertiary);text-decoration:line-through;font-weight:400;margin-right:5px;}
+.pl-rd .nxt{color:#1D9E75;}
+.pl-chk{display:flex;align-items:flex-start;gap:9px;margin:14px 12px 0 50px;padding:10px 11px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-primary);}
+.pl-chk input{margin-top:1px;width:15px;height:15px;accent-color:#1D9E75;flex-shrink:0;}
+.pl-chk .t{font-size:12px;color:var(--color-text-primary);line-height:1.45;}
+.pl-chk .s{display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:3px;line-height:1.45;}
+.pl-btns{display:flex;gap:8px;margin:12px 12px 0 50px;}
+.pl-save{flex:1;padding:10px;font-size:13px;font-weight:600;border-radius:var(--border-radius-md);border:none;background:#1D9E75;color:#fff;font-family:inherit;display:block;}
+.pl-cancel{padding:10px 16px;font-size:13px;font-weight:600;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);font-family:inherit;flex-shrink:0;}
+.pl-save[disabled]{opacity:0.4;}
 .pl-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 12px 7px 50px;font-size:11.5px;color:var(--color-text-secondary);}
 .pl-note{display:block;line-height:1.55;}
 .pl-match{color:var(--color-text-tertiary);}
@@ -1782,7 +1797,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.9';
+const APP_VERSION='v123.11';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -1990,27 +2005,101 @@ function _plIdxGuard(i,v,go){
 // finished round's number can only ever become wrong at the instant somebody changes the
 // index, so that instant is the only place the old value has to be captured. A round that
 // never sees a change never gets a snapshot, which is why lock mode writes none at all.
-function _plWriteIdx(i,v){
-  if(!canEditTrip())return;
-  var p=WK.players[i];
-  if(!p)return;
-  if(_hcpMode()==='round'){
-    for(var r=0;r<(WK.rounds||[]).length;r++){
-      var done=false;
-      try{done=_hcpRoundPlayed(r);}catch(e){done=false;}
-      if(!done)continue;
-      var rd=WK.rounds[r];
-      if(!rd.idxSnap)rd.idxSnap={};
-      // FREEZE EVERY PLAYER, not only the one being edited. A round that has been played
-      // out is settled history for the whole field, and freezing one player at a time
-      // leaves it half protected: the reproduction above had Kyle frozen and Doug not,
-      // in the same round. Doing the whole field on the first write closes that.
-      for(var q=0;q<WK.players.length;q++){
-        if(rd.idxSnap[q]===undefined||rd.idxSnap[q]===null)rd.idxSnap[q]=WK.players[q].idx;
-      }
+// FREEZE EVERY PLAYED ROUND THAT IS NOT ALREADY FROZEN.
+//
+// Split out of _plWriteIdx in v123.11 because the write is no longer the only moment a
+// player's index can change. In follow mode the number can move because somebody edited
+// a member record in another session, so a played round holding no snapshot would fall
+// through to the live value and rescore settled money. Freezing on the write was a proxy
+// for "the index might change", and following made the two diverge.
+//
+// Called from three places, all of them moments rather than computations:
+//   _plWriteIdx   - a user is changing an index right now
+//   adjScore      - a score just landed, which is the instant a round becomes played
+//   _plFollowSync - about to apply a member-side change
+//
+// Idempotent by construction: only empty slots are filled, so a round frozen once keeps
+// the values it was frozen with no matter how often this runs.
+function _hcpFreezePlayed(){
+  if(typeof WK==='undefined'||!WK||!WK.players)return;
+  if(_hcpMode()!=='round')return;
+  for(var r=0;r<(WK.rounds||[]).length;r++){
+    var done=false;
+    try{done=_hcpRoundPlayed(r);}catch(e){done=false;}
+    if(!done)continue;
+    var rd=WK.rounds[r];
+    if(!rd)continue;
+    if(!rd.idxSnap)rd.idxSnap={};
+    // FREEZE EVERY PLAYER, not only the one being edited. A round that has been played
+    // out is settled history for the whole field, and freezing one player at a time
+    // leaves it half protected: the reproduction above had Kyle frozen and Doug not,
+    // in the same round. Doing the whole field on the first write closes that.
+    for(var q=0;q<WK.players.length;q++){
+      if(rd.idxSnap[q]===undefined||rd.idxSnap[q]===null)rd.idxSnap[q]=WK.players[q].idx;
     }
   }
+}
+
+// opts.follow marks a reconcile rather than a user edit, and only that bypasses the
+// permission gate. It is deliberately not a second parameter: a bare boolean at a call
+// site reads as nothing at all, and this one decides whether a permission check applies.
+function _plWriteIdx(i,v,opts){
+  if(!(opts&&opts.follow)&&!canEditTrip())return;
+  var p=WK.players[i];
+  if(!p)return;
+  _hcpFreezePlayed();
   WK.players[i].idx=v;
+}
+
+// Single entry point for the four trigger sites. Never throws into a caller: a
+// failed reconcile must not take down a sync tick or stop a panel from opening.
+// It is still reported, because a reconcile that quietly stopped running is
+// indistinguishable from a trip whose players are already correct.
+function _plFollowSyncSafe(where){
+  try{return _plFollowSync();}
+  catch(e){console.error('_plFollowSync failed at '+(where||'?'),e);return false;}
+}
+
+// RECONCILE FOLLOWING PLAYERS AGAINST THE MEMBER RECORD.
+//
+// idxSetHere false means this trip tracks the player's own index. This is where that
+// tracking actually happens, at defined moments, rather than inside idxForRound.
+//
+// NOT IN idxForRound ON PURPOSE. That function is the only reader of an index on the
+// money path and its arithmetic is byte-identical to v123.2, which is what
+// neutral_harness proves across 462 probes. Reading the member cache from it would put
+// the cache on the money path: _memberHcpFor returns null until the cache loads, so the
+// leaderboard would compute one way before it arrives and another way after, with
+// nobody having touched anything.
+//
+// A NULL MEMBER INDEX IS NEVER APPLIED. Null means the cache has not arrived, or the
+// player has no member_id, or the member row has no index. In all three the stored
+// value is already the best number available. Coercing null here would write 0, and 0
+// is a legal scratch index that reads as real drift against every other player.
+function _plFollowSync(){
+  if(typeof WK==='undefined'||!WK||!WK.players)return;
+  if(_hcpMode()!=='round')return;
+  var moved=false;
+  for(var i=0;i<WK.players.length;i++){
+    var p=WK.players[i];
+    if(!p||p.idxSetHere)continue;
+    var live=null;
+    try{live=_memberHcpFor(p);}catch(e){live=null;}
+    if(!live)continue;
+    var v=live.index;
+    if(v===null||v===undefined)continue;
+    v=Number(v);
+    if(!isFinite(v))continue;
+    if(v===p.idx)continue;
+    // Through the single writer, so the freeze applies and the gate asserting one
+    // assignment site stays true.
+    _plWriteIdx(i,v,{follow:true});
+    moved=true;
+  }
+  if(moved&&typeof s2MarkDirty==='function'){
+    try{s2MarkDirty(['players']);}catch(e){}
+  }
+  return moved;
 }
 function _hcpModeLabel(){return _hcpMode()==='round'?'Round index':'Trip index';}
 
@@ -2399,7 +2488,11 @@ async function s2WriteActive(){
         ini:p.ini||'',
         player_index:pi,
         library_id:p.lid||null,
-        member_id:p.member_id||null
+        member_id:p.member_id||null,
+        // v123.10: false means this player follows their own index. true means a
+        // number was typed on this trip and deliberately detached from it. Nothing
+        // sets it yet; this build only proves it survives a round trip.
+        idx_set_here:!!p.idxSetHere
       }));
       const _playersOk=await s2Upsert('players',rows,'player_id');
       if(!_playersOk)_s2Dirty.players=true;
@@ -2655,6 +2748,9 @@ async function s2ReadTrip(tripId){
         fg:p.fg_color||'#ffffff',
         ini:p.ini||'?',
         member_id:p.member_id||null,
+        // v123.10: null or absent means following, which is why this is !! and not a
+        // bare read. See idx_set_here in the players upsert.
+        idxSetHere:!!p.idx_set_here,
         // READ ONLY in v123.0 and never written back, so it needs no serializer entry.
         // players.created_at is `not null default now()`, player_id is a stable token from
         // s2NewTok() rather than a positional key, and the upsert payload omits the column,
@@ -3170,6 +3266,39 @@ window.sbSaveProfile = async function(){
   }
 };
 
+// SINGLE SOURCE FOR "MY INDEX".
+//
+// group_members is the store of record. user_metadata.hcp is the seed a new
+// membership starts from and a mirror of the person's own profile edits, so it goes
+// stale the moment an admin corrects them, and a client cannot write anybody else's
+// metadata to keep it fresh.
+//
+// Every screen that shows somebody their own index reads THIS. Three of them used to
+// read metadata directly and each made the call separately, so fixing the edit form
+// left the Me screen quoting a number that was two corrections old.
+//
+// Rows cannot disagree since v123.11, so any row is right; newest stamp is a tiebreak
+// for a cache mid-refresh, not a rule.
+function _myHcpIndex(){
+  var u=(typeof sbCurrentUser==='function')?sbCurrentUser():null;
+  var meta=(u&&u.user_metadata)||{};
+  var best=null;
+  try{
+    if(u&&typeof _groupCache!=='undefined'){
+      for(var gk in _groupCache){
+        var mm=(_groupCache[gk]&&_groupCache[gk]._members)||[];
+        for(var mi=0;mi<mm.length;mi++){
+          var c=mm[mi];
+          if(!c||c.user_id!==u.id||c.hcp_index==null)continue;
+          if(!best||String(c.hcp_updated_at||'')>String(best.hcp_updated_at||''))best=c;
+        }
+      }
+    }
+  }catch(e){console.error('_myHcpIndex could not read the member rows; falling back to the profile seed',e);}
+  if(best)return best.hcp_index;
+  return (meta.hcp!=null&&meta.hcp!=='')?meta.hcp:null;
+}
+
 window.sbOpenEditProfile = function(){
   const menu = document.getElementById('userMenu');
   if (menu) menu.style.display = 'none';
@@ -3181,7 +3310,8 @@ window.sbOpenEditProfile = function(){
   document.getElementById('editProfName').value = meta.full_name || '';
   document.getElementById('editProfPhone').value = window.fmtPhoneVal(meta.phone || '');
   document.getElementById('editProfVenmo').value = (meta.venmo||'').replace(/^@+/,'');
-  document.getElementById('editProfHcp').value = (meta.hcp != null && meta.hcp !== '') ? sbHcpDisplay(meta.hcp) : '';
+  var _srcHcp = _myHcpIndex();
+  document.getElementById('editProfHcp').value = (_srcHcp != null && _srcHcp !== '') ? sbHcpDisplay(_srcHcp) : '';
   var _gEl=document.getElementById('editProfGhin');if(_gEl)_gEl.value=meta.ghin||'';
   document.getElementById('editProfError').style.display = 'none';
   document.getElementById('editProfOverlay').style.display = 'flex';
@@ -3511,7 +3641,13 @@ async function sbCreateGroup(name){
     const mr=await fetch(SB_URL+'/rest/v1/group_members',{
       method:'POST',
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+(_sbSession?.access_token||SB_KEY),'Content-Type':'application/json','Prefer':'return=minimal'},
-      body:JSON.stringify({group_id:group.group_id,user_id:user.id,role:'admin',display_name:meta.full_name||user.email,hcp_index:meta.hcp!=null?meta.hcp:null,venmo:meta.venmo||null})
+      // v123.11: seeded from _myHcpIndex(), not meta.hcp. The profile value is only
+      // refreshed when the person edits their own profile, so after an admin corrects
+      // them it is stale, and seeding from it would start the new group at a number
+      // every existing group had already moved off. _myHcpIndex falls back to the
+      // profile when there is no membership to read, which is the genuine first-group
+      // case this line was written for.
+      body:JSON.stringify({group_id:group.group_id,user_id:user.id,role:'admin',display_name:meta.full_name||user.email,hcp_index:_myHcpIndex(),venmo:meta.venmo||null})
     });
     if(!mr.ok)return null;
     return group;
@@ -4282,7 +4418,8 @@ function renderMeScreen(){
   var email=(user&&user.email)||'';
   var name=meta.full_name||'Your profile';
   var initials=(typeof sbInitialsFrom==='function')?sbInitialsFrom(meta.full_name,email):'';
-  var hcp=(meta.hcp!=null&&meta.hcp!=='')?((typeof sbHcpDisplay==='function')?sbHcpDisplay(meta.hcp):String(meta.hcp)):'Not set';
+  var _mh=_myHcpIndex();
+  var hcp=(_mh!=null&&_mh!=='')?((typeof sbHcpDisplay==='function')?sbHcpDisplay(_mh):String(_mh)):'Not set';
   var ghin=meta.ghin?String(meta.ghin):'';
   var ts=(typeof getThemeState==='function')?getThemeState():'system';
   var tl=ts==='dark'?'Dark':ts==='light'?'Light':'Auto';
@@ -5271,7 +5408,8 @@ function _qrStepHtml(){
       const _meParts=_meName.split(/\s+/).filter(Boolean);
       const _meFirst=_meParts[0]||'';
       const _meLast=_meParts.slice(1).join(' ')||'';
-      const _meHcp=_meta.hcp!=null?_meta.hcp:'';
+      const _myIdx=_myHcpIndex();
+      const _meHcp=_myIdx!=null?_myIdx:'';
       const rows=Array.from({length:_qrS.n},function(_,i){
         const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
         const saved=(_qrS.players||[])[i]||{};
@@ -7589,6 +7727,8 @@ function renderOptPanel(p){
     return;
   }
   if(!canEditTrip()&&(p==='weekend'||p==='players'||p==='flights'||p==='courses')){if(p==='weekend')renderWeekendPanel();else if(p==='players')renderPlayersPanel();else if(p==='flights')renderFlightsPanel();else if(p==='courses')renderCoursesPanel();var _cet_el=document.getElementById('opt-panel-'+p);if(_cet_el){var _cet_banner='<div style=\"display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:2px\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"color:var(--color-text-secondary);flex-shrink:0\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" y1=\"16\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"8\" x2=\"12.01\" y2=\"8\"/></svg><span style=\"font-size:12px;color:var(--color-text-secondary);line-height:1.4\">No edit access for this trip. You can still enter scores.</span></div>';_cet_el.innerHTML=_cet_banner+'<div style="opacity:0.55;pointer-events:none">'+_cet_el.innerHTML+'</div>';}return;}
+  // v123.11: on OPEN, not on redraw. renderPlayersPanel runs on every edit.
+  if(p==='players')_plFollowSyncSafe('panelOpen');
   if(p==='menu')renderOptMenu();if(p==='htp')renderHtpPanel();if(p==='teams')renderTeamsPanel();if(p==='players')renderPlayersPanel();if(p==='flights')renderFlightsPanel();if(p==='weekend')renderWeekendPanel();if(p==='courses')renderCoursesPanel();if(p==='info')renderInfoPanel();
 }
 function renderInfoPanel(){
@@ -8172,7 +8312,17 @@ function adjScore(pi,delta){if(isReadOnly)return;if(_pencilViewerLocked(STATE.cu
    if(fsEndedShort(_asR,_asFi)&&_asHi>=holeOffset(_asR)+fsHoleCount(_asR,_asFi)){
      showMsg('This round ended at hole '+fsHoleCount(_asR,_asFi)+'. Tap Resume round to keep playing.');
      return;}}
-  const r=STATE.currentRound,hi=STATE.currentHole,par=WK.rounds[r].course.holes[hi]?.par||4,c=STATE.scores[r][hi][pi];STATE.scores[r][hi][pi]=c===null?par:Math.max(1,c+delta);_s2Cleared.delete(r+':'+hi+':'+pi);s2MarkDirty(['score'],r+':'+hi);clearTimeout(window._s2ScoreTimer);window._s2ScoreTimer=setTimeout(()=>{autoSave(true);s2WriteActive();},1500);// Check auto-press after all players scored this hole
+  const r=STATE.currentRound,hi=STATE.currentHole,par=WK.rounds[r].course.holes[hi]?.par||4,c=STATE.scores[r][hi][pi];STATE.scores[r][hi][pi]=c===null?par:Math.max(1,c+delta);_s2Cleared.delete(r+':'+hi+':'+pi);
+  // v123.11: the score just landed, so this is the instant a round can become played.
+  // Freezing here is what makes "played rounds keep the index they were played off"
+  // survive a member-side change that never touches this trip. Runs after the write
+  // because _hcpRoundPlayed reads the card.
+  // NOT a silent catch. If this throws, the freeze did not happen and a played round is
+  // exposed to the next index change with nothing on screen to say so. Swallowing that is
+  // the same mistake as the empty catch around the profile fan-out. Score entry still
+  // proceeds, because losing a keystroke is worse than losing a freeze, but the failure
+  // is loud in the console and _hcpFreezePlayed is idempotent so the next tap retries it.
+  try{_hcpFreezePlayed();}catch(_hf){console.error('_hcpFreezePlayed failed on score entry; played rounds may be unfrozen',_hf);}s2MarkDirty(['score'],r+':'+hi);clearTimeout(window._s2ScoreTimer);window._s2ScoreTimer=setTimeout(()=>{autoSave(true);s2WriteActive();},1500);// Check auto-press after all players scored this hole
 const allScored=STATE.scores[r][hi].every(s=>s!==null);const _asFi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(allScored&&gameOnFs('mp',r,_asFi)){const mpG=mpGamesForRound(r,_asFi);const _th=roundHoleCount(r);const si=segForHole(hi-holeOffset(r),mpG,_th);checkAutoPress(r,_asFi,si);}renderScorecard();renderHoleDots();renderHammerBox();renderSkinsBoxWrap();renderMPHoleBox();renderVegasBoxWrap();
   _updateActionRow();
 }
@@ -11288,9 +11438,233 @@ var _plOpen={};
 window._setHcpMode=function(m){
   if(!canEditTrip())return;
   WK.hcpMode=(m==='round')?'round':'trip';
+  // After the assignment: the reconcile is a no-op unless the mode is already round.
+  // This is also the only chance to freeze rounds that were played while the trip
+  // was in Trip index mode, where snapshots are ignored rather than written.
+  if(_hcpMode()==='round'){try{_hcpFreezePlayed();}catch(e){console.error('freeze on mode switch failed',e);}}
+  _plFollowSyncSafe('modeSwitch');
   autoSave();s2WriteActive();renderWeekendPanel();renderScorecard();renderBanner();
 };
+window._plSetName=function(i,v){
+  window._plSetNameInner(i,v);
+  // Reported, not swallowed. If this throws, the tickbox silently stops offering to
+  // push a renamed player and the panel looks like a name that simply cannot leave
+  // the trip. Typing still works, because losing a keystroke is worse than losing
+  // the offer, and the next keystroke retries it.
+  try{_plRefreshPush(i);}catch(e){console.error('_plRefreshPush failed after a name edit; the update offer may be missing',e);}
+};
 window._plToggle=function(pid){_plOpen[pid]=!_plOpen[pid];renderPlayersPanel();};
+// Typed-but-unsaved index, keyed on pid. The panel must never report a draft as
+// though it were stored: before v123.11 the row said what the trip was playing off
+// and the number in the box were the same thing, and with a Save button they are not.
+var _plDraft={};
+function _plPid(p,i){return p.pid||('i'+i);}
+// THE BLUR HANDLER IS GONE. It called renderPlayersPanel on change, and tapping Cancel
+// blurs the input first, so the rebuild destroyed the button mid-tap: the first press
+// only painted the preview and the second press did the cancelling. Nothing re-renders
+// while a row is being edited now. Save and Cancel are the only redraws.
+// Fires on every keystroke so Save reacts immediately. It must NOT re-render: the
+// panel rebuild replaces the input the user is typing in, which is what cost v123.1.
+// So it updates the draft and touches only the Save button. The full redraw, which
+// paints the by-round preview, waits for blur in _plDraftIdx below.
+//
+// Safe on input ONLY because Save is now the commit point. The old handler had to
+// wait for blur because typing applied the number straight away and went through
+// _plIdxGuard, and a confirm sheet per keystroke is unusable. Nothing applies here.
+window._plDraftIdxLive=function(i,raw){
+  if(!canEditTrip())return;
+  var p=WK.players[i];if(!p)return;
+  var pid=_plPid(p,i),v=idxFromInput(raw,p.idx);
+  if(v===p.idx)delete _plDraft[pid];else _plDraft[pid]={idx:v};
+  var btn=document.getElementById('plsave_'+pid);
+  if(btn){if(_plDraft[pid])btn.removeAttribute('disabled');else btn.setAttribute('disabled','disabled');}
+  var cx=document.getElementById('plcancel_'+pid);
+  if(cx)cx.style.display=_plDraft[pid]?'block':'none';
+  // Paint the by-round preview in place. Frozen rounds carry no data-plrd, so they are
+  // untouched by construction rather than by a condition that could drift.
+  _plRefreshPush(i);
+  var d=_plDraft[pid],cells=document.querySelectorAll('[data-plrd="'+pid+'"]');
+  for(var k=0;k<cells.length;k++){
+    var base=cells[k].getAttribute('data-base')||'';
+    cells[k].innerHTML=d
+      ?'<span class="was">'+base+'</span><span class="nxt">'+sbHcpDisplay(d.idx)+'</span>'
+      :base;
+  }
+};
+// Discards the typed value. Needed because the draft outlives the row being closed:
+// without this the only way out of an unwanted number was to retype the old one from
+// memory, and the panel would keep showing the unsaved value every time the row
+// reopened. Closing the chevron deliberately does NOT discard, so a half-finished
+// edit survives a stray tap.
+// The member row this trip player corresponds to, or null when nothing may be
+// written outward. Managed players only: _gmSaveManaged already refuses on
+// m.user_id, and an authenticated member owns their own record. There is no self
+// branch either, because neither profile writer takes arguments - both scrape DOM
+// by element id - so a self branch would mean a FOURTH writer of the member pair,
+// and the three that exist already disagree on which columns they write.
+function _plPushTarget(p){
+  if(!p||!p.member_id)return null;
+  var gid=(WK&&WK._groupId)||null,g=gid?_groupCache[gid]:null;
+  if(!g||!_amGroupAdmin(g))return null;
+  var ms=g._members||[];
+  for(var k=0;k<ms.length;k++){
+    // v123.11: NO managed-only test. It used to return null when user_id was set, on
+    // the principle that a member who has claimed their account owns their own record.
+    // In practice every player in a real group has claimed, so the rule described
+    // nobody and the tickbox never appeared for anyone.
+    //
+    // Safe because member_id identifies ONE membership row: one person in one group.
+    // This cannot reach another group and never touches user_metadata.
+    if(ms[k]&&ms[k].member_id===p.member_id)return ms[k];
+  }
+  return null;
+}
+// What a push would actually change. Built from the diff so the caption names only
+// what moves: a name edit must not offer to write an index that has not.
+function _plPushDiff(p,pendingIdx){
+  var m=_plPushTarget(p);if(!m)return null;
+  var full=((p.first||'')+(p.last?' '+p.last:'')).trim()||p.name||'';
+  var v=(pendingIdx===undefined||pendingIdx===null)?p.idx:pendingIdx;
+  var d={m:m,name:null,idx:null};
+  if(full&&full!==(m.display_name||''))d.name=full;
+  if(v!==null&&v!==undefined&&Number(v)!==Number(m.hcp_index))d.idx=Number(v);
+  return (d.name||d.idx!==null)?d:null;
+}
+// Widens the member_id PATCH to carry display_name. _gmSaveManaged writes index,
+// venmo, ghin and source but NOT the name, and the member sheet has no name field at
+// all, so before this there was no way to rename a managed player anywhere.
+//
+// return=representation because hcp_updated_at is set by a DB trigger and the client
+// cannot know the new value. Hand-setting the index and leaving the stamp is the bug
+// _gmSaveManaged already documents.
+async function _plPushMember(d){
+  if(!d||!d.m)return false;
+  var body={};
+  if(d.name)body.display_name=d.name;
+  // hcp_source only when the index actually moves. Both existing writers set it
+  // unconditionally, harmlessly, because both always write the index. A name-only
+  // push carrying it would claim the handicap provenance changed when it did not.
+  if(d.idx!==null){body.hcp_index=d.idx;body.hcp_source='manual';}
+  if(!Object.keys(body).length)return false;
+  // ONE INDEX PER PERSON. A claimed player is keyed on user_id so every membership
+  // moves together; before this, _gmSaveManaged and this function both wrote a single
+  // row and neither fanned out, so the same person could hold four different indexes
+  // and nothing in the app could tell you which was theirs.
+  //
+  // user_metadata is deliberately NOT written here. A client can only set its own
+  // metadata, so an admin correcting somebody else cannot touch it. group_members is
+  // therefore the store of record and metadata is the seed a new membership starts
+  // from, plus a mirror of the person's own edits.
+  var sel=d.m.user_id
+    ? 'user_id=eq.'+encodeURIComponent(d.m.user_id)
+    : 'member_id=eq.'+encodeURIComponent(d.m.member_id);
+  try{
+    var tok=_sbSession?.access_token||SB_KEY;
+    var r=await fetch(SB_URL+'/rest/v1/group_members?'+sel,{
+      method:'PATCH',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify(body)
+    });
+    if(!r.ok)return false;
+    var saved=await r.json();
+    // Update the cache in place or the sentence keeps quoting a number that no longer
+    // exists, and the reconcile would pull the old value straight back.
+    // Every cached row for this person, not only the one this trip reads. Updating a
+    // single row would leave the other groups showing the old number until a refetch,
+    // and the profile prefill reads whichever row it finds first.
+    if(saved&&saved.length){
+      for(var si=0;si<saved.length;si++){
+        var row=saved[si];
+        for(var gk in _groupCache){
+          var mm=(_groupCache[gk]&&_groupCache[gk]._members)||[];
+          for(var mi=0;mi<mm.length;mi++){
+            if(mm[mi]&&mm[mi].member_id===row.member_id)Object.assign(mm[mi],row);
+          }
+        }
+      }
+    }
+    return true;
+  }catch(e){console.error('_plPushMember failed',e);return false;}
+}
+function _plPushInner(who,d){
+  if(!d)return '';
+  var what=(d.name&&d.idx!==null)?'name and index':(d.name?'name':'index');
+  var val=(d.idx!==null)?sbHcpDisplay(d.idx):d.name;
+  return '<input type="checkbox" class="plpushbox" checked>'
+    +'<span class="t">Also update '+who+"'s "+what
+    +'<span class="s">Changes it to '+val+' everywhere, not just this trip.</span></span>';
+}
+// The tickbox has to be rebuilt on the keystroke, like Save, Cancel and the preview.
+// Nothing re-renders while a row is being edited - that is what made Cancel take two
+// taps - so anything whose visibility depends on the typed value has to be updated
+// here by hand. The tickbox was written before that rule existed and never got one.
+function _plRefreshPush(i){
+  var p=WK&&WK.players?WK.players[i]:null;if(!p)return;
+  var pid=_plPid(p,i),wrap=document.getElementById('plpushwrap_'+pid);
+  if(!wrap)return;
+  var d0=_plDraft[pid];
+  var d=_plPushDiff(p,d0?d0.idx:undefined);
+  var who=p.first||p.name||'this player';
+  if(!d){wrap.style.display='none';wrap.innerHTML='';}
+  else{
+    // Preserve an explicit untick across keystrokes. Rebuilding the input would
+    // silently re-tick a box the user had just cleared.
+    var prev=wrap.querySelector('.plpushbox'),keep=prev?prev.checked:true;
+    wrap.innerHTML=_plPushInner(who,d);
+    var now=wrap.querySelector('.plpushbox');if(now)now.checked=keep;
+    wrap.style.display='flex';
+  }
+  var btn=document.getElementById('plsave_'+pid);
+  if(btn){if(d0||d)btn.removeAttribute('disabled');else btn.setAttribute('disabled','disabled');}
+}
+window._plCancelRow=function(i){
+  var p=WK.players[i];if(!p)return;
+  delete _plDraft[_plPid(p,i)];
+  renderPlayersPanel();
+};
+window._plSaveRow=async function(i){
+  if(!canEditTrip())return;
+  var p=WK.players[i];if(!p)return;
+  var pid=_plPid(p,i),d=_plDraft[pid];
+  var wrap=document.getElementById('plpushwrap_'+pid);
+  var box=wrap?wrap.querySelector('.plpushbox'):null;
+  var wants=!!(box&&box.checked);
+  var diff=_plPushDiff(p,d?d.idx:undefined);
+  function finish(){
+    delete _plDraft[pid];
+    try{s2MarkDirty(['players']);}catch(e){}
+    renderPlayersPanel();renderScorecard();renderBanner();autoSave();s2WriteActive();
+  }
+  async function apply(){
+    var pushed=false;
+    if(wants&&diff)pushed=await _plPushMember(diff);
+    if(d&&d.idx!==undefined&&d.idx!==null){
+      _plWriteIdx(i,d.idx);
+      // The flag records INTENT, and only a push that actually landed counts as
+      // correcting the person. If the write failed the trip now disagrees with the
+      // member record, and leaving the flag clear would let the next reconcile pull
+      // the old number straight back and silently undo the edit.
+      WK.players[i].idxSetHere=!(wants&&pushed&&diff&&diff.idx!==null);
+    }
+    if(wants&&diff&&!pushed)alert('Saved to this trip. Updating the group record failed, so this index applies here only.');
+    finish();
+  }
+  if(d&&d.idx!==undefined&&d.idx!==null)_plIdxGuard(i,d.idx,function(){apply();});
+  else if(wants&&diff)apply();
+};
+// The only way back. Without it a typed number owns that player forever, which is
+// the trap v121.31 shipped and v121.32 had to go back and undo.
+window._plFollowAgain=function(i){
+  if(!canEditTrip())return;
+  var p=WK.players[i];if(!p)return;
+  delete _plDraft[_plPid(p,i)];
+  p.idxSetHere=false;
+  try{s2MarkDirty(['players']);}catch(e){}
+  // Through the reconcile rather than assigning here, so the freeze applies and the
+  // one-assignment-site invariant holds.
+  _plFollowSyncSafe('followAgain');
+  renderPlayersPanel();renderScorecard();renderBanner();autoSave();s2WriteActive();
+};
 window._plEditIdx=function(i,raw){
   if(!canEditTrip())return;
   var v=idxFromInput(raw,WK.players[i]?WK.players[i].idx:0);
@@ -11301,7 +11675,9 @@ window._plEditIdx=function(i,raw){
 };
 // Writes idx through the SAME expression the row's own input already uses, so nothing
 // downstream of courseHdcp sees a path it has not seen since this panel shipped.
-window._plUseIdx=function(i,v){if(!canEditTrip())return;_plIdxGuard(i,v,function(){_plWriteIdx(i,v);renderPlayersPanel();renderScorecard();autoSave();});};
+// _plUseIdx removed in v123.11c. It pulled the member index into the trip on a tap,
+// which is what the reconcile now does on its own, and it was reachable from a row
+// that could contradict an edit the user had just made.
 // THE OLD INLINE HANDLER WAS INERT, and had been since first/last were introduced.
 // It set p.name and p.ini and nothing else, but:
 //   displayName() returns `${p.first[0]}. ${p.last}` whenever both exist, so every other
@@ -11322,7 +11698,7 @@ window._plUseIdx=function(i,v){if(!canEditTrip())return;_plIdxGuard(i,v,function
 // field, and it does not reproduce in Node, which has no blur and no keyboard.
 // `input` fires per keystroke, so nothing depends on the blur surviving.
 var _plNameT=null;
-window._plSetName=function(i,v){
+window._plSetNameInner=function(i,v){
   if(!canEditTrip())return;
   var p=WK.players[i];
   if(!p)return;
@@ -11361,8 +11737,11 @@ function renderPlayersPanel(){
   const canEd=canEditTrip();
   const anyDone=_plAnyRoundDone();
   const nR=(WK.rounds||[]).length;
-  let html=`<div class="section-card" style="margin-bottom:14px"><div class="section-hd"><span>Players</span><span style="font-size:11px;color:var(--color-text-tertiary)">Mode: ${_hcpModeLabel()}</span></div>`;
-  html+=`<div class="pl-hd"><span></span><span>Player</span><span style="text-align:center">Index<button class="pl-q" onclick="window._snapshotInfo()" aria-label="About these handicaps">?</button></span><span></span></div>`;
+  // The mode moved into the column it describes. Two labels for one fact in one header
+  // was the redundancy, and the column header is where the reader is already looking.
+  const followMode=_hcpMode()==='round';
+  let html=`<div class="section-card" style="margin-bottom:14px">`;
+  html+=`<div class="pl-hd"><span></span><span>Player</span><span style="text-align:center">${followMode?'Round index':'Trip index'}<button class="pl-q" onclick="window._snapshotInfo()" aria-label="About these handicaps">?</button></span><span></span></div>`;
   WK.players.forEach((p,i)=>{
     const pid=p.pid||('i'+i);
     const open=!!_plOpen[pid];
@@ -11373,18 +11752,20 @@ function renderPlayersPanel(){
     // disabled button and a paragraph explaining why the button was dead, which is a
     // prompt that exists only to be refused. Hidden outright, chevron included.
     const showDrift=!anyDone;
+    const draft=_plDraft[pid]||null;
     // Built from first and last rather than p.name, so the box holds the real full name
     // whatever resolveDisplayNames may have left in p.name.
     const fullName=((p.first||'')+(p.last?' '+p.last:'')).trim()||p.name||'';
     html+=`<div class="pl-row">`
       +`<div class="avatar" id="plav_${pid}" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div>`
       +`<div class="pl-name" id="plnm_${pid}">${fullName}</div>`
-      +`<input class="ie-num" type="text" value="${sbHcpDisplay(p.idx)}" style="width:70px;text-align:center" onchange="window._plEditIdx(${i},this.value)"/>`
-      +`<button class="pl-chev${(drifted&&showDrift)?' hot':''}" onclick="window._plToggle('${pid}')" aria-label="Player details">${open?'&#9650;':'&#9660;'}</button>`
+      +`<div class="pl-idx">${sbHcpDisplay(p.idx)}${(followMode&&p.idxSetHere)?'<span class="set">TRIP ONLY</span>':''}</div>`
+      +`<button class="pl-chev" onclick="window._plToggle('${pid}')" aria-label="Player details">${open?'&#9650;':'&#9660;'}</button>`
       +`</div>`;
     if(open){
       const seat=_hcpDate(p.seatedAt);
       const who=p.first||p.name||'this player';
+      void showDrift;void drifted;
       // Lock mode states ONE sentence rather than listing a row per round. Four rows all
       // reading the same number with the finished ones greyed would say those rounds are
       // protected, and in this mode they are not: editing idx rescores every round.
@@ -11395,6 +11776,11 @@ function renderPlayersPanel(){
       // that read as text, so nobody knew it was editable.
       if(canEd)html+=`<div class="pl-fld"><label class="pl-flbl">Name</label>`
         +`<input class="pl-fin" value="${fullName}" oninput="window._plSetName(${i},this.value)"/></div>`;
+      // Editable ONLY here. In the collapsed row it was an input in a line that
+      // otherwise reads as a display, so it was changed by people who never opened
+      // anything and never saw what the change did.
+      if(canEd)html+=`<div class="pl-fld"><label class="pl-flbl">Index</label>`
+        +`<input class="pl-fin num" type="text" value="${sbHcpDisplay(draft?draft.idx:p.idx)}" oninput="window._plDraftIdxLive(${i},this.value)"/></div>`;
       if(_follow){
         // The per-round list exists ONLY in follow mode. In lock mode there is one number,
         // and four rows all reading it with the finished ones greyed would say those
@@ -11404,19 +11790,34 @@ function renderPlayersPanel(){
           let _dn=false;try{_dn=_hcpRoundPlayed(ri);}catch(e){_dn=false;}
           html+=`<div class="pl-rd${_dn?' done':''}"><span>${roundLabel(ri)}${rd.courseName?' &middot; '+rd.courseName:''}</span>`
             +`<span class="frz">${_dn?'frozen':(_plRoundHasScores(ri)?'in play':'')}</span>`
-            +`<span class="val">${sbHcpDisplay(idxForRound(i,ri))}</span></div>`;
+            +`<span class="val"${_dn?'':` data-plrd="${pid}" data-base="${sbHcpDisplay(idxForRound(i,ri))}"`}>${(draft&&!_dn)?'<span class="was">'+sbHcpDisplay(idxForRound(i,ri))+'</span><span class="nxt">'+sbHcpDisplay(draft.idx)+'</span>':sbHcpDisplay(idxForRound(i,ri))}</span></div>`;
         });
         if(seat)html+=`<div class="pl-line pl-note">Added to the trip ${seat}.</div>`;
       }else{
         html+=`<div class="pl-line pl-note">${rw} off ${sbHcpDisplay(p.idx)}${seat?', taken from the group '+seat+' when '+who+' was added to the trip':''}. Changing it moves all ${nR===1?'of them':'three'.replace('three',String(nR))}.</div>`;
       }
-      if(showDrift&&live&&!drifted){
-        html+=`<div class="pl-line pl-match">Matches the group index</div>`;
-      }else if(showDrift&&drifted){
-        const when=_hcpDate(live.updatedAt);
-        html+=`<div class="pl-line"><span class="pl-dot"></span>`
-          +`<span>Group index <b style="color:var(--color-text-primary)">${sbHcpDisplay(live.index)}</b>${when?', updated '+when:''}</span>`
-          +(canEd?`<button class="pl-pill" onclick="window._plUseIdx(${i},${live.index})">Use it</button>`:'')
+      // "Use it" is GONE. It read live.index !== p.idx with no direction in it, so
+      // after somebody typed a new number it offered to replace that number with the
+      // stale one, and tapping it reverted the edit with nothing on screen to say so.
+      // There is one number now, the player's, and one reason to differ from it.
+      if(canEd&&followMode){
+        if(p.idxSetHere){
+          html+=`<div class="pl-sub">This index is for this trip only.`
+            +(live&&live.index!==null&&live.index!==undefined?` ${who}'s index is <b style="color:var(--color-text-primary)">${sbHcpDisplay(live.index)}</b>.`:'')
+            +` <span class="act" onclick="window._plFollowAgain(${i})">Go back to using it.</span></div>`;
+        }else if(live&&live.index!==null&&live.index!==undefined){
+          const when=_hcpDate(live.updatedAt);
+          html+=`<div class="pl-sub">Uses ${who}'s index, <b style="color:var(--color-text-primary)">${sbHcpDisplay(live.index)}</b>${when?', updated '+when:''}. If it changes, unplayed rounds here change with it.</div>`;
+        }
+      }
+      if(canEd){
+      const pdiff=canEd?_plPushDiff(p,draft?draft.idx:undefined):null;
+      if(canEd&&_plPushTarget(p))
+        html+=`<label class="pl-chk" id="plpushwrap_${pid}" style="display:${pdiff?'flex':'none'}">${_plPushInner(who,pdiff)}</label>`;
+      if(canEd)
+        html+=`<div class="pl-btns">`
+          +`<button class="pl-save" id="plsave_${pid}" onclick="window._plSaveRow(${i})"${(draft||pdiff)?'':' disabled'}>Save changes</button>`
+          +`<button class="pl-cancel" id="plcancel_${pid}" onclick="window._plCancelRow(${i})" style="display:${draft?'block':'none'}">Cancel</button>`
           +`</div>`;
       }
       if(WK.players.length>2&&canEd)html+=`<button class="pl-remove" onclick="removePlayer(${i})">Remove from trip</button>`;
@@ -11972,12 +12373,18 @@ function _syncScheduleNext(){
 }
 async function _syncTickWrapper(){
   await _syncTick();
+  // After the merge, never before: reconciling first would compare against rows
+  // the tick is in the middle of replacing.
+  _plFollowSyncSafe('syncTick');
   _syncScheduleNext();
 }
 
 function _syncStart(){
   _syncStop();
   _syncTripUpdatedAt=(WK&&WK._updatedAt)||null;
+  // v123.11: the trip is now live, so bring following players up to date before
+  // anything renders off their indices.
+  _plFollowSyncSafe('syncStart');
   // Seed the score watermark from the trip's SERVER-stamped updated_at. If it's
   // absent (blob-fallback trip), fall back to epoch — the first tick re-pulls every
   // score row (all idempotent no-ops against the loaded grid) rather than trusting
