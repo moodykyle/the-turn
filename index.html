@@ -1797,7 +1797,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.11';
+const APP_VERSION='v123.12';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -4201,12 +4201,17 @@ async function saveNewCourse(name){
   if(!c)return;
   try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}
   try{
-    await sbApiFetch(SB_URL+'/rest/v1/courses?on_conflict=name',{
+    // courses.external_id carries a UNIQUE index and is now TEXT rather than int8. A row
+    // whose id already sits on a differently named course comes back 409, and this used to
+    // swallow it: present in CATALOG, present in localStorage, absent on every other
+    // device. That is the fbTeamsManual failure shape and it is invisible without this.
+    const _res=await sbApiFetch(SB_URL+'/rest/v1/courses?on_conflict=name',{
       method:'POST',
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer(),'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
       body:JSON.stringify({name,slope:c.slope,rating:c.rating||null,holes:c.holes,is_custom:c.source==='custom',tees:c.tees||null,source:c.source||'custom',external_id:c.external_id||null,display_name:c.displayName||null,api_fetched_at:c.api_fetched_at||null,location:c.location||null})
     });
-  }catch(e){}
+    if(!_res.ok){const _t=await _res.text().catch(()=>'');console.warn('[saveNewCourse] '+_res.status+': '+_t);}
+  }catch(e){console.warn('[saveNewCourse] exception:',e);}
   autoSave();
 }
 async function renameCourse(oldName,newName){newName=newName.trim();if(!newName||newName===oldName)return;if(CATALOG[newName]){alert('A course named "'+newName+'" already exists.');return;}CATALOG[newName]=CATALOG[oldName];delete CATALOG[oldName];WK.rounds.forEach((rd,i)=>{if(rd.courseName===oldName){WK.rounds[i].courseName=newName;}});try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}try{await fetch(SB_URL+'/rest/v1/courses?name=eq.'+encodeURIComponent(oldName),{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer(),'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name:newName})});}catch(e){}renderCoursesPanel();renderWeekendPanel();autoSave();}
@@ -5522,21 +5527,31 @@ window._qrImportCourse=async function(i){
   const c=window._qrApiResults&&window._qrApiResults[i];if(!c)return;
   const el=document.getElementById('qrCourseResults');
   if(el)el.innerHTML='<div style="font-size:12px;color:var(--color-text-secondary)">Importing...</div>';
-  const dispName=c.club_name+(c.course_name&&c.course_name!==c.club_name?' - '+c.course_name:'');
-  const existing=Object.keys(CATALOG).find(function(n){return CATALOG[n].external_id===c.id;});
+  // Search returns tee COUNTS now, not tee arrays, so the real record has to be fetched
+  // before anything can be resolved. c is the search hit; ac is the course.
+  let ac;
+  try{ac=await _gcaFetchCourse(c.id);}
+  catch(e){
+    if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">Could not load course details. Try again.</div>';
+    return;
+  }
+  const dispName=ac.club_name+(ac.course_name&&ac.course_name!==ac.club_name?' - '+ac.course_name:'');
+  const existing=Object.keys(CATALOG).find(function(n){return CATALOG[n].external_id===ac.id;});
   const name=existing||dispName;
-  const male=_gcaTeeList(c.tees&&c.tees.male),female=_gcaTeeList(c.tees&&c.tees.female);
+  const male=_gcaTeeList(ac.tees&&ac.tees.male),female=_gcaTeeList(ac.tees&&ac.tees.female);
   const defTee=male.length>1?male[1]:(male[0]||female[0]);
   const gender=male.indexOf(defTee)>=0?'male':'female';
-  const entry=defTee?_gcaResolveTee(c,gender,defTee.tee_name||''):null;
+  const entry=defTee?_gcaResolveTee(ac,gender,defTee.tee_name||''):null;
   if(entry){CATALOG[name]=entry;if(!existing)await saveNewCourse(name);else await saveCourse(name);}
   else{
     // NEVER LEAVE THE SHEET ON "Importing...". A course whose tee data this app cannot
     // read is a real outcome, and the user needs to be told so they can add it by hand
-    // rather than watch a spinner that will not resolve.
+    // rather than watch a spinner that will not resolve. There are now THREE ways to get
+    // here rather than one: a bad tee shape, a failed detail request, and a dead id.
     if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">No usable tee data for this course. Add it by hand in Settings &gt; Courses.</div>';
     return;
   }
+  if(el)el.innerHTML='';
   window._qrPickCourse(name);
 };
 window._qrClose=function(){const m=document.getElementById('qrModal');if(m)m.style.display='none';};
@@ -6786,10 +6801,7 @@ window._twRoundImport=async function(i,ri){
   const el=document.getElementById('tw_rresults'+i);
   if(el)el.innerHTML='<div style="font-size:12px;color:var(--color-text-secondary)">Importing...</div>';
   try{
-    const r=await fetch(GOLF_PROXY+'?action=course&id='+c.id,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});
-    if(!r.ok)throw new Error();
-    const data=await r.json();
-    const apiCourse=data.course;
+    const apiCourse=await _gcaFetchCourse(c.id);
     const male=(apiCourse.tees?.male||[]);
     const female=(apiCourse.tees?.female||[]);
     const defT=male.length>1?male[1]:male[0]||female[0];
@@ -6840,10 +6852,7 @@ window._twCourseImport=async function(idx){
   const el=document.getElementById('tw_courseResults');
   if(el)el.innerHTML='<div style="font-size:12px;color:var(--color-text-secondary)">Importing...</div>';
   try{
-    const r=await fetch(GOLF_PROXY+'?action=course&id='+c.id,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});
-    if(!r.ok)throw new Error();
-    const data=await r.json();
-    const apiCourse=data.course;
+    const apiCourse=await _gcaFetchCourse(c.id);
     const male=(apiCourse.tees?.male||[]);
     const female=(apiCourse.tees?.female||[]);
     const defT=male.length>1?male[1]:male[0]||female[0];
@@ -13084,6 +13093,26 @@ function _gcaTeeToHoles(tee){
 // name, and `|| []` cannot see that because an object is truthy. Array.isArray can.
 // Real arrays pass through untouched, so nothing about a healthy record changes.
 function _gcaTeeList(v){return Array.isArray(v)?v:[];}
+// ONE place builds the course-detail request. There were six inline copies and they drifted:
+// two of them checked r.ok with a bare throw, two with a message, and none of them could
+// tell a dead id from a failed request.
+//
+// A course id stored before the vendor moved to the 8-character alphabet is not a transient
+// failure. It answers 409 and always will, so the caller has to be able to say "re-import
+// this" rather than "try again", which is why this throws a TAGGED error instead of
+// returning null. The tag is the only thing distinguishing a permanent outcome from a
+// temporary one, and a caller that ignores it tells the user to keep retrying forever.
+async function _gcaFetchCourse(id){
+  const r=await fetch(GOLF_PROXY+'?action=course&id='+encodeURIComponent(id),{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});
+  if(r.status===409){const e=new Error('legacy course id');e.gcaLegacy=true;throw e;}
+  if(!r.ok)throw new Error('course detail fetch failed: '+r.status);
+  const data=await r.json();
+  const apiCourse=data&&data.course;
+  // The payload is wrapped. An unwrap that silently yields undefined would hand every
+  // caller a course-shaped nothing and fail four lines later somewhere less obvious.
+  if(!apiCourse)throw new Error('course detail payload had no course');
+  return apiCourse;
+}
 function _gcaResolveTee(apiCourse,gender,teeName){
   const tees=apiCourse.tees||{};
   const list=_gcaTeeList(gender==='female'?tees.female:tees.male);
@@ -13213,13 +13242,19 @@ window._e9ImportCourse=async function(i){
   const c=window._e9ApiResults&&window._e9ApiResults[i];if(!c)return;
   const el=document.getElementById('e9CourseResults');
   if(el)el.innerHTML='<div style="font-size:12px;color:var(--color-text-secondary)">Importing...</div>';
-  const displayName=c.club_name+(c.course_name&&c.course_name!==c.club_name?' - '+c.course_name:'');
-  const existing=Object.keys(CATALOG).find(n=>CATALOG[n].external_id===c.id);
+  let ac;
+  try{ac=await _gcaFetchCourse(c.id);}
+  catch(e){
+    if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">Could not load course details. Try again.</div>';
+    return;
+  }
+  const displayName=ac.club_name+(ac.course_name&&ac.course_name!==ac.club_name?' - '+ac.course_name:'');
+  const existing=Object.keys(CATALOG).find(n=>CATALOG[n].external_id===ac.id);
   const name=existing||displayName;
-  const male=_gcaTeeList(c.tees&&c.tees.male),female=_gcaTeeList(c.tees&&c.tees.female);
+  const male=_gcaTeeList(ac.tees&&ac.tees.male),female=_gcaTeeList(ac.tees&&ac.tees.female);
   const defTee=male.length>1?male[1]:(male[0]||female[0]);
   const gender=male.indexOf(defTee)>=0?'male':'female';
-  const entry=defTee?_gcaResolveTee(c,gender,defTee.tee_name||''):null;
+  const entry=defTee?_gcaResolveTee(ac,gender,defTee.tee_name||''):null;
   if(entry){CATALOG[name]=entry;if(!existing)await saveNewCourse(name);else await saveCourse(name);}
   else{
     if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">No usable tee data for this course. Add it by hand below.</div>';
@@ -13266,16 +13301,12 @@ window._gcaSelectResult=async function(idx){
   const el=document.getElementById('gcaResults');
   el.innerHTML='<div style="font-size:12px;color:var(--color-text-secondary);padding:8px 0">Loading course details...</div>';
   try{
-    const r=await fetch(GOLF_PROXY+'?action=course&id='+c.id,{
-      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}
-    });
-    if(!r.ok)throw new Error('Fetch failed');
-    const data=await r.json();
-    window._gcaPendingCourse=data.course;
-    var _tz=data.course&&data.course.tees;
+    const apiCourse=await _gcaFetchCourse(c.id);
+    window._gcaPendingCourse=apiCourse;
+    var _tz=apiCourse&&apiCourse.tees;
     var _hasTees=!!(_tz&&(( _tz.male&&_tz.male.length)||(_tz.female&&_tz.female.length)));
-    if(!_hasTees){_gcaManualFromApi(data.course);return;}
-    _gcaShowTeePicker(data.course);
+    if(!_hasTees){_gcaManualFromApi(apiCourse);return;}
+    _gcaShowTeePicker(apiCourse);
   }catch(e){
     el.innerHTML='<div style="font-size:12px;color:#DC2626">Could not load course details.</div>';
   }
@@ -13406,18 +13437,14 @@ window._gcaRefresh=async function(eidOrName,isEid){
   const btn=document.getElementById('gca-refresh-'+name.replace(/\W/g,'_'));
   if(btn)btn.textContent='Refreshing...';
   try{
-    const r=await fetch(GOLF_PROXY+'?action=course&id='+c.external_id,{
-      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}
-    });
-    if(!r.ok)throw new Error('Fetch failed');
-    const data=await r.json();
+    const apiCourse=await _gcaFetchCourse(c.external_id);
     // Find which tee was previously the default (match slope+rating)
     const prevTees=c.tees||{};
     const allPrev=[...(prevTees.male||[]),...(prevTees.female||[])];
     const prevDefault=allPrev.find(t=>t.slope_rating===c.slope&&Math.abs((t.course_rating||0)-c.rating)<0.1);
     const gender=prevDefault&&(prevTees.female||[]).find(t=>t.tee_name===prevDefault.tee_name)?'female':'male';
-    const teeName=prevDefault?.tee_name||(data.course.tees?.male?.[1]||data.course.tees?.male?.[0]||data.course.tees?.female?.[0])?.tee_name||'';
-    const entry=_gcaResolveTee(data.course,gender,teeName);
+    const teeName=prevDefault?.tee_name||(apiCourse.tees?.male?.[1]||apiCourse.tees?.male?.[0]||apiCourse.tees?.female?.[0])?.tee_name||'';
+    const entry=_gcaResolveTee(apiCourse,gender,teeName);
     if(!entry)throw new Error('No tee data');
     const _prevDisplay=(CATALOG[name]||{}).displayName||null;
     CATALOG[name]=entry;
@@ -13427,7 +13454,9 @@ window._gcaRefresh=async function(eidOrName,isEid){
     (function(){var ex=document.getElementById('gcaRefreshToast');if(ex)ex.remove();var t=document.createElement('div');t.id='gcaRefreshToast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1D9E75;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';t.textContent=(courseDisp(name))+' updated from the API';document.body.appendChild(t);setTimeout(function(){t.remove();},3000);})();
   }catch(e){
     if(btn)btn.textContent='Refresh';
-    (function(){var ex=document.getElementById('gcaRefreshToast');if(ex)ex.remove();var t=document.createElement('div');t.id='gcaRefreshToast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#DC2626;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';t.textContent='Refresh failed. Try again.';document.body.appendChild(t);setTimeout(function(){t.remove();},3000);})();
+    // A legacy id can never succeed, so "Try again" is a lie that costs the user taps.
+    var _rfMsg=(e&&e.gcaLegacy)?'Imported before the course API changed. Re-import to refresh.':'Refresh failed. Try again.';
+    (function(){var ex=document.getElementById('gcaRefreshToast');if(ex)ex.remove();var t=document.createElement('div');t.id='gcaRefreshToast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#DC2626;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';t.textContent=_rfMsg;document.body.appendChild(t);setTimeout(function(){t.remove();},3000);})();
   }
 };
 window._gcaOpenEdit=function(ri,eid,_stagedName){
