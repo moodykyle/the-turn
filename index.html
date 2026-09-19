@@ -1797,7 +1797,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.12';
+const APP_VERSION='v123.13';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -2367,6 +2367,7 @@ async function s2WriteActive(){
           ...(rd.rid&&{rid:rd.rid}),
           courseName:rd.courseName,
           course:rd.course,
+          ...(rd.coursePinned===true&&{coursePinned:true}),
           mpOn:!!rd.mpOn,
           vegasOn:!!rd.vegasOn,
           skinsOn:!!rd.skinsOn,
@@ -2761,6 +2762,7 @@ async function s2ReadTrip(tripId){
         ...(rd.rid&&{rid:rd.rid}),
         courseName:rd.courseName,
         course:rd.course||(CATALOG[rd.courseName])||{slope:113,holes:Array.from({length:18},(_,i)=>({par:4,si:i+1}))},
+        coursePinned:rd.coursePinned===true,
         // Per-round flags: use value from rounds_data if present (v70+), else fall back to trip-level (pre-v70)
         mpOn:rd.mpOn!==undefined?rd.mpOn:!!t.mp_on,
         ...(rd.mpFormat&&{mpFormat:rd.mpFormat}),
@@ -2851,7 +2853,27 @@ async function s2ReadTrip(tripId){
     // a different tee (pre-v106.6.42 trips) or CATALOG's top-level defaults.
     // Safe to run on every load: if CATALOG has no tees, _resolveCourseObj
     // returns Object.assign({},cat) which is identical to the existing fallback.
+    // A round that has been played pays at the course it was played on. CATALOG is a
+    // live table: Refresh rewrites it, and so does a same-name re-import, which needs
+    // no button because the API rebuilds the exact key already stored. Re-resolving a
+    // played round moves money that has already been settled, silently, on load.
+    // Decided here rather than below because scoreRows is in hand and STATE.scores is
+    // not reconstructed until later in this function.
+    const _cpScored=new Set();
+    scoreRows.forEach(function(s){
+      const _r=(s.round_id||'').split(':round:')[1];
+      if(_r!==undefined&&_r!=='')_cpScored.add(_r);
+    });
+    const _cpSettled=Array.isArray(t.settled_rounds)?t.settled_rounds:[];
+    const _cpLocked=Array.isArray(t.locked_rounds)?t.locked_rounds:[];
+    newWK.rounds.forEach(function(rd,ri){
+      if(rd.coursePinned===true)return;
+      if((rd.rid!=null&&_cpScored.has(String(rd.rid)))||_cpSettled.includes(ri)||_cpLocked.includes(ri))
+        rd.coursePinned=true;
+    });
+
     newWK.rounds.forEach(function(rd){
+      if(rd.coursePinned===true)return; // blob IS the snapshot
       const cat=CATALOG[rd.courseName];
       if(cat&&cat.tees){
         let dt=rd.course&&rd.course.defaultTee;
@@ -5920,7 +5942,23 @@ function _s2RehydrateLoadedTrip(){
   // Re-hydrate course objects: prefer live CATALOG (handles built-in + loaded custom courses)
   // Fall back to blob's own course data for custom courses not yet in CATALOG
   // Either way, ensure holes array exists
+  // Backfill the pin for trips saved before this build, and for rounds arriving via
+  // the sync poll rather than s2ReadTrip. Idempotent: an already-pinned round returns
+  // immediately, so this cannot re-stamp or re-derive anything.
+  WK.rounds.forEach((rd,r)=>{
+    if(rd.coursePinned===true)return;
+    const _sc=(STATE.scores&&STATE.scores[r])||[];
+    const _any=_sc.some(h=>Array.isArray(h)&&h.some(v=>v!=null));
+    if(_any||(STATE.settledRounds||[]).includes(r)||(STATE.lockedRounds||[]).includes(r)){
+      rd.coursePinned=true;
+      s2MarkDirty(['trip']);
+    }
+  });
   WK.rounds.forEach(rd=>{
+    // Pinned rounds keep their own snapshot. Not "preserve defaultTee and re-resolve":
+    // _resolveCourseObj reads CATALOG internally and rebuilds slope, rating and holes
+    // off the live tee list, which is the same reach-back with an extra step.
+    if(rd.coursePinned===true&&rd.course&&rd.course.holes&&rd.course.holes.length)return;
     if(rd.courseName&&CATALOG[rd.courseName]){
       const _cat=CATALOG[rd.courseName];
       // Preserve the round's per-tee selection. The loaded rd.course (from
@@ -7808,7 +7846,7 @@ function switchGamesRound(r){STATE.gamesViewRound=r;renderGamesTab();}
 function switchGamesGame(g){STATE.gamesViewGame=g;renderGamesTab();}
 function switchTeamsRound(r){STATE.teamsRound=r;renderTeamsPanel();}
 function _vpi(pi){return Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];}
-function courseHdcp(pi,r){if(!_vpi(pi))return 0;const course=WK.rounds[r].course;const slope=course.slope||113;const rating=course.rating!=null?course.rating:(CATALOG[WK.rounds[r].courseName]?.rating??null);const par=course.holes?course.holes.reduce((a,h)=>a+h.par,0):72;const base=idxForRound(pi,r)*WK.hdcpPct*(slope/113);const adj=(rating!==null)?rating-par:0;return Math.round(base+adj);}
+function courseHdcp(pi,r){if(!_vpi(pi))return 0;const course=WK.rounds[r].course;const slope=course.slope||113;const rating=course.rating!=null?course.rating:(WK.rounds[r].coursePinned===true?null:(CATALOG[WK.rounds[r].courseName]?.rating??null));const par=course.holes?course.holes.reduce((a,h)=>a+h.par,0):72;const base=idxForRound(pi,r)*WK.hdcpPct*(slope/113);const adj=(rating!==null)?rating-par:0;return Math.round(base+adj);}
 function roundLabel(r){
   const rd=WK.rounds[r];
   const isRegular=!rd.isE9||(rd.isE9&&rd.inStandings);
@@ -12638,7 +12676,7 @@ function renderWeekendPanel(){
     const rdOpts=_tripCourseNames.map(n=>`<option value="${n}"${rd.courseName===n?' selected':''}>${courseDisp(n)}</option>`).join('');
     // self-heal defaultTee if missing (mirrors Courses tab _gcaTripCourseCard)
     // gated: a stale viewer snapshot must never write the whole trip row over the live scorer's state
-    if(rd.course&&!rd.course.defaultTee&&_s2CanSelfHeal(origI)){const _ct=CATALOG[rd.courseName];if(_ct&&_ct.tees){const _m=_ct.tees.male||[];const _f=_ct.tees.female||[];const _defT=_m.length>1?_m[1]:(_m[0]||_f[0]);if(_defT){const _defG=_m.includes(_defT)?'male':'female';rd.course=Object.assign({},rd.course,{defaultTee:{gender:_defG,teeName:_defT.tee_name}});s2MarkDirty(['trip']);s2WriteActive();}}}
+    if(rd.course&&!rd.course.defaultTee&&rd.coursePinned!==true&&_s2CanSelfHeal(origI)){const _ct=CATALOG[rd.courseName];if(_ct&&_ct.tees){const _m=_ct.tees.male||[];const _f=_ct.tees.female||[];const _defT=_m.length>1?_m[1]:(_m[0]||_f[0]);if(_defT){const _defG=_m.includes(_defT)?'male':'female';rd.course=Object.assign({},rd.course,{defaultTee:{gender:_defG,teeName:_defT.tee_name}});s2MarkDirty(['trip']);s2WriteActive();}}}
     // tee pill (interactive) - mirrors Courses tab
     const dt=rd.course&&rd.course.defaultTee;
     const teeName=dt?dt.teeName:'';
@@ -13418,7 +13456,7 @@ window._gcaImport=async function(){
   }
   document.getElementById('gcaSearch').value='';
   window._gcaPendingCourse=null;
-  if(WK&&WK.rounds){WK.rounds.forEach(rd=>{if(rd.courseName===name&&rd.course&&!rd.course.defaultTee){rd.course=Object.assign({},rd.course,{defaultTee:{gender,teeName}});}});}
+  if(WK&&WK.rounds){WK.rounds.forEach(rd=>{if(rd.courseName===name&&rd.course&&!rd.course.defaultTee&&rd.coursePinned!==true){rd.course=Object.assign({},rd.course,{defaultTee:{gender,teeName}});}});}
   // Add to trip's staged courses if not already on a round
   if(WK&&!WK.rounds.some(rd=>rd.courseName===name)){
     if(!WK.stagedCourses)WK.stagedCourses=[];
