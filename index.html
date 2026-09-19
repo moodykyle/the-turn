@@ -1797,7 +1797,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.13';
+const APP_VERSION='v123.14';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -2020,6 +2020,26 @@ function _plIdxGuard(i,v,go){
 //
 // Idempotent by construction: only empty slots are filled, so a round frozen once keeps
 // the values it was frozen with no matter how often this runs.
+function _cpPinPlayed(){
+  if(typeof WK==='undefined'||!WK||!WK.rounds)return;
+  for(var r=0;r<WK.rounds.length;r++){
+    var rd=WK.rounds[r];
+    if(!rd||rd.coursePinned===true)continue;
+    var played=false;
+    try{played=_plRoundHasScores(r);}catch(e){played=false;}
+    if(!played&&typeof STATE!=='undefined'&&STATE)
+      played=((STATE.settledRounds||[]).indexOf(r)>=0)||((STATE.lockedRounds||[]).indexOf(r)>=0);
+    if(!played)continue;
+    rd.coursePinned=true;
+    // MUST mark the trip dirty. rounds_data rides the trip upsert, which s2WriteActive
+    // gates behind _s2Dirty.trip, and score entry marks only ['score']. Without this the
+    // flag lives in memory, the write skips the trip row entirely, and the marker is gone
+    // on reload. Same trap as rd.idxSnap. Fires once per round, on the transition only,
+    // and rides the autoSave already scheduled by the caller.
+    if(typeof s2MarkDirty==='function')s2MarkDirty(['trip']);
+  }
+}
+
 function _hcpFreezePlayed(){
   if(typeof WK==='undefined'||!WK||!WK.players)return;
   if(_hcpMode()!=='round')return;
@@ -5951,7 +5971,6 @@ function _s2RehydrateLoadedTrip(){
     const _any=_sc.some(h=>Array.isArray(h)&&h.some(v=>v!=null));
     if(_any||(STATE.settledRounds||[]).includes(r)||(STATE.lockedRounds||[]).includes(r)){
       rd.coursePinned=true;
-      s2MarkDirty(['trip']);
     }
   });
   WK.rounds.forEach(rd=>{
@@ -8369,7 +8388,7 @@ function adjScore(pi,delta){if(isReadOnly)return;if(_pencilViewerLocked(STATE.cu
   // the same mistake as the empty catch around the profile fan-out. Score entry still
   // proceeds, because losing a keystroke is worse than losing a freeze, but the failure
   // is loud in the console and _hcpFreezePlayed is idempotent so the next tap retries it.
-  try{_hcpFreezePlayed();}catch(_hf){console.error('_hcpFreezePlayed failed on score entry; played rounds may be unfrozen',_hf);}s2MarkDirty(['score'],r+':'+hi);clearTimeout(window._s2ScoreTimer);window._s2ScoreTimer=setTimeout(()=>{autoSave(true);s2WriteActive();},1500);// Check auto-press after all players scored this hole
+  try{_hcpFreezePlayed();}catch(_hf){console.error('_hcpFreezePlayed failed on score entry; played rounds may be unfrozen',_hf);}try{_cpPinPlayed();}catch(_cp){console.error('_cpPinPlayed failed on score entry; played rounds may be unpinned',_cp);}s2MarkDirty(['score'],r+':'+hi);clearTimeout(window._s2ScoreTimer);window._s2ScoreTimer=setTimeout(()=>{autoSave(true);s2WriteActive();},1500);// Check auto-press after all players scored this hole
 const allScored=STATE.scores[r][hi].every(s=>s!==null);const _asFi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(allScored&&gameOnFs('mp',r,_asFi)){const mpG=mpGamesForRound(r,_asFi);const _th=roundHoleCount(r);const si=segForHole(hi-holeOffset(r),mpG,_th);checkAutoPress(r,_asFi,si);}renderScorecard();renderHoleDots();renderHammerBox();renderSkinsBoxWrap();renderMPHoleBox();renderVegasBoxWrap();
   _updateActionRow();
 }
