@@ -1834,7 +1834,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.16-next.1';
+const APP_VERSION='v123.17-next.1';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -16476,9 +16476,56 @@ function settleItem(key){
   if(!STATE.settledRounds.includes(key))STATE.settledRounds.push(key);autoSave();renderMoney();if(document.getElementById('mpanel-expenses')?.classList.contains('active'))renderExpenses();}
 function unsettleItem(key){if(!STATE.settledRounds)return;STATE.settledRounds=STATE.settledRounds.filter(k=>k!==key);if(STATE.roundSettleData?.[key])delete STATE.roundSettleData[key];autoSave();renderMoney();if(document.getElementById('mpanel-expenses')?.classList.contains('active'))renderExpenses();}
 function unsettleRound(r){unsettleItem(r);}
+// v123.17. PER-FOURSOME LOCKS, IN ONE PLACE.
+// The array is mixed on purpose: a NUMBER is the whole round (the only shape that has
+// ever been written, so every existing trip keeps reading correctly and every consumer
+// of isRoundLocked keeps its meaning), a STRING 'r:fi' is one foursome. The two are kept
+// exclusive by _lockCollapse and _lockExpand: a round is never both.
+// A partial lock deliberately leaves isRoundLocked FALSE. Settlement and the money tab
+// read that, and settling a round while a foursome is still live would be wrong.
+function _lockKey(r,fi){return r+':'+(fi||0);}
+function _lockArr(){if(!STATE.lockedRounds)STATE.lockedRounds=[];return STATE.lockedRounds;}
+function _fsCountFor(r){var fl=flightsForRound(r);return (fl&&fl.length)||1;}
+function isFlightLocked(r,fi){var a=_lockArr();return a.includes(r)||a.includes(_lockKey(r,fi));}
+// Every foursome locked collapses back to the plain round number, so a fully finished
+// round is stored in the pre-v123.17 shape and an older client would still read it.
+function _lockCollapse(r){
+  var a=_lockArr(),n=_fsCountFor(r);
+  for(var fi=0;fi<n;fi++)if(!a.includes(_lockKey(r,fi)))return false;
+  for(var i=a.length-1;i>=0;i--)if(typeof a[i]==='string'&&a[i].indexOf(r+':')===0)a.splice(i,1);
+  if(!a.includes(r))a.push(r);
+  return true;
+}
+// Freeing ONE foursome of a whole-round lock means writing the others out explicitly
+// first, otherwise removing the number would unlock the entire field.
+function _lockExpand(r){
+  var a=_lockArr(),i=a.indexOf(r);
+  if(i<0)return;
+  a.splice(i,1);
+  var n=_fsCountFor(r);
+  for(var fi=0;fi<n;fi++){var k=_lockKey(r,fi);if(!a.includes(k))a.push(k);}
+}
+function lockFlight(r,fi){
+  var a=_lockArr();
+  if(a.includes(r))return true; // whole round already locked
+  var k=_lockKey(r,fi);
+  if(!a.includes(k))a.push(k);
+  _lockCollapse(r);
+  autoSave();
+  return true;
+}
+function unlockFlight(r,fi){
+  if((STATE.settledRounds||[]).includes(r)){showMsg('Unsettle this round on the Money tab before unlocking.');return false;}
+  var a=_lockArr();
+  if(a.includes(r))_lockExpand(r);
+  var i=a.indexOf(_lockKey(r,fi));
+  if(i>=0)a.splice(i,1);
+  autoSave();
+  return true;
+}
 function isRoundLocked(r){return(STATE.lockedRounds||[]).includes(r);}
-function lockRound(r){if(!STATE.lockedRounds)STATE.lockedRounds=[];if(!STATE.lockedRounds.includes(r))STATE.lockedRounds.push(r);autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();}
-function unlockRound(r){if((STATE.settledRounds||[]).includes(r)){showMsg('Unsettle this round on the Money tab before unlocking.');return;}if(!STATE.lockedRounds)return;STATE.lockedRounds=STATE.lockedRounds.filter(x=>x!==r);if(STATE.razzleFiredToasts){Object.keys(STATE.razzleFiredToasts).forEach(k=>{if(k.startsWith('bonus:'+r+':')||k.startsWith('birdie:'+r+':')||k.startsWith('final:'+r+':'))delete STATE.razzleFiredToasts[k];});}if(STATE.razzleHWM)STATE.razzleHWM[r]=undefined;autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();if(document.getElementById('mpanel-golf')?.classList.contains('active'))renderMoney();}
+function lockRound(r){var _la=_lockArr();for(var _i=_la.length-1;_i>=0;_i--)if(typeof _la[_i]==='string'&&_la[_i].indexOf(r+':')===0)_la.splice(_i,1);if(!_la.includes(r))_la.push(r);autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();}
+function unlockRound(r){if((STATE.settledRounds||[]).includes(r)){showMsg('Unsettle this round on the Money tab before unlocking.');return;}if(!STATE.lockedRounds)return;STATE.lockedRounds=STATE.lockedRounds.filter(x=>x!==r&&!(typeof x==='string'&&x.indexOf(r+':')===0));if(STATE.razzleFiredToasts){Object.keys(STATE.razzleFiredToasts).forEach(k=>{if(k.startsWith('bonus:'+r+':')||k.startsWith('birdie:'+r+':')||k.startsWith('final:'+r+':'))delete STATE.razzleFiredToasts[k];});}if(STATE.razzleHWM)STATE.razzleHWM[r]=undefined;autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();if(document.getElementById('mpanel-golf')?.classList.contains('active'))renderMoney();}
 
 function renderMoney(){
   const n=WK.players.length,pot=WK.buyIn*n;
