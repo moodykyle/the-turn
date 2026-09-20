@@ -1807,6 +1807,13 @@ function _pencilMoot(r,fi){
   }
   return true;
 }
+// v123.16. Reopening a finished round is a VIEW choice, not a data change: it lives in
+// memory, dies with the tab, and is keyed per round AND foursome so reopening yours does
+// not reopen the group next door. Deliberately not in STATE: persisting it would sync a
+// personal view preference to everyone else's device.
+var _doneBarOpen={};
+function _doneBarKey(r,fi){return r+':'+(fi||0);}
+function _doneBarShown(r,fi){return _pencilMoot(r,fi)&&!_doneBarOpen[_doneBarKey(r,fi)];}
 // The VIEW ONLY pill, lifted out of updateHoleUI so it can be tested on its own.
 function _viewOnlyPillShown(r){var fi=_curFi(r);return !_fsPickPending(r)&&_pencilViewerLocked(r,fi)&&!_pencilMoot(r,fi);}
 // Render-time self-heal writes (defaultTee backfill etc.) must not fire from a stale
@@ -1817,7 +1824,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.15';
+const APP_VERSION='v123.16';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7521,16 +7528,15 @@ function _updateActionRow(){
   }
   if(!isReadOnly&&_pencilActive()){
     const _arFi=_curFi(r);
-    if(!holdsPencil(r,_arFi)&&_pencilMoot(r,_arFi)){
+    if(_doneBarShown(r,_arFi)){
       row.style.gridTemplateColumns='1fr auto 64px';
       if(isRoundLocked(r)){
         row.style.gridTemplateColumns='1fr 64px';
         row.innerHTML='<div class="act-pencil-done"></div>'+_gridBtn;
       }else{
-        var _edAct=pencilUnheld(r,_arFi)?'window._pencilClaim()':'window._pencilTakeoverConfirm()';
         row.innerHTML='<div class="act-pencil-done" style="display:flex;align-items:center;gap:6px;min-width:0;font-size:13px;color:var(--color-text-secondary);white-space:nowrap">'
           +'<i class="ti ti-circle-check" style="font-size:15px;flex-shrink:0" aria-hidden="true"></i>Round complete</div>'
-          +'<button class="act-clear" onclick="'+_edAct+'" style="background:#1D9E75;color:#0c1712;border:none">Edit</button>'+_gridBtn;
+          +'<button class="act-clear" onclick="window._doneEdit()" style="background:#1D9E75;color:#0c1712;border:none">Edit</button>'+_gridBtn;
       }
       _updateActionRowGameLock();
       return;
@@ -12325,6 +12331,15 @@ async function _tripAdminSave(){
     });
   }catch(e){console.warn('[_tripAdminSave] failed',e);}
 }
+window._doneEdit=function(){
+  if(isReadOnly)return;
+  var r=STATE.currentRound,fi=_curFi(r);
+  if(_fsPickPending(r))return;
+  if(isRoundLocked(r))return; // unlock lives above the bar; nothing to reopen here
+  if(holdsPencil(r,fi)){_doneBarOpen[_doneBarKey(r,fi)]=true;updateHoleUI();return;}
+  if(pencilUnheld(r,fi)){window._pencilClaim();return;}
+  window._pencilTakeoverConfirm();
+};
 window._pencilClaim=function(){
   if(isReadOnly)return;
   var r=STATE.currentRound,fi=_curFi(r);
@@ -12335,6 +12350,7 @@ window._pencilClaim=function(){
   var _uid=sbCurrentUser()?.id;if(!_uid)return;
   if(!WK._pencilLock)WK._pencilLock=[];
   _pencilPadSet(WK._pencilLock,r,fi,{uid:_uid,ts:Date.now()});
+  _doneBarOpen[_doneBarKey(r,fi)]=true;
   _pencilSave(r,fi);
   updateHoleUI();
 };
@@ -12378,6 +12394,7 @@ window._pencilTakeoverConfirm=function(){
       var _uid=sbCurrentUser()?.id;if(!_uid)return;
       if(!WK._pencilLock)WK._pencilLock=[];
       _pencilPadSet(WK._pencilLock,r,fi,{uid:_uid,ts:Date.now()});
+      _doneBarOpen[_doneBarKey(r,fi)]=true;
       _pencilSave(r,fi);
       updateHoleUI();
     }
