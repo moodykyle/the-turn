@@ -1789,6 +1789,26 @@ function _updateActionRowGameLock(){
 function pencilHolder(r,fi){var lk=_pencilLockFor(r,fi);return lk?lk.uid:null;}
 function holdsPencil(r,fi){if(_simViewer)return false;var lk=_pencilLockFor(r,fi);if(!lk)return false;var _uid=sbCurrentUser()?.id;return !!(_uid&&lk.uid===_uid);}
 function pencilUnheld(r,fi){if(!_pencilActive())return false;if(_simViewer)return false;return !_pencilLockFor(r,fi);}
+// v123.15. A pencil only matters while a hole is live. Once the round is locked, or THIS
+// foursome has every hole of ITS length scored, whoever last held it is history, not the
+// scorer. Display rule only: pencil_lock is never written here, so there is nothing to race
+// with sync, and trips finished before this build clear the moment they are opened.
+// Per foursome, not per round: a finished group must not wait on one still out on 15.
+// Empty seats (-1) are skipped; a foursome with nobody in it is never 'done'.
+function _pencilMoot(r,fi){
+  if(isRoundLocked(r))return true;
+  var n=fsHoleCount(r,fi||0),off=holeOffset(r);
+  var mem=(flightsForRound(r)[fi||0]||[]).filter(function(pi){return typeof pi==='number'&&pi>=0;});
+  if(!mem.length||!(n>0))return false;
+  for(var hi=off;hi<off+n;hi++){
+    var row=STATE&&STATE.scores&&STATE.scores[r]&&STATE.scores[r][hi];
+    if(!row)return false;
+    for(var k=0;k<mem.length;k++){var sc=row[mem[k]];if(sc===null||sc===undefined)return false;}
+  }
+  return true;
+}
+// The VIEW ONLY pill, lifted out of updateHoleUI so it can be tested on its own.
+function _viewOnlyPillShown(r){var fi=_curFi(r);return !_fsPickPending(r)&&_pencilViewerLocked(r,fi)&&!_pencilMoot(r,fi);}
 // Render-time self-heal writes (defaultTee backfill etc.) must not fire from a stale
 // viewer's snapshot — that would clobber the live scorer's in-progress game state on
 // their next redraw. If the pencil isn't in play (solo/quick round), there's only one
@@ -1797,7 +1817,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.14';
+const APP_VERSION='v123.15';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7501,6 +7521,20 @@ function _updateActionRow(){
   }
   if(!isReadOnly&&_pencilActive()){
     const _arFi=_curFi(r);
+    if(!holdsPencil(r,_arFi)&&_pencilMoot(r,_arFi)){
+      row.style.gridTemplateColumns='1fr auto 64px';
+      if(isRoundLocked(r)){
+        row.style.gridTemplateColumns='1fr 64px';
+        row.innerHTML='<div class="act-pencil-done"></div>'+_gridBtn;
+      }else{
+        var _edAct=pencilUnheld(r,_arFi)?'window._pencilClaim()':'window._pencilTakeoverConfirm()';
+        row.innerHTML='<div class="act-pencil-done" style="display:flex;align-items:center;gap:6px;min-width:0;font-size:13px;color:var(--color-text-secondary);white-space:nowrap">'
+          +'<i class="ti ti-circle-check" style="font-size:15px;flex-shrink:0" aria-hidden="true"></i>Round complete</div>'
+          +'<button class="act-clear" onclick="'+_edAct+'" style="background:#1D9E75;color:#0c1712;border:none">Edit</button>'+_gridBtn;
+      }
+      _updateActionRowGameLock();
+      return;
+    }
     if(pencilUnheld(r,_arFi)){
       row.style.gridTemplateColumns='1fr 64px';
       row.innerHTML='<button class="act-save" id="actStartBtn" onclick="window._pencilClaim()">Start Scoring</button>'+_gridBtn;
@@ -10088,7 +10122,7 @@ function updateHoleUI(){
   const hole=WK.rounds[r].course.holes?.[hi]||{par:4,si:hi+1};
   const locked=isRoundLocked(r),complete=isRoundComplete(r);
   document.getElementById('holeLabel').textContent='Hole '+(hi+1);
-  var _voPill=document.getElementById('viewOnlyPill');if(_voPill)_voPill.style.display=(!_fsPickPending(r)&&_pencilViewerLocked(r,_curFi(r)))?'inline-flex':'none';
+  var _voPill=document.getElementById('viewOnlyPill');if(_voPill)_voPill.style.display=_viewOnlyPillShown(r)?'inline-flex':'none';
   const _yds=hole.yardage||0;const _ydStr=_yds>0?' · '+_yds+' yds':'';document.getElementById('holeMeta').textContent='Par '+hole.par+_ydStr+' · Hdcp '+hole.si;
   const _minHole=holeOffset(r),_maxHole=_navLastHole(r,_navFi(r));
   document.getElementById('prevBtn').disabled=hi===_minHole;
