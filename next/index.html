@@ -1806,7 +1806,7 @@ function pencilUnheld(r,fi){if(!_pencilActive())return false;if(_simViewer)retur
 // Per foursome, not per round: a finished group must not wait on one still out on 15.
 // Empty seats (-1) are skipped; a foursome with nobody in it is never 'done'.
 function _pencilMoot(r,fi){
-  if(isRoundLocked(r))return true;
+  if(isFlightLocked(r,fi||0))return true;
   var n=fsHoleCount(r,fi||0),off=holeOffset(r);
   var mem=(flightsForRound(r)[fi||0]||[]).filter(function(pi){return typeof pi==='number'&&pi>=0;});
   if(!mem.length||!(n>0))return false;
@@ -1834,7 +1834,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.17-next.1';
+const APP_VERSION='v123.18-next.1';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7540,7 +7540,7 @@ function _updateActionRow(){
     const _arFi=_curFi(r);
     if(_doneBarShown(r,_arFi)){
       row.style.gridTemplateColumns='1fr auto 64px';
-      if(isRoundLocked(r)){
+      if(isFlightLocked(r,_arFi)){
         row.style.gridTemplateColumns='1fr 64px';
         row.innerHTML='<div class="act-pencil-done"></div>'+_gridBtn;
       }else{
@@ -7575,7 +7575,7 @@ function _updateActionRow(){
   if(clearBtn){
     const hasScores=STATE.scores[r][hi].some(s=>s!==null);
     const _arfi=isMultiFlight(r)?(getFlightPick(r)||0):0;const _arhs=STATE.hammerState&&STATE.hammerState[r]&&STATE.hammerState[r][_arfi]&&STATE.hammerState[r][_arfi][hi];const hasHammer=!!(_arhs&&(_arhs.throws?.length>0||_arhs.conceded||_arhs.accepted));
-    const canClear=!isReadOnly&&!isRoundLocked(r)&&(hasScores||hasHammer);
+    const canClear=!isReadOnly&&!isFlightLocked(r,_curFi(r))&&(hasScores||hasHammer);
     clearBtn.classList.toggle('active',canClear);
     clearBtn.disabled=!canClear;
   }
@@ -7590,7 +7590,7 @@ window._actClear=function(){
   if(isReadOnly)return;
   if(_pencilViewerLocked(STATE.currentRound,_curFi(STATE.currentRound)))return;
   const r=STATE.currentRound,hi=STATE.currentHole;
-  if(isRoundLocked(r))return;
+  if(isFlightLocked(r,_curFi(r)))return;
   _clearHoleForFlight(r,hi);
   updateHoleUI();
 };
@@ -8414,14 +8414,14 @@ function renderScorecard(){
   let _huPairNet=null;if(gameOnFs('mp',r,_fp)&&isHeadsUp(r)&&huNetOffMatchLow(r,_fp)){const _siHU=segForHole(hi-holeOffset(r),mpGamesForRound(r,_fp),roundHoleCount(r));const _tmHU=STATE.mpTeams[r]?.[_fp]?.[_siHU];if(_tmHU&&_tmHU[0]&&_tmHU[1]){_huPairNet={};for(let _mi=0;_mi<_tmHU[0].length;_mi++){const _pa=_tmHU[0][_mi],_pb=_tmHU[1][_mi];if(_pa!==undefined&&_pb!==undefined){_huPairNet[_pa]=[_pa,_pb];_huPairNet[_pb]=[_pa,_pb];}}}}
   // Snake holder for the ACTIVE foursome at this hole (the card only shows that foursome).
   const _snkHolder=gameOnFs('snake',r,_fp)?currentSnakeHolderForFlight(r,hi,_fp):null;
-  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const grTick=gameOn('grinders',r)&&grPlayerOk(r,i,hi)?`<span class="gr-tick" title="Par or better">&#10003;</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const roStyle=_pvLock?'pointer-events:none':((isReadOnly||isRoundLocked(r))?'opacity:0.5;pointer-events:none':(_deadH?'pointer-events:none':''));const _rowDim=_pvLock?'opacity:0.42;':(_deadH?'opacity:0.42;':'');const _minusBtn=(_pvLock||_deadH)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_pvLock?'<i class="ti ti-lock" style="font-size:16px;color:var(--color-text-secondary);margin-left:2px" aria-hidden="true"></i>':(_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}${grTick}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('')+_grHoleChip(r,_fp,hi);
+  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const grTick=gameOn('grinders',r)&&grPlayerOk(r,i,hi)?`<span class="gr-tick" title="Par or better">&#10003;</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const roStyle=_pvLock?'pointer-events:none':((isReadOnly||isFlightLocked(r,_fp==null?_curFi(r):_fp))?'opacity:0.5;pointer-events:none':(_deadH?'pointer-events:none':''));const _rowDim=_pvLock?'opacity:0.42;':(_deadH?'opacity:0.42;':'');const _minusBtn=(_pvLock||_deadH)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_pvLock?'<i class="ti ti-lock" style="font-size:16px;color:var(--color-text-secondary);margin-left:2px" aria-hidden="true"></i>':(_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}${grTick}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('')+_grHoleChip(r,_fp,hi);
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
   try{renderNinesBox();}catch(ne){console.error('renderNinesBox error:',ne);const nw=document.getElementById('ninesBoxWrap');if(nw)nw.innerHTML='';}
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
   try{renderRazzleBox();}catch(re){console.error('renderRazzleBox error:',re);const w=document.getElementById('razzleBoxWrap');if(w)w.innerHTML='';}
   try{renderWolfBox();}catch(we){console.error('renderWolfBox error:',we);const wb=document.getElementById('wolfBoxWrap');if(wb)wb.innerHTML='';}
   try{renderFBBox();}catch(fe){console.error('renderFBBox error:',fe);const fbb=document.getElementById('fbBoxWrap');if(fbb)fbb.innerHTML='';}}
-function adjScore(pi,delta){if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRound,_curFi(STATE.currentRound)))return;if((STATE.lockedRounds||[]).includes(STATE.currentRound))return;
+function adjScore(pi,delta){if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRound,_curFi(STATE.currentRound)))return;if(isFlightLocked(STATE.currentRound,_curFi(STATE.currentRound)))return;
   // Refusing only at Save was not enough: this writes straight to STATE and schedules
   // its own autoSave, so the number stuck and synced anyway. Refuse the keystroke.
   {const _asR=STATE.currentRound,_asHi=STATE.currentHole,_asFi=_curFi(_asR);
@@ -9298,7 +9298,7 @@ function renderSnakeEntry(){
   if(!wrap)return;
   if(!gameOn('snake',STATE.currentRound)){wrap.innerHTML='';return;}
   const r=STATE.currentRound,hi=STATE.currentHole;
-  if(isReadOnly||isRoundLocked(r)){wrap.innerHTML='';return;}
+  if(isReadOnly||isFlightLocked(r,_curFi(r))){wrap.innerHTML='';return;}
   {const _sfp=isMultiFlight(r)?getFlightPick(r):0;
    if(_sfp!==null&&_mpHoleDead(r,_sfp,hi)){wrap.innerHTML='';return;}}
   // Resolve the active foursome. On a multi-flight round with no pick yet the scorecard
@@ -9473,10 +9473,10 @@ function renderRazzleBox(){
   const matches=calcRazzle(r,_rbfi);
   // Sweep and 5-hole bonus toasts — fire once per match, persisted across reloads
   if(!STATE.razzleFiredToasts)STATE.razzleFiredToasts={};
-  const _toastOk=STATE.razzleToastOk===true&&!isRoundLocked(r);STATE.razzleToastOk=false;
+  const _toastOk=STATE.razzleToastOk===true&&!isFlightLocked(r,_rbfi);STATE.razzleToastOk=false;
   matches.forEach(cm=>{
     if(!cm.winner)return;
-    if(isRoundLocked(r))return;
+    if(isFlightLocked(r,_rbfi))return;
     if(!_toastOk)return;
     const matchKey='bonus:'+r+':'+_rbfi+':'+cm.mi;
     if(STATE.razzleFiredToasts[matchKey])return;
@@ -9539,7 +9539,7 @@ function renderRazzleBox(){
       const bonus='$'+((birdies.length*(roundValFs('razzleBirdieBonus',r,_rbfi,WK.razzleBirdieBonus||5))).toFixed(2));
       if(!STATE.razzleFiredToasts)STATE.razzleFiredToasts={};
       const key='birdie:'+r+':'+_rbfi+':'+hi;
-      if(!STATE.razzleFiredToasts[key]&&!isRoundLocked(r)&&!isRoundComplete(r)){STATE.razzleFiredToasts[key]=true;setTimeout(()=>{const el=document.getElementById('razzleBirdieToast');if(el)el.remove();const t=document.createElement('div');t.id='razzleBirdieToast';t.style.cssText='position:fixed;bottom:185px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';t.textContent='Birdie bonus! '+names+' · +'+bonus+' to pot';document.body.appendChild(t);setTimeout(()=>t.remove(),3000);},100);}
+      if(!STATE.razzleFiredToasts[key]&&!isFlightLocked(r,_rbfi)&&!isRoundComplete(r)){STATE.razzleFiredToasts[key]=true;setTimeout(()=>{const el=document.getElementById('razzleBirdieToast');if(el)el.remove();const t=document.createElement('div');t.id='razzleBirdieToast';t.style.cssText='position:fixed;bottom:185px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';t.textContent='Birdie bonus! '+names+' · +'+bonus+' to pot';document.body.appendChild(t);setTimeout(()=>t.remove(),3000);},100);}
     }
   }
   // Per-player badges: team pt goes on the low-sum scorer; ind pt goes on the low-individual scorer
@@ -9615,7 +9615,7 @@ function _rzFlightComplete(r,fi){
 function razzleFinalNoticeDue(r,fi){
   fi=fi||0;
   if(!WK||!WK.rounds||!WK.rounds[r])return null;
-  if(isRoundLocked(r))return null;
+  if(isFlightLocked(r,fi))return null;
   if(!gameOnFs('razzle',r,fi))return null;
   if(!_rzFlightComplete(r,fi))return null;
   if(!STATE.razzleFiredToasts)STATE.razzleFiredToasts={};
@@ -9883,7 +9883,7 @@ function renderMPHoleBox(){
       // Same move v118.17 made for the 2v2 box; heads-up had no header to move it
       // into, so each mini card gets one. Cancel travels with it, or the body would
       // be left holding a lone wide Cancel. Availability test and handlers unchanged.
-      const _huCanPress=pressesOnForRound(r)&&!isRoundLocked(r)&&(hi-holeOffset(r))<seg.end;
+      const _huCanPress=pressesOnForRound(r)&&!isFlightLocked(r,_fi)&&(hi-holeOffset(r))<seg.end;
       const _huPresses=_huCanPress?getPresses(r,_fi,si,mi):[];
       const _huCtl=_huCanPress?((_huPresses.length>0?`<button style="padding:4px 10px;background:transparent;border:0.5px solid var(--color-border-secondary);border-radius:999px;color:var(--color-text-secondary);font-size:12px;font-family:inherit;text-transform:none;letter-spacing:0.01em;line-height:1.4;cursor:pointer" onclick="cancelLastPress(${r},${_fi},${si},${mi});renderMPHoleBox()">Cancel</button>`:'')+`<button style="padding:4px 11px;background:var(--accent);border:none;border-radius:999px;color:#fff;font-size:12px;font-weight:600;font-family:inherit;text-transform:none;letter-spacing:0.01em;line-height:1.4;cursor:pointer" onclick="addPress(${r},${_fi},${si},${hi},false,${mi});renderMPHoleBox()">Press</button>`):'';
       const bestIsA=resHU&&resHU.aWins;
@@ -9946,7 +9946,7 @@ function renderMPHoleBox(){
   // Press button and cancel — always built regardless of score state
   const activePresses2=getPresses(r2,_fi,si2);
   let pressBtn='';
-  if(pressesOnForRound(r2)&&!isRoundLocked(r2)&&(hi-holeOffset(r2))<seg.end){
+  if(pressesOnForRound(r2)&&!isFlightLocked(r2,_fi)&&(hi-holeOffset(r2))<seg.end){
     const cancelPart=activePresses2.length>0?`<button class="mp-hd-cancel" onclick="cancelLastPress(${r2},${_fi},${si2});renderMPHoleBox()">Cancel</button>`:'';
     pressBtn=`${cancelPart}<button class="mp-hd-press" onclick="addPress(${r2},${_fi},${si2},${hi},false);renderMPHoleBox()">Press</button>`;
   }
@@ -10052,7 +10052,7 @@ function renderHoleDots(){const r=STATE.currentRound;const nHoles=roundHoleCount
   const makeDot=(i)=>{const done=STATE.scores[r][i]&&_need.every(function(pi){return STATE.scores[r][i][pi]!==null;});return'<div class="hdot'+(done?' done':'')+(_srShort&&i>=_srEnd?' sr-void':'')+(i===STATE.currentHole?' cur':'')+'" onclick="jumpHole('+i+')">'+(i+1)+'</div>';};let html='';if(nHoles<=9){html='<div class="hole-dots-row">'+Array.from({length:nHoles},(_,i)=>makeDot(i+off)).join('')+'</div>';}else{const front=Array.from({length:9},(_,i)=>makeDot(i)).join('');const back=Array.from({length:nHoles-9},(_,i)=>makeDot(i+9)).join('');html='<div class="hole-dots-row">'+front+'</div><div class="hole-dots-row">'+back+'</div>';}  // Placement B: a quiet link, not a filled button, and only in the window where
   // ending is meaningful. A mis-tap opens the sheet and nothing else.
   const _srDone=_fsScoredThrough(r,_srFi);
-  const _srOk=!_fsPickPending(r)&&canEditTrip()&&!isRoundLocked(r)&&!(STATE.settledRounds||[]).includes(r);
+  const _srOk=!_fsPickPending(r)&&canEditTrip()&&!isFlightLocked(r,_srFi)&&!(STATE.settledRounds||[]).includes(r);
   if(_srShort){
     // Informational, so it reads louder than the destructive direction does. The whole
     // row is the tap target and it opens the round status sheet rather than acting.
@@ -10069,7 +10069,7 @@ function renderHoleDots(){const r=STATE.currentRound;const nHoles=roundHoleCount
   // the user actually joined.
   if(!_fsPickPending(r))_srAutoExpand(r,_srFi);}
 function jumpHole(i){const r=STATE.currentRound,_lo=holeOffset(r);if(!(i>=_lo&&i<=_lo+roundHoleCount(r)-1))return;STATE.razzleToastOk=false;STATE.currentHole=i;updateHoleUI();}
-function changeHole(d){const r=STATE.currentRound,curHole=STATE.currentHole,_maxHi=Math.max(_navLastHole(r,_navFi(r)),curHole),nextHole=Math.max(holeOffset(r),Math.min(_maxHi,curHole+d));const _chfi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(d>0&&gameOnFs('razzle',r,_chfi)&&razzleMatchClosedOnHole(r,curHole)&&!isRoundLocked(r)){const _cms=calcRazzle(r,_chfi);const _closedM=_cms.find(m=>m.closedOnHole===curHole);const _nextMi=_closedM?_closedM.mi+1:_cms.length;const _teamsSet=STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r]&&STATE.razzleMatchTeams[r][_chfi]&&STATE.razzleMatchTeams[r][_chfi][_nextMi];if(!_teamsSet){showRazzleTeamModal(r,nextHole);return;}}if(d>0){if(!STATE.razzleHWM)STATE.razzleHWM={};const hwm=(STATE.razzleHWM[r]&&STATE.razzleHWM[r][_chfi]!==undefined)?STATE.razzleHWM[r][_chfi]:-1;if(nextHole>hwm){if(!STATE.razzleHWM[r])STATE.razzleHWM[r]={};STATE.razzleHWM[r][_chfi]=nextHole;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}}else{STATE.razzleToastOk=false;}STATE.currentHole=nextHole;updateHoleUI();}
+function changeHole(d){const r=STATE.currentRound,curHole=STATE.currentHole,_maxHi=Math.max(_navLastHole(r,_navFi(r)),curHole),nextHole=Math.max(holeOffset(r),Math.min(_maxHi,curHole+d));const _chfi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(d>0&&gameOnFs('razzle',r,_chfi)&&razzleMatchClosedOnHole(r,curHole)&&!isFlightLocked(r,_chfi)){const _cms=calcRazzle(r,_chfi);const _closedM=_cms.find(m=>m.closedOnHole===curHole);const _nextMi=_closedM?_closedM.mi+1:_cms.length;const _teamsSet=STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r]&&STATE.razzleMatchTeams[r][_chfi]&&STATE.razzleMatchTeams[r][_chfi][_nextMi];if(!_teamsSet){showRazzleTeamModal(r,nextHole);return;}}if(d>0){if(!STATE.razzleHWM)STATE.razzleHWM={};const hwm=(STATE.razzleHWM[r]&&STATE.razzleHWM[r][_chfi]!==undefined)?STATE.razzleHWM[r][_chfi]:-1;if(nextHole>hwm){if(!STATE.razzleHWM[r])STATE.razzleHWM[r]={};STATE.razzleHWM[r][_chfi]=nextHole;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}}else{STATE.razzleToastOk=false;}STATE.currentHole=nextHole;updateHoleUI();}
 function _fsPillOutside(e){
   var p=document.getElementById('fsPill');
   if(p&&!p.contains(e.target)){p.classList.remove('open');document.removeEventListener('click',_fsPillOutside,true);}
@@ -10136,7 +10136,7 @@ function updateHoleUI(){
   {const _uhFi=getFlightPick(r)||0;if(!STATE.razzleHWM[r]||typeof STATE.razzleHWM[r]!=='object')STATE.razzleHWM[r]={};if(STATE.razzleHWM[r][_uhFi]===undefined){const _rc=isRoundComplete(r);const _maxH2=holeOffset(r)+fsHoleCount(r,_uhFi)-1;STATE.razzleHWM[r][_uhFi]=_rc?_maxH2:-1;}}
   if(!WK.rounds[r]||!WK.rounds[r].course){console.error('updateHoleUI: missing round/course for round',r);return;}
   const hole=WK.rounds[r].course.holes?.[hi]||{par:4,si:hi+1};
-  const locked=isRoundLocked(r),complete=isRoundComplete(r);
+  const locked=isFlightLocked(r,_curFi(r)),complete=isRoundComplete(r);
   document.getElementById('holeLabel').textContent='Hole '+(hi+1);
   var _voPill=document.getElementById('viewOnlyPill');if(_voPill)_voPill.style.display=_viewOnlyPillShown(r)?'inline-flex':'none';
   const _yds=hole.yardage||0;const _ydStr=_yds>0?' · '+_yds+' yds':'';document.getElementById('holeMeta').textContent='Par '+hole.par+_ydStr+' · Hdcp '+hole.si;
@@ -10213,7 +10213,7 @@ function _clearHoleForFlight(r,hi){
 function resetHole(){
   if(isReadOnly)return;
   const r=STATE.currentRound,hi=STATE.currentHole;
-  if(isRoundLocked(r))return;
+  if(isFlightLocked(r,_curFi(r)))return;
   _clearHoleForFlight(r,hi);
   updateHoleUI();
 }
@@ -11175,7 +11175,7 @@ function calcWolfPointsAllFlights(r,throughHole){
   return out;
 }
 function openWolfPickModal(hi,r,fi){
-  if(isRoundLocked(r))return;if(isReadOnly||_pencilViewerLocked(r,fi))return;
+  if(isFlightLocked(r,fi))return;if(isReadOnly||_pencilViewerLocked(r,fi))return;
   const wolf=wolfForHoleEff(hi,r,fi);
   const wolfName=displayName(wolf);
   const order=wolfOrderForRound(r,fi);
@@ -11258,7 +11258,7 @@ function renderWolfBox(){
   const wolfName=displayName(wolf);
   const wolfPill=`<span style="font-size:10px;background:#0B3A25;color:#B8CFB0;padding:1px 6px;border-radius:999px;font-weight:400;margin-left:4px">wolf</span>`;
   const pick=wolfPicksForRound(r,fi)[hi];
-  const locked=isRoundLocked(r);
+  const locked=isFlightLocked(r,fi);
   const loneMode=roundValFs('wolfLoneMode',r,fi,WK.wolfLoneMode||'A');
   const blindMult=roundValFs('wolfBlindMult',r,fi,WK.wolfBlindMult)||2;
   const changePick=!locked?`<button class="btn-sm" onclick="openWolfPickModal(${hi},${r},${fi})">Change pick</button>`:'';
@@ -11974,7 +11974,7 @@ function renderFlightsPanel(){
   const nP=WK.players.length;
   if(!STATE.roundFlights)STATE.roundFlights=WK.rounds.map(()=>defaultFlights(nP));
   const fl=_fsNormalize(STATE.roundFlights[r]||defaultFlights(nP),nP);
-  const editable=canEditTrip()&&!isRoundLocked(r);
+  const editable=canEditTrip()&&!isAnyFlightLocked(r);
   let html='<div id="flightsRdSel"></div>';
   html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px 2px;font-size:12px;color:var(--color-text-secondary)">'
     +'<span><b style="color:var(--color-text-primary)">'+nP+' player'+(nP===1?'':'s')+'</b> \u00b7 '+fl.length+' foursome'+(fl.length===1?'':'s')+'</span>'
@@ -12040,7 +12040,7 @@ function _flightsMutate(r,fn){
 window._fsAddFoursome=function(r){_flightsMutate(r,function(fl){fl.push([]);});};
 window._fsRemoveFoursome=function(r,gi){_flightsMutate(r,function(fl){if(fl[gi]&&fl[gi].length===0&&fl.length>1)fl.splice(gi,1);});};
 window._fsNudge=function(r,pi,dir){
-  if(!canEditTrip()||isRoundLocked(r))return;
+  if(!canEditTrip()||isAnyFlightLocked(r))return;
   _flightsMutate(r,function(fl){
     const gi=_fsGroupOf(fl,pi);
     if(gi<0)return;
@@ -12096,7 +12096,7 @@ window._fsAutoSplit=function(r){
 };
 window._fsCloseSheet=function(){const el=document.getElementById('fsSheet');if(el)el.remove();};
 window._fsTapPlayer=function(r,pi){
-  if(!canEditTrip()||isRoundLocked(r))return;
+  if(!canEditTrip()||isAnyFlightLocked(r))return;
   const fl=_fsNormalize(STATE.roundFlights[r]||defaultFlights(WK.players.length),WK.players.length);
   const gi=_fsGroupOf(fl,pi);
   if(gi<0)return;
@@ -12345,7 +12345,7 @@ window._doneEdit=function(){
   if(isReadOnly)return;
   var r=STATE.currentRound,fi=_curFi(r);
   if(_fsPickPending(r))return;
-  if(isRoundLocked(r))return; // unlock lives above the bar; nothing to reopen here
+  if(isFlightLocked(r,fi))return; // unlock lives above the bar; nothing to reopen here
   if(holdsPencil(r,fi)){_doneBarOpen[_doneBarKey(r,fi)]=true;updateHoleUI();return;}
   if(pencilUnheld(r,fi)){window._pencilClaim();return;}
   window._pencilTakeoverConfirm();
@@ -14288,7 +14288,7 @@ window._fbResetTeams=function(r){
 // Swap sheet. Every pick is a TRADE, so the teams stay full and legal by construction:
 // there is no half-assigned state to validate and nobody can be stranded.
 window._fbOpenSwap=function(r,ti,si){
-  if(!canEditTrip()||isRoundLocked(r))return;
+  if(!canEditTrip()||isAnyFlightLocked(r))return;
   const teams=fbTeamsForRound(r),cur=teams[ti]&&teams[ti][si];
   if(!_vpi(cur))return;
   const curName=displayName(cur),curP=WK.players[cur];
@@ -14611,7 +14611,7 @@ function _gsFourBallSetupBody(r){
   }
   // ---- teams ----
   h+='<div class="section-card" style="margin:12px 0 0">';
-  const canEdit=canEditTrip()&&!isRoundLocked(r);
+  const canEdit=canEditTrip()&&!isAnyFlightLocked(r);
   const _fbMan=!!WK.rounds[r].fbTeamsManual&&d.scope!=='fs';
   let _hdBtns='';
   if(canEdit){
@@ -15006,7 +15006,7 @@ window._gsCloseSetupModal=function(){
 // invent holes. Returns null on success or a printable reason.
 window._endRoundAt=function(r,fis,count){
   if(!canEditTrip())return 'You do not have edit access for this trip.';
-  if(isRoundLocked(r))return 'This round is locked.';
+  if((fis||[]).some(function(_fi){return isFlightLocked(r,_fi);}))return 'This round is locked.';
   if((STATE.settledRounds||[]).includes(r))return 'This round is already settled.';
   const full=roundHoleCount(r);
   count=Math.floor(Number(count));
@@ -15028,7 +15028,7 @@ window._endRoundAt=function(r,fis,count){
 // s2WriteActive sends the whole game-state surface on every call.
 window._endRoundEach=function(r,perFi){
   if(!canEditTrip())return 'You do not have edit access for this trip.';
-  if(isRoundLocked(r))return 'This round is locked.';
+  if(Object.keys(perFi||{}).some(function(_fi){return isFlightLocked(r,+_fi);}))return 'This round is locked.';
   if((STATE.settledRounds||[]).includes(r))return 'This round is already settled.';
   const full=roundHoleCount(r);
   const ends=[];
@@ -15058,7 +15058,7 @@ window._resumeRound=function(r,fis){
   // as complete, so Lock and Settle both become reachable; resuming from there would
   // change the hole count a settled round's money was figured on. The UI hides the
   // button, but a write path guarded only by a render is one call site away from wrong.
-  if(isRoundLocked(r))return 'This round is locked.';
+  if((fis||[]).some(function(_fi){return isFlightLocked(r,_fi);}))return 'This round is locked.';
   if((STATE.settledRounds||[]).includes(r))return 'This round is already settled. Unsettle it first.';
   const rd=WK.rounds[r];
   if(!Array.isArray(rd.fsEndHoles))return null;
@@ -15178,7 +15178,7 @@ window._srStatusSheet=function(r){
   if(!ended.length)return;
   const std=standingsHoleCount(r);
   const settled=(STATE.settledRounds||[]).includes(r);
-  const canEdit=canEditTrip()&&!settled&&!isRoundLocked(r);
+  const canEdit=canEditTrip()&&!settled&&!isAnyFlightLocked(r);
   const inStd=WK.rounds[r].shortInStandings===true;
   const old=document.getElementById('srStatusSheet');if(old)old.remove();
   const el=document.createElement('div');
@@ -16523,6 +16523,10 @@ function unlockFlight(r,fi){
   autoSave();
   return true;
 }
+// Composition changes (who sits in which foursome) are round-wide by nature: moving a
+// player out of a live foursome rewrites the foursome a LOCKED one was scored against.
+// So they freeze as soon as ANY foursome in the round is closed.
+function isAnyFlightLocked(r){var a=_lockArr();if(a.includes(r))return true;var n=_fsCountFor(r);for(var fi=0;fi<n;fi++)if(a.includes(_lockKey(r,fi)))return true;return false;}
 function isRoundLocked(r){return(STATE.lockedRounds||[]).includes(r);}
 function lockRound(r){var _la=_lockArr();for(var _i=_la.length-1;_i>=0;_i--)if(typeof _la[_i]==='string'&&_la[_i].indexOf(r+':')===0)_la.splice(_i,1);if(!_la.includes(r))_la.push(r);autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();}
 function unlockRound(r){if((STATE.settledRounds||[]).includes(r)){showMsg('Unsettle this round on the Money tab before unlocking.');return;}if(!STATE.lockedRounds)return;STATE.lockedRounds=STATE.lockedRounds.filter(x=>x!==r&&!(typeof x==='string'&&x.indexOf(r+':')===0));if(STATE.razzleFiredToasts){Object.keys(STATE.razzleFiredToasts).forEach(k=>{if(k.startsWith('bonus:'+r+':')||k.startsWith('birdie:'+r+':')||k.startsWith('final:'+r+':'))delete STATE.razzleFiredToasts[k];});}if(STATE.razzleHWM)STATE.razzleHWM[r]=undefined;autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();if(document.getElementById('mpanel-golf')?.classList.contains('active'))renderMoney();}
@@ -17669,8 +17673,9 @@ function calcHammerSegResult(r,si,fi){
   return{netA,netB,carryPot:0}; // carry at end of segment is forfeit
 }
 function undoHammer(r,hi){
-  if(isReadOnly||isRoundLocked(r))return;
+  if(isReadOnly)return;
   const fi=isMultiFlight(r)?(getFlightPick(r)||0):0;
+  if(isFlightLocked(r,fi))return;
   if(!STATE.hammerState||!STATE.hammerState[r]||!STATE.hammerState[r][fi]||!STATE.hammerState[r][fi][hi])return;
   const hs=STATE.hammerState[r][fi][hi];
   if(hs.conceded||hs.accepted){
@@ -17684,8 +17689,9 @@ function undoHammer(r,hi){
   autoSave();renderHammerBox();if(document.getElementById('view-games').style.display!=='none')renderGamesTab();
 }
 function throwHammer(teamIdx,r,hi){
-  if(isReadOnly||isRoundLocked(r))return;
+  if(isReadOnly)return;
   const fi=isMultiFlight(r)?(getFlightPick(r)||0):0;
+  if(isFlightLocked(r,fi))return;
   if(!STATE.hammerState)STATE.hammerState=WK.rounds.map((_,rr)=>flightsForRound(rr).map(()=>Array(18).fill(null)));
   if(!STATE.hammerState[r])STATE.hammerState[r]=flightsForRound(r).map(()=>Array(18).fill(null));
   if(!STATE.hammerState[r][fi])STATE.hammerState[r][fi]=Array(18).fill(null);
@@ -17703,8 +17709,9 @@ function throwHammer(teamIdx,r,hi){
   autoSave();renderHammerBox();
 }
 function resolveHammer(action,r,hi){
-  if(isReadOnly||isRoundLocked(r))return;
+  if(isReadOnly)return;
   const fi=isMultiFlight(r)?(getFlightPick(r)||0):0;
+  if(isFlightLocked(r,fi))return;
   if(!STATE.hammerState||!STATE.hammerState[r]||!STATE.hammerState[r][fi]||!STATE.hammerState[r][fi][hi])return;
   const hs=STATE.hammerState[r][fi][hi];
   if(action==='accept'){
@@ -17728,7 +17735,7 @@ function renderHammerBox(){
   {const _hn=_gameGroupNote('hammer',(flightsForRound(r)[_hbfi]||[]).length);if(_hn){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Hammer</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">'+_hn+'.</div></div>';return;}}
   if(!gameOnFs('hammer',r,_hbfi)){wrap.innerHTML='';return;}const hc=calcHammerHole(hi,r,_hbfi);if(!hc){wrap.innerHTML='';return;}
   const{tA,tB,nA,nB,scoreA,scoreB,allIn,hs,potVal,si}=hc;
-  const locked=isRoundLocked(r);
+  const locked=isFlightLocked(r,_hbfi);
   const nameA=tA.map(i=>displayName(i));const nameB=tB.map(i=>displayName(i));
   const scoring=roundValFs('hammerScoring',r,_hbfi,WK.hammerScoring||'bestball');
   const payout=roundValFs('hammerPayout',r,_hbfi,WK.hammerPayout||'perplayer');
