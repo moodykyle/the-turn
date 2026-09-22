@@ -1834,7 +1834,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.18-next.1';
+const APP_VERSION='v123.19-next.1';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -8658,6 +8658,9 @@ function _fbSetDerived(r){
 function reconcileFBTeams(r){
   const rd=WK.rounds&&WK.rounds[r];if(!rd)return;
   if((STATE.settledRounds||[]).includes(r)||isRoundLocked(r))return;
+  // v123.19: Four-Ball pools can span foursomes, so re-deriving teams while ANY foursome
+  // is final could rewrite that foursome's pairing. Same rule as composition changes.
+  if(isAnyFlightLocked(r))return;
   // Game off: leave the roster alone. Rebuilding it to [] here would quietly throw away a
   // custom pairing every time someone toggled the game off and back on.
   if(!gameOn('fourball',r))return;
@@ -9012,6 +9015,8 @@ function reconcileMPTeams(r){
   const _vp=pi=>Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];
   const outT=[],outP=[];
   for(let fi=0;fi<fl.length;fi++){
+    // v123.19: a locked foursome is final. Carry its stored slot through untouched.
+    if(isFlightLocked(r,fi)){outT[fi]=STATE.mpTeams[r][fi];outP[fi]=STATE.pressState[r][fi];continue;}
     const nSeg=mpGamesForRound(r,fi);
     const mem=(fl[fi]||[]),mset={};mem.forEach(pi=>{if(_vp(pi))mset[pi]=1;});
     const stored=Array.isArray(STATE.mpTeams[r][fi])?STATE.mpTeams[r][fi]:null;
@@ -9035,6 +9040,8 @@ function reconcileVegasTeams(r){
   const _vp=pi=>Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];
   const outT=[];
   for(let fi=0;fi<fl.length;fi++){
+    // v123.19: a locked foursome is final. Carry its stored slot through untouched.
+    if(isFlightLocked(r,fi)){outT[fi]=STATE.vegTeams[r][fi];continue;}
     const nSeg=vegasSegForRound(r,fi);
     const mem=(fl[fi]||[]),mset={};mem.forEach(pi=>{if(_vp(pi))mset[pi]=1;});
     if(mem.length<4){outT[fi]=Array(nSeg).fill(null).map(()=>[[],[]]);continue;}
@@ -9057,6 +9064,8 @@ function reconcileSkinsTeams(r){
   const _vp=pi=>Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];
   const outT=[];
   for(let fi=0;fi<fl.length;fi++){
+    // v123.19: a locked foursome is final. Carry its stored slot through untouched.
+    if(isFlightLocked(r,fi)){outT[fi]=STATE.skinsTeams[r][fi];continue;}
     const nSeg=skinsGamesForRound(r,fi);
     const mem=(fl[fi]||[]),mset={};mem.forEach(pi=>{if(_vp(pi))mset[pi]=1;});
     if(mem.length<4){outT[fi]=Array(nSeg).fill(null).map(()=>[[],[]]);continue;}
@@ -9079,6 +9088,8 @@ function reconcileRazzleOrder(r){
   if(!Array.isArray(STATE.razzleMatchTeams[r]))STATE.razzleMatchTeams[r]=[];
   var fl=flightsForRound(r),outO=[],outM=[];
   for(var fi=0;fi<fl.length;fi++){
+    // v123.19: a locked foursome is final. Carry its stored slot through untouched.
+    if(isFlightLocked(r,fi)){outO[fi]=STATE.razzleOrder[r][fi];outM[fi]=STATE.razzleMatchTeams[r][fi];continue;}
     var members=(fl[fi]||[]).filter(function(pi){return typeof pi==='number'&&pi>=0;});
     var mset={};members.forEach(function(pi){mset[pi]=1;});
     var stored=Array.isArray(STATE.razzleOrder[r][fi])?STATE.razzleOrder[r][fi]:[];
@@ -9099,6 +9110,8 @@ function reconcileSnakeHolders(r){
   if(!Array.isArray(STATE.snakeHolder[r]))STATE.snakeHolder[r]=[];
   const fl=flightsForRound(r),out=[];
   for(let fi=0;fi<fl.length;fi++){
+    // v123.19: a locked foursome is final. Carry its stored slot through untouched.
+    if(isFlightLocked(r,fi)){out[fi]=STATE.snakeHolder[r][fi];continue;}
     const mset={};(fl[fi]||[]).forEach(pi=>{if(typeof pi==='number'&&pi>=0)mset[pi]=1;});
     const stored=Array.isArray(STATE.snakeHolder[r][fi])?STATE.snakeHolder[r][fi]:[];
     const cleaned=[];
@@ -10699,6 +10712,8 @@ function reconcileWolfOrder(r){
   if(!Array.isArray(STATE.wolfOrder[r]))STATE.wolfOrder[r]=[];
   var fl=flightsForRound(r),out=[];
   for(var fi=0;fi<fl.length;fi++){
+    // v123.19: a locked foursome is final. Carry its stored slot through untouched.
+    if(isFlightLocked(r,fi)){out[fi]=STATE.wolfOrder[r][fi];continue;}
     var members=(fl[fi]||[]).filter(function(pi){return typeof pi==='number'&&pi>=0;});
     var mset={};members.forEach(function(pi){mset[pi]=1;});
     var stored=Array.isArray(STATE.wolfOrder[r][fi])?STATE.wolfOrder[r][fi]:[];
@@ -17556,6 +17571,8 @@ function reconcileHammerTeams(r){
   const _vp=pi=>Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];
   const outT=[];
   for(let fi=0;fi<fl.length;fi++){
+    // v123.19: a locked foursome is final. Carry its stored slot through untouched.
+    if(isFlightLocked(r,fi)){outT[fi]=STATE.hammerTeams[r][fi];continue;}
     const nSeg=hammerSegsForRound(r,fi)||1;
     const mem=(fl[fi]||[]),mset={};mem.forEach(pi=>{if(_vp(pi))mset[pi]=1;});
     const need=mem.length<4?2:4;
@@ -17572,7 +17589,7 @@ function reconcileHammerTeams(r){
   // keep hammerState foursome-count in sync (throw data, not validated, just padded)
   if(!STATE.hammerState)STATE.hammerState=WK.rounds.map(()=>[]);
   if(!Array.isArray(STATE.hammerState[r]))STATE.hammerState[r]=[];
-  const hsOut=[];for(let fi=0;fi<fl.length;fi++){hsOut[fi]=Array.isArray(STATE.hammerState[r][fi])?STATE.hammerState[r][fi]:Array(18).fill(null);}
+  const hsOut=[];for(let fi=0;fi<fl.length;fi++){if(isFlightLocked(r,fi)){hsOut[fi]=STATE.hammerState[r][fi];continue;}hsOut[fi]=Array.isArray(STATE.hammerState[r][fi])?STATE.hammerState[r][fi]:Array(18).fill(null);}
   STATE.hammerState[r]=hsOut;
 }
 function hammerSegsForRound(r,fi){const fv=_segFsVal('hammerSegs',r,fi);if(fv)return fv;const ov=WK.hammerSegsPerRound?.[r];return(ov>0)?ov:(WK.hammerSegsDefault>0?WK.hammerSegsDefault:1);}
