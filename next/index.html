@@ -1837,7 +1837,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.20-next.1';
+const APP_VERSION='v123.21-next.1';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -2081,8 +2081,9 @@ function _cpPinPlayed(){
 }
 
 function _hcpFreezePlayed(){
-  if(typeof WK==='undefined'||!WK||!WK.players)return;
-  if(_hcpMode()!=='round')return;
+  if(typeof WK==='undefined'||!WK||!WK.players)return false;
+  if(_hcpMode()!=='round')return false;
+  var wrote=false;
   for(var r=0;r<(WK.rounds||[]).length;r++){
     var done=false;
     try{done=_hcpRoundPlayed(r);}catch(e){done=false;}
@@ -2095,9 +2096,25 @@ function _hcpFreezePlayed(){
     // leaves it half protected: the reproduction above had Kyle frozen and Doug not,
     // in the same round. Doing the whole field on the first write closes that.
     for(var q=0;q<WK.players.length;q++){
-      if(rd.idxSnap[q]===undefined||rd.idxSnap[q]===null)rd.idxSnap[q]=WK.players[q].idx;
+      if(rd.idxSnap[q]===undefined||rd.idxSnap[q]===null){rd.idxSnap[q]=WK.players[q].idx;wrote=true;}
     }
   }
+  // THE MARK BELONGS WITH THE WRITE, not at the call sites. rd.idxSnap rides the trip
+  // upsert, and of the five paths that reach this function only score entry (through its
+  // debounced autoSave) and the mode switch were followed by a trip write. The other
+  // three arrive via _plFollowSync, which marks only ['players'] - and that is the path
+  // that fires BECAUSE an index moved, so the snapshot was being created in memory at
+  // the one moment it mattered and dropped on the next load. The round then re-froze at
+  // the number that had just replaced the one it was actually played off.
+  //
+  // Same shape as m.winner!==null standing in for "match closed": a call-site mark was a
+  // proxy for "the freeze got persisted" and held only while every call site happened to
+  // be followed by a trip write. Marking where the value is written cannot drift.
+  //
+  // Guarded on `wrote`. This function is idempotent and runs on every keystroke and every
+  // sync tick; an unconditional mark would leave the trip permanently dirty.
+  if(wrote&&typeof s2MarkDirty==='function'){try{s2MarkDirty(['trip']);}catch(e){}}
+  return wrote;
 }
 
 // opts.follow marks a reconcile rather than a user edit, and only that bypasses the
@@ -2159,6 +2176,11 @@ function _plFollowSync(){
   if(moved&&typeof s2MarkDirty==='function'){
     try{s2MarkDirty(['players']);}catch(e){}
   }
+  // The freeze above (inside _plWriteIdx) may have marked the trip dirty, and this is
+  // one of the paths with no write behind it. Flush here or the snapshot sits in memory
+  // until some unrelated action happens to write the trip, which for a viewer who never
+  // enters a score is never.
+  if(moved&&typeof s2WriteActive==='function'){try{s2WriteActive();}catch(e){}}
   return moved;
 }
 function _hcpModeLabel(){return _hcpMode()==='round'?'Round index':'Trip index';}
