@@ -1309,6 +1309,8 @@ body.force-light,:root:has(body.force-light){--mark-tile:#0E3B27}
 .n2-big{font-family:var(--font-display);font-size:22px;color:var(--color-text-primary);margin-top:2px}
 .n2-meta{display:block;font-size:13px;color:var(--color-text-secondary);margin-top:2px}
 .n2-cardb>.n2-meta{margin-top:10px}
+.n2-clamp{font-size:20px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.n2-alsoh{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-text-secondary);font-weight:600;padding:18px 0 6px}
 .n2-pill{font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid var(--color-border-secondary);color:var(--color-text-secondary);white-space:nowrap}
 .n2-more{background:none;border:none;color:var(--accent);font:inherit;font-size:13px;font-weight:500;padding:10px 0 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .n2-rows{margin:0 -14px;border-bottom:1px solid var(--color-border-tertiary)}
@@ -1888,7 +1890,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.21-next.3';
+const APP_VERSION='v123.21-next.4';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -6252,9 +6254,39 @@ function _n2Window(st){
   if(me<5)return st.slice(0,5);
   return st.slice(0,4).concat(['gap',st[me]]);
 }
-function _n2Hero(ct,n,last){
-  var more=n>1?'<button class="n2-more" onclick="event.stopPropagation();window._hmShowAllInProgress()">See all in progress ('+n+')</button>':'';
+// Hero order: a trip with scores posted, then a started individual round, then anything
+// not started. Within a tier the most recently saved wins. (User-facing name for
+// is_quick_round is "Individual round"; the code name never reaches the screen.)
+function _n2Tier(t){var st=_n2Started(t);return st?(t.is_quick_round?1:0):2;}
+function _n2Order(list){
+  return list.slice().sort(function(a,b){
+    var d=_n2Tier(a)-_n2Tier(b);if(d)return d;
+    return new Date(b.savedAt||0)-new Date(a.savedAt||0);
+  });
+}
+function _n2Sub(t){
+  var np=(t.playerNames||[]).length,nr=(t.courses||[]).length;
+  var ps=np?np+' player'+(np!==1?'s':''):'';
+  if(t.is_quick_round)return['Individual round',ps].filter(Boolean).join(' \u00b7 ');
+  var grp=t.group_id&&_groupCache[t.group_id]?_groupCache[t.group_id].name:'';
+  return[grp,ps,nr?nr+' round'+(nr!==1?'s':''):''].filter(Boolean).join(' \u00b7 ');
+}
+function _n2AlsoRow(t){
+  var status=_n2Started(t)?(t.roundStatus||'In progress'):'Not started';
+  return'<button class="n2-row" onclick="viewTrip(\''+t.id+'\')">'+_n2Tile(t.date,false,t.name)
+    +'<span class="n2-grow"><span class="n2-nm">'+_n2Esc(t.name||'Unnamed Trip')+'</span>'
+    +'<span class="n2-meta">'+_n2Esc([_n2Sub(t),status].filter(Boolean).join(' \u00b7 '))+'</span></span>'
+    +'<span class="n2-ch" aria-hidden="true">&#8250;</span></button>';
+}
+function _n2Hero(list,last){
+  list=list||[];
+  var ct=list[0]||null;
   if(ct){
+    var others=list.slice(1);
+    var also=others.length
+      ?'<div class="n2-alsoh">Also in progress</div><div class="n2-rows">'+others.slice(0,2).map(_n2AlsoRow).join('')+'</div>'
+        +(others.length>2?'<button class="n2-more" onclick="event.stopPropagation();window._hmShowAllInProgress()">See all in progress ('+list.length+')</button>':'')
+      :'';
     var name=ct.name||'Unnamed Trip';
     var st=Array.isArray(ct.standings)?ct.standings:[];
     var started=_n2Started(ct);
@@ -6269,18 +6301,17 @@ function _n2Hero(ct,n,last){
         +'<div class="n2-g n2-bsub"><span>Pos</span><span>Player</span><span>Net</span><span>Thru</span></div>'
         +rows
         +'<button class="n2-cta" onclick="viewTrip(\''+ct.id+'\')"><span>Resume '+_n2Esc(name)+'</span><span aria-hidden="true">&#8250;</span></button>'
-        +'</div>'+more;
+        +'</div>'+also;
     }
-    var grp=ct.group_id&&_groupCache[ct.group_id]?_groupCache[ct.group_id].name:'';
-    var np=(ct.playerNames||[]).length,nr=(ct.courses||[]).length;
-    var sub=ct.is_quick_round
-      ?((ct.courses&&ct.courses[0])||'')
-      :[grp,np?np+' player'+(np!==1?'s':''):'',nr?nr+' round'+(nr!==1?'s':''):''].filter(Boolean).join(' \u00b7 ');
+    var p=_n2Ymd(ct.date);
+    var eb=started?'In progress':(p&&p.key===_n2Today()?'Today':'Up next');
+    var btn=ct.is_quick_round?(started?'Resume round':'Start round'):(started?'Resume':'Open trip');
+    var sub=_n2Sub(ct);
     return'<div class="n2-card"><div class="n2-cardb"><div class="n2-top">'+_n2Tile(ct.date,false,name)
-      +'<div class="n2-grow"><div class="n2-eb">'+(started?'In progress':'Up next')+'</div><div class="n2-big">'+_n2Esc(name)+'</div></div></div>'
+      +'<div class="n2-grow"><div class="n2-eb">'+eb+'</div><div class="n2-big n2-clamp">'+_n2Esc(name)+'</div></div></div>'
       +(sub?'<div class="n2-meta">'+_n2Esc(sub)+'</div>':'')+'</div>'
-      +'<button class="n2-cta" onclick="viewTrip(\''+ct.id+'\')"><span>'+(started?'Resume':'Open trip')+'</span><span aria-hidden="true">&#8250;</span></button>'
-      +'</div>'+more;
+      +'<button class="n2-cta" onclick="viewTrip(\''+ct.id+'\')"><span>'+btn+'</span><span aria-hidden="true">&#8250;</span></button>'
+      +'</div>'+also;
   }
   if(last){
     var lr=(last.courses||[]).length;
@@ -6334,14 +6365,14 @@ function _renderContinueSection(){
   const el=document.getElementById('homeContinueSec');if(!el)return;
   const trips=loadTrips().filter(function(t){return!_pendingRoundDeletes.has(t.id);});
   trips.forEach(function(t){if(t.totalHoles>0&&t.holesPlayed>=t.totalHoles)t.complete=true;});
-  const inProgress=trips.filter(function(t){return!t.complete;}).sort(function(a,b){return new Date(b.savedAt||0)-new Date(a.savedAt||0);});
+  const inProgress=_n2Order(trips.filter(function(t){return!t.complete;}));
   const ct=inProgress[0]||null;
   let last=null;
   if(!ct){
     const done=trips.filter(function(t){return t.complete&&!t.is_quick_round;}).sort(function(a,b){return new Date(b.savedAt||0)-new Date(a.savedAt||0);});
     last=done[0]||null;
   }
-  el.innerHTML=_n2Hero(ct,inProgress.length,last);
+  el.innerHTML=_n2Hero(inProgress,last);
 }
 function _renderIndivRoundsSection(){
   const el=document.getElementById('homeIndivSec');if(!el)return;
