@@ -1285,8 +1285,6 @@ body.force-light,:root:has(body.force-light){--mark-tile:#0E3B27}
 .n2-tile-mk{width:40px;height:40px;border-radius:10px;background:var(--mark-tile);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .n2-mark{width:34px;height:34px;display:block}
 .n2-wm{flex:1;font-family:var(--font-display);font-size:20px;color:var(--color-text-primary)}
-.n2-me{width:44px;height:44px;border-radius:22px;border:none;background:var(--accent);color:var(--accent-ink);font-family:var(--font-num);font-size:16px;font-weight:600;letter-spacing:.04em;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-.n2-me .ti{font-size:20px}
 #homeDashboard .home-dash-sec-label{font-family:var(--font-display);font-size:18px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--color-text-primary);margin:18px 0 8px}
 #homeScreen .home-elev{box-shadow:none}
 .n2-board{background:var(--color-background-primary);border:2px solid var(--accent);border-radius:6px;overflow:hidden;margin-top:6px}
@@ -1328,6 +1326,9 @@ body.force-light,:root:has(body.force-light){--mark-tile:#0E3B27}
 .n2-tile.on{background:var(--accent);border-color:var(--accent)}
 .n2-tile.on .m,.n2-tile.on .d{color:var(--accent-ink)}
 .n2-tile.none{background:none;border-style:dashed}
+.n2-tile.mono{background:var(--tint);border-color:var(--tint-bd)}
+.n2-tile.mono .d{font-size:19px;letter-spacing:.04em;color:var(--tint-tx)}
+.n2-tile .y{font-size:10px;letter-spacing:.06em;color:var(--color-text-secondary);margin-top:2px;font-variant-numeric:tabular-nums}
 /* ===== END NEXT2 LAYER ===== */
 </style>
 </head>
@@ -1523,7 +1524,6 @@ body.force-light,:root:has(body.force-light){--mark-tile:#0E3B27}
       <header class="n2-bar">
         <span class="n2-tile-mk"><span class="n2-mark splash-mark" aria-hidden="true"></span></span>
         <span class="n2-wm">The Turn</span>
-        <button class="n2-me" id="n2Me" aria-label="Me" onclick="window.homeNavGo('me')"><i class="ti ti-user"></i></button>
       </header>
       <div class="home-dash" id="homeDashboard"></div>
     </div>
@@ -1888,7 +1888,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.21-next.2';
+const APP_VERSION='v123.21-next.3';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -4718,7 +4718,6 @@ function _buildTripSections(trips,sectionKey,startOpen,gid){
 function renderGroupList(){renderHomeDashboard();}
 
 async function renderHomeDashboard(){
-  _n2SetMe();
   const _hb=document.getElementById('heroThemeBtn');
   if(_hb){const _ts=getThemeState();_hb.textContent=_ts==='dark'?'🌙':_ts==='light'?'☀️':'🌓';}
   const dash=document.getElementById('homeDashboard');
@@ -6226,11 +6225,22 @@ function _n2Ymd(d){
 }
 function _n2Today(){var t=new Date();return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');}
 var _N2_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-function _n2Tile(date,live){
+// Tile: month and day; the year appears only when it is not this year. With no usable
+// date the tile falls back to a monogram of the name it sits beside, so it never reads blank.
+function _n2Mono(name){
+  var w=String(name||'').replace(/['\u2019]/g,'').replace(/[^A-Za-z0-9 ]/g,' ').trim().split(/\s+/).filter(Boolean);
+  if(!w.length)return'';
+  return(w.length>1?w[0][0]+w[1][0]:w[0].slice(0,2)).toUpperCase();
+}
+function _n2Tile(date,live,name){
   if(live)return'<span class="n2-tile on"><span class="m">Live</span><span class="d">Now</span></span>';
   var p=_n2Ymd(date);
-  if(!p)return'<span class="n2-tile none"><span class="m">&#8211;</span></span>';
-  return'<span class="n2-tile"><span class="m">'+_N2_MON[p.m-1]+'</span><span class="d">'+p.d+'</span></span>';
+  if(!p){
+    var mo=_n2Mono(name);
+    return mo?'<span class="n2-tile mono"><span class="d">'+_n2Esc(mo)+'</span></span>':'<span class="n2-tile none"><span class="m">&#8211;</span></span>';
+  }
+  var yr=p.y!==new Date().getFullYear()?'<span class="y">'+p.y+'</span>':'';
+  return'<span class="n2-tile"><span class="m">'+_N2_MON[p.m-1]+'</span><span class="d">'+p.d+'</span>'+yr+'</span>';
 }
 function _n2Rel(p){if(!p||(p.played||0)===0)return'-';var r=p.rel;return r===0?'E':(r>0?'+'+r:'\u2212'+Math.abs(r));}
 function _n2Started(t){return Array.isArray(t.standings)&&t.standings.some(function(x){return (x.played||0)>0;});}
@@ -6266,7 +6276,7 @@ function _n2Hero(ct,n,last){
     var sub=ct.is_quick_round
       ?((ct.courses&&ct.courses[0])||'')
       :[grp,np?np+' player'+(np!==1?'s':''):'',nr?nr+' round'+(nr!==1?'s':''):''].filter(Boolean).join(' \u00b7 ');
-    return'<div class="n2-card"><div class="n2-cardb"><div class="n2-top">'+_n2Tile(ct.date)
+    return'<div class="n2-card"><div class="n2-cardb"><div class="n2-top">'+_n2Tile(ct.date,false,name)
       +'<div class="n2-grow"><div class="n2-eb">'+(started?'In progress':'Up next')+'</div><div class="n2-big">'+_n2Esc(name)+'</div></div></div>'
       +(sub?'<div class="n2-meta">'+_n2Esc(sub)+'</div>':'')+'</div>'
       +'<button class="n2-cta" onclick="viewTrip(\''+ct.id+'\')"><span>'+(started?'Resume':'Open trip')+'</span><span aria-hidden="true">&#8250;</span></button>'
@@ -6295,10 +6305,10 @@ function _n2GroupRows(groups,trips){
       if(p&&(!latest||p.key>_n2Ymd(latest.date).key))latest=t;
     });
     var tile,line,tag='';
-    if(live){tile=_n2Tile('',true);line=[live.name||'Trip',live.roundStatus||'','in progress'].filter(Boolean).join(' \u00b7 ');tag='<span class="n2-tag">Live</span>';}
-    else if(next){tile=_n2Tile(next.date);line='Next: '+(next.name||'Trip');}
-    else if(latest){tile=_n2Tile(latest.date);line='Last: '+(latest.name||'Trip')+(latest.winner?' \u00b7 won by '+latest.winner:'');}
-    else{tile=_n2Tile('');line=gt.length?'':'No trips yet';}
+    if(live){tile=_n2Tile('',true);line=(live.name||'Trip')+' \u00b7 '+(live.roundStatus||'In progress');tag='<span class="n2-tag">Live</span>';}
+    else if(next){tile=_n2Tile(next.date,false,g.name);line='Next: '+(next.name||'Trip');}
+    else if(latest){tile=_n2Tile(latest.date,false,g.name);line='Last: '+(latest.name||'Trip')+(latest.winner?' \u00b7 won by '+latest.winner:'');}
+    else{tile=_n2Tile('',false,g.name);line=gt.length?'':'No trips yet';}
     var n=gt.length;
     return'<button class="n2-row" onclick="window.openGroupPage(\''+g.group_id+'\')">'+tile
       +'<span class="n2-grow"><span class="n2-nm">'+_n2Esc(g.name)+tag+'</span>'
@@ -6314,18 +6324,11 @@ function _n2IndivRows(rounds){
     var net=me&&(me.played||0)>0?'<span class="n2-net">'+_n2Rel(me)+'</span>':'';
     var np=(t.playerNames||[]).length;
     var status=_n2Done(t)?'Final':(t.roundStatus||'In progress');
-    return'<button class="n2-row" onclick="viewTrip(\''+t.id+'\')">'+_n2Tile(t.date)
+    return'<button class="n2-row" onclick="viewTrip(\''+t.id+'\')">'+_n2Tile(t.date,false,t.name||(t.courses&&t.courses[0]))
       +'<span class="n2-grow"><span class="n2-nm">'+_n2Esc(t.name||(t.courses&&t.courses[0])||'Round')+'</span>'
       +'<span class="n2-meta">'+_n2Esc([np?np+' player'+(np!==1?'s':''):'',status].filter(Boolean).join(' \u00b7 '))+'</span></span>'
       +net+'<span class="n2-ch" aria-hidden="true">&#8250;</span></button>';
   }).join('')+'</div>';
-}
-function _n2SetMe(){
-  var el=document.getElementById('n2Me');if(!el)return;
-  var u=(typeof sbCurrentUser==='function')?sbCurrentUser():null;
-  var meta=(u&&u.user_metadata)||{};
-  var ini=u&&typeof sbInitialsFrom==='function'?sbInitialsFrom(meta.full_name,u.email||''):'';
-  if(ini){el.textContent=ini;}else{el.textContent='';el.innerHTML='<i class="ti ti-user"></i>';}
 }
 function _renderContinueSection(){
   const el=document.getElementById('homeContinueSec');if(!el)return;
