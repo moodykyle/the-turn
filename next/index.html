@@ -1277,18 +1277,17 @@ body,body.force-light,body.force-dark{font-family:var(--font-sans);font-variant-
 .sc-grid{font-family:var(--font-num);}
 /* ===== END CLUBHOUSE LAYER ===== */
 /* ===== NEXT2 LAYER ===== */
-:root{--mark-tile:#0E3B27}
-@media(prefers-color-scheme:dark){:root{--mark-tile:transparent}}
-body.force-dark,:root:has(body.force-dark){--mark-tile:transparent}
-body.force-light,:root:has(body.force-light){--mark-tile:#0E3B27}
-.n2-bar{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 14px;min-height:56px;box-sizing:border-box;background:var(--color-background-page);border-bottom:1px solid var(--color-border-tertiary)}
-.n2-tile-mk{width:40px;height:40px;border-radius:10px;background:var(--mark-tile);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-.n2-mark{width:34px;height:34px;display:block}
-.n2-wm{flex:1;font-family:var(--font-display);font-size:20px;color:var(--color-text-primary)}
+:root{--band:#0E3B27;--band-ink:#F4EFE3;--band-gold:#C9B77A}
+.n2-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;min-height:60px;box-sizing:border-box;background:var(--band)}
+.n2-mark{width:40px;height:40px;display:block;flex:0 0 auto}
+.n2-wm{flex:1;font-family:var(--font-display);font-size:22px;color:var(--band-ink)}
+.n2-date{font-family:var(--font-num);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--band-gold);white-space:nowrap}
 #homeDashboard .home-dash-sec-label{font-family:var(--font-display);font-size:18px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--color-text-primary);margin:18px 0 8px}
 #homeScreen .home-elev{box-shadow:none}
 .n2-board{background:var(--color-background-primary);border:2px solid var(--accent);border-radius:6px;overflow:hidden;margin-top:6px}
-.n2-bh{background:var(--accent);color:var(--accent-ink);text-align:center;font-family:var(--font-num);letter-spacing:.14em;font-size:13px;padding:7px 8px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.n2-bh{background:var(--accent);color:var(--accent-ink);padding:9px 14px 8px}
+.n2-bh .t{font-family:var(--font-display);font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.n2-bh .s{font-family:var(--font-num);font-size:13px;letter-spacing:.12em;text-transform:uppercase;opacity:.85;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .n2-g{display:grid;grid-template-columns:34px minmax(0,1fr) 48px 42px}
 .n2-bsub span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-secondary);padding:5px 8px}
 .n2-bsub span:nth-child(n+3){text-align:center;padding:5px 0}
@@ -1524,8 +1523,9 @@ body.force-light,:root:has(body.force-light){--mark-tile:#0E3B27}
   <div id="homeScreen">
     <div class="home">
       <header class="n2-bar">
-        <span class="n2-tile-mk"><span class="n2-mark splash-mark" aria-hidden="true"></span></span>
+        <span class="n2-mark splash-mark" aria-hidden="true"></span>
         <span class="n2-wm">The Turn</span>
+        <span class="n2-date" id="n2Date"></span>
       </header>
       <div class="home-dash" id="homeDashboard"></div>
     </div>
@@ -1890,7 +1890,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.21-next.4';
+const APP_VERSION='v123.21-next.5';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -4720,6 +4720,7 @@ function _buildTripSections(trips,sectionKey,startOpen,gid){
 function renderGroupList(){renderHomeDashboard();}
 
 async function renderHomeDashboard(){
+  _n2SetDate();
   const _hb=document.getElementById('heroThemeBtn');
   if(_hb){const _ts=getThemeState();_hb.textContent=_ts==='dark'?'🌙':_ts==='light'?'☀️':'🌓';}
   const dash=document.getElementById('homeDashboard');
@@ -6225,6 +6226,11 @@ function _n2Ymd(d){
   var dim=new Date(y,mo,0).getDate();if(da>dim)return null;
   return{y:y,m:mo,d:da,key:m[0]};
 }
+function _n2SetDate(){
+  var el=document.getElementById('n2Date');if(!el)return;
+  var t=new Date();
+  el.textContent=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][t.getDay()]+' \u00b7 '+_N2_MON[t.getMonth()]+' '+t.getDate();
+}
 function _n2Today(){var t=new Date();return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');}
 var _N2_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 // Tile: month and day; the year appears only when it is not this year. With no usable
@@ -6291,13 +6297,15 @@ function _n2Hero(list,last){
     var st=Array.isArray(ct.standings)?ct.standings:[];
     var started=_n2Started(ct);
     if(!ct.is_quick_round&&started){
-      var hdr=[name,ct.roundStatus||'',(typeof courseDisp==='function'?courseDisp(ct.currentCourse):ct.currentCourse)||''].filter(Boolean).join(' \u00b7 ');
+      var rs=String(ct.roundStatus||'').split(' \u00b7 ').filter(function(x){return x&&!/^in progress$/i.test(x.trim());});
+      var crs=(typeof courseDisp==='function'?courseDisp(ct.currentCourse):ct.currentCourse)||'';
+      var sub2=rs.concat(crs?[crs]:[]).join(' \u00b7 ');
       var rows=_n2Window(st).map(function(p){
         if(p==='gap')return'<div class="n2-gap">&#183; &#183; &#183;</div>';
         var hcp=p.hcp?' <span class="h">'+_n2Esc(p.hcp)+'</span>':'';
         return'<div class="n2-g n2-br'+(p.me?' me':'')+'"><span>'+_n2Esc(p.rank||'-')+'</span><span class="p">'+(p.me?'You':_n2Esc(p.name||''))+hcp+'</span><span>'+_n2Rel(p)+'</span><span>'+_n2Esc(p.thru||'-')+'</span></div>';
       }).join('');
-      return'<div class="n2-board"><div class="n2-bh">'+_n2Esc(hdr)+'</div>'
+      return'<div class="n2-board"><div class="n2-bh"><div class="t">'+_n2Esc(name)+'</div>'+(sub2?'<div class="s">'+_n2Esc(sub2)+'</div>':'')+'</div>'
         +'<div class="n2-g n2-bsub"><span>Pos</span><span>Player</span><span>Net</span><span>Thru</span></div>'
         +rows
         +'<button class="n2-cta" onclick="viewTrip(\''+ct.id+'\')"><span>Resume '+_n2Esc(name)+'</span><span aria-hidden="true">&#8250;</span></button>'
