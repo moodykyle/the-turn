@@ -1827,7 +1827,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.21';
+const APP_VERSION='v123.22';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -6186,7 +6186,7 @@ function _renderContinueSection(){
     // Leader, runner up, and you. If you ARE the leader, show the top three instead so the
     // card never repeats the same row twice.
     var meIdx=-1;
-    for(var k=0;k<st.length;k++)if(st[k].me){meIdx=k;break;}
+    for(var k=0;k<st.length;k++)if(_standingIsMe(ct,st[k])){meIdx=k;break;}
     var pick=[];
     if(meIdx>=0&&meIdx<=2){pick=st.slice(0,3);}
     else if(meIdx>2){pick=[st[0],st[1],st[meIdx]];}
@@ -6196,13 +6196,14 @@ function _renderContinueSection(){
     body+='<div class="home-lb">'
       +'<div class="home-lb-hd"><span></span><span></span><span>PLAYER</span><span style="text-align:right">NET</span><span style="text-align:center">THRU</span></div>';
     pick.forEach(function(p){
+      var isMe=_standingIsMe(ct,p);
       var rel=(p.rel===0?'E':(p.rel>0?'+'+p.rel:''+p.rel));
       if((p.played||0)===0)rel='-';
       var hcp=p.hcp?' <span class="home-lb-hcp">('+p.hcp+')</span>':'';
-      body+='<div class="home-lb-row'+(p.me?' me':'')+'">'
+      body+='<div class="home-lb-row'+(isMe?' me':'')+'">'
         +'<span class="home-lb-rank">'+(p.rank||'-')+'</span>'
         +'<span class="avatar" style="width:22px;height:22px;box-sizing:border-box;font-size:9px;background:'+(p.bg||'#6B7280')+';color:'+(p.fg||'#fff')+'">'+(p.ini||'??')+'</span>'
-        +'<span class="home-lb-nm">'+(p.me?'You':(p.name||''))+hcp+'</span>'
+        +'<span class="home-lb-nm">'+(isMe?'You':(p.name||''))+hcp+'</span>'
         +'<span class="home-lb-net">'+rel+'</span>'
         +'<span class="home-lb-thru">'+(p.thru||'-')+'</span>'
         +'</div>';
@@ -10576,15 +10577,32 @@ function tripWinnerName(){
 }
 // Frozen into the trip summary at save time. The home screen never has WK, so anything the tile
 // shows has to be written down here or it cannot exist there.
+// v123.22: each standing carries mid, the player's member_id, and nothing about who
+// saved. The summary is shared by every phone, so a flag computed from the saving
+// session would make the last poster "you" on everyone's Home. Who is you is decided
+// where it is read, by _standingIsMe. member_id, not user_id: it is the join key,
+// it is on the players row, and it does not change when a managed member is claimed.
 function summaryStandings(){
-  const me=sbCurrentUser()?.id||null;
   return tripStandings().map(x=>{
     const p=WK.players[x.pi];
     return{pi:x.pi,name:displayName(x.pi),ini:p.ini,bg:p.bg,fg:p.fg,
       hcp:(p.idx!==undefined&&p.idx!==null)?Number(p.idx).toFixed(1):'',
       rel:x.rel,thru:x.thru,rank:x.rankLabel,played:x.played,
-      me:!!(me&&p.user_id&&p.user_id===me)};
+      mid:p.member_id||null};
   });
+}
+// Is this summary standing the person looking at it? True when its mid is YOUR
+// membership row in the trip's own group: _groupCache[gid].member_id comes from
+// sbGetUserGroups, which is awaited before Home renders and served from the offline
+// cache when there is no network. Guests and group-less rounds have no mid and are
+// never you. A summary saved before v123.22 has no mid at all and keeps its own me
+// flag (which was always false, but it is the flag it was written with). No separate
+// null-mid test: g.member_id must be truthy to match, so a null or empty mid cannot.
+function _standingIsMe(t,x){
+  if(!x)return false;
+  if(!('mid' in x))return !!x.me;
+  var g=(t&&t.group_id&&typeof _groupCache!=='undefined')?_groupCache[t.group_id]:null;
+  return !!(g&&g.member_id&&g.member_id===x.mid);
 }
 function playerThru(pi){
   let last=-1;
