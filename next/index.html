@@ -1276,6 +1276,12 @@ body,body.force-light,body.force-dark{font-family:var(--font-sans);font-variant-
 .scr-title,.event-name,.hm-gp-title{font-family:var(--font-display);font-weight:400;letter-spacing:.005em;}
 .sc-grid{font-family:var(--font-num);}
 /* ===== END CLUBHOUSE LAYER ===== */
+/* next.6 sheet tokens */
+:root{--sheet-ok-ink:#FFFFFF;--sheet-scrim:rgba(27,42,34,0.45);}
+@media(prefers-color-scheme:dark){:root{--sheet-ok-ink:#0D1B16;--sheet-scrim:rgba(0,0,0,0.55);}}
+body.force-dark,:root:has(body.force-dark){--sheet-ok-ink:#0D1B16;--sheet-scrim:rgba(0,0,0,0.55);}
+body.force-light,:root:has(body.force-light){--sheet-ok-ink:#FFFFFF;--sheet-scrim:rgba(27,42,34,0.45);}
+/* end next.6 sheet tokens */
 /* ===== NEXT2 LAYER ===== */
 :root{--band:#0E3B27;--band-ink:#F4EFE3;--band-gold:#C9B77A}
 .n2-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;min-height:60px;box-sizing:border-box;background:var(--band)}
@@ -1890,7 +1896,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.21-next.5';
+const APP_VERSION='v123.22-next.6';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -6254,9 +6260,9 @@ function _n2Rel(p){if(!p||(p.played||0)===0)return'-';var r=p.rel;return r===0?'
 function _n2Started(t){return Array.isArray(t.standings)&&t.standings.some(function(x){return (x.played||0)>0;});}
 function _n2Done(t){return !!t.complete||(t.totalHoles>0&&t.holesPlayed>=t.totalHoles);}
 // Up to 8 players show in full. Past that: the top five, or the top four, a gap and you.
-function _n2Window(st){
+function _n2Window(st,t){
   if(st.length<=8)return st.slice();
-  var me=-1;for(var k=0;k<st.length;k++)if(st[k]&&st[k].me){me=k;break;}
+  var me=-1;for(var k=0;k<st.length;k++)if(_standingIsMe(t,st[k])){me=k;break;}
   if(me<5)return st.slice(0,5);
   return st.slice(0,4).concat(['gap',st[me]]);
 }
@@ -6300,10 +6306,11 @@ function _n2Hero(list,last){
       var rs=String(ct.roundStatus||'').split(' \u00b7 ').filter(function(x){return x&&!/^in progress$/i.test(x.trim());});
       var crs=(typeof courseDisp==='function'?courseDisp(ct.currentCourse):ct.currentCourse)||'';
       var sub2=rs.concat(crs?[crs]:[]).join(' \u00b7 ');
-      var rows=_n2Window(st).map(function(p){
+      var rows=_n2Window(st,ct).map(function(p){
         if(p==='gap')return'<div class="n2-gap">&#183; &#183; &#183;</div>';
         var hcp=p.hcp?' <span class="h">'+_n2Esc(p.hcp)+'</span>':'';
-        return'<div class="n2-g n2-br'+(p.me?' me':'')+'"><span>'+_n2Esc(p.rank||'-')+'</span><span class="p">'+(p.me?'You':_n2Esc(p.name||''))+hcp+'</span><span>'+_n2Rel(p)+'</span><span>'+_n2Esc(p.thru||'-')+'</span></div>';
+        var isMe=_standingIsMe(ct,p);
+        return'<div class="n2-g n2-br'+(isMe?' me':'')+'"><span>'+_n2Esc(p.rank||'-')+'</span><span class="p">'+(isMe?'You':_n2Esc(p.name||''))+hcp+'</span><span>'+_n2Rel(p)+'</span><span>'+_n2Esc(p.thru||'-')+'</span></div>';
       }).join('');
       return'<div class="n2-board"><div class="n2-bh"><div class="t">'+_n2Esc(name)+'</div>'+(sub2?'<div class="s">'+_n2Esc(sub2)+'</div>':'')+'</div>'
         +'<div class="n2-g n2-bsub"><span>Pos</span><span>Player</span><span>Net</span><span>Thru</span></div>'
@@ -6359,7 +6366,7 @@ function _n2GroupRows(groups,trips){
 }
 function _n2IndivRows(rounds){
   return'<div class="n2-rows">'+(rounds||[]).map(function(t){
-    var me=null;(t.standings||[]).forEach(function(x){if(x&&x.me)me=x;});
+    var me=null;(t.standings||[]).forEach(function(x){if(_standingIsMe(t,x))me=x;});
     var net=me&&(me.played||0)>0?'<span class="n2-net">'+_n2Rel(me)+'</span>':'';
     var np=(t.playerNames||[]).length;
     var status=_n2Done(t)?'Final':(t.roundStatus||'In progress');
@@ -10726,15 +10733,32 @@ function tripWinnerName(){
 }
 // Frozen into the trip summary at save time. The home screen never has WK, so anything the tile
 // shows has to be written down here or it cannot exist there.
+// v123.22: each standing carries mid, the player's member_id, and nothing about who
+// saved. The summary is shared by every phone, so a flag computed from the saving
+// session would make the last poster "you" on everyone's Home. Who is you is decided
+// where it is read, by _standingIsMe. member_id, not user_id: it is the join key,
+// it is on the players row, and it does not change when a managed member is claimed.
 function summaryStandings(){
-  const me=sbCurrentUser()?.id||null;
   return tripStandings().map(x=>{
     const p=WK.players[x.pi];
     return{pi:x.pi,name:displayName(x.pi),ini:p.ini,bg:p.bg,fg:p.fg,
       hcp:(p.idx!==undefined&&p.idx!==null)?Number(p.idx).toFixed(1):'',
       rel:x.rel,thru:x.thru,rank:x.rankLabel,played:x.played,
-      me:!!(me&&p.user_id&&p.user_id===me)};
+      mid:p.member_id||null};
   });
+}
+// Is this summary standing the person looking at it? True when its mid is YOUR
+// membership row in the trip's own group: _groupCache[gid].member_id comes from
+// sbGetUserGroups, which is awaited before Home renders and served from the offline
+// cache when there is no network. Guests and group-less rounds have no mid and are
+// never you. A summary saved before v123.22 has no mid at all and keeps its own me
+// flag (which was always false, but it is the flag it was written with). No separate
+// null-mid test: g.member_id must be truthy to match, so a null or empty mid cannot.
+function _standingIsMe(t,x){
+  if(!x)return false;
+  if(!('mid' in x))return !!x.me;
+  var g=(t&&t.group_id&&typeof _groupCache!=='undefined')?_groupCache[t.group_id]:null;
+  return !!(g&&g.member_id&&g.member_id===x.mid);
 }
 function playerThru(pi){
   let last=-1;
@@ -12558,11 +12582,11 @@ function _finishSheet(r){
   var out=c.n-c.k;
   function opt(v,icon,label,sub,primary){
     return '<button onclick="window._finishGo(\''+v+'\')" style="width:100%;min-height:58px;display:flex;align-items:center;gap:12px;padding:10px 14px;margin-bottom:8px;box-sizing:border-box;'
-      +(primary?'background:color-mix(in srgb,var(--accent) 16%,transparent);border:0.5px solid #2c5848;color:#5fd3a8;':'background:rgba(255,255,255,0.03);border:0.5px solid #24352c;color:#e8efe9;')
+      +(primary?'background:var(--tint);border:1px solid var(--tint-bd);color:var(--tint-tx);':'background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary);color:var(--color-text-primary);')
       +'border-radius:12px;font-family:inherit;text-align:left;cursor:pointer">'
-      +'<span style="width:36px;height:36px;border-radius:10px;background:color-mix(in srgb,var(--accent) 12%,transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti '+icon+'" style="font-size:20px;color:var(--accent)" aria-hidden="true"></i></span>'
-      +'<span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:600">'+label+'</span><span style="font-size:12px;color:#a9b8b0">'+sub+'</span></span>'
-      +'<i class="ti ti-chevron-right" style="font-size:18px;color:#6f8279" aria-hidden="true"></i></button>';
+      +'<span style="width:36px;height:36px;border-radius:10px;background:'+(primary?'var(--color-background-primary)':'var(--tint)')+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti '+icon+'" style="font-size:20px;color:var(--tint-tx)" aria-hidden="true"></i></span>'
+      +'<span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:600">'+label+'</span><span style="font-size:12px;color:var(--color-text-secondary)">'+sub+'</span></span>'
+      +'<i class="ti ti-chevron-right" style="font-size:18px;color:var(--color-text-tertiary)" aria-hidden="true"></i></button>';
   }
   var sub=last?(c.n>1?'All '+c.n+' foursomes in. The round is final.':'The round is final.'):(c.k+' of '+c.n+' foursomes in');
   var opts=last
@@ -12573,13 +12597,13 @@ function _finishSheet(r){
       +opt('board','ti-trophy','Standings (live)',out+' foursome'+(out===1?'':'s')+' still on the course',false);
   var ov=document.createElement('div');
   ov.id='finishSheet';
-  ov.style.cssText='position:fixed;inset:0;z-index:10002;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;justify-content:center';
-  ov.innerHTML='<div style="width:100%;max-width:440px;background:#132019;border-top:0.5px solid #24352c;border-radius:16px 16px 0 0;padding:16px 16px calc(14px + env(safe-area-inset-bottom));box-sizing:border-box">'
-    +'<div style="display:flex;justify-content:center;margin-bottom:10px"><div style="width:46px;height:46px;border-radius:50%;background:color-mix(in srgb,var(--accent) 15%,transparent);display:flex;align-items:center;justify-content:center"><i class="ti ti-circle-check" style="font-size:24px;color:var(--accent)" aria-hidden="true"></i></div></div>'
-    +'<div style="text-align:center;font-size:17px;font-weight:600;color:#e8efe9;margin-bottom:4px">Your foursome is final</div>'
-    +'<div style="text-align:center;font-size:13px;color:#a9b8b0;margin-bottom:14px">'+sub+'</div>'
+  ov.style.cssText='position:fixed;inset:0;z-index:10002;background:var(--sheet-scrim);display:flex;align-items:flex-end;justify-content:center';
+  ov.innerHTML='<div style="width:100%;max-width:440px;background:var(--color-background-primary);border-top:1px solid var(--color-border-tertiary);border-radius:16px 16px 0 0;padding:16px 16px calc(14px + env(safe-area-inset-bottom));box-sizing:border-box">'
+    +'<div style="display:flex;justify-content:center;margin-bottom:10px"><div style="width:46px;height:46px;border-radius:50%;background:var(--tint);display:flex;align-items:center;justify-content:center"><i class="ti ti-circle-check" style="font-size:24px;color:var(--tint-tx)" aria-hidden="true"></i></div></div>'
+    +'<div style="text-align:center;font-size:17px;font-weight:600;color:var(--color-text-primary);margin-bottom:4px">Your foursome is final</div>'
+    +'<div style="text-align:center;font-size:13px;color:var(--color-text-secondary);margin-bottom:14px">'+sub+'</div>'
     +opts
-    +'<button onclick="window._finishGo(\'\')" style="width:100%;min-height:44px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:500;color:#c2cdc6;cursor:pointer">Stay here</button>'
+    +'<button onclick="window._finishGo(\'\')" style="width:100%;min-height:44px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:500;color:var(--color-text-secondary);cursor:pointer">Stay here</button>'
     +'</div>';
   ov.addEventListener('click',function(e){if(e.target===ov)window._finishGo('');});
   document.body.appendChild(ov);
@@ -12648,16 +12672,16 @@ function _confirmSheet(opts){
   var ex=document.getElementById('confirmSheet');if(ex)ex.remove();
   var ov=document.createElement('div');
   ov.id='confirmSheet';
-  ov.style.cssText='position:fixed;inset:0;z-index:10002;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;justify-content:center';
+  ov.style.cssText='position:fixed;inset:0;z-index:10002;background:var(--sheet-scrim);display:flex;align-items:flex-end;justify-content:center';
   var card=document.createElement('div');
-  card.style.cssText='width:100%;max-width:440px;background:#132019;border-top:0.5px solid #24352c;border-radius:16px 16px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box';
-  var iconHtml=opts.icon?'<div style="display:flex;justify-content:center;margin-bottom:12px"><div style="width:42px;height:42px;border-radius:50%;background:color-mix(in srgb,var(--accent) 15%,transparent);display:flex;align-items:center;justify-content:center"><i class="ti '+opts.icon+'" style="font-size:20px;color:var(--accent)" aria-hidden="true"></i></div></div>':'';
+  card.style.cssText='width:100%;max-width:440px;background:var(--color-background-primary);border-top:1px solid var(--color-border-tertiary);border-radius:16px 16px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box';
+  var iconHtml=opts.icon?'<div style="display:flex;justify-content:center;margin-bottom:12px"><div style="width:42px;height:42px;border-radius:50%;background:var(--tint);display:flex;align-items:center;justify-content:center"><i class="ti '+opts.icon+'" style="font-size:20px;color:var(--tint-tx)" aria-hidden="true"></i></div></div>':'';
   card.innerHTML=iconHtml
-    +'<div style="text-align:center;font-size:16px;font-weight:500;color:#e8efe9;margin-bottom:6px">'+(opts.title||'Are you sure?')+'</div>'
-    +'<div style="text-align:center;font-size:13px;color:#a9b8b0;line-height:1.5;margin-bottom:16px">'+(opts.body||'')+'</div>'
+    +'<div style="text-align:center;font-size:16px;font-weight:600;color:var(--color-text-primary);margin-bottom:6px">'+(opts.title||'Are you sure?')+'</div>'
+    +'<div style="text-align:center;font-size:13px;color:var(--color-text-secondary);line-height:1.5;margin-bottom:16px">'+(opts.body||'')+'</div>'
     +'<div style="display:flex;gap:8px">'
-    +'<button id="_csCancel" style="flex:1;font-size:14px;font-weight:500;color:#c2cdc6;background:transparent;border:0.5px solid #2c3a33;padding:11px 0;border-radius:10px">Cancel</button>'
-    +'<button id="_csOk" style="flex:1;font-size:14px;font-weight:500;color:#0c1712;background:var(--accent);border:none;padding:11px 0;border-radius:10px">'+(opts.okLabel||'Confirm')+'</button>'
+    +'<button id="_csCancel" style="flex:1;min-height:44px;font-size:14px;font-weight:500;color:var(--color-text-primary);background:transparent;border:1px solid var(--color-border-secondary);padding:11px 0;border-radius:10px">Cancel</button>'
+    +'<button id="_csOk" style="flex:1;min-height:44px;font-size:14px;font-weight:600;color:var(--sheet-ok-ink);background:var(--accent);border:none;padding:11px 0;border-radius:10px">'+(opts.okLabel||'Confirm')+'</button>'
     +'</div>';
   ov.appendChild(card);
   document.body.appendChild(ov);
