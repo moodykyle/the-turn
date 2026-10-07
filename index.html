@@ -1853,7 +1853,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.24';
+const APP_VERSION='v123.25';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5634,6 +5634,7 @@ window._qrOnlineSearch=async function(q){
   const el=document.getElementById('qrCourseResults');if(!el)return;
   try{
     const r=await fetch(GOLF_PROXY+'?action=search&query='+encodeURIComponent(q),{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});
+    _gcaLimitErr(r);
     if(!r.ok)throw new Error();
     const data=await r.json();
     const seen=new Set();
@@ -5641,7 +5642,7 @@ window._qrOnlineSearch=async function(q){
     if(!courses.length){el.innerHTML='<div style="font-size:12px;color:var(--color-text-secondary)">No results.</div>';return;}
     window._qrApiResults=courses;
     el.innerHTML=courses.map(function(c,i){const loc=[c.location&&c.location.city,c.location&&c.location.state].filter(Boolean).join(', ');return'<div onclick="window._qrImportCourse('+i+')" style="padding:8px 10px;border-radius:6px;background:var(--color-background-secondary);margin-bottom:4px;cursor:pointer"><div style="font-size:13px;font-weight:500">'+c.club_name+'</div><div style="font-size:11px;color:var(--color-text-secondary)">'+c.course_name+(loc?' · '+loc:'')+'</div></div>';}).join('');
-  }catch(e){el.innerHTML='<div style="font-size:12px;color:#DC2626">Search failed.</div>';}
+  }catch(e){el.innerHTML='<div style="font-size:12px;color:#DC2626">'+_gcaFailMsg(e,'Search failed.')+'</div>';}
 };
 window._qrImportCourse=async function(i){
   const c=window._qrApiResults&&window._qrApiResults[i];if(!c)return;
@@ -5652,7 +5653,7 @@ window._qrImportCourse=async function(i){
   let ac;
   try{ac=await _gcaFetchCourse(c.id);}
   catch(e){
-    if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">Could not load course details. Try again.</div>';
+    if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">'+_gcaFailMsg(e,'Could not load course details. Try again.')+'</div>';
     return;
   }
   const dispName=ac.club_name+(ac.course_name&&ac.course_name!==ac.club_name?' - '+ac.course_name:'');
@@ -6914,6 +6915,7 @@ window._twOnlineSearch=async function(i,q){
   if(!el)return;
   try{
     const r=await fetch(GOLF_PROXY+'?action=search&query='+encodeURIComponent(q),{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});
+    _gcaLimitErr(r);
     if(!r.ok)throw new Error();
     const data=await r.json();
     console.log("[GCA] raw results:",JSON.stringify((data.courses||[]).map(c=>({id:c.id,club:c.club_name,course:c.course_name}))));const _seen=new Set();const courses=(data.courses||[]).filter(c=>{if(_seen.has(c.id))return false;_seen.add(c.id);return true;}).slice(0,6);
@@ -6928,7 +6930,7 @@ window._twOnlineSearch=async function(i,q){
         +'</div>';
     }).join('');
   }catch(e){
-    el.innerHTML='<div style="font-size:12px;color:#DC2626">Search failed.</div>';
+    el.innerHTML='<div style="font-size:12px;color:#DC2626">'+_gcaFailMsg(e,'Search failed.')+'</div>';
   }
 };
 window._twRoundImport=async function(i,ri){
@@ -6956,7 +6958,7 @@ window._twRoundImport=async function(i,ri){
     _twS.tees[i]={gender:defG,teeName:defT?.tee_name||''};
     _twRender();
   }catch(e){
-    if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">Import failed.</div>';
+    if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">'+_gcaFailMsg(e,'Import failed.')+'</div>';
   }
 };
 window._twCourseSearch=async function(){
@@ -6966,6 +6968,7 @@ window._twCourseSearch=async function(){
   el.innerHTML='<div style="font-size:12px;color:var(--color-text-secondary);padding:4px 0">Searching...</div>';
   try{
     const r=await fetch(GOLF_PROXY+'?action=search&query='+encodeURIComponent(q),{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});
+    _gcaLimitErr(r);
     if(!r.ok)throw new Error();
     const data=await r.json();
     console.log("[GCA] raw results:",JSON.stringify((data.courses||[]).map(c=>({id:c.id,club:c.club_name,course:c.course_name}))));const _seen=new Set();const courses=(data.courses||[]).filter(c=>{if(_seen.has(c.id))return false;_seen.add(c.id);return true;}).slice(0,6);
@@ -6979,7 +6982,7 @@ window._twCourseSearch=async function(){
         +'</div>';
     }).join('');
   }catch(e){
-    el.innerHTML='<div style="font-size:12px;color:#DC2626">Search failed.</div>';
+    el.innerHTML='<div style="font-size:12px;color:#DC2626">'+_gcaFailMsg(e,'Search failed.')+'</div>';
   }
 };
 window._twCourseImport=async function(idx){
@@ -7006,7 +7009,7 @@ window._twCourseImport=async function(idx){
     for(let j=0;j<nR;j++){const el2=document.getElementById('tw_course'+j);if(el2)_twS.courses[j]=el2.value;}
     _twRender();
   }catch(e){
-    if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">Import failed.</div>';
+    if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">'+_gcaFailMsg(e,'Import failed.')+'</div>';
   }
 };
 window._twPickLocal=function(i,ri){
@@ -13387,9 +13390,16 @@ function _gcaTeeList(v){return Array.isArray(v)?v:[];}
 // this" rather than "try again", which is why this throws a TAGGED error instead of
 // returning null. The tag is the only thing distinguishing a permanent outcome from a
 // temporary one, and a caller that ignores it tells the user to keep retrying forever.
+// v123.25. The vendor caps the shared key at a daily number of calls and answers 429 past
+// it. That cannot succeed again until the cap resets, so "Search failed" and "Try again" are
+// both wrong. Every proxy fetch calls _gcaLimitErr(r) before its r.ok test, and every catch
+// that words a course-lookup failure goes through _gcaFailMsg. The wording lives only here.
+function _gcaLimitErr(r){if(r&&r.status===429){const e=new Error('daily lookup limit');e.gcaLimit=true;throw e;}}
+function _gcaFailMsg(e,generic){return e&&e.gcaLimit===true?'Daily lookup limit reached. Try again tomorrow.':generic;}
 async function _gcaFetchCourse(id){
   const r=await fetch(GOLF_PROXY+'?action=course&id='+encodeURIComponent(id),{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});
   if(r.status===409){const e=new Error('legacy course id');e.gcaLegacy=true;throw e;}
+  _gcaLimitErr(r);
   if(!r.ok)throw new Error('course detail fetch failed: '+r.status);
   const data=await r.json();
   const apiCourse=data&&data.course;
@@ -13456,6 +13466,7 @@ window._gcaProxySearch=async function(q){
     const r=await fetch(GOLF_PROXY+'?action=search&query='+encodeURIComponent(q),{
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}
     });
+    _gcaLimitErr(r);
     if(!r.ok)throw new Error('Search failed');
     const data=await r.json();
     const courses=(data.courses||[]).slice(0,8);
@@ -13475,7 +13486,7 @@ window._gcaProxySearch=async function(q){
     // stash results for tee picker
     window._gcaLastResults=courses;
   }catch(e){
-    el.innerHTML='<div style="font-size:12px;color:#DC2626;padding:8px 0">Search failed. Check connection.</div>'
+    el.innerHTML='<div style="font-size:12px;color:#DC2626;padding:8px 0">'+_gcaFailMsg(e,'Search failed. Check connection.')+'</div>'
       +'<button class="btn-sm" onclick="window._gcaShowManual()">Add manually</button>';
   }
 };
@@ -13514,6 +13525,7 @@ window._e9OnlineSearch=async function(q){
   const el=document.getElementById('e9CourseResults');if(!el)return;
   try{
     const r=await fetch(GOLF_PROXY+'?action=search&query='+encodeURIComponent(q),{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});
+    _gcaLimitErr(r);
     if(!r.ok)throw new Error();
     const data=await r.json();
     const seen=new Set();
@@ -13521,7 +13533,7 @@ window._e9OnlineSearch=async function(q){
     if(!courses.length){el.innerHTML='<div style="font-size:12px;color:var(--color-text-secondary)">No results.</div>';return;}
     window._e9ApiResults=courses;
     el.innerHTML=courses.map((c,i)=>{const loc=[c.location?.city,c.location?.state].filter(Boolean).join(', ');return'<div onclick="window._e9ImportCourse('+i+')" style="padding:8px 10px;border-radius:6px;background:var(--color-background-secondary);margin-bottom:4px;cursor:pointer"><div style="font-size:13px;font-weight:500">'+c.club_name+'</div><div style="font-size:11px;color:var(--color-text-secondary)">'+c.course_name+(loc?' · '+loc:'')+'</div></div>';}).join('');
-  }catch(e){el.innerHTML='<div style="font-size:12px;color:#DC2626">Search failed.</div>';}
+  }catch(e){el.innerHTML='<div style="font-size:12px;color:#DC2626">'+_gcaFailMsg(e,'Search failed.')+'</div>';}
 };
 window._e9ImportCourse=async function(i){
   const c=window._e9ApiResults&&window._e9ApiResults[i];if(!c)return;
@@ -13530,7 +13542,7 @@ window._e9ImportCourse=async function(i){
   let ac;
   try{ac=await _gcaFetchCourse(c.id);}
   catch(e){
-    if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">Could not load course details. Try again.</div>';
+    if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">'+_gcaFailMsg(e,'Could not load course details. Try again.')+'</div>';
     return;
   }
   const displayName=ac.club_name+(ac.course_name&&ac.course_name!==ac.club_name?' - '+ac.course_name:'');
@@ -13593,7 +13605,7 @@ window._gcaSelectResult=async function(idx){
     if(!_hasTees){_gcaManualFromApi(apiCourse);return;}
     _gcaShowTeePicker(apiCourse);
   }catch(e){
-    el.innerHTML='<div style="font-size:12px;color:#DC2626">Could not load course details.</div>';
+    el.innerHTML='<div style="font-size:12px;color:#DC2626">'+_gcaFailMsg(e,'Could not load course details.')+'</div>';
   }
 };
 function _gcaShowTeePicker(apiCourse){
@@ -13744,7 +13756,7 @@ window._gcaRefresh=async function(eidOrName,isEid){
   }catch(e){
     if(btn)btn.textContent='Refresh';
     // A legacy id can never succeed, so "Try again" is a lie that costs the user taps.
-    var _rfMsg=(e&&e.gcaLegacy)?'Imported before the course API changed. Re-import to refresh.':'Refresh failed. Try again.';
+    var _rfMsg=(e&&e.gcaLegacy)?'Imported before the course API changed. Re-import to refresh.':_gcaFailMsg(e,'Refresh failed. Try again.');
     (function(){var ex=document.getElementById('gcaRefreshToast');if(ex)ex.remove();var t=document.createElement('div');t.id='gcaRefreshToast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#DC2626;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9998;box-shadow:0 4px 12px rgba(0,0,0,0.3)';t.textContent=_rfMsg;document.body.appendChild(t);setTimeout(function(){t.remove();},3000);})();
   }
 };
