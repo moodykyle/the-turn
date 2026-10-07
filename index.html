@@ -1853,7 +1853,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.26';
+const APP_VERSION='v123.27';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -4281,7 +4281,7 @@ async function loadCourses(){
             slope:c.slope||113,
             rating:c.rating||null,
             holes:c.holes,
-            tees:c.tees||null,
+            tees:_gcaTeesNorm(c.tees||null),
             source:c.source||'custom',
             external_id:c.external_id||null,
             api_fetched_at:c.api_fetched_at||null,
@@ -4297,7 +4297,7 @@ async function loadCourses(){
   // Fallback: localStorage cache
   try{
     const d=localStorage.getItem(LS_COURSES);
-    if(d){const cc=JSON.parse(d);Object.keys(cc).forEach(n=>{CATALOG[n]=cc[n];});}
+    if(d){const cc=JSON.parse(d);Object.keys(cc).forEach(n=>{const e=cc[n],_nt=e&&_gcaTeesNorm(e.tees);CATALOG[n]=(!e||_nt===e.tees)?e:Object.assign({},e,{tees:_nt});});}
   }catch(e){}
 }
 async function saveCourse(name){
@@ -13381,6 +13381,24 @@ function _gcaTeeToHoles(tee){
 // name, and `|| []` cannot see that because an object is truthy. Array.isArray can.
 // Real arrays pass through untouched, so nothing about a healthy record changes.
 function _gcaTeeList(v){return Array.isArray(v)?v:[];}
+// v123.27. The same coercion applied ONCE, where tees enter: the vendor fetch, the courses
+// table load and the localStorage restore. About twenty readers do `tees.male || []`, which
+// cannot see a list that is present but is not an array, and two of them threw on it.
+// Fixing the entry points covers every reader, present and future. Returns the SAME object
+// when both lists are already arrays, null or absent, so well-formed data (every stored row
+// as of 7 Oct 2026) is untouched; tees that are not an object at all become null. Only a
+// present, non-array list is replaced, with []: its contents are unreadable to every reader,
+// and Refresh can fetch the course again.
+function _gcaTeesNorm(t){
+  if(t===null||t===undefined)return t;
+  if(typeof t!=='object'||Array.isArray(t))return null;
+  var bad=function(v){return v!==null&&v!==undefined&&!Array.isArray(v);};
+  if(!bad(t.male)&&!bad(t.female))return t;
+  var o=Object.assign({},t);
+  if(bad(o.male))o.male=[];
+  if(bad(o.female))o.female=[];
+  return o;
+}
 // ONE place builds the course-detail request. There were six inline copies and they drifted:
 // two of them checked r.ok with a bare throw, two with a message, and none of them could
 // tell a dead id from a failed request.
@@ -13413,7 +13431,8 @@ async function _gcaFetchCourse(id){
   // The payload is wrapped. An unwrap that silently yields undefined would hand every
   // caller a course-shaped nothing and fail four lines later somewhere less obvious.
   if(!apiCourse)throw new Error('course detail payload had no course');
-  return apiCourse;
+  const _nt=_gcaTeesNorm(apiCourse.tees);
+  return _nt===apiCourse.tees?apiCourse:Object.assign({},apiCourse,{tees:_nt});
 }
 function _gcaResolveTee(apiCourse,gender,teeName){
   const tees=apiCourse.tees||{};
