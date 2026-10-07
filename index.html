@@ -375,7 +375,27 @@ select.course-select,select.ie-sel,select.inline-edit,select.team-dropdown,selec
 .collapsible-hd.open{border-radius:var(--border-radius-md) var(--border-radius-md) 0 0;margin-bottom:0;}
 .collapsible-body{border:0.5px solid var(--color-border-tertiary);border-top:none;border-radius:0 0 var(--border-radius-md) var(--border-radius-md);overflow:hidden;margin-bottom:14px;}
 .home{padding:0 0 2rem;}
-.home-hero{position:relative;height:220px;background:#0a1826 url('the-turn-hero.jpg') center 50%/cover no-repeat;overflow:hidden;}
+/* v123.28 Home bar: the splash mark and a one-line wordmark. Gold gradient in dark mode, one
+   deep gold in light (the gradient fails contrast on cream). No divider. */
+.home-bar{display:flex;align-items:center;gap:8px;height:52px;padding:0 16px;box-sizing:border-box;}
+.home-bar-mark{display:block;width:38px;height:38px;margin:-4px -4px -4px -6px;flex-shrink:0;}
+.home-bar-wm{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.08em;line-height:1;padding-top:3px;color:#8A5A0B;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .home-bar-wm{background:linear-gradient(180deg,#F8E29A,#EFC456 46%,#DB9E28);-webkit-background-clip:text;background-clip:text;color:transparent;}}
+body.force-dark .home-bar-wm{background:linear-gradient(180deg,#F8E29A,#EFC456 46%,#DB9E28);-webkit-background-clip:text;background-clip:text;color:transparent;}
+/* v123.28 group tile, one renderer for Home and Groups (_grpTileHtml). */
+.home-gtile{display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;min-height:78px;padding:14px 14px 14px 16px;margin:0 0 10px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;text-align:left;font-family:inherit;color:inherit;cursor:pointer;}
+.home-gtile:active{background:var(--color-background-secondary);}
+.home-gtile-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;}
+.home-gtile-name{font-size:16px;font-weight:600;letter-spacing:-0.01em;color:var(--color-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.home-gtile-st{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-text-secondary);white-space:nowrap;min-width:0;}
+.home-gtile-st .d{overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.home-gtile-dot{width:7px;height:7px;border-radius:50%;background:#1D9E75;flex-shrink:0;}
+.home-gtile-tag{font-weight:600;flex-shrink:0;}
+.home-gtile-tag.live{color:#13795B;}.home-gtile-tag.next{color:#94600A;}.home-gtile-tag.last,.home-gtile-tag.none{color:var(--color-text-secondary);}
+@media(prefers-color-scheme:dark){body:not(.force-light) .home-gtile-tag.live{color:#3CC79A;}body:not(.force-light) .home-gtile-tag.next{color:#EFC456;}}
+body.force-dark .home-gtile-tag.live{color:#3CC79A;}body.force-dark .home-gtile-tag.next{color:#EFC456;}
+.home-gtile-meta{font-size:12px;color:var(--color-text-secondary);min-height:15px;}
+.home-gtile-chev{font-size:18px;line-height:1;color:var(--color-text-tertiary);flex-shrink:0;}
 .home-dash{padding:8px 14px 80px;}
 .home-dash-sec{margin-top:12px;}
 .home-dash-sec-label{font-size:11px;font-weight:700;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:10px;}
@@ -444,9 +464,6 @@ select.course-select,select.ie-sel,select.inline-edit,select.team-dropdown,selec
 .home-sec-links .dot{color:var(--color-text-tertiary);}
 .home-grp-door{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:10px;}
 .home-grp-door:active{background:var(--color-background-secondary);}
-.home-grp-avs{display:flex;flex-shrink:0;}
-.home-grp-avs .avatar{width:26px;height:26px;font-size:10px;border:2px solid var(--color-background-primary);}
-.home-grp-avs .avatar:not(:first-child){margin-left:-7px;}
 .home-grp-info{flex:1;min-width:0;}
 .home-grp-name{font-size:15px;font-weight:700;color:var(--color-text-primary);}
 .home-grp-meta{font-size:12px;color:var(--color-text-secondary);margin-top:2px;}
@@ -458,13 +475,6 @@ select.course-select,select.ie-sel,select.inline-edit,select.team-dropdown,selec
 .grp-sheet-row-ic.ic-group{background:rgba(29,158,117,0.14);}
 .grp-sheet-row-mid{flex:1;min-width:0;}
 .grp-sheet-grp-sub{font-size:12px;color:var(--color-text-tertiary);margin-top:2px;}
-.home-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:120px;background:linear-gradient(180deg,rgba(4,10,18,0.32),rgba(4,10,18,0));pointer-events:none;z-index:1;}
-.home-hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:78px;background:linear-gradient(0deg,rgba(4,10,18,0.62),rgba(4,10,18,0));pointer-events:none;z-index:1;}
-.home-wm{position:absolute;top:46px;left:0;right:0;text-align:center;line-height:1;z-index:2;}
-.home-wm-the{font-family:'DM Sans',sans-serif;font-weight:400;font-size:17px;letter-spacing:0.42em;text-indent:0.42em;color:#EAD79A;}
-.home-wm-turn{display:block;font-family:'Bebas Neue',sans-serif;font-size:64px;letter-spacing:0.05em;line-height:0.86;margin-top:4px;background:linear-gradient(180deg,#F8E29A,#EFC456 46%,#DB9E28);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 10px rgba(0,0,0,0.4));}
-.home-tagline{position:absolute;bottom:12px;left:0;right:0;text-align:center;z-index:2;font-family:'DM Sans',sans-serif;font-weight:500;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#EBDBAB;text-shadow:0 1px 9px rgba(0,0,0,0.9);}
-.home-hero-footer{display:flex;align-items:center;justify-content:space-between;margin-top:16px;}
 .home-theme-btn{background:rgba(255,255,255,0.12);border:0.5px solid rgba(255,255,255,0.25);border-radius:20px;cursor:pointer;padding:5px 11px;color:rgba(255,255,255,0.85);font-size:12px;font-weight:500;line-height:1;flex-shrink:0;display:flex;align-items:center;gap:5px;letter-spacing:0.01em;}
 .home-theme-btn:active{background:rgba(255,255,255,0.2);}
 .home-actions{padding:1.25rem 1rem 0.5rem;}
@@ -1457,13 +1467,10 @@ body.force-light{
 
   <div id="homeScreen">
     <div class="home">
-      <div class="home-hero">
-        <div class="home-wm">
-          <div class="home-wm-the">THE</div>
-          <div class="home-wm-turn">TURN</div>
-        </div>
-        <div class="home-tagline">Track the weekend &nbsp;&middot;&nbsp; Skip the bro math</div>
-      </div>
+      <header class="home-bar">
+        <span class="home-bar-mark splash-mark" aria-hidden="true"></span>
+        <span class="home-bar-wm">THE TURN</span>
+      </header>
       <div class="home-dash" id="homeDashboard"></div>
     </div>
   </div>
@@ -1853,7 +1860,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.27';
+const APP_VERSION='v123.28';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -2222,8 +2229,6 @@ function updateThemeUI(){
     else if(state==='light'){icon.textContent='☀️';label.textContent='Light';}
     else{icon.textContent='🌓';label.textContent='Auto';}
   }
-  const heroBtn=document.getElementById('heroThemeBtn');
-  if(heroBtn){heroBtn.textContent=state==='dark'?'🌙':state==='light'?'☀️':'🌓';}
   // Options panel toggle — re-render if open
   const optPanel=document.getElementById('opt-panel-weekend');
   if(optPanel&&optPanel.classList.contains('active'))renderWeekendPanel();
@@ -4574,19 +4579,7 @@ async function renderGroupsScreen(){
   var trips=(typeof loadTrips==='function')?loadTrips():[];
   if(groups.length){
     h+='<div class="me-seclbl" style="margin-top:20px">Your groups</div>';
-    groups.forEach(function(g){
-      var tc=trips.filter(function(t){return t.group_id===g.group_id;}).length;
-      var isAdmin=(typeof _amGroupAdmin==='function')?_amGroupAdmin(g):(g&&g.role==='admin');
-      var roleCls=isAdmin?'gcard-role admin':'gcard-role';
-      var roleTxt=isAdmin?'Admin':'Member';
-      h+='<div class="gcard" data-gid="'+g.group_id+'">'
-        +'<div class="gcard-top">'
-        +'<div class="home-grp-avs" id="gs-davs-'+g.group_id+'"><div style="width:26px;height:26px;border-radius:50%;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary)"></div></div>'
-        +'<span class="'+roleCls+'">'+roleTxt+'</span></div>'
-        +'<div class="gcard-name">'+g.name+'</div>'
-        +'<div class="gcard-meta" id="gs-dmeta-'+g.group_id+'">'+tc+' trip'+(tc!==1?'s':'')+'</div>'
-        +'</div>';
-    });
+    groups.forEach(function(g){h+=_grpTileHtml(g,trips,'gs-');});
   } else {
     h+='<div class="hm-empty"><div class="hm-empty-ic"><i class="ti ti-users"></i></div>'
       +'<div class="hm-empty-t">No groups yet</div>'
@@ -4595,8 +4588,7 @@ async function renderGroupsScreen(){
   body.innerHTML=h;
   var bc=document.getElementById('grpActCreate');if(bc)bc.onclick=function(){window.sbShowCreateGroup();};
   var bj=document.getElementById('grpActJoin');if(bj)bj.onclick=function(){window.sbShowJoinGroup();};
-  body.querySelectorAll('.gcard[data-gid]').forEach(function(el){el.onclick=function(){window.openGroupPage(el.getAttribute('data-gid'));};});
-  if(groups.length){groups.forEach(function(g){try{_loadGroupMembersIntoDoor(g.group_id,'gs-');}catch(e){}});}
+  if(groups.length){groups.forEach(function(g){try{_loadGroupMembersIntoDoor(g.group_id,'gs-',_grpTileSfx(g));}catch(e){}});}
 }
 window.renderGroupsScreen=renderGroupsScreen;
 function renderRoundsScreen(){
@@ -4683,8 +4675,6 @@ function _buildTripSections(trips,sectionKey,startOpen,gid){
 function renderGroupList(){renderHomeDashboard();}
 
 async function renderHomeDashboard(){
-  const _hb=document.getElementById('heroThemeBtn');
-  if(_hb){const _ts=getThemeState();_hb.textContent=_ts==='dark'?'🌙':_ts==='light'?'☀️':'🌓';}
   const dash=document.getElementById('homeDashboard');
   if(!dash)return;
 
@@ -4704,17 +4694,8 @@ async function renderHomeDashboard(){
   if(groups.length){
     html+='<div class="home-dash-sec"><div class="home-dash-sec-label">Your Groups</div>';
     groups.forEach(function(g){
-      const groupTrips=trips.filter(function(t){return t.group_id===g.group_id;});
-      const tripCount=groupTrips.length;
-      html+='<div class="home-grp-door home-elev" onclick="window.openGroupPage(\''+g.group_id+'\')">'
-        +'<div class="home-grp-avs" id="hm-davs-'+g.group_id+'"><div style="width:26px;height:26px;border-radius:50%;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary)"></div></div>'
-        +'<div class="home-grp-info">'
-        +'<div class="home-grp-name">'+g.name+'</div>'
-        +'<div class="home-grp-meta" id="hm-dmeta-'+g.group_id+'">'+tripCount+' trip'+(tripCount!==1?'s':'')+'</div>'
-        +'</div>'
-        +'<div class="home-grp-chev">&#8250;</div>'
-        +'</div>';
-      _loadGroupMembersIntoDoor(g.group_id);
+      html+=_grpTileHtml(g,trips,'hm-');
+      _loadGroupMembersIntoDoor(g.group_id,'hm-',_grpTileSfx(g));
     });
     html+='</div>';
   } else {
@@ -4794,7 +4775,43 @@ window.toggleTripSection = function(id){
 };
 
 // Stage 5: async member loader for doorway cards
-async function _loadGroupMembersIntoDoor(gid,idPrefix){idPrefix=idPrefix||'hm-';
+// v123.28. One group tile for Home and Groups. The status line comes from the group's trips
+// already on the device: a started, unfinished trip is Live (the most recently saved); else
+// an unstarted one is Next (earliest date, undated last); else the latest finished one is
+// Last; else "No trips yet". A trip whose holes are all in counts as finished even if its
+// flag lags, the same rule Home applies elsewhere. Everything shown is escaped.
+function _gtEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function _grpTileSfx(g){return _amGroupAdmin(g)?' \u00b7 Admin':'';}
+function _grpTileStatus(trips,now){
+  var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var iso=function(d){return /^\d{4}-\d{2}-\d{2}$/.test(d||'');};
+  var key=function(t){return iso(t.date)?t.date:'';};
+  var saved=function(t){return String(t.savedAt||'');};
+  var done=function(t){return !!t.complete||((t.totalHoles||0)>0&&(t.holesPlayed||0)>=t.totalHoles);};
+  var day=function(d){if(!d)return'';if(!iso(d))return _gtEsc(d);var y=+d.slice(0,4);return MON[+d.slice(5,7)-1]+' '+(+d.slice(8,10))+(y!==now.getFullYear()?', '+y:'');};
+  var mon=function(d){if(!d)return'';if(!iso(d))return _gtEsc(d);return MON[+d.slice(5,7)-1]+' '+d.slice(0,4);};
+  var join=function(a,b){return b?a+' \u00b7 '+b:a;};
+  var ts=(trips||[]).filter(Boolean);
+  var live=ts.filter(function(t){return !done(t)&&(t.holesPlayed||0)>0;}).sort(function(a,b){return saved(b)<saved(a)?-1:saved(b)>saved(a)?1:0;});
+  if(live.length){var r=String(live[0].roundStatus||'').split(' \u00b7 ')[0];if(!/^Round \d/.test(r))r='';return{kind:'live',tag:'Live',detail:join(_gtEsc(live[0].name),r)};}
+  var next=ts.filter(function(t){return !done(t);}).sort(function(a,b){var ka=key(a),kb=key(b);if(ka!==kb){if(!ka)return 1;if(!kb)return -1;return ka<kb?-1:1;}return saved(b)<saved(a)?-1:saved(b)>saved(a)?1:0;});
+  if(next.length)return{kind:'next',tag:'Next',detail:join(_gtEsc(next[0].name),day(next[0].date))};
+  var last=ts.filter(done).sort(function(a,b){var ka=key(a),kb=key(b);if(ka!==kb)return ka<kb?1:-1;return saved(b)<saved(a)?-1:saved(b)>saved(a)?1:0;});
+  if(last.length)return{kind:'last',tag:'Last',detail:join(_gtEsc(last[0].name),mon(last[0].date))};
+  return{kind:'none',tag:'No trips yet',detail:''};
+}
+function _grpTileHtml(g,trips,pfx){
+  var gid=String(g.group_id),s=_grpTileStatus((trips||[]).filter(function(t){return t&&t.group_id===g.group_id;}),new Date());
+  return '<button type="button" class="home-gtile" data-gid="'+_gtEsc(gid)+'" onclick="window.openGroupPage(\''+_gtEsc(gid)+'\')">'
+    +'<span class="home-gtile-info">'
+    +'<span class="home-gtile-name">'+_gtEsc(g.name)+'</span>'
+    +'<span class="home-gtile-st">'+(s.kind==='live'?'<span class="home-gtile-dot"></span>':'')+'<span class="home-gtile-tag '+s.kind+'">'+s.tag+'</span>'+(s.detail?'<span class="d">\u00b7 '+s.detail+'</span>':'')+'</span>'
+    +'<span class="home-gtile-meta" id="'+pfx+'dmeta-'+_gtEsc(gid)+'">'+(_amGroupAdmin(g)?'Admin':'')+'</span>'
+    +'</span>'
+    +'<span class="home-gtile-chev" aria-hidden="true">&#8250;</span>'
+    +'</button>';
+}
+async function _loadGroupMembersIntoDoor(gid,idPrefix,sfx){idPrefix=idPrefix||'hm-';sfx=sfx||'';
   if(!navigator.onLine)return;
   try{
     const tok=_sbSession?.access_token||SB_KEY;
@@ -4804,20 +4821,8 @@ async function _loadGroupMembersIntoDoor(gid,idPrefix){idPrefix=idPrefix||'hm-';
     if(!r.ok)return;
     const members=await r.json();
     if(_groupCache[gid])_groupCache[gid]._members=_sortMembers(members);
-    const avEl=document.getElementById(idPrefix+'davs-'+gid);
-    if(avEl){
-      avEl.innerHTML=members.slice(0,4).map(function(m,i){
-        const ini=(m.display_name||'??').split(' ').map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
-        const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
-        const isManaged=!m.user_id;
-        return'<div class="avatar'+(isManaged?' managed':'')+'" style="width:26px;height:26px;font-size:10px;background:'+c.bg+';color:'+c.fg+';border:2px solid var(--color-background-primary);">'+ini+'</div>';
-      }).join('');
-    }
     const metaEl=document.getElementById(idPrefix+'dmeta-'+gid);
-    if(metaEl){
-      const groupTrips=loadTrips().filter(function(t){return t.group_id===gid;});
-      metaEl.textContent=members.length+' member'+(members.length!==1?'s':'')+' · '+groupTrips.length+' trip'+(groupTrips.length!==1?'s':'');
-    }
+    if(metaEl)metaEl.textContent=members.length+' member'+(members.length!==1?'s':'')+sfx;
   }catch(e){}
 }
 
@@ -5919,8 +5924,6 @@ function renderTripList(){
 }
 
 function _renderTripListFromData(trips){
-  const _hb=document.getElementById('heroThemeBtn');
-  if(_hb){const _ts=getThemeState();_hb.textContent=_ts==='dark'?'🌙':_ts==='light'?'☀️':'🌓';}
   const el=document.getElementById('tripList');
   if(!el)return;
 
