@@ -1853,7 +1853,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.25';
+const APP_VERSION='v123.26';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -13394,8 +13394,15 @@ function _gcaTeeList(v){return Array.isArray(v)?v:[];}
 // it. That cannot succeed again until the cap resets, so "Search failed" and "Try again" are
 // both wrong. Every proxy fetch calls _gcaLimitErr(r) before its r.ok test, and every catch
 // that words a course-lookup failure goes through _gcaFailMsg. The wording lives only here.
+// v123.26: a legacy id (409) is permanent too. The importers only ever fetch ids from a
+// search hit, which are new-format today, but that is a proxy for "not legacy", not a
+// guarantee. Refresh checks gcaLegacy itself first and keeps its re-import wording.
 function _gcaLimitErr(r){if(r&&r.status===429){const e=new Error('daily lookup limit');e.gcaLimit=true;throw e;}}
-function _gcaFailMsg(e,generic){return e&&e.gcaLimit===true?'Daily lookup limit reached. Try again tomorrow.':generic;}
+function _gcaFailMsg(e,generic){
+  if(e&&e.gcaLimit===true)return 'Daily lookup limit reached. Try again tomorrow.';
+  if(e&&e.gcaLegacy===true)return 'This course cannot be imported from the course database.';
+  return generic;
+}
 async function _gcaFetchCourse(id){
   const r=await fetch(GOLF_PROXY+'?action=course&id='+encodeURIComponent(id),{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});
   if(r.status===409){const e=new Error('legacy course id');e.gcaLegacy=true;throw e;}
