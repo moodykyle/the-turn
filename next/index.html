@@ -1884,6 +1884,32 @@ function _fsAllScored(r,fi){
   }
   return true;
 }
+// v123.24. The first hole THIS foursome still owes, or -1 when it owes none. Same members,
+// same length and same test as _fsAllScored, so "-1" and "Finish will lock" are one fact:
+// the button can never promise a hole while Finish waits on a different one. skip is the
+// hole on screen: the label must not send you to the hole you are standing on, which the
+// save itself fills. An empty foursome owes nothing (-1) and _fsAllScored calls it not done;
+// both leave the old path in charge, which is Standings.
+function _fsFirstMissing(r,fi,skip){
+  var n=fsHoleCount(r,fi||0),off=holeOffset(r);
+  var mem=(flightsForRound(r)[fi||0]||[]).filter(function(pi){return typeof pi==='number'&&pi>=0;});
+  if(!mem.length||!(n>0))return -1;
+  for(var hi=off;hi<off+n;hi++){
+    if(hi===skip)continue;
+    var row=STATE&&STATE.scores&&STATE.scores[r]&&STATE.scores[r][hi];
+    if(!row)return hi;
+    for(var k=0;k<mem.length;k++){var sc=row[mem[k]];if(sc===null||sc===undefined)return hi;}
+  }
+  return -1;
+}
+// The toast after the jump: who in this foursome has no score on hole hi, in seat order.
+function _fsMissingNote(r,fi,hi){
+  var row=STATE&&STATE.scores&&STATE.scores[r]&&STATE.scores[r][hi];
+  var who=(flightsForRound(r)[fi||0]||[]).filter(function(pi){return typeof pi==='number'&&pi>=0&&(!row||row[pi]===null||row[pi]===undefined);}).map(function(pi){return displayName(pi);});
+  if(!who.length)return '';
+  var list=who.length===1?who[0]:who.slice(0,-1).join(', ')+' and '+who[who.length-1];
+  return 'Hole '+(hi+1)+' still needs '+(who.length===1?'a score':'scores')+' for '+list+'.';
+}
 // v123.16's in-memory reopen flag was removed in v123.20. The bar is a pure
 // readout of the lock and the pencil now; Finish and Edit change real state instead.
 // The VIEW ONLY pill, lifted out of updateHoleUI so it can be tested on its own.
@@ -1896,7 +1922,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.22-next.6';
+const APP_VERSION='v123.24-next.6';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7764,7 +7790,10 @@ function _updateActionRow(){
   if(saveBtn){
     const _maxH=_navLastHole(r,_curFi(r));
     // v123.20: a full card saves by finishing, from any hole.
-    saveBtn.textContent=hi===_maxH?'Finish Round':(_fsAllScored(r,_curFi(r))?'Save Changes':'Save & Continue');
+    // v123.24: on the last hole, a card that still owes an earlier hole names it. Finish
+    // Round only where Finish will actually lock.
+    const _mh=hi===_maxH?_fsFirstMissing(r,_curFi(r),hi):-1;
+    saveBtn.textContent=hi===_maxH?(_mh>=0?'Save, go to hole '+(_mh+1):'Finish Round'):(_fsAllScored(r,_curFi(r))?'Save Changes':'Save & Continue');
   }
 }
 
@@ -10366,7 +10395,7 @@ function saveHole(){if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRou
     showMsg('This round ended at hole '+fsHoleCount(r,_shFi)+'. Tap Resume round to keep playing.');
     return;
   }
-  if(!_flightNeedIdxs(r).every(function(pi){return STATE.scores[r][hi][pi]!==null;})){showMsg('Enter all scores first.');return;}if(gameOn('wolf',r)){const _wfi=isMultiFlight(r)?getFlightPick(r):0;if(_wfi!==null&&gameOnFs('wolf',r,_wfi)&&(flightsForRound(r)[_wfi]||[]).length>=4&&!wolfPicksForRound(r,_wfi)[hi]){showMsg('Wolf still needs a pick for this hole. Choose a partner, go lone, or go blind.');return;}}autoSave();s2WriteActive();if(!_fsPickPending(r)&&_fsAllScored(r,_curFi(r))){_finishFoursome(r,_curFi(r));return;}if(hi<_navLastHole(r,_curFi(r)))changeHole(1);else setView('board');}
+  if(!_flightNeedIdxs(r).every(function(pi){return STATE.scores[r][hi][pi]!==null;})){showMsg('Enter all scores first.');return;}if(gameOn('wolf',r)){const _wfi=isMultiFlight(r)?getFlightPick(r):0;if(_wfi!==null&&gameOnFs('wolf',r,_wfi)&&(flightsForRound(r)[_wfi]||[]).length>=4&&!wolfPicksForRound(r,_wfi)[hi]){showMsg('Wolf still needs a pick for this hole. Choose a partner, go lone, or go blind.');return;}}autoSave();s2WriteActive();if(!_fsPickPending(r)&&_fsAllScored(r,_curFi(r))){_finishFoursome(r,_curFi(r));return;}if(hi<_navLastHole(r,_curFi(r)))changeHole(1);else{const _mh=_fsPickPending(r)?-1:_fsFirstMissing(r,_curFi(r),hi);if(_mh>=0){jumpHole(_mh);const _mn=_fsMissingNote(r,_curFi(r),_mh);if(_mn)showMsg(_mn);}else setView('board');}}
 // ONE clear path. _actClear and resetHole held byte-identical copies of this logic, and
 // BOTH cleared the whole roster and EVERY foursome's per-hole game state. In a multi-foursome
 // round that wiped the other group's scores, hammer throw, wolf pick and snake holder out of
@@ -11986,14 +12015,6 @@ window._plFollowAgain=function(i){
   _plFollowSyncSafe('followAgain');
   renderPlayersPanel();renderScorecard();renderBanner();autoSave();s2WriteActive();
 };
-window._plEditIdx=function(i,raw){
-  if(!canEditTrip())return;
-  var v=idxFromInput(raw,WK.players[i]?WK.players[i].idx:0);
-  if(v===(WK.players[i]||{}).idx){renderPlayersPanel();return;}
-  _plIdxGuard(i,v,function(){
-    _plWriteIdx(i,v);renderPlayersPanel();renderScorecard();autoSave();
-  });
-};
 // Writes idx through the SAME expression the row's own input already uses, so nothing
 // downstream of courseHdcp sees a path it has not seen since this panel shipped.
 // _plUseIdx removed in v123.11c. It pulled the member index into the trip on a tap,
@@ -12625,8 +12646,8 @@ function _reopenFoursome(r,fi){
   }
   updateHoleUI();
 }
-// ONLY the final acknowledgement. unlockRound also clears bonus: and birdie: keys, which was
-// harmless there because it only ever ran on a complete round, where both toasts are gated
+// ONLY the final acknowledgement. unlockRound (removed v123.23) also cleared bonus: and
+// birdie: keys, which was harmless there because it only ever ran on a complete round, where both toasts are gated
 // shut. On one foursome of a partial round the birdie gate is open, and clearing those keys
 // would re-fire every birdie on the card. Display state only: no calc* reads these keys.
 function _rzReopenClear(r,fi){
@@ -13813,7 +13834,11 @@ function _gcaManualFromApi(apiCourse){
   if(nm)nm.value=composed;
   if(f)f.scrollIntoView({behavior:'smooth'});
 }
+// A blank hand entry. _gcaManualFromApi stashes the vendor's id and location for addCourse
+// to stamp on the course it seeds; an abandoned import left them behind, and the next hand
+// entry (from here) was saved under the other course's external_id. Clear them first.
 window._gcaShowManual=function(){
+  window._gcaSeedExternalId=null;window._gcaSeedLocation=null;
   document.getElementById('gcaResults').innerHTML='';
   document.getElementById('addCourseForm').style.display='block';
   document.getElementById('addCourseForm').scrollIntoView({behavior:'smooth'});
@@ -14187,7 +14212,7 @@ function renderCoursesPanel(){
   html+='</div>';
   html+='<div id="gcaResults" style="margin-top:6px"></div>';
   html+='</div>';
-  html+='<div style="margin-bottom:10px"><button class="btn-sm" onclick="toggleAddCourse()">+ Add manually</button></div>';
+  html+='<div style="margin-bottom:10px"><button class="btn-sm" onclick="window._gcaShowManual()">+ Add manually</button></div>';
   html+='<div id="addCourseForm" style="display:none" class="section-card"><div class="section-hd">New course</div><div style="padding:10px 12px"><div style="display:flex;gap:8px;margin-bottom:8px"><input class="text-input" id="newCName" placeholder="Course name" style="flex:2"/><input class="ie-num" id="newCSlope" type="number" placeholder="Slope" style="width:65px"/><input class="ie-num" id="newCRating" type="number" step="0.1" placeholder="Rating" style="width:72px"/></div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Front 9 pars</div><input class="text-input" id="newCFP" placeholder="4,4,3,5,4,4,3,5,4" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Front 9 HCP indexes</div><input class="text-input" id="newCFSI" placeholder="1,3,5,7,9,11,13,15,17" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Back 9 pars</div><input class="text-input" id="newCBP" placeholder="4,4,3,5,4,4,3,5,4" style="margin-bottom:4px"/><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Back 9 HCP indexes</div><input class="text-input" id="newCBSI" placeholder="2,4,6,8,10,12,14,16,18" style="margin-bottom:8px"/><button class="btn-primary" onclick="addCourse()" style="padding:8px">Save course</button></div></div>';
   html+='</div>';
   document.getElementById('opt-panel-courses').innerHTML=html;
@@ -16830,12 +16855,13 @@ function unlockFlight(r,fi){
 // So they freeze as soon as ANY foursome in the round is closed.
 // v123.20. The whole round, in the one shape: drop this round's 'r:fi' entries, store the
 // number. settleRound pushed the number alone, which left [0,'0:1'] once foursomes could
-// finish on their own. Same body lockRound always had, minus its renders.
+// finish on their own. Same body lockRound had (removed v123.23), minus its renders.
 function _lockWhole(r){var a=_lockArr();for(var i=a.length-1;i>=0;i--)if(typeof a[i]==='string'&&a[i].indexOf(r+':')===0)a.splice(i,1);if(!a.includes(r))a.push(r);}
 function isAnyFlightLocked(r){var a=_lockArr();if(a.includes(r))return true;var n=_fsCountFor(r);for(var fi=0;fi<n;fi++)if(a.includes(_lockKey(r,fi)))return true;return false;}
 function isRoundLocked(r){return(STATE.lockedRounds||[]).includes(r);}
-function lockRound(r){var _la=_lockArr();for(var _i=_la.length-1;_i>=0;_i--)if(typeof _la[_i]==='string'&&_la[_i].indexOf(r+':')===0)_la.splice(_i,1);if(!_la.includes(r))_la.push(r);autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();}
-function unlockRound(r){if((STATE.settledRounds||[]).includes(r)){showMsg('Unsettle this round on the Money tab before unlocking.');return;}if(!STATE.lockedRounds)return;STATE.lockedRounds=STATE.lockedRounds.filter(x=>x!==r&&!(typeof x==='string'&&x.indexOf(r+':')===0));if(STATE.razzleFiredToasts){Object.keys(STATE.razzleFiredToasts).forEach(k=>{if(k.startsWith('bonus:'+r+':')||k.startsWith('birdie:'+r+':')||k.startsWith('final:'+r+':'))delete STATE.razzleFiredToasts[k];});}if(STATE.razzleHWM)STATE.razzleHWM[r]=undefined;autoSave();renderRdSel('entryRdSel',STATE.currentRound,'switchEntryRound');updateHoleUI();if(document.getElementById('mpanel-golf')?.classList.contains('active'))renderMoney();}
+// v123.23: lockRound and unlockRound removed. Neither had a caller after v123.20: locking
+// is lockFlight (and _lockWhole, which is lockRound's body without its renders); reopening
+// is unlockFlight plus _rzReopenClear, which clears only the final: key on purpose.
 
 function renderMoney(){
   const n=WK.players.length,pot=WK.buyIn*n;
