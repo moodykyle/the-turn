@@ -1815,6 +1815,32 @@ function _fsAllScored(r,fi){
   }
   return true;
 }
+// v123.24. The first hole THIS foursome still owes, or -1 when it owes none. Same members,
+// same length and same test as _fsAllScored, so "-1" and "Finish will lock" are one fact:
+// the button can never promise a hole while Finish waits on a different one. skip is the
+// hole on screen: the label must not send you to the hole you are standing on, which the
+// save itself fills. An empty foursome owes nothing (-1) and _fsAllScored calls it not done;
+// both leave the old path in charge, which is Standings.
+function _fsFirstMissing(r,fi,skip){
+  var n=fsHoleCount(r,fi||0),off=holeOffset(r);
+  var mem=(flightsForRound(r)[fi||0]||[]).filter(function(pi){return typeof pi==='number'&&pi>=0;});
+  if(!mem.length||!(n>0))return -1;
+  for(var hi=off;hi<off+n;hi++){
+    if(hi===skip)continue;
+    var row=STATE&&STATE.scores&&STATE.scores[r]&&STATE.scores[r][hi];
+    if(!row)return hi;
+    for(var k=0;k<mem.length;k++){var sc=row[mem[k]];if(sc===null||sc===undefined)return hi;}
+  }
+  return -1;
+}
+// The toast after the jump: who in this foursome has no score on hole hi, in seat order.
+function _fsMissingNote(r,fi,hi){
+  var row=STATE&&STATE.scores&&STATE.scores[r]&&STATE.scores[r][hi];
+  var who=(flightsForRound(r)[fi||0]||[]).filter(function(pi){return typeof pi==='number'&&pi>=0&&(!row||row[pi]===null||row[pi]===undefined);}).map(function(pi){return displayName(pi);});
+  if(!who.length)return '';
+  var list=who.length===1?who[0]:who.slice(0,-1).join(', ')+' and '+who[who.length-1];
+  return 'Hole '+(hi+1)+' still needs '+(who.length===1?'a score':'scores')+' for '+list+'.';
+}
 // v123.16's in-memory reopen flag was removed in v123.20. The bar is a pure
 // readout of the lock and the pencil now; Finish and Edit change real state instead.
 // The VIEW ONLY pill, lifted out of updateHoleUI so it can be tested on its own.
@@ -1827,7 +1853,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.23';
+const APP_VERSION='v123.24';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7608,7 +7634,10 @@ function _updateActionRow(){
   if(saveBtn){
     const _maxH=_navLastHole(r,_curFi(r));
     // v123.20: a full card saves by finishing, from any hole.
-    saveBtn.textContent=hi===_maxH?'Finish Round':(_fsAllScored(r,_curFi(r))?'Save Changes':'Save & Continue');
+    // v123.24: on the last hole, a card that still owes an earlier hole names it. Finish
+    // Round only where Finish will actually lock.
+    const _mh=hi===_maxH?_fsFirstMissing(r,_curFi(r),hi):-1;
+    saveBtn.textContent=hi===_maxH?(_mh>=0?'Save, go to hole '+(_mh+1):'Finish Round'):(_fsAllScored(r,_curFi(r))?'Save Changes':'Save & Continue');
   }
 }
 
@@ -10210,7 +10239,7 @@ function saveHole(){if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRou
     showMsg('This round ended at hole '+fsHoleCount(r,_shFi)+'. Tap Resume round to keep playing.');
     return;
   }
-  if(!_flightNeedIdxs(r).every(function(pi){return STATE.scores[r][hi][pi]!==null;})){showMsg('Enter all scores first.');return;}if(gameOn('wolf',r)){const _wfi=isMultiFlight(r)?getFlightPick(r):0;if(_wfi!==null&&gameOnFs('wolf',r,_wfi)&&(flightsForRound(r)[_wfi]||[]).length>=4&&!wolfPicksForRound(r,_wfi)[hi]){showMsg('Wolf still needs a pick for this hole. Choose a partner, go lone, or go blind.');return;}}autoSave();s2WriteActive();if(!_fsPickPending(r)&&_fsAllScored(r,_curFi(r))){_finishFoursome(r,_curFi(r));return;}if(hi<_navLastHole(r,_curFi(r)))changeHole(1);else setView('board');}
+  if(!_flightNeedIdxs(r).every(function(pi){return STATE.scores[r][hi][pi]!==null;})){showMsg('Enter all scores first.');return;}if(gameOn('wolf',r)){const _wfi=isMultiFlight(r)?getFlightPick(r):0;if(_wfi!==null&&gameOnFs('wolf',r,_wfi)&&(flightsForRound(r)[_wfi]||[]).length>=4&&!wolfPicksForRound(r,_wfi)[hi]){showMsg('Wolf still needs a pick for this hole. Choose a partner, go lone, or go blind.');return;}}autoSave();s2WriteActive();if(!_fsPickPending(r)&&_fsAllScored(r,_curFi(r))){_finishFoursome(r,_curFi(r));return;}if(hi<_navLastHole(r,_curFi(r)))changeHole(1);else{const _mh=_fsPickPending(r)?-1:_fsFirstMissing(r,_curFi(r),hi);if(_mh>=0){jumpHole(_mh);const _mn=_fsMissingNote(r,_curFi(r),_mh);if(_mn)showMsg(_mn);}else setView('board');}}
 // ONE clear path. _actClear and resetHole held byte-identical copies of this logic, and
 // BOTH cleared the whole roster and EVERY foursome's per-hole game state. In a multi-foursome
 // round that wiped the other group's scores, hammer throw, wolf pick and snake holder out of
