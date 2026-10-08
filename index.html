@@ -404,15 +404,26 @@ body.force-dark .home-gtile-tag.live{color:#3CC79A;}body.force-dark .home-gtile-
 .home-cont-btn:active{background:var(--color-background-secondary);}
 .home-cont-status{font-size:12px;color:var(--color-text-secondary);margin-top:2px;}
 .trip-card-status{font-size:12px;font-weight:500;color:#1D9E75;margin:5px 0 9px;}
-.home-lb{margin-top:11px;border-top:0.5px solid var(--color-border-tertiary);padding-top:8px;}
-.home-lb-hd{display:grid;grid-template-columns:20px 22px minmax(0,1fr) 34px 26px;gap:8px;align-items:center;font-size:9px;font-weight:700;letter-spacing:0.06em;color:var(--color-text-tertiary);padding-bottom:6px;}
-.home-lb-row{display:grid;grid-template-columns:20px 22px minmax(0,1fr) 34px 26px;gap:8px;align-items:center;padding:4px 0;}
-.home-lb-row.me{background:rgba(29,158,117,0.10);border-radius:6px;margin:0 -6px;padding:4px 6px;grid-template-columns:20px 22px minmax(0,1fr) 34px 26px;}
-.home-lb-rank{font-size:11px;font-weight:600;color:var(--color-text-secondary);}
-.home-lb-nm{font-size:13px;font-weight:500;color:var(--color-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+.home-lb{margin-top:12px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;overflow:hidden;}
+.home-lb-hd{display:grid;grid-template-columns:22px minmax(0,1fr) 44px 40px;gap:8px;align-items:center;font-size:10px;font-weight:700;letter-spacing:0.08em;color:var(--color-text-tertiary);padding:8px 14px 6px;}
+.home-lb-row{display:grid;grid-template-columns:22px minmax(0,1fr) 44px 40px;gap:8px;align-items:center;padding:8px 14px;border-top:0.5px solid var(--color-border-tertiary);}
+.home-lb-row.me{background:rgba(29,158,117,0.12);}
+.home-lb-rank{font-size:12px;font-weight:700;color:var(--color-text-secondary);}
+.home-lb-nm{font-size:14px;font-weight:500;color:var(--color-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
 .home-lb-hcp{font-size:10px;font-weight:400;color:var(--color-text-tertiary);}
 .home-lb-net{font-size:14px;font-weight:700;color:var(--color-text-primary);text-align:right;}
 .home-lb-thru{font-size:12px;color:var(--color-text-secondary);text-align:center;}
+/* v123.29 welcome block (_renderContinueSection). */
+.home-wb{display:flex;flex-direction:column;gap:6px;padding:2px 0 10px;}
+.home-wb-h{margin:0;font-size:26px;font-weight:700;letter-spacing:-0.02em;line-height:1.15;color:var(--color-text-primary);}
+.home-wb-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+.home-wb-line{margin:0;font-size:14px;line-height:1.4;color:var(--color-text-secondary);min-width:0;}
+.home-wb-all{background:none;border:none;padding:0;color:#1D9E75;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.home-wb-btn{display:flex;align-items:center;justify-content:center;width:100%;height:48px;margin-top:10px;border:none;border-radius:12px;background:#1D9E75;color:#FFFFFF;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;}
+.home-wb-btn:active{background:#13795B;}
+.home-wb-btn.ghost{height:46px;background:transparent;border:1.5px solid #1D9E75;color:#13795B;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .home-wb-btn.ghost{color:#3CC79A;}}
+body.force-dark .home-wb-btn.ghost{color:#3CC79A;}
 .home-cont-row{display:flex;align-items:center;gap:10px;}
 .home-cont-eyebrow{display:flex;align-items:center;gap:5px;margin-bottom:7px;}
 .home-cont-eyebrow-ic{width:16px;height:16px;border-radius:50%;background:var(--tint);display:grid;place-items:center;flex-shrink:0;}
@@ -1860,7 +1871,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.28';
+const APP_VERSION='v123.29';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -6192,76 +6203,88 @@ async function _commitRoundDelete(id){
 function _indivRoundsFromLocal(){
   return loadTrips().filter(function(t){return t.is_quick_round&&!t.group_id&&!_pendingRoundDeletes.has(t.id);}).sort(function(a,b){return new Date(b.savedAt||0)-new Date(a.savedAt||0);});
 }
+// v123.29. The welcome block. In order:
+//   in progress  the most recently saved trip or Individual Round that has begun (an
+//                Individual Round has no set-up phase, so it counts as soon as it exists):
+//                a context line, See all (N) past one, Resume, and for a group trip with
+//                scores the leader / runner-up / You leaderboard in its own card;
+//   coming up    else the next unstarted group trip, earliest date first, with Open trip;
+//   idle         else one line and no button.
+// The rows keep home-lb-row / .me / home-lb-nm: youmid_harness guards the You row on them.
+function _wbDay(d){
+  var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  if(!d)return'';
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d))return _gtEsc(d);
+  var y=+d.slice(0,4);
+  return MON[+d.slice(5,7)-1]+' '+(+d.slice(8,10))+(y!==new Date().getFullYear()?', '+y:'');
+}
 function _renderContinueSection(){
   const el=document.getElementById('homeContinueSec');if(!el)return;
   const trips=loadTrips().filter(function(t){return!_pendingRoundDeletes.has(t.id);});
   trips.forEach(function(t){if(t.totalHoles>0&&t.holesPlayed>=t.totalHoles)t.complete=true;});
-  const inProgressTrips=trips.filter(function(t){return!t.complete;}).sort(function(a,b){return new Date(b.savedAt||0)-new Date(a.savedAt||0);});
-  const ct=inProgressTrips[0]||null;
-  if(!ct){el.innerHTML='';return;}
-  const grpName=ct.group_id&&_groupCache[ct.group_id]?_groupCache[ct.group_id].name:'';
-  const seeAllLink=inProgressTrips.length>1
-    ?'<button onclick="event.stopPropagation();window._hmShowAllInProgress()" style="background:none;border:none;color:#1D9E75;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">See all ('+inProgressTrips.length+')</button>'
-    :'';
-
-  // The sliver renders only when somebody has actually posted a hole. Before anyone tees off
-  // every player sits at rel 0 and the order would be pure roster accident, so a trip that has
-  // not started shows its dates instead of a leaderboard of nothing.
-  const st=Array.isArray(ct.standings)?ct.standings:[];
-  const started=st.some(function(x){return (x.played||0)>0;});
-  const showLb=!ct.is_quick_round&&started;
-
-  var body='';
-  if(showLb){
-    // Leader, runner up, and you. If you ARE the leader, show the top three instead so the
-    // card never repeats the same row twice.
-    var meIdx=-1;
-    for(var k=0;k<st.length;k++)if(_standingIsMe(ct,st[k])){meIdx=k;break;}
-    var pick=[];
-    if(meIdx>=0&&meIdx<=2){pick=st.slice(0,3);}
-    else if(meIdx>2){pick=[st[0],st[1],st[meIdx]];}
-    else {pick=st.slice(0,3);}
-    pick=pick.filter(Boolean);
-
-    body+='<div class="home-lb">'
-      +'<div class="home-lb-hd"><span></span><span></span><span>PLAYER</span><span style="text-align:right">NET</span><span style="text-align:center">THRU</span></div>';
-    pick.forEach(function(p){
-      var isMe=_standingIsMe(ct,p);
-      var rel=(p.rel===0?'E':(p.rel>0?'+'+p.rel:''+p.rel));
-      if((p.played||0)===0)rel='-';
-      var hcp=p.hcp?' <span class="home-lb-hcp">('+p.hcp+')</span>':'';
-      body+='<div class="home-lb-row'+(isMe?' me':'')+'">'
-        +'<span class="home-lb-rank">'+(p.rank||'-')+'</span>'
-        +'<span class="avatar" style="width:22px;height:22px;box-sizing:border-box;font-size:9px;background:'+(p.bg||'#6B7280')+';color:'+(p.fg||'#fff')+'">'+(p.ini||'??')+'</span>'
-        +'<span class="home-lb-nm">'+(isMe?'You':(p.name||''))+hcp+'</span>'
-        +'<span class="home-lb-net">'+rel+'</span>'
-        +'<span class="home-lb-thru">'+(p.thru||'-')+'</span>'
-        +'</div>';
-    });
-    body+='</div>';
+  const open=trips.filter(function(t){return!t.complete;});
+  const recent=function(a,b){return new Date(b.savedAt||0)-new Date(a.savedAt||0);};
+  const inProg=open.filter(function(t){return t.is_quick_round||(t.holesPlayed||0)>0;}).sort(recent);
+  const grpOf=function(t){return t.group_id&&_groupCache[t.group_id]?_groupCache[t.group_id].name:'';};
+  const u=(typeof sbCurrentUser==='function')?sbCurrentUser():null;
+  const full=String((u&&u.user_metadata&&u.user_metadata.full_name)||'').trim();
+  const first=full?full.split(/\s+/)[0]:'';
+  var h='<div class="home-wb"><h1 class="home-wb-h">Welcome back'+(first?', '+_gtEsc(first):'')+'</h1>';
+  const ct=inProg[0]||null;
+  if(ct){
+    var line,label;
+    if(ct.is_quick_round){
+      line=['Individual Round',(ct.courses&&ct.courses[0])?courseDisp(ct.courses[0]):''].filter(Boolean).map(_gtEsc).join(' \u00b7 ');
+      label='Resume round';
+    } else {
+      var rd=String(ct.roundStatus||'').split(' \u00b7 ')[0];if(!/^Round \d/.test(rd))rd='';
+      line=[grpOf(ct),ct.name||'Unnamed Trip',rd].filter(Boolean).map(_gtEsc).join(' \u00b7 ');
+      var rn=rd.match(/^Round (\d+)/);label=rn?'Resume Round '+rn[1]:'Resume';
+    }
+    h+='<div class="home-wb-row"><p class="home-wb-line">'+line+'</p>'
+      +(inProg.length>1?'<button class="home-wb-all" onclick="window._hmShowAllInProgress()">See all ('+inProg.length+')</button>':'')
+      +'</div>'
+      +'<button class="home-wb-btn" onclick="viewTrip(\''+_gtEsc(ct.id)+'\')">'+label+'</button>';
+    // Leader, runner-up and you; the top three when you are among them or not in the trip.
+    // Nothing before somebody posts a hole: every player sits at 0 and the order is roster accident.
+    const st=Array.isArray(ct.standings)?ct.standings:[];
+    if(!ct.is_quick_round&&st.some(function(x){return (x.played||0)>0;})){
+      var meIdx=-1;
+      for(var k=0;k<st.length;k++)if(_standingIsMe(ct,st[k])){meIdx=k;break;}
+      var pick=(meIdx>2)?[st[0],st[1],st[meIdx]]:st.slice(0,3);
+      pick=pick.filter(Boolean);
+      h+='<div class="home-lb"><div class="home-lb-hd"><span></span><span>PLAYER</span><span style="text-align:right">NET</span><span style="text-align:center">THRU</span></div>';
+      pick.forEach(function(p){
+        var isMe=_standingIsMe(ct,p);
+        var rel=(p.rel===0?'E':(p.rel>0?'+'+p.rel:''+p.rel));
+        if((p.played||0)===0)rel='-';
+        var hcp=p.hcp?' <span class="home-lb-hcp">('+_gtEsc(p.hcp)+')</span>':'';
+        h+='<div class="home-lb-row'+(isMe?' me':'')+'">'
+          +'<span class="home-lb-rank">'+_gtEsc(p.rank||'-')+'</span>'
+          +'<span class="home-lb-nm">'+(isMe?'You':_gtEsc(p.name||''))+hcp+'</span>'
+          +'<span class="home-lb-net">'+rel+'</span>'
+          +'<span class="home-lb-thru">'+_gtEsc(p.thru||'-')+'</span>'
+          +'</div>';
+      });
+      h+='</div>';
+    }
+  } else {
+    const up=open.filter(function(t){return !t.is_quick_round;}).sort(function(a,b){
+      var ka=/^\d{4}-\d{2}-\d{2}$/.test(a.date||'')?a.date:'',kb=/^\d{4}-\d{2}-\d{2}$/.test(b.date||'')?b.date:'';
+      if(ka!==kb){if(!ka)return 1;if(!kb)return -1;return ka<kb?-1:1;}
+      return recent(a,b);
+    })[0]||null;
+    if(up){
+      var day=_wbDay(up.date),g=grpOf(up);
+      var upLine=day?_gtEsc(g||up.name||'Your trip')+' tees off '+day:[g,up.name||'Unnamed Trip'].filter(Boolean).map(_gtEsc).join(' \u00b7 ');
+      h+='<div class="home-wb-row"><p class="home-wb-line">'+upLine+'</p></div>'
+        +'<button class="home-wb-btn ghost" onclick="viewTrip(\''+_gtEsc(up.id)+'\')">Open trip</button>';
+    } else {
+      h+='<div class="home-wb-row"><p class="home-wb-line">Ready for your next golf adventure?</p></div>';
+    }
   }
-
-  // Sub-line: where the trip stands, or where it is played, or nothing.
-  var sub='';
-  if(ct.is_quick_round){sub=ct.courses&&ct.courses[0]?ct.courses[0]:'';}
-  else if(showLb){sub=[ct.roundStatus||'',courseDisp(ct.currentCourse)||''].filter(Boolean).join(' \u00b7 ');}
-  else {sub=[grpName,(ct.date||'')].filter(Boolean).join(' \u00b7 ')||'Not started';}
-
-  // ONE tap target. A real button, not a div with an onclick: it gets keyboard focus, the right
-  // role for VoiceOver, and native tap behaviour on an iOS PWA. The leaderboard rows are inert,
-  // so there is no dead zone between them for a thumb to land in.
-  el.innerHTML='<div class="home-dash-sec-label" style="display:flex;align-items:center;justify-content:space-between">'
-    +'<span>Continue Playing</span>'+seeAllLink+'</div>'
-    +'<button class="home-cont-btn home-elev"'+(ct.is_quick_round?' style="border-left-color:#F59E0B"':'')+' onclick="viewTrip(\''+ct.id+'\')">'
-    +'<div class="home-cont-row">'
-    +'<div style="flex:1;min-width:0">'
-    +'<div class="home-cont-name">'+(ct.name||'Unnamed Trip')+'</div>'
-    +(sub?'<div class="home-cont-status">'+sub+'</div>':'')
-    +'</div>'
-    +'<span style="color:#1D9E75;font-size:16px;flex-shrink:0">\u203A</span>'
-    +'</div>'
-    +body
-    +'</button>';
+  h+='</div>';
+  el.innerHTML=h;
 }
 function _renderIndivRoundsSection(){
   const el=document.getElementById('homeIndivSec');if(!el)return;
