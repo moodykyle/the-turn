@@ -1119,6 +1119,9 @@ body.force-light .home-dash-sec-label::before,body.force-light .me-seclbl.brand-
 .gp-tab{flex:1;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-0.5px;padding:10px 0 11px;font-family:inherit;font-size:14px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;}
 .gp-tab.on{font-weight:700;color:#13795B;border-bottom-color:#1D9E75;}
 .gp-acts{display:flex;gap:10px;margin-bottom:6px;}
+/* v123.34: the trip actions are the Groups screen's own action tiles, two to a row. */
+.gp-acts .grp-act2{flex:1;width:auto;min-height:56px;padding:10px 12px;gap:10px;}
+.gp-acts .grp-act2:active{background:var(--color-background-secondary);}
 .gp-act{flex:1;display:flex;align-items:center;justify-content:center;height:48px;border-radius:12px;background:transparent;border:1.5px solid #1D9E75;color:#13795B;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:background-color 120ms ease,color 120ms ease;}
 .gp-act:active{background:#1D9E75;color:#FFFFFF;}
 .gp-act.gp-wide{width:100%;flex:none;margin-top:10px;height:46px;}
@@ -1956,7 +1959,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.33';
+const APP_VERSION='v123.36';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -4626,6 +4629,20 @@ function _hmOpenCreateSheet(){
   var old=document.getElementById('hmCreateSheet');if(old)old.remove();
   var bd=document.createElement('div');bd.id='hmCreateSheet';bd.className='rdsheet-backdrop';
   bd.addEventListener('click',function(e){if(e.target===bd)bd.remove();});
+  // v123.35: on a Group page the + starts something in that group, without asking which.
+  var gid=_gpOpenGid();
+  if(gid){
+    bd.innerHTML='<div class="rdsheet"><div class="rdsheet-grab"></div>'
+      +'<div class="hmcs-hd">New in '+_gtEsc(_groupCache[gid].name||'this group')+'</div>'
+      +'<div class="hmcs-sub">Starts in this group.</div>'
+      +'<button class="hmcs-opt" id="hmcsGTrip"><span class="hmcs-ic"><i class="ti ti-calendar"></i></span><span class="hmcs-tx"><span class="hmcs-t">New trip</span><span class="hmcs-d">Plan a full weekend</span></span><i class="ti ti-chevron-right hmcs-chev"></i></button>'
+      +'<button class="hmcs-opt" id="hmcsGRound"><span class="hmcs-ic"><i class="ti ti-flag-3"></i></span><span class="hmcs-tx"><span class="hmcs-t">New round</span><span class="hmcs-d">One round with this group</span></span><i class="ti ti-chevron-right hmcs-chev"></i></button>'
+      +'</div>';
+    document.body.appendChild(bd);
+    var gt=document.getElementById('hmcsGTrip');if(gt)gt.onclick=function(){bd.remove();window._pendingGroupId=gid;startNewWeekend();};
+    var gr=document.getElementById('hmcsGRound');if(gr)gr.onclick=function(){bd.remove();window.startGroupQuickRound(gid);};
+    return;
+  }
   bd.innerHTML='<div class="rdsheet"><div class="rdsheet-grab"></div>'
     +'<div class="hmcs-hd">Start something</div>'
     +'<div class="hmcs-sub">Pick up a game or plan the weekend.</div>'
@@ -5057,7 +5074,9 @@ window._hmLaunchNewTrip=window._hmShowNewTripSheet;
 
 // v123.31. Opening a group lands on Trips; a re-render keeps the tab (_gpTab). Back returns
 // to whichever screen the group was opened from.
-var _gpTab='trips',_gpFrom='groups';
+var _gpTab='trips',_gpFrom='groups',_gpGid=null;
+// v123.35: the group whose page is on screen right now, or null.
+function _gpOpenGid(){var sc=document.getElementById('homeGroupScreen');return (sc&&sc.style.display!=='none'&&_gpGid&&_groupCache[_gpGid])?_gpGid:null;}
 window.openGroupPage = function(gid){
   const g=_groupCache[gid];
   if(!g)return;
@@ -5109,6 +5128,7 @@ function _sortMembers(a){
 async function renderGroupPage(gid){
   const g=_groupCache[gid];
   if(!g)return;
+  _gpGid=gid;
   if(typeof _renderSimBadge==='function')_renderSimBadge();
   const isAdmin=_amGroupAdmin(g);
   const body=document.getElementById('gpBody');
@@ -5165,8 +5185,8 @@ async function renderGroupPage(gid){
       h+='<button class="gp-danger" onclick="window._leaveGroup(\''+gq+'\',\''+nmq+'\')">Leave group</button>';
     }
   } else {
-    h+='<div class="gp-acts"><button class="gp-act" onclick="window._pendingGroupId=\''+gq+'\';startNewWeekend()">New trip</button>'
-      +'<button class="gp-act" onclick="window.startGroupQuickRound(\''+gq+'\')">Group round</button></div>';
+    h+='<div class="gp-acts"><button class="grp-act2" onclick="window._pendingGroupId=\''+gq+'\';startNewWeekend()"><span class="grp-act2-ic"><i class="ti ti-calendar"></i></span><span class="grp-act2-t">New trip</span></button>'
+      +'<button class="grp-act2" onclick="window.startGroupQuickRound(\''+gq+'\')"><span class="grp-act2-ic"><i class="ti ti-flag-3"></i></span><span class="grp-act2-t">New round</span></button></div>';
     var iso=function(d){return /^\d{4}-\d{2}-\d{2}$/.test(d||'');};
     var saved=function(a,b){return String(b.savedAt||'')<String(a.savedAt||'')?-1:String(b.savedAt||'')>String(a.savedAt||'')?1:0;};
     var dateAsc=function(a,b){var ka=iso(a.date)?a.date:'',kb=iso(b.date)?b.date:'';if(ka!==kb){if(!ka)return 1;if(!kb)return -1;return ka<kb?-1:1;}return saved(a,b);};
@@ -5523,7 +5543,9 @@ async function removeCourseFromPanel(name){
   renderCoursesPanel();
 }
 async function homeRemoveCourse(name){if(!confirm('Remove '+name+' from catalog?'))return;delete CATALOG[name];try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}try{await fetch(SB_URL+'/rest/v1/courses?name=eq.'+encodeURIComponent(name),{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});}catch(e){}renderLibrarySection();}
+var _twFromGid=null; // v123.35: the Group page the wizard was opened from, if any
 function startNewWeekend(){
+  _twFromGid=_gpOpenGid();
   // The teardown that used to sit here now runs in _twLaunch. Opening this wizard is
   // not a decision to abandon the open trip - there is a Cancel on step 1, and it was
   // useless while the trip had already been dropped before Cancel was ever drawn.
@@ -7180,8 +7202,11 @@ window._twPickCourse=function(i,cn){
 };
 window._twSetTee=function(i,gender,teeName){_twS.tees[i]={gender,teeName};};
 window._twCancel=function(){
+  var back=_twFromGid;
   document.getElementById('wizardScreen').style.display='none';
   window._pendingGroupId=null;
+  // v123.35: opened from a Group page that is still there? Stay on it (same tab).
+  if(back&&_gpOpenGid()===back){renderGroupPage(back);return;}
   showHome();
 };
 
