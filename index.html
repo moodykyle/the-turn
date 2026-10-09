@@ -1959,7 +1959,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.36';
+const APP_VERSION='v123.37';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5574,11 +5574,18 @@ function _qrRender(){
   if(nw)nw.scrollTop=y;
 }
 
+// v123.37: the wizard's pill. The group's name in a group, else "New round".
+function _qrPillText(){
+  var g=window._pendingGroupId&&_groupCache[window._pendingGroupId];
+  return g&&g.name?_gtEsc(g.name):'New round';
+}
 function _qrStepHtml(){
-  const pill='<div style="display:inline-block;font-size:11px;font-weight:500;color:#1D9E75;background:rgba(29,158,117,0.12);border-radius:4px;padding:2px 8px;margin-bottom:10px">'+(window._pendingGroupId?'Group Round':'Individual Round')+'</div>';
+  const pill='<div style="display:inline-block;font-size:11px;font-weight:500;color:#1D9E75;background:rgba(29,158,117,0.12);border-radius:4px;padding:2px 8px;margin-bottom:10px">'+_qrPillText()+'</div>';
+  // v123.37: group mode skips the count step, so its first screen is step 2 and it has three.
+  const _qrG=!!window._pendingGroupId,_qrFirst=_qrG?2:1;
   const card='background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);overflow:hidden;width:340px;max-width:calc(100vw - 32px)';
   // Dots
-  const dots=Array.from({length:4},(_,i)=>'<div style="width:7px;height:7px;border-radius:50%;background:'+(_qrS.step===i+1?'#1D9E75':'var(--color-border-secondary)')+'"></div>').join('');
+  const dots=Array.from({length:_qrG?3:4},(_,i)=>'<div style="width:7px;height:7px;border-radius:50%;background:'+(_qrS.step===i+_qrFirst?'#1D9E75':'var(--color-border-secondary)')+'"></div>').join('');
   const dotsRow='<div style="display:flex;justify-content:center;gap:6px;padding:12px 0 4px">'+dots+'</div>';
 
   if(_qrS.step===1){
@@ -5637,7 +5644,9 @@ function _qrStepHtml(){
       +courseSection
       +holesRows
       +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
-      +'<div onclick="window._qrBack()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">\u2190 Back</div>'
+      +(_qrFirst===2
+        ?'<div onclick="window._qrCancel()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Cancel</div>'
+        :'<div onclick="window._qrBack()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">\u2190 Back</div>')
       +'</div>';
   }
 
