@@ -425,6 +425,16 @@ body.force-dark .home-gtile-tag.live{color:#3CC79A;}body.force-dark .home-gtile-
 .home-wb-btn{display:flex;align-items:center;justify-content:center;width:100%;height:48px;margin-top:10px;border:none;border-radius:12px;background:#1D9E75;color:#FFFFFF;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;}
 .home-wb-btn:active{background:#13795B;}
 .home-wb-btn.ghost{height:46px;background:transparent;border:1.5px solid #1D9E75;color:#13795B;}
+.home-wb-btn.home-wb-resume{height:auto;min-height:62px;justify-content:flex-start;gap:12px;padding:11px 14px;margin-top:4px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);font-size:inherit;font-weight:inherit;text-align:left;}
+.home-wb-btn.home-wb-resume:active{background:var(--color-background-secondary);}
+.home-wb-resume .grp-act2-t{font-size:15px;font-weight:700;}
+.home-wb-resume .home-wb-line{display:block;font-size:13px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.home-wb-row.only-all{justify-content:flex-end;}
+.ts-danger{color:#B42318;}
+.ts-danger-bg{background:rgba(180,35,24,0.09);}
+@media(prefers-color-scheme:dark){body:not(.force-light) .ts-danger{color:#F28B82;}body:not(.force-light) .ts-danger-bg{background:rgba(242,139,130,0.14);}}
+body.force-dark .ts-danger{color:#F28B82;}
+body.force-dark .ts-danger-bg{background:rgba(242,139,130,0.14);}
 @media(prefers-color-scheme:dark){body:not(.force-light) .home-wb-btn.ghost{color:#3CC79A;}}
 body.force-dark .home-wb-btn.ghost{color:#3CC79A;}
 .home-cont-row{display:flex;align-items:center;gap:10px;}
@@ -1959,7 +1969,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.40';
+const APP_VERSION='v123.41';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5232,7 +5242,7 @@ function _gpTripRow(t,gid,isAdmin){
     +'<span class="gp-meta">'+(one?'':nr+' rounds \u00b7 ')+np+' player'+(np!==1?'s':'')+'</span>'
     +(place?'<span class="gp-place"><i class="ti ti-map-pin"></i> '+_gtEsc(place)+'</span>':'')
     +(st?'<span class="gp-st">'+st+'</span>':'')+'</span>'
-    +'<span class="gp-side">'+(isAdmin?'<button class="gp-more" aria-label="Trip actions" onclick="event.stopPropagation();_tripDeleteTap(\''+tid+'\',this,\''+_gtEsc(gid)+'\')">&#8943;</button>':'<span></span>')
+    +'<span class="gp-side">'+(isAdmin?'<button class="gp-more" aria-label="Trip actions" onclick="event.stopPropagation();_roundMenu(\''+tid+'\',this,\''+_gtEsc(gid)+'\')">&#8943;</button>':'<span></span>')
     +'<span class="gp-chev">&#8250;</span><span></span></span>'
     +'</div><!--/gp-row-->';
 }
@@ -6430,10 +6440,12 @@ function _renderContinueSection(){
       line=[grpOf(ct),ct.name||'Unnamed Trip',rd].filter(Boolean).map(_gtEsc).join(' \u00b7 ');
       var rn=rd.match(/^Round (\d+)/);label=rn?'Resume Round '+rn[1]:'Resume';
     }
-    h+='<div class="home-wb-row"><p class="home-wb-line">'+line+'</p>'
-      +(inProg.length>1?'<button class="home-wb-all" onclick="window._hmShowAllInProgress()">See all ('+inProg.length+')</button>':'')
-      +'</div>'
-      +'<button class="home-wb-btn" onclick="viewTrip(\''+_gtEsc(ct.id)+'\')">'+label+'</button>';
+    // v123.41: Resume is a tile like the Group page's actions; the line rides inside it.
+    h+=(inProg.length>1?'<div class="home-wb-row only-all"><button class="home-wb-all" onclick="window._hmShowAllInProgress()">See all ('+inProg.length+')</button></div>':'')
+      +'<button class="home-wb-btn home-wb-resume grp-act2" onclick="viewTrip(\''+_gtEsc(ct.id)+'\')">'
+      +'<span class="grp-act2-ic"><i class="ti ti-player-play" aria-hidden="true"></i></span>'
+      +'<span class="grp-act2-tx"><span class="grp-act2-t">'+label+'</span><span class="home-wb-line">'+line+'</span></span>'
+      +'<span class="grp-act2-chev" aria-hidden="true">&#8250;</span></button>';
     // Leader, runner-up and you; the top three when you are among them or not in the trip.
     // Nothing before somebody posts a hole: every player sits at 0 and the order is roster accident.
     const st=Array.isArray(ct.standings)?ct.standings:[];
@@ -6511,8 +6523,8 @@ function _tripDeleteTap(id,btn,gid){
     _confirmSheet({
       icon:'ti-trash',
       title:'Delete this trip?',
-      body:'"'+nm+'" and its scores, games, and expenses will be permanently deleted. This cannot be undone.',
-      okLabel:'Delete Trip',
+      body:'"'+_gtEsc(nm)+'" and its scores, games, and expenses will be permanently deleted. This cannot be undone.',
+      okLabel:'Delete Trip',danger:true,
       onOk:function(){_commitDeleteTrip(id,btn,gid);}
     });
   }else{
@@ -6521,13 +6533,44 @@ function _tripDeleteTap(id,btn,gid){
     _confirmSheet({
       icon:'ti-trash',
       title:'Delete this round?',
-      body:'"'+rnm+'" and its scores and games will be permanently deleted. This cannot be undone.',
-      okLabel:'Delete Round',
+      body:'"'+_gtEsc(rnm)+'" and its scores and games will be permanently deleted. This cannot be undone.',
+      okLabel:'Delete Round',danger:true,
       onOk:function(){_commitRoundDelete(id);}
     });
   }
 }
 window.deleteTrip=_tripDeleteTap;
+// v123.41: ⋯ on a round or trip row. A menu first, then the confirmation (Kyle: going straight
+// to "Delete?" from ⋯ felt off). Open closes the list pages that sit over the app first.
+function _roundMenu(id,btn,gid){
+  var t=loadTrips().find(function(x){return x.id===id;})||{};
+  var kind=t.is_quick_round?'round':'trip';
+  var ex=document.getElementById('roundMenu');if(ex)ex.remove();
+  var ov=document.createElement('div');ov.id='roundMenu';
+  ov.style.cssText='position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;justify-content:center';
+  var card=document.createElement('div');
+  card.style.cssText='width:100%;max-width:440px;background:var(--color-background-primary);border-top:0.5px solid var(--color-border-tertiary);border-radius:16px 16px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box';
+  var row='display:flex;align-items:center;gap:13px;width:100%;min-height:56px;padding:0 14px;background:none;border:none;font-family:inherit;font-size:15px;font-weight:600;text-align:left;cursor:pointer';
+  var ic='width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0';
+  card.innerHTML='<div style="text-align:center;font-size:13px;font-weight:600;color:var(--color-text-secondary);margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_gtEsc(t.name||(kind==='round'?'This round':'This trip'))+'</div>'
+    +'<div style="background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;overflow:hidden">'
+    +'<button id="_rmOpen" style="'+row+';color:var(--color-text-primary)"><span style="'+ic+';background:rgba(29,158,117,0.14);color:#1D9E75"><i class="ti ti-player-play" style="font-size:17px" aria-hidden="true"></i></span><span>Open '+kind+'</span></button>'
+    +'<button id="_rmDel" style="'+row+';border-top:0.5px solid var(--color-border-tertiary)"><span class="ts-danger ts-danger-bg" style="'+ic+'"><i class="ti ti-trash" style="font-size:17px" aria-hidden="true"></i></span><span class="ts-danger">Delete '+kind+'</span></button>'
+    +'</div>'
+    +'<button id="_rmCancel" style="width:100%;margin-top:10px;padding:13px 0;border-radius:12px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer">Cancel</button>';
+  ov.appendChild(card);
+  document.body.appendChild(ov);
+  function close(){ov.remove();}
+  ov.addEventListener('click',function(e){if(e.target===ov)close();});
+  card.querySelector('#_rmCancel').addEventListener('click',close);
+  card.querySelector('#_rmOpen').addEventListener('click',function(){
+    close();
+    ['yourRoundsPage','hmAllInProgress'].forEach(function(p){var el=document.getElementById(p);if(el)el.remove();});
+    viewTrip(id);
+  });
+  card.querySelector('#_rmDel').addEventListener('click',function(){close();_tripDeleteTap(id,btn,gid);});
+}
+window._roundMenu=_roundMenu;
 async function _commitDeleteTrip(id,btn,gid){
   // Optimistic: remove locally and re-render the current surface immediately, then delete on
   // the server in the background. Removes the greyed multi-second wait on the confirm. The
@@ -12760,14 +12803,18 @@ function _confirmSheet(opts){
   ov.id='confirmSheet';
   ov.style.cssText='position:fixed;inset:0;z-index:10002;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;justify-content:center';
   var card=document.createElement('div');
-  card.style.cssText='width:100%;max-width:440px;background:#132019;border-top:0.5px solid #24352c;border-radius:16px 16px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box';
-  var iconHtml=opts.icon?'<div style="display:flex;justify-content:center;margin-bottom:12px"><div style="width:42px;height:42px;border-radius:50%;background:rgba(29,158,117,0.15);display:flex;align-items:center;justify-content:center"><i class="ti '+opts.icon+'" style="font-size:20px;color:#1D9E75" aria-hidden="true"></i></div></div>':'';
+  // v123.41: follows the theme (was a fixed dark green in both modes); opts.danger is red.
+  card.style.cssText='width:100%;max-width:440px;background:var(--color-background-primary);border-top:0.5px solid var(--color-border-tertiary);border-radius:16px 16px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box';
+  var iconHtml=opts.icon?(opts.danger
+    ?'<div style="display:flex;justify-content:center;margin-bottom:12px"><div class="ts-danger-bg" style="width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center"><i class="ti '+opts.icon+' ts-danger" style="font-size:20px" aria-hidden="true"></i></div></div>'
+    :'<div style="display:flex;justify-content:center;margin-bottom:12px"><div style="width:42px;height:42px;border-radius:50%;background:rgba(29,158,117,0.15);display:flex;align-items:center;justify-content:center"><i class="ti '+opts.icon+'" style="font-size:20px;color:#1D9E75" aria-hidden="true"></i></div></div>'):'';
+  var okStyle=opts.danger?'color:#FFFFFF;background:#C9372C':'color:#0c1712;background:#1D9E75';
   card.innerHTML=iconHtml
-    +'<div style="text-align:center;font-size:16px;font-weight:500;color:#e8efe9;margin-bottom:6px">'+(opts.title||'Are you sure?')+'</div>'
-    +'<div style="text-align:center;font-size:13px;color:#a9b8b0;line-height:1.5;margin-bottom:16px">'+(opts.body||'')+'</div>'
+    +'<div style="text-align:center;font-size:16px;font-weight:600;color:var(--color-text-primary);margin-bottom:6px">'+(opts.title||'Are you sure?')+'</div>'
+    +'<div style="text-align:center;font-size:13px;color:var(--color-text-secondary);line-height:1.5;margin-bottom:16px">'+(opts.body||'')+'</div>'
     +'<div style="display:flex;gap:8px">'
-    +'<button id="_csCancel" style="flex:1;font-size:14px;font-weight:500;color:#c2cdc6;background:transparent;border:0.5px solid #2c3a33;padding:11px 0;border-radius:10px">Cancel</button>'
-    +'<button id="_csOk" style="flex:1;font-size:14px;font-weight:500;color:#0c1712;background:#1D9E75;border:none;padding:11px 0;border-radius:10px">'+(opts.okLabel||'Confirm')+'</button>'
+    +'<button id="_csCancel" style="flex:1;font-size:14px;font-weight:500;color:var(--color-text-primary);background:transparent;border:0.5px solid var(--color-border-secondary);padding:11px 0;border-radius:10px">Cancel</button>'
+    +'<button id="_csOk" style="flex:1;font-size:14px;font-weight:600;'+okStyle+';border:none;padding:11px 0;border-radius:10px">'+(opts.okLabel||'Confirm')+'</button>'
     +'</div>';
   ov.appendChild(card);
   document.body.appendChild(ov);
@@ -17949,7 +17996,7 @@ function deleteExp(id){
     icon:'ti-trash',
     title:'Delete this expense?',
     body:'"'+_clEsc(e.desc||'this expense')+'" will be removed from the list and from everyone\u2019s settlement.',
-    okLabel:'Delete',
+    okLabel:'Delete',danger:true,
     onOk:function(){_expVoid(id);}
   });
 }
