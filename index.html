@@ -1959,7 +1959,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.37';
+const APP_VERSION='v123.39';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5579,6 +5579,15 @@ function _qrPillText(){
   var g=window._pendingGroupId&&_groupCache[window._pendingGroupId];
   return g&&g.name?_gtEsc(g.name):'New round';
 }
+// v123.38: the wizard's footer. A flow's first screen: Cancel alone. Every later screen:
+// Back on the left, Cancel on the right, one row.
+function _qrFoot(first){
+  var s='padding:10px 20px;font-size:14px;color:var(--color-text-tertiary);cursor:pointer';
+  if(first)return'<div onclick="window._qrCancel()" style="'+s+';text-align:center;border-top:0.5px solid var(--color-border-tertiary)">Cancel</div>';
+  return'<div style="display:flex;justify-content:space-between;border-top:0.5px solid var(--color-border-tertiary)">'
+    +'<div onclick="window._qrBack()" style="'+s+'">\u2190 Back</div>'
+    +'<div onclick="window._qrCancel()" style="'+s+'">Cancel</div></div>';
+}
 function _qrStepHtml(){
   const pill='<div style="display:inline-block;font-size:11px;font-weight:500;color:#1D9E75;background:rgba(29,158,117,0.12);border-radius:4px;padding:2px 8px;margin-bottom:10px">'+_qrPillText()+'</div>';
   // v123.37: group mode skips the count step, so its first screen is step 2 and it has three.
@@ -5644,9 +5653,7 @@ function _qrStepHtml(){
       +courseSection
       +holesRows
       +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
-      +(_qrFirst===2
-        ?'<div onclick="window._qrCancel()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Cancel</div>'
-        :'<div onclick="window._qrBack()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">\u2190 Back</div>')
+      +_qrFoot(_qrFirst===2)
       +'</div>';
   }
 
@@ -5695,7 +5702,7 @@ function _qrStepHtml(){
         +rows
         +'<div style="padding:10px 20px;border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:12px"><div style="font-size:12px;color:var(--color-text-secondary)">'+countLabel+'</div></div>'
         +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
-        +'<div onclick="window._qrCancel()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Cancel</div>'
+        +_qrFoot(false)
         +'</div>';
     } else {
       const _me=sbCurrentUser();
@@ -5712,7 +5719,7 @@ function _qrStepHtml(){
         const isMe=i===0&&!!_me;
         const fVal=isMe?(saved.first||_meFirst):saved.first||'';
         const lVal=isMe?(saved.last||_meLast):saved.last||'';
-        const hVal=isMe?(saved.idx!=null?saved.idx:_meHcp):saved.idx||'';
+        const hVal=isMe?(saved.idx!=null?saved.idx:_meHcp):(saved.idx!=null&&saved.idx!==''?saved.idx:'');
         const ini=isMe&&_meFirst?(_meFirst[0]||'').toUpperCase()+(_meLast[0]||'').toUpperCase():'P'+(i+1);
         const meTag=isMe?'<span style="font-size:10px;font-weight:500;color:#185FA5;background:var(--color-background-info);border-radius:4px;padding:1px 5px;margin-left:6px">You</span>':'';
         return'<div style="display:flex;align-items:center;gap:8px;padding:10px 20px;border-bottom:0.5px solid var(--color-border-tertiary)">'
@@ -5720,10 +5727,10 @@ function _qrStepHtml(){
           +'<div style="flex:1;display:flex;gap:6px;min-width:0;align-items:center">'
           +(isMe
             ?'<div style="flex:1;font-size:13px;font-weight:500;color:var(--color-text-primary);padding:7px 0">'+(_meName||'You')+meTag+'</div>'
-              +'<input type="hidden" id="qrfirst'+i+'" value="'+fVal+'"/>'
-              +'<input type="hidden" id="qrlast'+i+'" value="'+lVal+'"/>'
-            :'<input class="text-input" id="qrfirst'+i+'" value="'+fVal+'" placeholder="First" style="flex:1;min-width:0;font-size:13px;padding:7px 8px"/>'
-              +'<input class="text-input" id="qrlast'+i+'" value="'+lVal+'" placeholder="Last" style="flex:1;min-width:0;font-size:13px;padding:7px 8px"/>')
+              +'<input type="hidden" id="qrfirst'+i+'" value="'+_gtEsc(fVal)+'"/>'
+              +'<input type="hidden" id="qrlast'+i+'" value="'+_gtEsc(lVal)+'"/>'
+            :'<input class="text-input" id="qrfirst'+i+'" value="'+_gtEsc(fVal)+'" placeholder="First" style="flex:1;min-width:0;font-size:13px;padding:7px 8px"/>'
+              +'<input class="text-input" id="qrlast'+i+'" value="'+_gtEsc(lVal)+'" placeholder="Last" style="flex:1;min-width:0;font-size:13px;padding:7px 8px"/>')
           +'</div>'
           +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
           +'<span style="font-size:11px;color:var(--color-text-secondary)">Hdcp</span>'
@@ -5735,7 +5742,7 @@ function _qrStepHtml(){
         +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">Players</div><div style="font-size:12px;color:var(--color-text-secondary);margin-top:3px">'+subTitle+'</div></div>'
         +rows
         +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue →</button></div>'
-        +'<div onclick="window._qrCancel()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Cancel</div>'
+        +_qrFoot(false)
         +'</div>';
     }
   }
@@ -5756,7 +5763,7 @@ function _qrStepHtml(){
         +'<label class="toggle"><input type="checkbox" id="qrNetOffLow"'+(netOffLow?' checked':'')+' onchange="_qrS.netOffLow=this.checked"><span class="toggle-slider"></span></label>'
       +'</div>'
       +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue →</button></div>'
-      +'<div onclick="window._qrBack()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">← Back</div>'
+      +_qrFoot(false)
       +'</div>';
   }
 }
@@ -5875,7 +5882,21 @@ window._qrSetName=function(el){
 window._qrSetHoles=function(el){_qrS.holes=el.dataset.val;_qrRender();};
 window._qrSetN=function(el){_qrS.n=parseInt(el.dataset.val);_qrRender();};
 window._qrSet=function(key,val){_qrS[key]=val;_qrRender();};
+// v123.38: Players has a Back now. Keep what was typed there so Continue brings it back.
+// No Continue defaults here: a blank slot stays blank.
+function _qrStash(){
+  if(_qrS.step!==3)return;
+  (_qrS.selectedMembers||[]).forEach(function(s){var el=document.getElementById('qrhcp_'+s.member_id);if(el)s.hcp_index=idxFromInput(el.value,(s.hcp_index!=null?s.hcp_index:0));});
+  var pl=[];
+  for(var i=0;i<_qrS.n;i++){
+    var f=document.getElementById('qrfirst'+i);if(!f)return;
+    var l=document.getElementById('qrlast'+i),x=document.getElementById('qridx'+i);
+    pl.push({first:(f.value||'').trim(),last:((l&&l.value)||'').trim(),idx:idxFromInput((x&&x.value)||'',null)});
+  }
+  _qrS.players=pl;
+}
 window._qrBack=function(){
+  _qrStash();
   // Group mode never entered step 1, so Back must floor at 2 or it lands on a question
   // whose answer _qrNext throws away.
   var _qrFloor=window._pendingGroupId?2:1;
@@ -6389,7 +6410,9 @@ function _renderContinueSection(){
   if(ct){
     var line,label;
     if(ct.is_quick_round){
-      line=['Individual Round',(ct.courses&&ct.courses[0])?courseDisp(ct.courses[0]):''].filter(Boolean).map(_gtEsc).join(' \u00b7 ');
+      // v123.39: course first, then how far along ("Pine Valley · thru 9").
+      var _hp=Number(ct.holesPlayed);
+      line=[((ct.courses&&ct.courses[0])?courseDisp(ct.courses[0]):'')||'New round',(_hp>0&&isFinite(_hp))?'thru '+Math.floor(_hp):''].filter(Boolean).map(_gtEsc).join(' \u00b7 ');
       label='Resume round';
     } else {
       var rd=String(ct.roundStatus||'').split(' \u00b7 ')[0];if(!/^Round \d/.test(rd))rd='';
