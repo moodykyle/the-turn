@@ -1972,7 +1972,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.41';
+const APP_VERSION='v123.42';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -3196,14 +3196,17 @@ async function s2ReadTrip(tripId){
   }
 }
 
-async function s2LoadTripList(gid){
+// v123.42: strict returns [] for an empty list, so a caller can tell "nothing there" from a
+// failure (null). renderTripList calls it without strict and still gets null for both.
+async function s2LoadTripList(gid,strict){
   try{
     const r=await fetch(SB_URL+'/rest/v1/trips?select=trip_id,name,date,summary,is_quick_round,group_id'+(gid?'&group_id=eq.'+encodeURIComponent(gid):'')+'&order=updated_at.desc',{
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}
     });
     if(!r.ok)return null;
     const rows=await r.json();
-    if(!rows||!rows.length)return null;
+    if(!Array.isArray(rows))return null;
+    if(!rows.length)return strict?[]:null;
     // Shape into format renderTripList expects
     return rows.map(t=>{
       const s=t.summary||{};
@@ -4824,29 +4827,32 @@ async function renderHomeDashboard(){
       _loadGroupMembersIntoDoor(g.group_id,'hm-',_grpTileSfx(g));
     });
     html+='</div>';
-  } else {
-    html+='<div class="home-dash-sec">'
-      +'<div class="hm-empty">'
-      +'<div class="hm-empty-ic"><i class="ti ti-users"></i></div>'
-      +'<div class="hm-empty-t">No groups yet</div>'
-      +'<div class="hm-empty-d">Start a group for your crew, or join an existing one with a code.</div>'
-      +'<button class="hm-empty-btn primary" onclick="window.sbShowCreateGroup()">Create group</button>'
-      +'<button class="hm-empty-btn" onclick="window.sbShowJoinGroup()">Join with a code</button>'
-      +'<button class="hm-empty-link" onclick="showHowToPlay()"><i class="ti ti-info-circle"></i> New here? See how it works</button>'
-      +'</div></div>';
   }
 
   html+='<div class="home-dash-sec" id="homeIndivSec"></div>';
+
+  // v123.42: no groups. Your rounds stays right under Resume; the pitch follows as the Groups
+  // screen's own action tiles under a Your Groups heading (no solid green button on Home).
+  if(!groups.length){
+    html+='<div class="home-dash-sec"><div class="home-dash-sec-label brand-lbl">Your Groups</div>'
+      +'<div class="grp-actions2">'
+      +'<button class="grp-act2" onclick="window.sbShowCreateGroup()"><span class="grp-act2-ic"><i class="ti ti-plus"></i></span><span class="grp-act2-tx"><span class="grp-act2-t">Create a group</span><span class="grp-act2-d">Start a crew for your trips</span></span><i class="ti ti-chevron-right grp-act2-chev"></i></button>'
+      +'<button class="grp-act2" onclick="window.sbShowJoinGroup()"><span class="grp-act2-ic"><i class="ti ti-user-plus"></i></span><span class="grp-act2-tx"><span class="grp-act2-t">Join a group</span><span class="grp-act2-d">Enter a code from your group admin</span></span><i class="ti ti-chevron-right grp-act2-chev"></i></button>'
+      +'</div>'
+      +'<div style="text-align:center"><button class="hm-empty-link" onclick="showHowToPlay()"><i class="ti ti-info-circle"></i> New here? See how it works</button></div>'
+      +'</div>';
+  }
 
   dash.innerHTML=html;
   _renderContinueSection();
   _renderIndivRoundsSection();
 
   // Async Supabase sync (preserved)
-  if(!_grpListSyncing&&navigator.onLine&&groups.length){
+  // v123.42: runs with no groups too, so a group-less player's rounds come from the server.
+  if(!_grpListSyncing&&navigator.onLine){
     _grpListSyncing=true;
-    const _indivFetch=fetch(SB_URL+'/rest/v1/trips?is_quick_round=eq.true&group_id=is.null&select=trip_id,name,date,summary,is_quick_round,group_id&order=updated_at.desc',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}}).then(r=>r.ok?r.json():null).then(rows=>rows&&rows.length?rows.map(t=>{const s=t.summary||{};return{id:t.trip_id,name:t.name||'',date:t.date||'',is_quick_round:true,group_id:null,playerNames:s.playerNames||[],playerInis:s.playerInis||[],playerColors:s.playerColors||[],courses:s.courses||[],holesPlayed:s.holesPlayed||0,totalHoles:s.totalHoles||18,complete:!!(s.complete),winner:s.winner||'',standings:Array.isArray(s.standings)?s.standings:[],roundStatus:s.roundStatus||'',currentCourse:s.currentCourse||'',savedAt:s.savedAt||''};}):null).catch(()=>null);
-    Promise.all([...groups.map(function(g){return s2LoadTripList(g.group_id).catch(function(){return null;});}),_indivFetch]).then(function(results){
+    const _indivFetch=fetch(SB_URL+'/rest/v1/trips?is_quick_round=eq.true&group_id=is.null&select=trip_id,name,date,summary,is_quick_round,group_id&order=updated_at.desc',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}}).then(r=>r.ok?r.json():null).then(rows=>Array.isArray(rows)?rows.map(t=>{const s=t.summary||{};return{id:t.trip_id,name:t.name||'',date:t.date||'',is_quick_round:true,group_id:null,playerNames:s.playerNames||[],playerInis:s.playerInis||[],playerColors:s.playerColors||[],courses:s.courses||[],holesPlayed:s.holesPlayed||0,totalHoles:s.totalHoles||18,complete:!!(s.complete),winner:s.winner||'',standings:Array.isArray(s.standings)?s.standings:[],roundStatus:s.roundStatus||'',currentCourse:s.currentCourse||'',savedAt:s.savedAt||''};}):null).catch(()=>null);
+    Promise.all([...groups.map(function(g){return s2LoadTripList(g.group_id,true).catch(function(){return null;});}),_indivFetch]).then(function(results){
       _grpListSyncing=false;
       const local=loadTrips();
       let changed=false;
@@ -4873,7 +4879,15 @@ async function renderHomeDashboard(){
       });
       // Prune local trips that no longer exist in Supabase (deleted or never written)
       const allSbIds=new Set();results.forEach(function(sbTrips){if(sbTrips)sbTrips.forEach(function(t){allSbIds.add(t.id);});});
-      const pruned=local.filter(function(t){return allSbIds.has(t.id);});
+      // v123.42: results[i] is groups[i]'s list, the last is the solo rounds. null means that fetch
+      // failed, so it says nothing about its trips: keep them. A trip in a group you are no
+      // longer in, or of any other kind, is pruned as before.
+      const _failed=function(t){
+        if(t.group_id){var gi=groups.findIndex(function(g){return g.group_id===t.group_id;});return gi>=0&&results[gi]===null;}
+        if(t.is_quick_round)return results[results.length-1]===null;
+        return false;
+      };
+      const pruned=local.filter(function(t){return allSbIds.has(t.id)||_failed(t);});
       if(pruned.length<local.length){changed=true;local.splice(0,local.length,...pruned);}
       if(changed){saveTrips(local);renderHomeDashboard();}
     });
