@@ -1190,9 +1190,12 @@ body.force-dark .home-lb-row.me{background:rgba(239,196,86,0.10);}
 body.force-dark .home-lb-rank.r1{color:#EFC456;}
 body.force-dark .home-lb-net.under{color:#3CC79A;}
 /* v123.32 a live trip's tile, both themes. */
-.gp-row .gp-tile.live{background:#13795B;border-color:#13795B;border-style:solid;}
-.gp-row .gp-tile.live .m,.gp-row .gp-tile.live .y{color:#E3F6EE;}
-.gp-row .gp-tile.live .d{font-size:17px;color:#FFFFFF;}
+.gp-row .gp-tile.live{border-color:#1D9E75;border-width:1.5px;border-style:solid;}
+.gp-row .gp-tile.live .d{font-size:17px;}
+.gp-row .gp-tile.live .d.n{font-size:24px;}
+@media(prefers-color-scheme:light){body:not(.force-dark) .gp-tile .m,body:not(.force-dark) .gp-tile .d,body:not(.force-dark) .gp-tile .y{color:#13795B;}body:not(.force-dark) .gp-row .gp-tile.live{border-color:#13795B;}}
+body.force-light .gp-tile .m,body.force-light .gp-tile .d,body.force-light .gp-tile .y{color:#13795B;}
+body.force-light .gp-row .gp-tile.live{border-color:#13795B;}
 
 
 /* ── Header gear (Options) ── */
@@ -5226,7 +5229,7 @@ function _gpTripRow(t,gid,isAdmin){
   // A trip whose status says "of N" with N>1 is multi-round even if its course list is short.
   var rsN=+((String(t.roundStatus||'').match(/^Round \d+ of (\d+)/)||[])[1]||0);
   var one=(t.courses||[]).length<=1&&!(rsN>1),hp=Math.floor(Number(t.holesPlayed)||0),th=Math.floor(Number(t.totalHoles)||0);
-  if(one&&!t.complete&&hp>0)tile='<span class="gp-tile live"><span class="m">THRU</span><span class="d">'+hp+'</span><span class="y">'+(th>0?'OF '+th:'')+'</span></span>';
+  if(one&&!t.complete&&hp>0)tile='<span class="gp-tile live"><span class="m">THRU</span><span class="d n">'+hp+'</span><span class="y">'+(th>0?'OF '+th:'')+'</span></span>';
   else if(lr)tile='<span class="gp-tile live"><span class="m">LIVE</span>'+(lr[1]?'<span class="d">RD '+lr[1]+'</span><span class="y">OF '+lr[2]+'</span>':'<span class="d">&#8211;</span>')+'</span>';
   else if(/^\d{4}-\d{2}-\d{2}$/.test(d))tile='<span class="gp-tile"><span class="m">'+MON[+d.slice(5,7)-1]+'</span><span class="d">'+(+d.slice(8,10))+'</span><span class="y">'+d.slice(0,4)+'</span></span>';
   else tile='<span class="gp-tile none"><span class="d">&#8211;</span></span>';
