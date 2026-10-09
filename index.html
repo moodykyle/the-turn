@@ -1186,6 +1186,15 @@ body.force-light .gp-title,body.force-light .gp-name{color:#13795B;}
 /* v123.32 dark pass: gold on the names light mode makes green; the welcome leaderboard. */
 @media(prefers-color-scheme:dark){body:not(.force-light) .home-wb-h,body:not(.force-light) .home-gtile-name,body:not(.force-light) .gp-title,body:not(.force-light) .gp-name,body:not(.force-light) .hole-label{color:#EFC456;}body:not(.force-light) .home-lb-row.me{background:rgba(239,196,86,0.10);}body:not(.force-light) .home-lb-rank.r1{color:#EFC456;}body:not(.force-light) .home-lb-net.under{color:#3CC79A;}}
 body.force-dark .home-wb-h,body.force-dark .home-gtile-name,body.force-dark .gp-title,body.force-dark .gp-name,body.force-dark .hole-label{color:#EFC456;}
+/* v123.43: titles take the accent in both modes (green by day, gold at night); section labels
+   deep green / cream. Player and course names keep the text colour. */
+.qr-step-t{font-size:17px;font-weight:500;color:var(--color-text-primary);}
+@media(prefers-color-scheme:light){body:not(.force-dark) .event-name,body:not(.force-dark) .hole-label,body:not(.force-dark) .hmcs-hd,body:not(.force-dark) .grp-sheet-title,body:not(.force-dark) .qr-step-t,body:not(.force-dark) .scr-title{color:#13795B;}body:not(.force-dark) .rdsheet-hd,body:not(.force-dark) .board-section-label{color:#0F4D36;}}
+body.force-light .event-name,body.force-light .hole-label,body.force-light .hmcs-hd,body.force-light .grp-sheet-title,body.force-light .qr-step-t,body.force-light .scr-title{color:#13795B;}
+body.force-light .rdsheet-hd,body.force-light .board-section-label{color:#0F4D36;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .event-name,body:not(.force-light) .hmcs-hd,body:not(.force-light) .grp-sheet-title,body:not(.force-light) .qr-step-t,body:not(.force-light) .scr-title{color:#EFC456;}body:not(.force-light) .rdsheet-hd,body:not(.force-light) .board-section-label{color:#EDE6D3;}}
+body.force-dark .event-name,body.force-dark .hmcs-hd,body.force-dark .grp-sheet-title,body.force-dark .qr-step-t,body.force-dark .scr-title{color:#EFC456;}
+body.force-dark .rdsheet-hd,body.force-dark .board-section-label{color:#EDE6D3;}
 body.force-dark .home-lb-row.me{background:rgba(239,196,86,0.10);}
 body.force-dark .home-lb-rank.r1{color:#EFC456;}
 body.force-dark .home-lb-net.under{color:#3CC79A;}
@@ -1972,7 +1981,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.42';
+const APP_VERSION='v123.43';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5644,7 +5653,7 @@ function _qrStepHtml(){
         +'</div>';
     }).join('');
     return'<div style="'+card+'">'+dotsRow
-      +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">How many players?</div></div>'
+      +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div class="qr-step-t">How many players?</div></div>'
       +rows
       +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
       +'<div onclick="window._qrCancel()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Cancel</div>'
@@ -5686,7 +5695,7 @@ function _qrStepHtml(){
         +'</div></div>'
       :'';
     return'<div style="'+card+'">'+dotsRow
-      +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">Course &amp; holes</div></div>'
+      +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div class="qr-step-t">Course &amp; holes</div></div>'
       +nameSection
       +courseSection
       +holesRows
@@ -5735,7 +5744,7 @@ function _qrStepHtml(){
       const selCount=(_qrS.selectedMembers||[]).length;
       const countLabel=selCount===0?'None selected':selCount+' selected'+(selCount>_qrS.n?' - max '+_qrS.n:'');
       return'<div style="'+card+';max-height:90vh;overflow-y:auto">'+dotsRow
-        +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">Players</div><div style="font-size:12px;color:var(--color-text-secondary);margin-top:3px">Pick who is playing from '+(grp?grp.name:'your group')+'.</div></div>'
+        +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div class="qr-step-t">Players</div><div style="font-size:12px;color:var(--color-text-secondary);margin-top:3px">Pick who is playing from '+(grp?grp.name:'your group')+'.</div></div>'
         +_qBulk
         +rows
         +'<div style="padding:10px 20px;border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:12px"><div style="font-size:12px;color:var(--color-text-secondary)">'+countLabel+'</div></div>'
@@ -5777,7 +5786,7 @@ function _qrStepHtml(){
       }).join('');
       const subTitle=_qrS.n===1?'Your round.':'You are Player 1. Add your playing partners below.';
       return'<div style="'+card+';max-height:90vh;overflow-y:auto">'+dotsRow
-        +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">Players</div><div style="font-size:12px;color:var(--color-text-secondary);margin-top:3px">'+subTitle+'</div></div>'
+        +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div class="qr-step-t">Players</div><div style="font-size:12px;color:var(--color-text-secondary);margin-top:3px">'+subTitle+'</div></div>'
         +rows
         +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue →</button></div>'
         +_qrFoot(false)
@@ -5791,7 +5800,7 @@ function _qrStepHtml(){
     const hdcpOpts=_hList.map(function(v){return '<option value="'+v+'"'+(v===hdcpPct?' selected':'')+'>'+v+'%</option>';}).join('');
     const netOffLow=_qrS.netOffLow||false;
     return'<div style="'+card+'">'+dotsRow
-      +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">Handicap options</div></div>'
+      +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div class="qr-step-t">Handicap options</div></div>'
       +'<div style="padding:14px 20px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between">'
         +'<div><div style="font-size:14px;font-weight:500;color:var(--color-text-primary)">Handicap adjustment</div><div style="font-size:12px;color:var(--color-text-tertiary);margin-top:2px">% of USGA index applied</div></div>'
         +'<div style="display:flex;align-items:center;gap:6px"><select id="qrHdcpPct" style="width:76px;padding:7px 8px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:14px;background:var(--color-background-primary);color:var(--color-text-primary)">'+hdcpOpts+'</select></div>'
