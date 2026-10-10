@@ -1997,7 +1997,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.49';
+const APP_VERSION='v123.50';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -4662,7 +4662,8 @@ function showHome(){
 function _hideHomeCtx(){['homeScreen','meScreen','groupsScreen','roundsScreen','homeGroupScreen'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});}
 function homeNavSet(active){var bar=document.getElementById('homeNav');if(!bar)return;bar.classList.add('visible');['home','rounds','groups','me'].forEach(function(t){var b=document.getElementById('hnb-'+t);if(b)b.classList.toggle('active',t===active);});}
 function homeNavHide(){var bar=document.getElementById('homeNav');if(bar)bar.classList.remove('visible');}
-window.homeNavGo=function(tab){if(tab==='home'){showHome();}else if(tab==='plus'){_hmOpenCreateSheet();}else if(tab==='rounds'){showRoundsScreen();}else if(tab==='groups'){showGroupsScreen();}else if(tab==='me'){showMeScreen();}};
+// v123.50: the In Progress and Your Rounds pages sit above the tab bar now; a tab closes them first.
+window.homeNavGo=function(tab){['hmAllInProgress','yourRoundsPage'].forEach(function(p){var el=document.getElementById(p);if(el)el.remove();});if(tab==='home'){showHome();}else if(tab==='plus'){_hmOpenCreateSheet();}else if(tab==='rounds'){showRoundsScreen();}else if(tab==='groups'){showGroupsScreen();}else if(tab==='me'){showMeScreen();}};
 function showMeScreen(){_hideHomeCtx();var w=document.getElementById('wizardScreen');if(w)w.style.display='none';var m=document.getElementById('mainScreen');if(m)m.style.display='none';var el=document.getElementById('meScreen');if(el)el.style.display='block';homeNavSet('me');try{renderMeScreen();}catch(e){}}
 function showGroupsScreen(){_hideHomeCtx();var w=document.getElementById('wizardScreen');if(w)w.style.display='none';var m=document.getElementById('mainScreen');if(m)m.style.display='none';var el=document.getElementById('groupsScreen');if(el)el.style.display='block';homeNavSet('groups');try{renderGroupsScreen();}catch(e){}}
 function showRoundsScreen(){_hideHomeCtx();var w=document.getElementById('wizardScreen');if(w)w.style.display='none';var m=document.getElementById('mainScreen');if(m)m.style.display='none';var el=document.getElementById('roundsScreen');if(el)el.style.display='block';homeNavSet('rounds');try{renderRoundsScreen();}catch(e){}}
@@ -4904,6 +4905,9 @@ function _grpTileStatus(trips,now){
   var join=function(a,b){return b?a+' \u00b7 '+b:a;};
   var ts=(trips||[]).filter(Boolean);
   var live=ts.filter(function(t){return !done(t)&&(t.holesPlayed||0)>0;}).sort(function(a,b){return saved(b)<saved(a)?-1:saved(b)>saved(a)?1:0;});
+  // v123.50: a single round reads like its row and Resume ("In progress · name · thru N"), not "Live · Round 1 of 1".
+  if(live.length){var L0=live[0],rsN=+((String(L0.roundStatus||'').match(/^Round \d+ of (\d+)/)||[])[1]||0),hp=Math.floor(Number(L0.holesPlayed)||0);
+    if((L0.courses||[]).length<=1&&!(rsN>1))return{kind:'live',tag:'In progress',detail:join(_gtEsc(L0.name),hp>0?'thru '+hp:'')};}
   if(live.length){var r=String(live[0].roundStatus||'').split(' \u00b7 ')[0];if(!/^Round \d/.test(r))r='';return{kind:'live',tag:'Live',detail:join(_gtEsc(live[0].name),r)};}
   var next=ts.filter(function(t){return !done(t);}).sort(function(a,b){var ka=key(a),kb=key(b);if(ka!==kb){if(!ka)return 1;if(!kb)return -1;return ka<kb?-1:1;}return saved(b)<saved(a)?-1:saved(b)>saved(a)?1:0;});
   if(next.length)return{kind:'next',tag:'Next',detail:join(_gtEsc(next[0].name),day(next[0].date))};
@@ -5017,7 +5021,7 @@ window._hmShowAllInProgress=function(){
   const trips=loadTrips().filter(function(t){return!t.complete&&!_pendingRoundDeletes.has(t.id);}).sort(function(a,b){return new Date(b.savedAt||0)-new Date(a.savedAt||0);});
   const existing=document.getElementById('hmAllInProgress');if(existing)existing.remove();
   const div=document.createElement('div');div.id='hmAllInProgress';
-  div.style.cssText='position:fixed;inset:0;z-index:9980;background:var(--color-background-primary);overflow-y:auto;padding:16px 14px 40px;';
+  div.style.cssText='position:fixed;top:0;left:0;right:0;bottom:var(--tab-bar-h);z-index:9980;background:var(--color-background-primary);overflow-y:auto;padding:16px 14px 40px;';
   const cards=trips.map(function(t){return _homeRoundRow(t).replace(/onclick="viewTrip\(/g,'onclick="window._hmInProgressViewTrip(');}).join('');
   div.innerHTML='<div style="display:flex;align-items:center;min-height:44px;position:relative;margin-bottom:16px">'
     +'<button onclick="document.getElementById(\'hmAllInProgress\').remove()" style="background:none;border:none;color:var(--color-text-secondary);cursor:pointer;padding:6px;line-height:1;flex-shrink:0;z-index:1" aria-label="Home"><i class="ti ti-home" style="font-size:22px"></i></button>'
@@ -6435,7 +6439,7 @@ function _fillYourRoundsList(){
 window._showYourRoundsPage=function(){
   const existing=document.getElementById('yourRoundsPage');if(existing)existing.remove();
   const div=document.createElement('div');div.id='yourRoundsPage';
-  div.style.cssText='position:fixed;inset:0;z-index:9980;background:var(--color-background-primary);overflow-y:auto;padding:16px 14px 40px;';
+  div.style.cssText='position:fixed;top:0;left:0;right:0;bottom:var(--tab-bar-h);z-index:9980;background:var(--color-background-primary);overflow-y:auto;padding:16px 14px 40px;';
   div.innerHTML='<div style="display:flex;align-items:center;min-height:44px;position:relative;margin-bottom:16px">'
     +'<button onclick="document.getElementById(\'yourRoundsPage\').remove()" style="background:none;border:none;color:var(--color-text-secondary);cursor:pointer;padding:6px;line-height:1;flex-shrink:0;z-index:1" aria-label="Home"><i class="ti ti-home" style="font-size:22px"></i></button>'
     +'<div class="pg-title">Your Rounds</div>'
