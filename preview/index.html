@@ -1981,7 +1981,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.43';
+const APP_VERSION='v123.44';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -12646,14 +12646,28 @@ window._apGuestSubmit=async function(){
     member_id:memberId,idx:hp.value,bg:c.bg,fg:c.fg,ini:''});
 };
 function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=TW_MAX_PLAYERS)return;const c=pickColor(),i=WK.players.length;WK.players.push({pid:s2NewTok(),name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));});_rosterReconcileAll();if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();autoSave();s2WriteActive();}
-function removePlayer(idx){if(!canEditTrip())return;if(WK.players.length<=2){alert('Need at least 2 players.');return;}
-// Capture BEFORE the splice. The players row MUST be deleted too: s2ReadTrip sizes the
-// roster from playerRows.length, so a surviving row resurrects the player on reload.
-const _deadPid=(WK.players[idx]&&WK.players[idx].pid)?(WK._id+':player:'+WK.players[idx].pid):null;
-if(_deadPid){
-  s2DeleteWhere('scores','player_id=eq.'+encodeURIComponent(_deadPid));
-  s2DeleteWhere('players','player_id=eq.'+encodeURIComponent(_deadPid));
-}
+var _rmPlayerBusy=false;
+async function removePlayer(idx){if(!canEditTrip())return;if(WK.players.length<=2){alert('Need at least 2 players.');return;}
+// v123.44: the players row is deleted FIRST and awaited, before anything local changes. The splice
+// below shifts everyone above this player down one position; if the row survived (a failed
+// delete), the player came back on reload sharing a player_index with whoever moved into the slot.
+// s2ReadTrip sizes the roster from playerRows.length, so the row is the one that must go.
+if(_rmPlayerBusy)return;
+const _p=WK.players[idx];if(!_p)return;
+const _deadPid=s2PlayerId(idx),_nm=_p.name||'this player';
+_rmPlayerBusy=true;
+let _ok=false;
+try{_ok=await s2DeleteWhere('players','player_id=eq.'+encodeURIComponent(_deadPid));}catch(e){_ok=false;}
+if(!_ok){_rmPlayerBusy=false;alert('Could not remove '+_nm+'. Check your connection and try again.');return;}
+// A score row left behind is ignored by s2ReadTrip (its player is not in the roster), so a failed
+// scores delete does not block the removal.
+try{if(!await s2DeleteWhere('scores','player_id=eq.'+encodeURIComponent(_deadPid)))console.warn('[removePlayer] scores delete failed');}catch(e){console.warn('[removePlayer] scores delete threw',e);}
+_rmPlayerBusy=false;
+// The roster can move during the wait (a second tap, a sync replacing it, another trip opened):
+// find the player again by object, then by pid. Not found means someone else got there first.
+idx=WK.players.indexOf(_p);
+if(idx<0&&_p.pid)idx=WK.players.findIndex(function(q){return q&&q.pid===_p.pid;});
+if(idx<0)return;
 WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});
 // idxSnap is keyed on pi, which is POSITIONAL, and the splice above shifts every index
 // down by one. Without this the frozen handicap of the player above the removed one is
