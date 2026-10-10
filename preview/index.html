@@ -166,7 +166,10 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(52%) sepia(9
 .course-sel-row:last-child{border-bottom:none;}
 .course-select{flex:1;padding:6px 8px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary);}
 .wizard-nav{display:flex;gap:8px;margin-top:1.5rem;}
-.btn-primary{flex:1;padding:12px;background:var(--color-text-primary);color:var(--color-background-primary);border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer;}
+.btn-primary{flex:1;padding:12px;background:#13795B;color:#FFFFFF;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer;}
+/* v123.47: the app's green, not the text colour used as a fill (it was black by day, white at night). */
+@media(prefers-color-scheme:dark){body:not(.force-light) .btn-primary{background:#1D9E75;color:#0c1712;}}
+body.force-dark .btn-primary{background:#1D9E75;color:#0c1712;}
 .btn-secondary{padding:12px 16px;background:var(--color-background-primary);color:var(--color-text-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:15px;cursor:pointer;}
 .btn-sm{padding:5px 10px;background:var(--color-background-primary);color:var(--color-text-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:11px;cursor:pointer;}
 .btn-danger{padding:5px 8px;background:var(--color-background-primary);color:#D85A30;border:0.5px solid #D85A30;border-radius:var(--border-radius-md);font-size:11px;cursor:pointer;flex-shrink:0;}
@@ -1989,7 +1992,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.46';
+const APP_VERSION='v123.47';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -12185,7 +12188,7 @@ function renderPlayersPanel(){
           +`<button class="pl-cancel" id="plcancel_${pid}" onclick="window._plCancelRow(${i})" style="display:${draft?'block':'none'}">Cancel</button>`
           +`</div>`;
       }
-      if(WK.players.length>2&&canEd)html+=`<button class="pl-remove" onclick="removePlayer(${i})">${WK.isQuickRound?'Remove from round':'Remove from trip'}</button>`;
+      if(WK.players.length>(WK.isQuickRound?1:2)&&canEd)html+=`<button class="pl-remove" onclick="removePlayer(${i})">${WK.isQuickRound?'Remove from round':'Remove from trip'}</button>`;
       html+=`</div>`;
     }
   });
@@ -12536,7 +12539,10 @@ window._apGuestSubmit=async function(){
 };
 function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=TW_MAX_PLAYERS)return;const c=pickColor(),i=WK.players.length;WK.players.push({pid:s2NewTok(),name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));});_rosterReconcileAll();if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();autoSave();s2WriteActive();}
 var _rmPlayerBusy=false;
-async function removePlayer(idx){if(!canEditTrip())return;if(WK.players.length<=2){alert('Need at least 2 players.');return;}
+async function removePlayer(idx){if(!canEditTrip())return;
+// v123.47: a round can drop to one player (the wizard starts one-player rounds); a trip keeps two.
+var _rmMin=WK.isQuickRound?1:2;
+if(WK.players.length<=_rmMin){alert(_rmMin===1?'A round needs at least 1 player.':'Need at least 2 players.');return;}
 // v123.44: the players row is deleted FIRST and awaited, before anything local changes. The splice
 // below shifts everyone above this player down one position; if the row survived (a failed
 // delete), the player came back on reload sharing a player_index with whoever moved into the slot.
@@ -12572,7 +12578,10 @@ WK.rounds.forEach(function(rd){
   });
   rd.idxSnap=out;
 });
-function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=STATE.mpTeams.map(function(rd){return fixTeams(rd);});STATE.vegTeams=STATE.vegTeams.map(function(rd){return fixTeams(rd);});if(STATE.skinsTeams)STATE.skinsTeams=STATE.skinsTeams.map(function(rd){return fixTeams(rd);});if(STATE.hammerTeams)STATE.hammerTeams=STATE.hammerTeams.map(function(rd){return fixTeams(rd);});WK.rounds.forEach(function(rd){if(Array.isArray(rd.fbTeams))rd.fbTeams=rd.fbTeams.map(function(t){return t.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(STATE.roundFlights)STATE.roundFlights=STATE.roundFlights.map(function(fls){return fls.map(function(fl){return fl.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';_rosterReconcileAll();renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
+function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=STATE.mpTeams.map(function(rd){return fixTeams(rd);});STATE.vegTeams=STATE.vegTeams.map(function(rd){return fixTeams(rd);});if(STATE.skinsTeams)STATE.skinsTeams=STATE.skinsTeams.map(function(rd){return fixTeams(rd);});if(STATE.hammerTeams)STATE.hammerTeams=STATE.hammerTeams.map(function(rd){return fixTeams(rd);});WK.rounds.forEach(function(rd){if(Array.isArray(rd.fbTeams))rd.fbTeams=rd.fbTeams.map(function(t){return t.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(STATE.roundFlights)STATE.roundFlights=STATE.roundFlights.map(function(fls){return fls.map(function(fl){return fl.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';
+// v123.47: no game seats one player, so a round left with one has every game off (round, every
+// foursome, and the trip-level ones) rather than a box that cannot settle.
+if(WK.isQuickRound&&WK.players.length===1){GAME_DEFS.forEach(function(d){if(d.tripLevel){WK[d.onField]=false;return;}WK.rounds.forEach(function(rd){if(!rd)return;rd[d.onField]=false;if(Array.isArray(rd.fsGames))rd.fsGames.forEach(function(f){if(f)f[d.onField]=false;});});});}_rosterReconcileAll();renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
 // Trip admin management handlers
 var _tripAdminPickerMembers=[];
 window._tripAdminAdd=function(idx){
