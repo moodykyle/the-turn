@@ -1199,6 +1199,12 @@ body.force-light .rdsheet-hd,body.force-light .board-section-label{color:#0F4D36
 @media(prefers-color-scheme:dark){body:not(.force-light) .event-name,body:not(.force-light) .hmcs-hd,body:not(.force-light) .grp-sheet-title,body:not(.force-light) .qr-step-t,body:not(.force-light) .scr-title{color:#EFC456;}body:not(.force-light) .rdsheet-hd,body:not(.force-light) .board-section-label{color:#EDE6D3;}}
 body.force-dark .event-name,body.force-dark .hmcs-hd,body.force-dark .grp-sheet-title,body.force-dark .qr-step-t,body.force-dark .scr-title{color:#EFC456;}
 body.force-dark .rdsheet-hd,body.force-dark .board-section-label{color:#EDE6D3;}
+/* v123.49: the In Progress and Your Rounds page titles, in the title accent. */
+.pg-title{position:absolute;left:0;right:0;text-align:center;font-size:16px;font-weight:700;color:var(--color-text-primary);pointer-events:none;}
+@media(prefers-color-scheme:light){body:not(.force-dark) .pg-title{color:#13795B;}}
+body.force-light .pg-title{color:#13795B;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .pg-title{color:#EFC456;}}
+body.force-dark .pg-title{color:#EFC456;}
 /* v123.45: the Best individual rounds heading, in the section-label colours. */
 .rr-hd{font-size:12px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;}
 @media(prefers-color-scheme:light){body:not(.force-dark) .rr-hd{color:#0F4D36;}}
@@ -1991,7 +1997,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.48';
+const APP_VERSION='v123.49';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5015,7 +5021,7 @@ window._hmShowAllInProgress=function(){
   const cards=trips.map(function(t){return _homeRoundRow(t).replace(/onclick="viewTrip\(/g,'onclick="window._hmInProgressViewTrip(');}).join('');
   div.innerHTML='<div style="display:flex;align-items:center;min-height:44px;position:relative;margin-bottom:16px">'
     +'<button onclick="document.getElementById(\'hmAllInProgress\').remove()" style="background:none;border:none;color:var(--color-text-secondary);cursor:pointer;padding:6px;line-height:1;flex-shrink:0;z-index:1" aria-label="Home"><i class="ti ti-home" style="font-size:22px"></i></button>'
-    +'<div style="position:absolute;left:0;right:0;text-align:center;font-size:16px;font-weight:700;color:var(--color-text-primary);pointer-events:none">In Progress</div>'
+    +'<div class="pg-title">In Progress</div>'
     +'</div>'
     +cards;
   document.body.appendChild(div);
@@ -5198,9 +5204,10 @@ async function renderGroupPage(gid){
 // for your own rounds, admins only for a group's trips.
 function _homeRoundRow(t){
   var g=t.group_id||'';
-  return _gpTripRow(t,g,!g||_amGroupAdmin(_groupCache[g]||_activeGroup));
+  // v123.49: outside the Group page a row names its group, so a group round is not read as solo.
+  return _gpTripRow(t,g,!g||_amGroupAdmin(_groupCache[g]||_activeGroup),true);
 }
-function _gpTripRow(t,gid,isAdmin){
+function _gpTripRow(t,gid,isAdmin,showGroup){
   var MON=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   var d=String(t.date||''),tile;
   var lr=(!t.complete&&(t.holesPlayed||0)>0)?(String(t.roundStatus||'').match(/^Round (\d+) of (\d+)/)||[]):null;
@@ -5214,6 +5221,9 @@ function _gpTripRow(t,gid,isAdmin){
   else tile='<span class="gp-tile none"><span class="d">&#8211;</span></span>';
   var nr=(t.courses||[]).length,np=(t.playerNames||[]).length;
   var place=t.region||((t.courses&&t.courses[0])?courseDisp(t.courses[0]):'');
+  // v123.49: a course already in the title is not repeated on the pin line (a trip keeps its region).
+  if(place&&!t.region&&String(t.name||'').toLowerCase().indexOf(String(place).toLowerCase())>=0)place='';
+  var grpName=(showGroup&&gid&&_groupCache[gid]&&_groupCache[gid].name)||'';
   var st='';
   if(t.complete){if(t.winner)st='&#127942; '+_gtEsc(t.winner);}
   else if((t.holesPlayed||0)>0){var r=String(t.roundStatus||'').split(' \u00b7 ')[0];st=(!one&&/^Round \d/.test(r))?_gtEsc(r):'In progress';}
@@ -5222,6 +5232,7 @@ function _gpTripRow(t,gid,isAdmin){
     +'<span class="gp-tile-wrap">'+tile+'</span>'
     +'<span class="gp-info"><span class="gp-name">'+_gtEsc(t.name||'Unnamed Trip')+'</span>'
     +'<span class="gp-meta">'+(one?'':nr+' rounds \u00b7 ')+np+' player'+(np!==1?'s':'')+'</span>'
+    +(grpName?'<span class="gp-place gp-grp"><i class="ti ti-users"></i> '+_gtEsc(grpName)+'</span>':'')
     +(place?'<span class="gp-place"><i class="ti ti-map-pin"></i> '+_gtEsc(place)+'</span>':'')
     +(st?'<span class="gp-st">'+st+'</span>':'')+'</span>'
     +'<span class="gp-side">'+(isAdmin?'<button class="gp-more" aria-label="Trip actions" onclick="event.stopPropagation();_roundMenu(\''+tid+'\',this,\''+_gtEsc(gid)+'\')">&#8943;</button>':'<span></span>')
@@ -6427,7 +6438,7 @@ window._showYourRoundsPage=function(){
   div.style.cssText='position:fixed;inset:0;z-index:9980;background:var(--color-background-primary);overflow-y:auto;padding:16px 14px 40px;';
   div.innerHTML='<div style="display:flex;align-items:center;min-height:44px;position:relative;margin-bottom:16px">'
     +'<button onclick="document.getElementById(\'yourRoundsPage\').remove()" style="background:none;border:none;color:var(--color-text-secondary);cursor:pointer;padding:6px;line-height:1;flex-shrink:0;z-index:1" aria-label="Home"><i class="ti ti-home" style="font-size:22px"></i></button>'
-    +'<div style="position:absolute;left:0;right:0;text-align:center;font-size:16px;font-weight:700;color:var(--color-text-primary);pointer-events:none">Your Rounds</div>'
+    +'<div class="pg-title">Your Rounds</div>'
     +'</div>'
     +'<div id="yourRoundsList"></div>';
   document.body.appendChild(div);
