@@ -166,7 +166,9 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(52%) sepia(9
 .course-sel-row:last-child{border-bottom:none;}
 .course-select{flex:1;padding:6px 8px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary);}
 .wizard-nav{display:flex;gap:8px;margin-top:1.5rem;}
-.btn-primary{flex:1;padding:12px;background:var(--color-text-primary);color:var(--color-background-primary);border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer;}
+.btn-primary{flex:1;padding:12px;background:#13795B;color:#FFFFFF;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer;}
+/* v123.47: the app's green, not the text colour used as a fill (it was black by day, white at night).
+   v123.48: the same deep green with white text in both modes (Kyle: dark ink on green read as wrong). */
 .btn-secondary{padding:12px 16px;background:var(--color-background-primary);color:var(--color-text-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:15px;cursor:pointer;}
 .btn-sm{padding:5px 10px;background:var(--color-background-primary);color:var(--color-text-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:11px;cursor:pointer;}
 .btn-danger{padding:5px 8px;background:var(--color-background-primary);color:#D85A30;border:0.5px solid #D85A30;border-radius:var(--border-radius-md);font-size:11px;cursor:pointer;flex-shrink:0;}
@@ -1092,6 +1094,8 @@ body.force-light{
 .grp-act2{display:flex;align-items:center;gap:12px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:13px 14px;cursor:pointer;font-family:inherit;text-align:left;width:100%;}
 .grp-act2-ic{width:38px;height:38px;border-radius:10px;background:var(--brand-weak);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .grp-act2-ic .ti{font-size:20px;color:var(--brand);}
+/* v123.46: inline icons in the action tiles (the webfont has no filled glyphs). */
+.grp-act2-ic .ic-play{color:var(--brand);display:block;}
 .grp-act2-tx{flex:1;min-width:0;display:flex;flex-direction:column;}
 .grp-act2-t{font-size:14px;font-weight:600;color:var(--color-text-primary);}
 .grp-act2-d{font-size:12px;color:var(--color-text-secondary);margin-top:2px;}
@@ -1195,6 +1199,12 @@ body.force-light .rdsheet-hd,body.force-light .board-section-label{color:#0F4D36
 @media(prefers-color-scheme:dark){body:not(.force-light) .event-name,body:not(.force-light) .hmcs-hd,body:not(.force-light) .grp-sheet-title,body:not(.force-light) .qr-step-t,body:not(.force-light) .scr-title{color:#EFC456;}body:not(.force-light) .rdsheet-hd,body:not(.force-light) .board-section-label{color:#EDE6D3;}}
 body.force-dark .event-name,body.force-dark .hmcs-hd,body.force-dark .grp-sheet-title,body.force-dark .qr-step-t,body.force-dark .scr-title{color:#EFC456;}
 body.force-dark .rdsheet-hd,body.force-dark .board-section-label{color:#EDE6D3;}
+/* v123.45: the Best individual rounds heading, in the section-label colours. */
+.rr-hd{font-size:12px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;}
+@media(prefers-color-scheme:light){body:not(.force-dark) .rr-hd{color:#0F4D36;}}
+body.force-light .rr-hd{color:#0F4D36;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .rr-hd{color:#EDE6D3;}}
+body.force-dark .rr-hd{color:#EDE6D3;}
 body.force-dark .home-lb-row.me{background:rgba(239,196,86,0.10);}
 body.force-dark .home-lb-rank.r1{color:#EFC456;}
 body.force-dark .home-lb-net.under{color:#3CC79A;}
@@ -1981,7 +1991,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.43';
+const APP_VERSION='v123.48';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -3206,7 +3216,8 @@ async function s2ReadTrip(tripId){
 }
 
 // v123.42: strict returns [] for an empty list, so a caller can tell "nothing there" from a
-// failure (null). renderTripList calls it without strict and still gets null for both.
+// failure (null). Without strict both read null (the old renderTripList contract; that caller
+// was removed in v123.45, the non-strict form is kept for compatibility).
 async function s2LoadTripList(gid,strict){
   try{
     const r=await fetch(SB_URL+'/rest/v1/trips?select=trip_id,name,date,summary,is_quick_round,group_id'+(gid?'&group_id=eq.'+encodeURIComponent(gid):'')+'&order=updated_at.desc',{
@@ -3216,7 +3227,7 @@ async function s2LoadTripList(gid,strict){
     const rows=await r.json();
     if(!Array.isArray(rows))return null;
     if(!rows.length)return strict?[]:null;
-    // Shape into format renderTripList expects
+    // Shape into the trip summary format the Home lists read
     return rows.map(t=>{
       const s=t.summary||{};
       return{
@@ -4735,9 +4746,9 @@ function renderRoundsScreen(){
   if(!rounds.length){
     body.innerHTML='<div class="hm-empty"><div class="hm-empty-ic"><i class="ti ti-flag-3"></i></div>'
       +'<div class="hm-empty-t">No rounds yet</div>'
-      +'<div class="hm-empty-d">Tap the plus button to track a new round or plan a trip.</div>'
-      +'<button class="hm-empty-btn primary" id="rndStartBtn">Start something</button></div>';
-    var b=document.getElementById('rndStartBtn');if(b)b.onclick=function(){_hmOpenCreateSheet();};
+      +'<div class="hm-empty-d">Rounds you play outside a group show up here.</div>'
+      // v123.45: the + sheet's New round, as a tile (Kyle: a trip does not start from here).
+      +'<div class="grp-actions2"><button class="grp-act2" onclick="window._hmShowGrpRoundSheet&&window._hmShowGrpRoundSheet()"><span class="grp-act2-ic"><i class="ti ti-flag-3"></i></span><span class="grp-act2-tx"><span class="grp-act2-t">New round</span><span class="grp-act2-d">Track a single round</span></span><i class="ti ti-chevron-right grp-act2-chev"></i></button></div></div>';
     return;
   }
   body.innerHTML='<div class="home-dash-sec-label">Your rounds</div>'
@@ -4757,58 +4768,12 @@ window.sbShowUserMenu = function(){
 var _groupCache = {}; // group_id -> group object
 var _grpListSyncing = false;
 var _hm_tileOpen = {}; // persists tile open/close state across re-renders
-var _hm_secOpen = {};  // persists section open/close state across re-renders
 
 function _gearSvgStr(){
   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 }
 
-function _buildHomeTripCard(t){
-  const pct=t.totalHoles>0?Math.round(t.holesPlayed/t.totalHoles*100):0;
-  // Older trips saved before v117.11 carry no roundStatus. Fall back to the percentage rather
-  // than showing an empty slot, so a stale local snapshot still reads sensibly.
-  const _rstat=t.roundStatus||'';
-  const statusHtml=t.complete
-    ?`<span class="trip-status complete">&#10003; Complete</span>`
-    :(_rstat?'':`<span class="trip-status inprogress">${pct}% complete</span>`);
-  const playerAvis=(t.playerNames||[]).slice(0,4).map((n,i)=>{
-    const c=t.playerColors?.[i]||AVATAR_PALETTE[i%AVATAR_PALETTE.length];
-    const ini=t.playerInis?.[i]||nameToIni(n);
-    return`<div class="avatar" style="width:30px;height:30px;font-size:11px;background:${c.bg};color:${c.fg}">${ini}</div>`;
-  }).join('');
-  const winnerLine=t.complete&&t.winner?`<span style="font-size:11px;color:#1D9E75;font-weight:500">&#127942; ${t.winner}</span>`:'';
-  const _tcBorder=t.is_quick_round?'border-left:3px solid #F59E0B;':'border-left:3px solid #1D9E75;';
-  return`<div class="trip-card home-elev" style="${_tcBorder}" onclick="viewTrip('${t.id}')">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px">
-      <div class="trip-card-name">${t.name||'Unnamed Trip'}</div>
-      ${statusHtml}
-    </div>
-    <div class="trip-card-meta">${t.date||'No date'}${(!t.complete&&_rstat)?'':` · ${(t.courses||[]).length} round${(t.courses||[]).length!==1?'s':''}`} · ${(t.playerNames||[]).length} players</div>
-    ${(!t.complete&&_rstat)?`<div class="trip-card-status">${_rstat}</div>`:''}
-    ${(!t.complete&&!_rstat)?`<div class="trip-card-progress"><div class="trip-card-progress-fill" style="width:${pct}%"></div></div>`:'<div style="height:9px"></div>'}
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div class="trip-card-players">${playerAvis}</div>
-      <div style="display:flex;align-items:center;gap:8px">${winnerLine}${(!t.group_id||_amGroupAdmin(_groupCache[t.group_id]||_activeGroup))?`<button class="tc-del-btn" aria-label="Delete" onclick="event.stopPropagation();_tripDeleteTap('${t.id}',this,'${t.group_id||""}')"><i class="ti ti-trash" style="font-size:15px" aria-hidden="true"></i></button>`:''}</div>
-    </div>
-  </div>`;
-}
 
-function _buildTripSections(trips,sectionKey,startOpen,gid){
-  const regular=trips.filter(t=>!t.is_quick_round);
-  const quick=trips.filter(t=>!!t.is_quick_round);
-  if(!regular.length&&!quick.length){
-    return'<div style="text-align:center;color:var(--color-text-secondary);padding:1rem 0;font-size:13px">No trips yet.</div>';
-  }
-  const sk=(sectionKey||'x').replace(/[^a-z0-9]/gi,'-');
-  function secBlock(type,label,cards,topPad){
-    const id='hm-sec-'+type+'-'+sk;
-    return`<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;${topPad?'margin-top:10px;':''}margin-bottom:6px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);cursor:pointer" onclick="window.toggleTripSection('${id}')"><span id="${id}-chev" style="color:#1D9E75;font-size:11px;width:12px;text-align:center">${startOpen===false?'&#9660;':'&#9650;'}</span><div style="font-size:12px;font-weight:600;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.06em">${label}</div></div><div id="${id}" style="${startOpen===false?'display:none':''}">${cards}</div>`;
-  }
-  let html='';
-  if(regular.length){html+=secBlock('trips','Trips ('+regular.length+')',regular.map(_buildHomeTripCard).join(''),false);}
-  if(quick.length){html+=secBlock('qrs','Group Rounds ('+quick.length+')',quick.map(_buildHomeTripCard).join(''),regular.length>0);}
-  return html;
-}
 // Stage 5: renderHomeDashboard - replaces old renderGroupList accordion
 function renderGroupList(){renderHomeDashboard();}
 
@@ -4913,15 +4878,6 @@ window.toggleGroupTile = function(gid){
   _hm_tileOpen['hm-tile-'+gid]=!wasOpen;
 };
 
-window.toggleTripSection = function(id){
-  const el=document.getElementById(id);
-  const chev=document.getElementById(id+'-chev');
-  if(!el)return;
-  const open=el.style.display!=='none';
-  el.style.display=open?'none':'';
-  if(chev)chev.textContent=open?'▼':'▲';
-  _hm_secOpen[id]=!open;
-};
 
 // Stage 5: async member loader for doorway cards
 // v123.28. One group tile for Home and Groups. The status line comes from the group's trips
@@ -5699,6 +5655,7 @@ function _qrStepHtml(){
       +nameSection
       +courseSection
       +holesRows
+      +'<div id="qrCourseNeed" class="ts-danger" style="display:none;padding:10px 20px 0;font-size:13px;font-weight:600">Pick a course to continue.</div>'
       +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
       +_qrFoot(_qrFirst===2)
       +'</div>';
@@ -5999,6 +5956,8 @@ window._qrSelectAll=function(on){
   _qrRender();
 };
 window._qrNext=function(){
+  // v123.46: Course & holes needs a course. Without one the launch used the first catalog course.
+  if(_qrS.step===2&&!_qrS.course){var _cn=document.getElementById('qrCourseNeed');if(_cn)_cn.style.display='block';return;}
   if(_qrS.step===3){
     const gid=window._pendingGroupId;
     const grp=gid?_groupCache[gid]:null;
@@ -6029,6 +5988,9 @@ window._qrFinish=function(){_qrLaunchRound();};
 window._qrSkipGames=function(){_gsGames={};_qrLaunchRound();};
 
 function _qrLaunchRound(){
+  // v123.46: never launch without a course (it fell back to the first catalog course with a blank
+  // name). Checked BEFORE the line below clears the open trip.
+  if(!_qrS||!_qrS.course){if(_qrS){_qrS.step=2;}_qrRender();var _cn=document.getElementById('qrCourseNeed');if(_cn)_cn.style.display='block';return;}
   // MOVED HERE FROM startQuickRound, v120.19. Same ordering requirement as _twLaunch:
   // above initState, or the team builders read the outgoing trip's foursomes.
   WK=null;STATE=null;isReadOnly=false;viewingTripId=null;
@@ -6133,79 +6095,7 @@ function startQuickRound(){
   _qrRender();
 }
 function startQuickRoundWithPlayers(n){_qrS={step:1,n:n,holes:'18',course:null,tee:null,name:''};startQuickRound();}
-function renderTripList(){
-  // Render from blob immediately for instant display
-  _renderTripListFromData(loadTrips());
-  // Then fetch from schema, re-render, and reconcile localStorage
-  s2LoadTripList().then(schemaTrips=>{
-    const localTrips=loadTrips();
-    if(schemaTrips&&schemaTrips.length){
-      // Merge: Supabase is source of truth. Local-only trips (no Supabase row) are orphans — prune them.
-      const merged=[...schemaTrips];
-      const orphans=localTrips.filter(lt=>!merged.find(st=>st.id===lt.id));
-      // Only keep local-only trips that have never been written to Supabase (no trip_id in schema)
-      // In practice: all active trips are in Supabase, so any local-only entry after a successful
-      // schema fetch is stale/deleted on another device — drop it.
-      const hadOrphans=orphans.length>0;
-      // Re-render if Supabase added/changed something, or if we're pruning orphans
-      const hasNew=schemaTrips.some(st=>!localTrips.find(lt=>lt.id===st.id&&lt.savedAt===st.savedAt));
-      if(hasNew||hadOrphans)_renderTripListFromData(merged);
-      try{localStorage.setItem(LS_TRIPS,JSON.stringify(merged));}catch(e){}
-    } else if(schemaTrips&&schemaTrips.length===0){
-      // Supabase returned empty — don't wipe local trips, just keep showing them
-    }
-  });
-}
 
-function _renderTripListFromData(trips){
-  const el=document.getElementById('tripList');
-  if(!el)return;
-
-  if(trips.length===0){
-    el.innerHTML=`<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0;font-size:13px">No trips yet.<br>Start your first trip above.</div>`;
-    return;
-  }
-
-  trips.forEach(t=>{if(t.totalHoles>0&&t.holesPlayed>=t.totalHoles)t.complete=true;});
-  const inProgressTrips=trips.filter(t=>!t.complete);
-  const completedTrips=trips.filter(t=>t.complete);
-  function buildTripCard(t,isResume){
-    const pct=t.totalHoles>0?Math.round(t.holesPlayed/t.totalHoles*100):0;
-    const statusHtml=t.complete
-      ?`<span class="trip-status complete">✓ Complete</span>`
-      :isResume?`<span style="font-size:11px;font-weight:600;color:#1D9E75;flex-shrink:0">Resume →</span>`
-      :`<span class="trip-status inprogress">${pct}% complete</span>`;
-    const playerAvis=t.playerNames.slice(0,4).map((n,i)=>{
-      const c=t.playerColors?.[i]||AVATAR_PALETTE[i%AVATAR_PALETTE.length];
-      const ini=t.playerInis?.[i]||nameToIni(n);
-      return`<div class="avatar" style="width:30px;height:30px;font-size:11px;background:${c.bg};color:${c.fg}">${ini}</div>`;
-    }).join('');
-    const winnerLine=t.complete&&t.winner?`<span style="font-size:11px;color:#1D9E75;font-weight:500">🏆 ${t.winner}</span>`:'';
-    return`<div class="trip-card" onclick="viewTrip('${t.id}')">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px">
-        <div class="trip-card-name">${t.name||'Unnamed Trip'}</div>
-        ${statusHtml}
-      </div>
-      <div class="trip-card-meta">${t.date||'No date'} · ${t.courses.length} round${t.courses.length!==1?'s':''} · ${t.playerNames.length} players</div>
-      <div class="trip-card-progress"><div class="trip-card-progress-fill" style="width:${t.complete?100:pct}%"></div></div>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div class="trip-card-players">${playerAvis}</div>
-        <div style="display:flex;align-items:center;gap:8px">${winnerLine}${(!t.group_id||_amGroupAdmin(_groupCache[t.group_id]||_activeGroup))?`<button class="tc-del-btn" aria-label="Delete" onclick="event.stopPropagation();_tripDeleteTap('${t.id}',this,'${gid||""}')"><i class="ti ti-trash" style="font-size:15px" aria-hidden="true"></i></button>`:''}</div>
-      </div>
-    </div>`;
-  }
-  let html='';
-  if(inProgressTrips.length>0){
-    html+=`<div class="home-trips-label" style="margin-top:1rem">In Progress</div>`;
-    html+=inProgressTrips.map((t,i)=>buildTripCard(t,i===0)).join('');
-  }
-  if(completedTrips.length>0){
-    html+=`<div class="home-trips-label" style="margin-top:1rem">Completed</div>`;
-    html+=completedTrips.map(buildTripCard).join('');
-  }
-
-  el.innerHTML=html;
-}
 // Auto-resume breadcrumb: lets a cold boot (iOS PWA eviction) land back on the
 // active trip with zero taps. Written at the top of viewTrip (retry-safe if the
 // load itself gets interrupted by another eviction). 36h TTL covers a weekend
@@ -6459,7 +6349,8 @@ function _renderContinueSection(){
     if(ct.is_quick_round){
       // v123.39: course first, then how far along ("Pine Valley · thru 9").
       var _hp=Number(ct.holesPlayed);
-      line=[((ct.courses&&ct.courses[0])?courseDisp(ct.courses[0]):'')||'New round',(_hp>0&&isFinite(_hp))?'thru '+Math.floor(_hp):''].filter(Boolean).map(_gtEsc).join(' \u00b7 ');
+      // v123.48: a group round names its group first, so it is not mistaken for a solo round.
+      line=[grpOf(ct),((ct.courses&&ct.courses[0])?courseDisp(ct.courses[0]):'')||'New round',(_hp>0&&isFinite(_hp))?'thru '+Math.floor(_hp):''].filter(Boolean).map(_gtEsc).join(' \u00b7 ');
       label='Resume round';
     } else {
       var rd=String(ct.roundStatus||'').split(' \u00b7 ')[0];if(!/^Round \d/.test(rd))rd='';
@@ -6469,7 +6360,7 @@ function _renderContinueSection(){
     // v123.41: Resume is a tile like the Group page's actions; the line rides inside it.
     h+=(inProg.length>1?'<div class="home-wb-row only-all"><button class="home-wb-all" onclick="window._hmShowAllInProgress()">See all ('+inProg.length+')</button></div>':'')
       +'<button class="home-wb-btn home-wb-resume grp-act2" onclick="viewTrip(\''+_gtEsc(ct.id)+'\')">'
-      +'<span class="grp-act2-ic"><i class="ti ti-player-play" aria-hidden="true"></i></span>'
+      +'<span class="grp-act2-ic"><svg class="ic-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>'
       +'<span class="grp-act2-tx"><span class="grp-act2-t">'+label+'</span><span class="home-wb-line">'+line+'</span></span>'
       +'<span class="grp-act2-chev" aria-hidden="true">&#8250;</span></button>';
     // Leader, runner-up and you; the top three when you are among them or not in the trip.
@@ -11036,7 +10927,7 @@ function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
     }
     html+=`</div>`;
   });
-  html+=`</div>`;const entries=calcRoundRankings();const isOpen=STATE.roundRankOpen;html+=`<div class="collapsible-hd${isOpen?' open':''}" onclick="toggleRoundRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Best individual rounds</span><span style="font-size:12px;color:#1D9E75">${isOpen?'▲':'▼'}</span></div>`;if(isOpen){if(entries.length===0){html+=`<div class="collapsible-body"><div style="padding:16px 12px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Complete at least one full round to see rankings</div></div>`;}else{html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;entries.forEach(e=>{const p=WK.players[e.pi];const cbg=COURSE_COLORS[e.r%COURSE_COLORS.length];const cfg=COURSE_FG[e.r%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const badgeLabel=rdLabel(e.r);html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${displayName(e.pi)}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}};const eEntries=calcEmergencyRankings();if(eEntries.length>0){const eOpen=STATE.emergencyRankOpen;html+=`<div class="collapsible-hd${eOpen?' open':''}" onclick="toggleEmergencyRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Emergency rounds</span><span style="font-size:12px;color:#1D9E75">${eOpen?'▲':'▼'}</span></div>`;if(eOpen){html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;eEntries.forEach(e=>{const p=WK.players[e.pi];const cbg=COURSE_COLORS[e.r%COURSE_COLORS.length];const cfg=COURSE_FG[e.r%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const erd=WK.rounds[e.r];const holeLabel=erd.nineHole==='front'?'Front 9':erd.nineHole==='back'?'Back 9':'9 holes';
+  html+=`</div>`;const entries=calcRoundRankings();const isOpen=STATE.roundRankOpen;html+=`<div class="collapsible-hd${isOpen?' open':''}" onclick="toggleRoundRankings()"><span class="rr-hd">Best individual rounds</span><span style="font-size:12px;color:#1D9E75">${isOpen?'▲':'▼'}</span></div>`;if(isOpen){if(entries.length===0){html+=`<div class="collapsible-body"><div style="padding:16px 12px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Complete at least one full round to see rankings</div></div>`;}else{html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;entries.forEach(e=>{const p=WK.players[e.pi];const cbg=COURSE_COLORS[e.r%COURSE_COLORS.length];const cfg=COURSE_FG[e.r%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const badgeLabel=rdLabel(e.r);html+=`<tr><td style="font-size:13px;color:var(--color-text-secondary)">${e.rank}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:8px;background:${p.bg};color:${p.fg}">${p.ini}</div><span style="font-weight:500">${displayName(e.pi)}</span></div></td><td><span class="rr-course-badge" style="background:${cbg};color:${cfg}">${badgeLabel}</span></td><td class="right" style="color:var(--color-text-secondary)">${grossStr}</td><td class="right" style="font-weight:500;color:#0A5C38">${netStr}</td></tr>`;});html+=`</table></div>`;}};const eEntries=calcEmergencyRankings();if(eEntries.length>0){const eOpen=STATE.emergencyRankOpen;html+=`<div class="collapsible-hd${eOpen?' open':''}" onclick="toggleEmergencyRankings()"><span style="font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Emergency rounds</span><span style="font-size:12px;color:#1D9E75">${eOpen?'▲':'▼'}</span></div>`;if(eOpen){html+=`<div class="collapsible-body"><table class="rr-table"><tr><th style="width:28px">#</th><th>Player</th><th>Course</th><th class="right">Gross</th><th class="right" style="color:#0A5C38">Net</th></tr>`;eEntries.forEach(e=>{const p=WK.players[e.pi];const cbg=COURSE_COLORS[e.r%COURSE_COLORS.length];const cfg=COURSE_FG[e.r%COURSE_FG.length];const grossStr=e.relGross===0?`${e.gross} (E)`:`${e.gross} (${e.relGross>0?'+':''}${e.relGross})`;const netStr=e.relNet===0?`${e.net} (E)`:`${e.net} (${e.relNet>0?'+':''}${e.relNet})`;const erd=WK.rounds[e.r];const holeLabel=erd.nineHole==='front'?'Front 9':erd.nineHole==='back'?'Back 9':'9 holes';
       // A shortened round joins the same vocabulary the nine-hole rounds already use.
       // Without it a 7 hole score reads as a very bad 18 hole one.
       const _ehShort=_roundHasEnd(e.r)?standingsHoleCount(e.r):0;
@@ -12268,9 +12159,10 @@ function renderPlayersPanel(){
             +`<span class="frz">${_dn?'frozen':(_plRoundHasScores(ri)?'in play':'')}</span>`
             +`<span class="val"${_dn?'':` data-plrd="${pid}" data-base="${sbHcpDisplay(idxForRound(i,ri))}"`}>${(draft&&!_dn)?'<span class="was">'+sbHcpDisplay(idxForRound(i,ri))+'</span><span class="nxt">'+sbHcpDisplay(draft.idx)+'</span>':sbHcpDisplay(idxForRound(i,ri))}</span></div>`;
         });
-        if(seat)html+=`<div class="pl-line pl-note">Added to the trip ${seat}.</div>`;
+        if(seat)html+=`<div class="pl-line pl-note">Added to the ${WK.isQuickRound?'round':'trip'} ${seat}.</div>`;
       }else{
-        html+=`<div class="pl-line pl-note">${rw} off ${sbHcpDisplay(p.idx)}${seat?', taken from the group '+seat+' when '+who+' was added to the trip':''}. Changing it moves all ${nR===1?'of them':'three'.replace('three',String(nR))}.</div>`;
+        // v123.46: a round says round; one round has nothing else to move.
+        html+=`<div class="pl-line pl-note">${rw} off ${sbHcpDisplay(p.idx)}${seat?', taken from the group '+seat+' when '+who+' was added to the '+(WK.isQuickRound?'round':'trip'):''}.${nR===1?'':' Changing it moves all '+nR+'.'}</div>`;
       }
       // "Use it" is GONE. It read live.index !== p.idx with no direction in it, so
       // after somebody typed a new number it offered to replace that number with the
@@ -12296,7 +12188,7 @@ function renderPlayersPanel(){
           +`<button class="pl-cancel" id="plcancel_${pid}" onclick="window._plCancelRow(${i})" style="display:${draft?'block':'none'}">Cancel</button>`
           +`</div>`;
       }
-      if(WK.players.length>2&&canEd)html+=`<button class="pl-remove" onclick="removePlayer(${i})">Remove from trip</button>`;
+      if(WK.players.length>(WK.isQuickRound?1:2)&&canEd)html+=`<button class="pl-remove" onclick="removePlayer(${i})">${WK.isQuickRound?'Remove from round':'Remove from trip'}</button>`;
       html+=`</div>`;
     }
   });
@@ -12584,7 +12476,8 @@ function _apRender(showGuest){
       +'<div style="font-size:11px;color:var(--color-text-tertiary)">Saved to the group for future trips</div></div></div>';
   }else{
     h+='<div class="ap-sec">New guest</div>';
-    h+='<div style="padding:4px 14px 14px">'
+    // v123.48: typing clears the error (input events bubble to this wrapper).
+    h+='<div style="padding:4px 14px 14px" oninput="var _e=document.getElementById(\'apGuestError\');if(_e)_e.style.display=\'none\';">'
       +'<div id="apGuestError" style="display:none;margin-bottom:8px;padding:8px 12px;background:#FAEEDA;border:0.5px solid #EFB880;border-radius:var(--border-radius-md);font-size:12px;color:#633806;"></div>'
       +'<div style="display:flex;gap:6px;margin-bottom:8px"><input class="text-input" id="apgFirst" placeholder="First" style="flex:2;font-size:13px;padding:7px 9px"/>'
       +'<input class="text-input" id="apgLast" placeholder="Last" style="flex:2;font-size:13px;padding:7px 9px"/></div>'
@@ -12646,14 +12539,31 @@ window._apGuestSubmit=async function(){
     member_id:memberId,idx:hp.value,bg:c.bg,fg:c.fg,ini:''});
 };
 function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=TW_MAX_PLAYERS)return;const c=pickColor(),i=WK.players.length;WK.players.push({pid:s2NewTok(),name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));});_rosterReconcileAll();if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();autoSave();s2WriteActive();}
-function removePlayer(idx){if(!canEditTrip())return;if(WK.players.length<=2){alert('Need at least 2 players.');return;}
-// Capture BEFORE the splice. The players row MUST be deleted too: s2ReadTrip sizes the
-// roster from playerRows.length, so a surviving row resurrects the player on reload.
-const _deadPid=(WK.players[idx]&&WK.players[idx].pid)?(WK._id+':player:'+WK.players[idx].pid):null;
-if(_deadPid){
-  s2DeleteWhere('scores','player_id=eq.'+encodeURIComponent(_deadPid));
-  s2DeleteWhere('players','player_id=eq.'+encodeURIComponent(_deadPid));
-}
+var _rmPlayerBusy=false;
+async function removePlayer(idx){if(!canEditTrip())return;
+// v123.47: a round can drop to one player (the wizard starts one-player rounds); a trip keeps two.
+var _rmMin=WK.isQuickRound?1:2;
+if(WK.players.length<=_rmMin){alert(_rmMin===1?'A round needs at least 1 player.':'Need at least 2 players.');return;}
+// v123.44: the players row is deleted FIRST and awaited, before anything local changes. The splice
+// below shifts everyone above this player down one position; if the row survived (a failed
+// delete), the player came back on reload sharing a player_index with whoever moved into the slot.
+// s2ReadTrip sizes the roster from playerRows.length, so the row is the one that must go.
+if(_rmPlayerBusy)return;
+const _p=WK.players[idx];if(!_p)return;
+const _deadPid=s2PlayerId(idx),_nm=_p.name||'this player';
+_rmPlayerBusy=true;
+let _ok=false;
+try{_ok=await s2DeleteWhere('players','player_id=eq.'+encodeURIComponent(_deadPid));}catch(e){_ok=false;}
+if(!_ok){_rmPlayerBusy=false;alert('Could not remove '+_nm+'. Check your connection and try again.');return;}
+// A score row left behind is ignored by s2ReadTrip (its player is not in the roster), so a failed
+// scores delete does not block the removal.
+try{if(!await s2DeleteWhere('scores','player_id=eq.'+encodeURIComponent(_deadPid)))console.warn('[removePlayer] scores delete failed');}catch(e){console.warn('[removePlayer] scores delete threw',e);}
+_rmPlayerBusy=false;
+// The roster can move during the wait (a second tap, a sync replacing it, another trip opened):
+// find the player again by object, then by pid. Not found means someone else got there first.
+idx=WK.players.indexOf(_p);
+if(idx<0&&_p.pid)idx=WK.players.findIndex(function(q){return q&&q.pid===_p.pid;});
+if(idx<0)return;
 WK.players.splice(idx,1);WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.splice(idx,1));});
 // idxSnap is keyed on pi, which is POSITIONAL, and the splice above shifts every index
 // down by one. Without this the frozen handicap of the player above the removed one is
@@ -12669,7 +12579,10 @@ WK.rounds.forEach(function(rd){
   });
   rd.idxSnap=out;
 });
-function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=STATE.mpTeams.map(function(rd){return fixTeams(rd);});STATE.vegTeams=STATE.vegTeams.map(function(rd){return fixTeams(rd);});if(STATE.skinsTeams)STATE.skinsTeams=STATE.skinsTeams.map(function(rd){return fixTeams(rd);});if(STATE.hammerTeams)STATE.hammerTeams=STATE.hammerTeams.map(function(rd){return fixTeams(rd);});WK.rounds.forEach(function(rd){if(Array.isArray(rd.fbTeams))rd.fbTeams=rd.fbTeams.map(function(t){return t.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(STATE.roundFlights)STATE.roundFlights=STATE.roundFlights.map(function(fls){return fls.map(function(fl){return fl.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';_rosterReconcileAll();renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
+function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=STATE.mpTeams.map(function(rd){return fixTeams(rd);});STATE.vegTeams=STATE.vegTeams.map(function(rd){return fixTeams(rd);});if(STATE.skinsTeams)STATE.skinsTeams=STATE.skinsTeams.map(function(rd){return fixTeams(rd);});if(STATE.hammerTeams)STATE.hammerTeams=STATE.hammerTeams.map(function(rd){return fixTeams(rd);});WK.rounds.forEach(function(rd){if(Array.isArray(rd.fbTeams))rd.fbTeams=rd.fbTeams.map(function(t){return t.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(STATE.roundFlights)STATE.roundFlights=STATE.roundFlights.map(function(fls){return fls.map(function(fl){return fl.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';
+// v123.47: no game seats one player, so a round left with one has every game off (round, every
+// foursome, and the trip-level ones) rather than a box that cannot settle.
+if(WK.isQuickRound&&WK.players.length===1){GAME_DEFS.forEach(function(d){if(d.tripLevel){WK[d.onField]=false;return;}WK.rounds.forEach(function(rd){if(!rd)return;rd[d.onField]=false;if(Array.isArray(rd.fsGames))rd.fsGames.forEach(function(f){if(f)f[d.onField]=false;});});});}_rosterReconcileAll();renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
 // Trip admin management handlers
 var _tripAdminPickerMembers=[];
 window._tripAdminAdd=function(idx){
