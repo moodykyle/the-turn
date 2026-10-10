@@ -167,9 +167,8 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(52%) sepia(9
 .course-select{flex:1;padding:6px 8px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary);}
 .wizard-nav{display:flex;gap:8px;margin-top:1.5rem;}
 .btn-primary{flex:1;padding:12px;background:#13795B;color:#FFFFFF;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer;}
-/* v123.47: the app's green, not the text colour used as a fill (it was black by day, white at night). */
-@media(prefers-color-scheme:dark){body:not(.force-light) .btn-primary{background:#1D9E75;color:#0c1712;}}
-body.force-dark .btn-primary{background:#1D9E75;color:#0c1712;}
+/* v123.47: the app's green, not the text colour used as a fill (it was black by day, white at night).
+   v123.48: the same deep green with white text in both modes (Kyle: dark ink on green read as wrong). */
 .btn-secondary{padding:12px 16px;background:var(--color-background-primary);color:var(--color-text-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:15px;cursor:pointer;}
 .btn-sm{padding:5px 10px;background:var(--color-background-primary);color:var(--color-text-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:11px;cursor:pointer;}
 .btn-danger{padding:5px 8px;background:var(--color-background-primary);color:#D85A30;border:0.5px solid #D85A30;border-radius:var(--border-radius-md);font-size:11px;cursor:pointer;flex-shrink:0;}
@@ -1992,7 +1991,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.47';
+const APP_VERSION='v123.48';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -6350,7 +6349,8 @@ function _renderContinueSection(){
     if(ct.is_quick_round){
       // v123.39: course first, then how far along ("Pine Valley · thru 9").
       var _hp=Number(ct.holesPlayed);
-      line=[((ct.courses&&ct.courses[0])?courseDisp(ct.courses[0]):'')||'New round',(_hp>0&&isFinite(_hp))?'thru '+Math.floor(_hp):''].filter(Boolean).map(_gtEsc).join(' \u00b7 ');
+      // v123.48: a group round names its group first, so it is not mistaken for a solo round.
+      line=[grpOf(ct),((ct.courses&&ct.courses[0])?courseDisp(ct.courses[0]):'')||'New round',(_hp>0&&isFinite(_hp))?'thru '+Math.floor(_hp):''].filter(Boolean).map(_gtEsc).join(' \u00b7 ');
       label='Resume round';
     } else {
       var rd=String(ct.roundStatus||'').split(' \u00b7 ')[0];if(!/^Round \d/.test(rd))rd='';
@@ -12476,7 +12476,8 @@ function _apRender(showGuest){
       +'<div style="font-size:11px;color:var(--color-text-tertiary)">Saved to the group for future trips</div></div></div>';
   }else{
     h+='<div class="ap-sec">New guest</div>';
-    h+='<div style="padding:4px 14px 14px">'
+    // v123.48: typing clears the error (input events bubble to this wrapper).
+    h+='<div style="padding:4px 14px 14px" oninput="var _e=document.getElementById(\'apGuestError\');if(_e)_e.style.display=\'none\';">'
       +'<div id="apGuestError" style="display:none;margin-bottom:8px;padding:8px 12px;background:#FAEEDA;border:0.5px solid #EFB880;border-radius:var(--border-radius-md);font-size:12px;color:#633806;"></div>'
       +'<div style="display:flex;gap:6px;margin-bottom:8px"><input class="text-input" id="apgFirst" placeholder="First" style="flex:2;font-size:13px;padding:7px 9px"/>'
       +'<input class="text-input" id="apgLast" placeholder="Last" style="flex:2;font-size:13px;padding:7px 9px"/></div>'
