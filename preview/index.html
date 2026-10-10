@@ -1092,6 +1092,8 @@ body.force-light{
 .grp-act2{display:flex;align-items:center;gap:12px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:13px 14px;cursor:pointer;font-family:inherit;text-align:left;width:100%;}
 .grp-act2-ic{width:38px;height:38px;border-radius:10px;background:var(--brand-weak);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .grp-act2-ic .ti{font-size:20px;color:var(--brand);}
+/* v123.46: inline icons in the action tiles (the webfont has no filled glyphs). */
+.grp-act2-ic .ic-play{color:var(--brand);display:block;}
 .grp-act2-tx{flex:1;min-width:0;display:flex;flex-direction:column;}
 .grp-act2-t{font-size:14px;font-weight:600;color:var(--color-text-primary);}
 .grp-act2-d{font-size:12px;color:var(--color-text-secondary);margin-top:2px;}
@@ -1987,7 +1989,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.45';
+const APP_VERSION='v123.46';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5651,6 +5653,7 @@ function _qrStepHtml(){
       +nameSection
       +courseSection
       +holesRows
+      +'<div id="qrCourseNeed" class="ts-danger" style="display:none;padding:10px 20px 0;font-size:13px;font-weight:600">Pick a course to continue.</div>'
       +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
       +_qrFoot(_qrFirst===2)
       +'</div>';
@@ -5951,6 +5954,8 @@ window._qrSelectAll=function(on){
   _qrRender();
 };
 window._qrNext=function(){
+  // v123.46: Course & holes needs a course. Without one the launch used the first catalog course.
+  if(_qrS.step===2&&!_qrS.course){var _cn=document.getElementById('qrCourseNeed');if(_cn)_cn.style.display='block';return;}
   if(_qrS.step===3){
     const gid=window._pendingGroupId;
     const grp=gid?_groupCache[gid]:null;
@@ -5981,6 +5986,9 @@ window._qrFinish=function(){_qrLaunchRound();};
 window._qrSkipGames=function(){_gsGames={};_qrLaunchRound();};
 
 function _qrLaunchRound(){
+  // v123.46: never launch without a course (it fell back to the first catalog course with a blank
+  // name). Checked BEFORE the line below clears the open trip.
+  if(!_qrS||!_qrS.course){if(_qrS){_qrS.step=2;}_qrRender();var _cn=document.getElementById('qrCourseNeed');if(_cn)_cn.style.display='block';return;}
   // MOVED HERE FROM startQuickRound, v120.19. Same ordering requirement as _twLaunch:
   // above initState, or the team builders read the outgoing trip's foursomes.
   WK=null;STATE=null;isReadOnly=false;viewingTripId=null;
@@ -6349,7 +6357,7 @@ function _renderContinueSection(){
     // v123.41: Resume is a tile like the Group page's actions; the line rides inside it.
     h+=(inProg.length>1?'<div class="home-wb-row only-all"><button class="home-wb-all" onclick="window._hmShowAllInProgress()">See all ('+inProg.length+')</button></div>':'')
       +'<button class="home-wb-btn home-wb-resume grp-act2" onclick="viewTrip(\''+_gtEsc(ct.id)+'\')">'
-      +'<span class="grp-act2-ic"><i class="ti ti-player-play-filled" aria-hidden="true"></i></span>'
+      +'<span class="grp-act2-ic"><svg class="ic-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>'
       +'<span class="grp-act2-tx"><span class="grp-act2-t">'+label+'</span><span class="home-wb-line">'+line+'</span></span>'
       +'<span class="grp-act2-chev" aria-hidden="true">&#8250;</span></button>';
     // Leader, runner-up and you; the top three when you are among them or not in the trip.
@@ -12148,9 +12156,10 @@ function renderPlayersPanel(){
             +`<span class="frz">${_dn?'frozen':(_plRoundHasScores(ri)?'in play':'')}</span>`
             +`<span class="val"${_dn?'':` data-plrd="${pid}" data-base="${sbHcpDisplay(idxForRound(i,ri))}"`}>${(draft&&!_dn)?'<span class="was">'+sbHcpDisplay(idxForRound(i,ri))+'</span><span class="nxt">'+sbHcpDisplay(draft.idx)+'</span>':sbHcpDisplay(idxForRound(i,ri))}</span></div>`;
         });
-        if(seat)html+=`<div class="pl-line pl-note">Added to the trip ${seat}.</div>`;
+        if(seat)html+=`<div class="pl-line pl-note">Added to the ${WK.isQuickRound?'round':'trip'} ${seat}.</div>`;
       }else{
-        html+=`<div class="pl-line pl-note">${rw} off ${sbHcpDisplay(p.idx)}${seat?', taken from the group '+seat+' when '+who+' was added to the trip':''}. Changing it moves all ${nR===1?'of them':'three'.replace('three',String(nR))}.</div>`;
+        // v123.46: a round says round; one round has nothing else to move.
+        html+=`<div class="pl-line pl-note">${rw} off ${sbHcpDisplay(p.idx)}${seat?', taken from the group '+seat+' when '+who+' was added to the '+(WK.isQuickRound?'round':'trip'):''}.${nR===1?'':' Changing it moves all '+nR+'.'}</div>`;
       }
       // "Use it" is GONE. It read live.index !== p.idx with no direction in it, so
       // after somebody typed a new number it offered to replace that number with the
@@ -12176,7 +12185,7 @@ function renderPlayersPanel(){
           +`<button class="pl-cancel" id="plcancel_${pid}" onclick="window._plCancelRow(${i})" style="display:${draft?'block':'none'}">Cancel</button>`
           +`</div>`;
       }
-      if(WK.players.length>2&&canEd)html+=`<button class="pl-remove" onclick="removePlayer(${i})">Remove from trip</button>`;
+      if(WK.players.length>2&&canEd)html+=`<button class="pl-remove" onclick="removePlayer(${i})">${WK.isQuickRound?'Remove from round':'Remove from trip'}</button>`;
       html+=`</div>`;
     }
   });
