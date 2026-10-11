@@ -1289,6 +1289,18 @@ span.qrw-hbox{display:flex;align-items:center;justify-content:center;border-colo
 .qrw-askt{font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px;}
 .qrw-askb{display:flex;justify-content:flex-end;gap:12px;align-items:center;margin-top:4px;}
 .qrw-cta.sm{width:auto;height:40px;padding:0 18px;font-size:15px;}
+/* v123.55: the sliding holes switch and the folded tees. */
+.qrw-seg{position:relative;gap:0;}
+.qrw-pill{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px) / 3);border-radius:9px;background:#13795B;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:transform 0.25s ease;pointer-events:none;z-index:0;}
+.qrw-seg button{position:relative;z-index:1;}
+.qrw-seg button.on{background:transparent;box-shadow:none;color:#FFFFFF;font-weight:700;}
+.qrw-seg button.on small{color:rgba(255,255,255,0.85);}
+.qrw-teesum,.qrw-teehd{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding-top:10px;border-top:0.5px solid var(--color-border-tertiary);cursor:pointer;}
+.qrw-teesum .qrw-lbl,.qrw-teehd .qrw-lbl{flex:1;}
+.qrw-teeval{display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
+.qrw-teeval b{font-size:15px;font-weight:700;color:var(--qrw-title);}
+.qrw-teeval small{font-size:11px;color:var(--color-text-secondary);}
+.qrw-teesum>i,.qrw-teehd>i{font-size:16px;color:var(--color-text-secondary);}
 /* v123.45: the Best individual rounds heading, in the section-label colours. */
 .rr-hd{font-size:12px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;}
 @media(prefers-color-scheme:light){body:not(.force-dark) .rr-hd{color:#0F4D36;}}
@@ -2081,7 +2093,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.54';
+const APP_VERSION='v123.55';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5751,8 +5763,28 @@ window._qrShowRecent=function(){_qrS.near=null;_qrS.nearErr='';_qrRender();};
 window._qrPickListed=function(i){var cn=window._qrListStash&&window._qrListStash[i];if(cn)window._qrPickCourse(cn);};
 window._qrTeeChip=function(g,i){
   var c=CATALOG[_qrS.course],l=c&&c.tees&&(g==='female'?c.tees.female:c.tees.male),t=l&&l[i];
-  if(t){_qrS.tee={gender:g,teeName:t.tee_name};_qrRender();}
+  if(t){_qrS.tee={gender:g,teeName:t.tee_name};_qrS.teeOpen='';_qrRender();}
 };
+// v123.55: tees folded. Closed: the picked tee on one row. Open: that gender's chips, the other
+// gender folded below; tapping the open header folds it.
+window._qrTeeOpen=function(g){_qrS.teeOpen=(_qrS.teeOpen===g)?'':g;_qrRender();};
+function _qrTeesHtml(m,f,sel,chips){
+  if(!m.length&&!f.length)return'';
+  var both=m.length&&f.length,open=_qrS.teeOpen||'';
+  var G=[['male',m,"MEN'S TEES"],['female',f,"WOMEN'S TEES"]].filter(function(x){return x[1].length;});
+  if(!open){
+    var g=sel.gender||(m.length?'male':'female'),list=g==='female'?f:m;
+    var t=list.find(function(x){return x.tee_name===sel.teeName;})||null;
+    var rs=t&&t.course_rating&&t.slope_rating?t.course_rating+' / '+t.slope_rating:'';
+    var sub=[both?(g==='female'?"Women's":"Men's"):'',rs].filter(Boolean).join(' · ');
+    return '<button type="button" class="qrw-teesum" onclick="window._qrTeeOpen(\''+g+'\')" aria-expanded="false"><span class="qrw-lbl">TEES</span>'
+      +'<span class="qrw-teeval"><b>'+_gtEsc(t?t.tee_name:'Choose')+'</b>'+(sub?'<small>'+_gtEsc(sub)+'</small>':'')+'</span><i class="ti ti-chevron-down" aria-hidden="true"></i></button>';
+  }
+  return G.map(function(x){var on=open===x[0];
+    return '<button type="button" class="qrw-teehd" onclick="window._qrTeeOpen(\''+x[0]+'\')" aria-expanded="'+on+'"><span class="qrw-lbl">'+(both?x[2]:'TEES')+' · '+x[1].length+'</span>'
+      +'<i class="ti ti-chevron-'+(on?'up':'right')+'" aria-hidden="true"></i></button>'
+      +(on?'<div class="qrw-chips">'+chips(x[1],x[0])+'</div>':'');}).join('');
+}
 function _qrCourseStepHtml(first,total,idx){
   var gid=window._pendingGroupId||'',c=_qrS.course,h='';
   if(!c){
@@ -5784,12 +5816,12 @@ function _qrCourseStepHtml(first,total,idx){
     h+='<div class="qrw-card qrw-pick"><div class="qrw-pickhd"><span class="qrw-ico lg"><i class="ti ti-flag-3" aria-hidden="true"></i></span>'
       +'<span class="qrw-rt"><span class="qrw-pn">'+_gtEsc(courseDisp(c))+'</span>'+(pl?'<span class="qrw-rs">'+_gtEsc(pl)+'</span>':'')+'</span>'
       +'<button type="button" class="qrw-change" onclick="window._qrClearCourse()">Change</button></div>'
-      +(m.length?'<div class="qrw-lbl">'+(f.length?"MEN'S TEES":'TEES')+'</div><div class="qrw-chips">'+chips(m,'male')+'</div>':'')
-      +(f.length?'<div class="qrw-lbl">'+(m.length?"WOMEN'S TEES":'TEES')+'</div><div class="qrw-chips">'+chips(f,'female')+'</div>':'')
+      +_qrTeesHtml(m,f,sel,chips)
       +'</div>';
   }
   var HO=[['18','18 holes',''],['front','Front 9','1-9'],['back','Back 9','10-18']];
-  h+='<div class="qrw-lbl">HOLES</div><div class="qrw-seg" role="radiogroup" aria-label="Holes">'+HO.map(function(o){var on=_qrS.holes===o[0];
+  var _hi=Math.max(0,HO.findIndex(function(o){return o[0]===_qrS.holes;}));
+  h+='<div class="qrw-lbl">HOLES</div><div class="qrw-seg" id="qrHolesSeg" role="radiogroup" aria-label="Holes"><span class="qrw-pill" style="transform:translateX('+(_hi*100)+'%)"></span>'+HO.map(function(o){var on=_qrS.holes===o[0];
     return '<button type="button" role="radio" aria-checked="'+on+'" class="'+(on?'on':'')+'" data-val="'+o[0]+'" onclick="window._qrSetHoles(this)"><span>'+o[1]+'</span>'+(o[2]?'<small>'+o[2]+'</small>':'')+'</button>';}).join('')+'</div>';
   if(c){
     var _nmTyped=!!(_qrS.name||'').trim();
@@ -5822,7 +5854,8 @@ function _qrPlayersStepHtml(){
       var isManaged=!m.user_id,isMe=!!(me&&m.user_id===me.id);
       var ini=(m.display_name||'??').split(' ').filter(Boolean).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
       var c=AVATAR_PALETTE[midx%AVATAR_PALETTE.length];
-      var hv=sel?(sel.hcp_index||m.hcp_index||''):(m.hcp_index!=null?m.hcp_index:'');
+      // v123.55: a 0 index is a value, not a blank (a scratch member's box was empty).
+      var hv=sel?((sel.hcp_index!=null&&sel.hcp_index!=='')?sel.hcp_index:(m.hcp_index!=null?m.hcp_index:'')):(m.hcp_index!=null?m.hcp_index:'');
       var hd=(hv===''||hv==null)?'':(hv<0?'+'+Math.abs(hv):(''+hv));
       var mid=_gtEsc(m.member_id);
       var tag=isMe?'You':(isManaged?'Managed':'');
@@ -5897,7 +5930,7 @@ window._qrPickCourse=function(cn){
   _qrRender();
 };
 window._qrSetTee=function(gender,teeName){_qrS.tee={gender,teeName};};
-window._qrClearCourse=function(){_qrS.course=null;_qrS.tee=null;_qrRender();};
+window._qrClearCourse=function(){_qrS.course=null;_qrS.tee=null;_qrS.teeOpen='';_qrRender();};
 window._qrSearchCourse=async function(){
   const q=(document.getElementById('qrCourseSearch')?.value||'').trim().toLowerCase();
   const el=document.getElementById('qrCourseResults');
@@ -5998,7 +6031,16 @@ window._qrSetName=function(el){
     ?'Your name. Clear the field to go back to the course name.'
     :'Follows the course until you change it.';
 };
-window._qrSetHoles=function(el){_qrS.holes=el.dataset.val;_qrRender();};
+// v123.55: the switch moves in place so the pill slides; a full redraw would jump it.
+window._qrSetHoles=function(el){
+  _qrS.holes=el.dataset.val;
+  var seg=document.getElementById('qrHolesSeg'),pill=seg&&seg.querySelector&&seg.querySelector('.qrw-pill');
+  if(!seg||!pill||!seg.querySelectorAll){_qrRender();return;}
+  var bs=seg.querySelectorAll('button'),idx=0;
+  for(var i=0;i<bs.length;i++){var on=bs[i].dataset.val===_qrS.holes;if(on)idx=i;bs[i].className=on?'on':'';bs[i].setAttribute('aria-checked',on?'true':'false');}
+  pill.style.transform='translateX('+(idx*100)+'%)';
+  var ne=document.getElementById('qrRoundName');if(ne&&!(_qrS.name||'').trim())ne.value=_qrRoundName();
+};
 window._qrSetN=function(el){_qrS.n=parseInt(el.dataset.val);_qrRender();};
 window._qrSet=function(key,val){_qrS[key]=val;_qrRender();};
 // v123.38: Players has a Back now. Keep what was typed there so Continue brings it back.
