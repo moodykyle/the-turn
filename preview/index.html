@@ -1237,6 +1237,26 @@ body.force-dark .pg-title{color:#EFC456;}
 /* v123.52: the round wizard's new look (canvas "Round wizard, step 1"), the course screen first. */
 #qrModal.qrw-full{background:var(--color-background-page)!important;align-items:stretch!important;justify-content:center!important;}
 #qrModal.qrw-full .qr-inner{width:100%;max-width:560px;height:100%;}
+/* v123.62: the trip wizard's new screens, full screen */
+#wizardScreen.qrw-full{background:var(--color-background-page)!important;padding:0!important;align-items:stretch!important;justify-content:center!important;overflow:hidden!important;}
+#wizardScreen.qrw-full #twInner{max-width:560px!important;max-height:none!important;height:100%;border:none!important;border-radius:0!important;overflow:hidden!important;background:var(--color-background-page)!important;}
+#wizardScreen.qrw-full #twBody{height:100%;}
+.tw-tiles{display:flex;flex-direction:column;gap:10px;}
+.tw-tile{display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 14px;box-sizing:border-box;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;cursor:text;}
+.tw-tt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.tw-tl{font-size:12px;color:var(--color-text-secondary);}
+.tw-in{border:none;outline:none;background:transparent;padding:0;margin:0;width:100%;font-size:16px;font-weight:600;color:var(--color-text-primary);font-family:inherit;}
+.tw-in::placeholder{color:var(--color-text-tertiary);font-weight:500;}
+.tw-amt{display:flex;align-items:baseline;justify-content:center;gap:2px;cursor:text;}
+.tw-amt-in{width:4ch;border:none;outline:none;background:transparent;padding:0;margin:0;text-align:left;font-size:36px;font-weight:700;color:var(--qrw-title);font-family:inherit;}
+.tw-opt{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:8px 14px;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.tw-opt:last-child{border-bottom:none;}
+.tw-opt.fixed{cursor:default;}
+.tw-opt .qrw-rn{font-weight:500;}
+.tw-opt.on .qrw-rn,.tw-opt.fixed .qrw-rn{font-weight:700;}
+.tw-radio{width:24px;height:24px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tw-radio.on{border:2px solid var(--qrw-acc);}
+.tw-radio.on::after{content:'';width:12px;height:12px;border-radius:50%;background:var(--qrw-acc);}
 @media(prefers-color-scheme:light){body:not(.force-dark) .qrw{--qrw-acc:#13795B;--qrw-link:#13795B;--qrw-lbl:#0F4D36;--qrw-title:#13795B;--qrw-sel:rgba(19,121,91,0.08);}}
 body.force-light .qrw{--qrw-acc:#13795B;--qrw-link:#13795B;--qrw-lbl:#0F4D36;--qrw-title:#13795B;--qrw-sel:rgba(19,121,91,0.08);}
 .qrw{display:flex;flex-direction:column;height:100%;background:var(--color-background-page);color:var(--color-text-primary);}
@@ -2131,7 +2151,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.61';
+const APP_VERSION='v123.62';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -6990,11 +7010,48 @@ function _twRender(){
   // had to scroll down again for the next one. Restore only WITHIN a step: arriving at a
   // new step should start at the top, the way a new screen does.
   const sc=document.getElementById('twInner');
+  // v123.62: the new screens are full screen and scroll inside .qrw-body.
+  const ws=document.getElementById('wizardScreen');
+  if(ws&&ws.classList)ws.classList[_twNewLook()?'add':'remove']('qrw-full');
+  const _qb=function(){return inner.querySelector?inner.querySelector('.qrw-body'):null;};
   const keep=(_twLastStep===_twS.step)&&sc;
-  const y=keep?sc.scrollTop:0;
+  const y=keep?sc.scrollTop:0,ob=keep?_qb():null,y2=ob?ob.scrollTop:0;
   inner.innerHTML=_twStepHtml();
   _twLastStep=_twS.step;
   if(sc)sc.scrollTop=y;
+  const nb=_qb();if(nb)nb.scrollTop=y2;
+}
+// v123.62: which screens wear the round wizard's look (v123.63 adds 2 to 4).
+function _twNewLook(){return _twS.step===1||_twS.step===5;}
+function _twTop(idx){
+  var g=window._pendingGroupId&&_groupCache[window._pendingGroupId];
+  var ctx=(g&&g.name?_gtEsc(g.name)+' · ':'')+'New trip';
+  var bar='';for(var i=0;i<_TW_TOTAL_STEPS;i++)bar+='<span'+(i<idx?' class="on"':'')+'></span>';
+  return '<div class="qrw-top">'
+    +(idx===1?'<span class="qrw-ib"></span>':'<button type="button" class="qrw-ib" onclick="window._twBack()" aria-label="Back"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>')
+    +'<span class="qrw-ctx">'+ctx+'</span>'
+    +'<button type="button" class="qrw-ib" onclick="window._twCancel()" aria-label="Cancel"><i class="ti ti-x" aria-hidden="true"></i></button></div>'
+    +'<div class="qrw-bar">'+bar+'</div>'
+    +'<div class="qrw-head"><div class="qrw-step">STEP '+idx+' OF '+_TW_TOTAL_STEPS+'</div>';
+}
+function _twFoot(note,label){
+  return '<div class="qrw-foot">'+(note?'<div class="qrw-hint c">'+note+'</div>':'')
+    +'<button type="button" class="qrw-cta" onclick="window._twNext()">'+label+'</button></div>';
+}
+var _TW_ICO={
+  name:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"></path></svg>',
+  date:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M4 10h16M9 3v4M15 3v4"></path></svg>',
+  pin:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.4"></circle></svg>'};
+// Typed values on the setup and money screens, read before anything redraws them.
+function _twStash(){
+  if(_twS.step===1){
+    var n=document.getElementById('tw_name'),d=document.getElementById('tw_date'),g=document.getElementById('tw_region');
+    if(n)_twS.name=n.value;if(d)_twS.date=d.value;if(g)_twS.region=g.value;
+  }
+  if(_twS.step===5){
+    var b=document.getElementById('tw_buyIn');
+    if(b){var v=parseFloat(String(b.value).replace(/[^0-9.]/g,''));_twS.buyIn=(isFinite(v)&&v>=0)?Math.round(v):(_twS.buyIn!=null?_twS.buyIn:50);}
+  }
 }
 
 function _twDots(){
@@ -7033,22 +7090,35 @@ function _twStepHtml(){
   return'';
 }
 
-// Step 1: Trip setup
+// Step 1: Trip setup. v123.62: tiles and the rounds pill (canvas "Trip wizard").
 function _twStep1Html(){
-  return _twHeader('New trip','Trip setup','Takes about 2 minutes.')+
-    `<div style="padding:14px 20px;">`+
-    `<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;">Trip name</div>`+
-    `<input id="tw_name" class="text-input" style="width:100%;box-sizing:border-box;margin-bottom:12px;" placeholder="e.g. Shaker Cup 2025" value="${_twS.name||''}"/>`+
-    `<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;">Date</div>`+
-    `<input id="tw_date" class="text-input" type="date" max="2099-12-31" style="width:100%;box-sizing:border-box;margin-bottom:12px;" value="${_twS.date||''}"/>`+
-    `<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;">Region</div>`+
-    `<input id="tw_region" class="text-input" style="width:100%;box-sizing:border-box;margin-bottom:14px;" placeholder="e.g. Pinehurst, Bandon Dunes" value="${_twS.region||''}"/>`+
-    `<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;">Rounds</div>`+
-    `<select id="tw_numRounds" class="course-select" style="width:100%;">`+
-    [1,2,3,4].map(n=>`<option value="${n}"${_twS.numRounds===n?' selected':''}>${n}</option>`).join('')+
-    `</select></div>`+
-    _twFooter('Next','Cancel');
+  var nR=_twS.numRounds||4,ri=Math.max(0,Math.min(5,nR-1));
+  var tile=function(ico,lbl,id,type,val,ph){
+    return '<label class="tw-tile"><span class="qrw-ico">'+_TW_ICO[ico]+'</span><span class="tw-tt"><span class="tw-tl">'+lbl+'</span>'
+      +'<input id="'+id+'" class="tw-in" type="'+type+'"'+(type==='date'?' max="2099-12-31"':'')+' placeholder="'+ph+'" value="'+_gtEsc(val||'')+'" autocomplete="off"></span></label>';
+  };
+  var h='<div class="tw-tiles">'
+    +tile('name','Trip name','tw_name','text',_twS.name,'e.g. Shaker Cup 2027')
+    +tile('date','Date','tw_date','date',_twS.date,'')
+    +tile('pin','Region (optional)','tw_region','text',_twS.region,'e.g. Pinehurst')+'</div>'
+    +'<div class="qrw-lbl">ROUNDS</div>'
+    +'<div class="qrw-seg tw-rseg" id="twRoundsSeg" role="radiogroup" aria-label="Rounds"><span class="qrw-pill" style="width:calc((100% - 8px) / 6);transform:translateX('+(ri*100)+'%)"></span>'
+    +[1,2,3,4,5,6].map(function(n){var on=n===nR;
+      return '<button type="button" role="radio" aria-checked="'+on+'" class="'+(on?'on':'')+'" data-val="'+n+'" onclick="window._twSetRounds(this)"><span>'+n+'</span></button>';}).join('')+'</div>'
+    +'<div class="qrw-hint">More rounds can be added to the trip later.</div>';
+  return '<div class="qrw" data-tw-step="1">'+_twTop(1)+'<div class="qr-step-t qrw-title">Name your trip</div></div>'
+    +'<div class="qrw-body">'+h+'</div>'+_twFoot(_twS.nameErr?'Name the trip to continue.':'','Continue')+'</div>';
 }
+// The pill moves in place (typed text stays); with no switch on screen it redraws after a stash.
+window._twSetRounds=function(el){
+  var n=parseInt(el&&el.dataset&&el.dataset.val,10);if(!(n>=1&&n<=6))return;
+  _twS.numRounds=n;
+  var seg=document.getElementById('twRoundsSeg'),pill=seg&&seg.querySelector&&seg.querySelector('.qrw-pill');
+  if(!seg||!pill||!seg.querySelectorAll){_twStash();_twRender();return;}
+  var bs=seg.querySelectorAll('button');
+  for(var i=0;i<bs.length;i++){var on=parseInt(bs[i].dataset.val,10)===n;bs[i].className=on?'on':'';bs[i].setAttribute('aria-checked',on?'true':'false');}
+  pill.style.transform='translateX('+((n-1)*100)+'%)';
+};
 
 // Step 2: Players (member picker)
 function _twStep2Html(){
@@ -7189,43 +7259,39 @@ function _twStep4Html(){
     _twFooter('Next','Back');
 }
 
-// Step 5: Money & games
+// Step 5: Money. v123.62: the stepper, the fixed winner tile, tie choices as radio rows.
+var _TW_TIES=[['countback','Countback','Lowest final-round net, then the last 9, 6, 3, 1'],['split','Split the pot','Tied players share it evenly'],['manual','Decide it ourselves','The app shows the tie; you settle it']];
 function _twStep5Html(){
-  // Games left this step in v121.3; the weekend bet did not. Buy-in, winner and tiebreak
-  // are read out of here by _twNext.
-  return _twHeader('New trip','Money','')+
-
-    `<div style="padding:14px 20px 10px;">`+
-    `<div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px;">Weekend bet</div>`+
-    `<div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;margin-bottom:14px;">`+
-    `<div style="padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:10px;">`+
-    `<div style="flex:1;font-size:13px;color:var(--color-text-primary);">Buy-in per player</div>`+
-    `<span style="font-size:13px;color:var(--color-text-secondary);">$</span>`+
-    `<input id="tw_buyIn" type="number" step="1" min="0" value="${_twS.buyIn||50}" onclick="event.stopPropagation()" style="width:64px;padding:5px 6px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;text-align:center;"/></div>`+
-    `<div style="padding:10px 12px;display:flex;align-items:center;gap:10px;">`+
-    `<div style="flex:1;font-size:13px;color:var(--color-text-primary);">Weekend winner</div>`+
-    `<span style="font-size:13px;color:var(--color-text-secondary);">Net stroke play</span></div>`+
-    `<div style="padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:10px;">`+
-    `<div style="flex:1;font-size:13px;color:var(--color-text-primary);">If players tie<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px;">Countback: lowest net on the final round, then last 9, 6, 3, then the 18th</div></div>`+
-    `<select id="tw_potTiebreak" class="ie-sel" onclick="event.stopPropagation()">`+
-    `<option value="countback"${(_twS.potTiebreak||'countback')==='countback'?' selected':''}>Countback</option>`+
-    `<option value="split"${_twS.potTiebreak==='split'?' selected':''}>Split the pot</option>`+
-    `<option value="manual"${_twS.potTiebreak==='manual'?' selected':''}>Decide it ourselves</option>`+
-    `</select></div></div>`+
-    `<div style="font-size:11px;color:var(--color-text-tertiary);line-height:1.5;">Pick games once the trip starts. Each foursome chooses its own from the Games tab.</div>`+
-    `</div>`+
-    _twFooter('Start trip','Back');
+  var amt=_twS.buyIn!=null?_twS.buyIn:50,tb=_twS.potTiebreak||'countback';
+  var radio=function(on){return '<span class="tw-radio'+(on?' on':'')+'"></span>';};
+  var h='<div class="qrw-card qrw-pick"><div class="qrw-rt"><span class="qrw-rn">Buy-in per player</span><span class="qrw-rs">The weekend pot. 0 for no pot.</span></div>'
+    +'<div class="qrw-step5"><button type="button" class="qrw-sbtn" onclick="window._twBuyStep(-5)" aria-label="Less"'+(amt<=0?' disabled':'')+'><i class="ti ti-minus" aria-hidden="true"></i></button>'
+    +'<label class="tw-amt"><span class="qrw-pct">$</span><input id="tw_buyIn" class="tw-amt-in" type="text" inputmode="numeric" value="'+amt+'" aria-label="Buy-in per player" onfocus="this.select()"></label>'
+    +'<button type="button" class="qrw-sbtn" onclick="window._twBuyStep(5)" aria-label="More"><i class="ti ti-plus" aria-hidden="true"></i></button></div>'
+    +'<div class="qrw-hint c">Steps of $5, or tap the amount to type it</div></div>'
+    +'<div class="qrw-lbl">WEEKEND WINNER</div>'
+    +'<div class="qrw-card"><div class="tw-opt fixed"><span class="qrw-rt"><span class="qrw-rn">Net stroke play</span><span class="qrw-rs">Lowest total net across every round</span></span>'+radio(true)+'</div></div>'
+    +'<div class="qrw-lbl">IF PLAYERS TIE</div>'
+    +'<div class="qrw-card" role="radiogroup" aria-label="If players tie">'+_TW_TIES.map(function(o){var on=o[0]===tb;
+      return '<button type="button" class="tw-opt'+(on?' on':'')+'" role="radio" aria-checked="'+on+'" onclick="window._twSetTie(\''+o[0]+'\')"><span class="qrw-rt"><span class="qrw-rn">'+o[1]+'</span><span class="qrw-rs">'+o[2]+'</span></span>'+radio(on)+'</button>';}).join('')+'</div>'
+    +'<div class="qrw-hint c">Games are picked once the trip starts, by each foursome.</div>';
+  return '<div class="qrw" data-tw-step="5">'+_twTop(5)+'<div class="qr-step-t qrw-title">Money</div></div>'
+    +'<div class="qrw-body">'+h+'</div>'+_twFoot('','Create trip')+'</div>';
 }
+window._twBuyStep=function(d){_twStash();var v=(_twS.buyIn!=null?_twS.buyIn:50)+d;if(v<0)v=0;_twS.buyIn=v;_twRender();};
+window._twSetTie=function(v){if(!_TW_TIES.some(function(o){return o[0]===v;}))return;_twStash();_twS.potTiebreak=v;_twRender();};
 
 // ── _twNext: capture + advance ───────────────────────────────────────────────
 window._twNext=function(){
   if(_twS.step===1){
-    const name=(document.getElementById('tw_name')?.value||'').trim();
-    if(!name){alert('Please enter a trip name.');return;}
+    _twStash();
+    const name=(_twS.name||'').trim();
+    if(!name){_twS.nameErr=true;_twRender();var _ne=document.getElementById('tw_name');if(_ne&&_ne.focus)_ne.focus();return;}
+    _twS.nameErr=false;
     _twS.name=name;
-    _twS.date=document.getElementById('tw_date')?.value||'';
-    _twS.region=document.getElementById('tw_region')?.value||'';
-    _twS.numRounds=parseInt(document.getElementById('tw_numRounds')?.value||2);
+    _twS.date=_twS.date||'';
+    _twS.region=(_twS.region||'').trim();
+    _twS.numRounds=Math.max(1,Math.min(6,parseInt(_twS.numRounds,10)||4));
     // Sync courses array length
     while(_twS.courses.length<_twS.numRounds)_twS.courses.push('');
     _twS.courses=_twS.courses.slice(0,_twS.numRounds);
@@ -7260,9 +7326,9 @@ window._twNext=function(){
   }
   if(_twS.step===5){
     // Capture step 5 fields before launch
-    _twS.buyIn=parseFloat(document.getElementById('tw_buyIn')?.value||50)||50;
-    _twS.potMethod=document.getElementById('tw_potMethod')?.value||'netstroke';
-    _twS.potTiebreak=document.getElementById('tw_potTiebreak')?.value||'countback';
+    _twStash();
+    _twS.potMethod='netstroke';
+    _twS.potTiebreak=_twS.potTiebreak||'countback';
     _twLaunch();return;
   }
 };
@@ -7274,7 +7340,7 @@ window._twToggleNetOffLow=function(){
   _twRender();
 };
 window._twBack=function(){
-  if(_twS.step>1){_twS.step--;_twRender();}
+  if(_twS.step>1){_twStash();_twS.step--;_twRender();}
 };
 
 window._twClearCourse=function(i){
@@ -7691,7 +7757,7 @@ function _twLaunch(){
     date:s.date||'',
     region:s.region||'',
     players,rounds,hdcpPct,
-    buyIn:s.buyIn||50,
+    buyIn:(s.buyIn!=null&&isFinite(s.buyIn))?s.buyIn:50,
     potMethod:s.potMethod||'netstroke',
     potTiebreak:s.potTiebreak||'countback',
     mpOn,mpGamesDefault:3,mpGamesPerRound:Array(nR).fill(3),gameVal:5,mpSettle:'perplayer',
