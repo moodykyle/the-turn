@@ -1280,6 +1280,7 @@ body.force-dark .qrw{--qrw-acc:#1D9E75;--qrw-link:#3CC79A;--qrw-lbl:#EDE6D3;--qr
 .qrw-head{padding:22px 16px 6px;flex-shrink:0;}
 .qrw-step{font-size:12px;font-weight:700;letter-spacing:0.08em;color:var(--color-text-secondary);margin-bottom:4px;}
 .qr-step-t.qrw-title{font-size:26px;font-weight:700;letter-spacing:-0.01em;line-height:1.2;}
+.qrw-body>*{flex-shrink:0;}
 .qrw-body{flex:1;overflow-y:auto;padding:14px 16px 20px;display:flex;flex-direction:column;gap:12px;}
 .qrw-search{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 6px 0 14px;background:var(--color-background-primary);border:1.5px solid var(--qrw-acc);border-radius:12px;box-sizing:border-box;}
 .qrw-search>i{font-size:20px;color:var(--color-text-secondary);}
@@ -1319,6 +1320,7 @@ body.force-dark .qrw{--qrw-acc:#1D9E75;--qrw-link:#3CC79A;--qrw-lbl:#EDE6D3;--qr
 .qrw-name-in{border:none;outline:none;background:transparent;padding:0;margin:0;font-size:15px;font-weight:600;color:var(--color-text-primary);font-family:inherit;width:100%;box-shadow:none;}
 .qrw-hint{font-size:12px;color:var(--color-text-secondary);line-height:1.5;padding:0 4px;}
 .qrw-hint.c{text-align:center;padding:0 0 8px;}
+.qrw-hint.qrw-warn{font-size:13px;font-weight:600;}
 .qrw-foot{flex-shrink:0;padding:12px 16px calc(16px + env(safe-area-inset-bottom));border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-page);}
 .qrw-cta{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:100%;height:50px;border-radius:12px;background:#13795B;color:#FFFFFF;font-size:16px;font-weight:600;cursor:pointer;}
 .qrw-cta.off{background:var(--color-background-secondary);color:var(--color-text-tertiary);}
@@ -2160,7 +2162,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.63';
+const APP_VERSION='v123.64';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -2510,9 +2512,12 @@ function _hcpModeLabel(){return _hcpMode()==='round'?'Round index':'Trip index';
 
 // ===== THEME =====
 (function(){
-  const saved=localStorage.getItem('theturn_theme');
+  // v123.64: dark unless the player chose Light or Auto ('system').
+  var saved=null;try{saved=localStorage.getItem('theturn_theme');}catch(e){}
+  try{
   if(saved==='light'){document.documentElement.style.setProperty('color-scheme','light');document.body.classList.add('force-light');}
-  else if(saved==='dark'){document.documentElement.style.setProperty('color-scheme','dark');document.body.classList.add('force-dark');}
+  else if(saved!=='system'){document.documentElement.style.setProperty('color-scheme','dark');document.body.classList.add('force-dark');}
+  }catch(e){}
 })();
 function getThemeState(){
   if(document.body.classList.contains('force-dark'))return'dark';
@@ -2546,7 +2551,7 @@ function toggleTheme(){
     localStorage.setItem('theturn_theme','light');
   } else {
     document.documentElement.style.removeProperty('color-scheme');
-    localStorage.removeItem('theturn_theme');
+    localStorage.setItem('theturn_theme','system');
   }
   updateThemeUI();
   if(document.getElementById('opt-panel-info')&&document.getElementById('opt-panel-info').innerHTML)renderInfoPanel();
@@ -7061,8 +7066,8 @@ function _twTop(idx){
     +'<div class="qrw-bar">'+bar+'</div>'
     +'<div class="qrw-head"><div class="qrw-step">STEP '+idx+' OF '+_TW_TOTAL_STEPS+'</div>';
 }
-function _twFoot(note,label){
-  return '<div class="qrw-foot">'+(note?'<div class="qrw-hint c">'+note+'</div>':'')
+function _twFoot(note,label,warn){
+  return '<div class="qrw-foot">'+(note?'<div class="qrw-hint c'+(warn?' qrw-warn ts-danger':'')+'">'+note+'</div>':'')
     +'<button type="button" class="qrw-cta" onclick="window._twNext()">'+label+'</button></div>';
 }
 var _TW_ICO={
@@ -7134,7 +7139,7 @@ function _twStep1Html(){
       return '<button type="button" role="radio" aria-checked="'+on+'" class="'+(on?'on':'')+'" data-val="'+n+'" onclick="window._twSetRounds(this)"><span>'+n+'</span></button>';}).join('')+'</div>'
     +'<div class="qrw-hint">More rounds can be added to the trip later.</div>';
   return '<div class="qrw" data-tw-step="1">'+_twTop(1)+'<div class="qr-step-t qrw-title">Name your trip</div></div>'
-    +'<div class="qrw-body">'+h+'</div>'+_twFoot(_twS.nameErr?'Name the trip to continue.':'','Continue')+'</div>';
+    +'<div class="qrw-body">'+h+'</div>'+_twFoot(_twS.nameErr?'Name the trip to continue.':'','Continue',!!_twS.nameErr)+'</div>';
 }
 // The pill moves in place (typed text stays); with no switch on screen it redraws after a stash.
 window._twSetRounds=function(el){
@@ -7162,7 +7167,7 @@ function _twStep2Html(){
     +'<div class="qrw-hint c">Guests are saved to the group for future trips. Tap a handicap to change it for this trip.</div>';
   var n=S.length,note=_twS.plErr?'Pick at least 2 players.':(n===0?'None selected':n+' selected');
   return '<div class="qrw" data-tw-step="2">'+_twTop(2)+'<div class="qr-step-t qrw-title">Who&#39;s playing?</div></div>'
-    +'<div class="qrw-body">'+h+'</div>'+_twFoot(note,'Continue')+'</div>';
+    +'<div class="qrw-body">'+h+'</div>'+_twFoot(note,'Continue',!!_twS.plErr)+'</div>';
 }
 
 // Step 3: Handicaps. v123.63: the round wizard's stepper and switch.
@@ -7265,7 +7270,7 @@ function _twPickHtml(i){
       +'<button type="button" class="qrw-change" onclick="window._twClearCourse('+i+')">Change</button></div>'
       +_twTeesHtml(i)+'</div>';
   }
-  return '<div class="qrw" data-tw-step="4" data-tw-pick="'+i+'">'+_twTop(4)+'<div class="qr-step-t qrw-title">Round '+(i+1)+'</div><div class="qrw-sub">Choose its course and tees.</div></div>'
+  return '<div class="qrw" data-tw-step="4" data-tw-pick="'+i+'">'+_twTop(4)+'<div class="qr-step-t qrw-title">Round '+(i+1)+'</div><div class="qrw-sub">'+(_twS.walk?'Round '+(i+1)+' of '+_twS.numRounds+'. The next empty round opens after you pick.':'Choose its course and tees.')+'</div></div>'
     +'<div class="qrw-body">'+h+'</div>'
     +'<div class="qrw-foot"><button type="button" class="qrw-cta'+(cn?'':' off')+'" onclick="window._twPickBack()">Done</button></div></div>';
 }
@@ -7276,8 +7281,16 @@ function _twTeesHtml(i){
     return _qrChipHtml(t,sel.gender===g&&sel.teeName===t.tee_name,"window._twTeeChip("+i+",'"+g+"',"+k+")");}).join('');},
     {open:'_twTeeOpen',state:_twS.teeOpen});
 }
-window._twOpenRound=function(i){if(!(i>=0&&i<_twS.numRounds))return;_twS.pick=i;_twS.teeOpen='';_twS.near=null;_twS.nearErr='';_twS.nearAsk=false;_twRender();};
-window._twPickBack=function(){_twS.pick=null;_twS.teeOpen='';_twRender();};
+window._twOpenRound=function(i){if(!(i>=0&&i<_twS.numRounds))return;_twS.walk=!_twS.courses[i];_twS.pick=i;_twS.teeOpen='';_twS.near=null;_twS.nearErr='';_twS.nearAsk=false;_twRender();};
+window._twPickBack=function(){_twS.pick=null;_twS.walk=false;_twS.teeOpen='';_twRender();};
+// v123.64: after a pick, the next empty round (from the one after, wrapping) when walking; else the list.
+function _twAfterPick(i){
+  _twS.teeOpen='';_twS.near=null;_twS.nearErr='';_twS.nearAsk=false;
+  var n=_twS.numRounds,next=null;
+  if(_twS.walk)for(var k=1;k<=n;k++){var j=(i+k)%n;if(!_twS.courses[j]){next=j;break;}}
+  _twS.pick=next;if(next===null)_twS.walk=false;
+  _twRender();
+}
 window._twPickListed=function(i,k){var cn=window._twListStash&&window._twListStash[k];if(cn)window._twPickCourse(i,cn);};
 window._twTeeOpen=function(g){_twS.teeOpen=(_twS.teeOpen===g)?'':g;_twRender();};
 window._twTeeChip=function(i,g,k){
@@ -7467,7 +7480,7 @@ window._twRoundImport=async function(i,ri){
     for(let j=0;j<nR;j++){const s=document.getElementById('tw_csearch'+j);if(s)_twS.courses[j]=_twS.courses[j]||'';}
     _twS.courses[i]=finalName;
     _twS.tees[i]={gender:defG,teeName:defT?.tee_name||''};
-    _twRender();
+    _twAfterPick(i);
   }catch(e){
     if(el)el.innerHTML='<div style="font-size:12px;color:#DC2626">'+_gcaFailMsg(e,'Import failed.')+'</div>';
   }
@@ -7537,7 +7550,7 @@ window._twPickCourse=function(i,cn){
     const d=m.length>1?m[1]:m[0]||f[0];
     if(d)_twS.tees[i]={gender:m.indexOf(d)>=0?'male':'female',teeName:d.tee_name};
   }else{_twS.tees[i]={};}
-  _twRender();
+  _twAfterPick(i);
 };
 window._twSetTee=function(i,gender,teeName){_twS.tees[i]={gender,teeName};};
 window._twCancel=function(){
