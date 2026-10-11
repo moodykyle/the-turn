@@ -2081,7 +2081,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.53';
+const APP_VERSION='v123.54';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -6081,7 +6081,7 @@ window._qrNext=function(){
     if(gid&&members.length>0){
       (_qrS.selectedMembers||[]).forEach(function(s){const el=document.getElementById('qrhcp_'+s.member_id);if(el)s.hcp_index=idxFromInput(el.value,(s.hcp_index!=null?s.hcp_index:0));});
       if(!_qrS.selectedMembers||_qrS.selectedMembers.length<2){alert('Please select at least 2 players.');return;}
-      _qrS.n=_qrS.selectedMembers.length;
+      // v123.54: n stays the selection ceiling (TW_MAX_PLAYERS); overwriting it capped the picker after Back.
     } else {
       const pl=[];for(let i=0;i<_qrS.n;i++){pl.push({first:(document.getElementById('qrfirst'+i)?.value||'').trim()||('Player '+(i+1)),last:(document.getElementById('qrlast'+i)?.value||'').trim(),idx:idxFromInput(document.getElementById('qridx'+i)?.value||'',10)});}
       _qrS.players=pl;
@@ -6914,8 +6914,13 @@ function _twFooter(nextLabel,backLabel){
   const bAction=_twS.step>1?'window._twBack()':'window._twCancel()';
   return`<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary);">`+
     `<button style="width:100%;background:#1D9E75;color:#fff;border:none;border-radius:var(--border-radius-md);padding:13px;font-size:15px;font-weight:500;cursor:pointer;" onclick="window._twNext()">${nLbl}</button></div>`+
-    `<div style="padding:10px 20px;text-align:center;border-top:0.5px solid var(--color-border-tertiary);">`+
-    `<button style="font-size:14px;color:var(--color-text-tertiary);background:none;border:none;cursor:pointer;" onclick="${bAction}">${bLbl}</button></div>`;
+    // v123.54: every screen after the first has Back and Cancel (Kyle: "no way to cancel out of it").
+    (_twS.step>1
+      ?`<div style="display:flex;justify-content:space-between;padding:10px 20px;border-top:0.5px solid var(--color-border-tertiary);">`+
+        `<button style="font-size:14px;color:var(--color-text-tertiary);background:none;border:none;cursor:pointer;" onclick="window._twBack()">${bLbl==='Back'?'\u2190 Back':bLbl}</button>`+
+        `<button style="font-size:14px;color:var(--color-text-tertiary);background:none;border:none;cursor:pointer;" onclick="window._twCancel()">Cancel</button></div>`
+      :`<div style="padding:10px 20px;text-align:center;border-top:0.5px solid var(--color-border-tertiary);">`+
+        `<button style="font-size:14px;color:var(--color-text-tertiary);background:none;border:none;cursor:pointer;" onclick="${bAction}">${bLbl}</button></div>`);
 }
 
 function _twStepHtml(){
