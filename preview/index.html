@@ -1247,6 +1247,15 @@ body.force-dark .pg-title{color:#EFC456;}
 .tw-tl{font-size:12px;color:var(--color-text-secondary);}
 .tw-in{border:none;outline:none;background:transparent;padding:0;margin:0;width:100%;font-size:16px;font-weight:600;color:var(--color-text-primary);font-family:inherit;}
 .tw-in::placeholder{color:var(--color-text-tertiary);font-weight:500;}
+/* v123.63: iPhone Safari centres a date input's value; keep it with the label */
+.tw-in[type=date]{-webkit-appearance:none;appearance:none;display:block;min-height:1.4em;text-align:left;}
+.tw-in::-webkit-date-and-time-value{text-align:left;margin:0;}
+.tw-rds{display:flex;flex-direction:column;gap:10px;}
+.tw-rd{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.tw-rd.empty{border:1.5px dashed var(--color-border-secondary);}
+.tw-rd.empty .qrw-rn{font-weight:500;color:var(--color-text-secondary);}
+.tw-rdn{width:40px;height:40px;border-radius:10px;background:var(--color-background-secondary);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;font-weight:700;line-height:1.05;}
+.tw-rdn small{font-size:9px;font-weight:700;letter-spacing:0.06em;color:var(--color-text-secondary);}
 .tw-amt{display:flex;align-items:baseline;justify-content:center;gap:2px;cursor:text;}
 .tw-amt-in{width:4ch;border:none;outline:none;background:transparent;padding:0;margin:0;text-align:left;font-size:36px;font-weight:700;color:var(--qrw-title);font-family:inherit;}
 .tw-opt{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:8px 14px;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -2151,7 +2160,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.62';
+const APP_VERSION='v123.63';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5842,24 +5851,31 @@ function _qrTeeYds(t){
   if(!(y>0))y=(Array.isArray(t.holes)?t.holes:[]).reduce(function(a,h){return a+(+(h&&h.yardage)||0);},0);
   return y>0?y.toLocaleString('en-US')+' yds':'';
 }
-function _qrTeesHtml(m,f,sel,chips){
+// v123.63: api {open, state} lets the trip wizard use this too (default: the round wizard).
+function _qrChipHtml(t,on,js){
+  return '<button type="button" class="qrw-chip'+(on?' on':'')+'" onclick="'+js+'" aria-pressed="'+on+'"><span>'+_gtEsc(t.tee_name)+'</span>'
+    +(_qrTeeYds(t)?'<small class="qrw-yd">'+_gtEsc(_qrTeeYds(t))+'</small>':'')
+    +(t.course_rating&&t.slope_rating?'<small>'+_gtEsc(t.course_rating+' / '+t.slope_rating)+'</small>':'')+'</button>';
+}
+function _qrTeesHtml(m,f,sel,chips,api){
+  api=api||{open:'_qrTeeOpen',state:_qrS.teeOpen};
   if(!m.length&&!f.length)return'';
-  var both=m.length&&f.length,open=_qrS.teeOpen||'';
+  var both=m.length&&f.length,open=api.state||'';
   var G=[['male',m,"MEN'S TEES"],['female',f,"WOMEN'S TEES"]].filter(function(x){return x[1].length;});
   if(!open){
     var g=sel.gender||(m.length?'male':'female'),list=g==='female'?f:m;
     var t=list.find(function(x){return x.tee_name===sel.teeName;})||null;
     var rs=t&&t.course_rating&&t.slope_rating?t.course_rating+' / '+t.slope_rating:'';
     var sub=[both?(g==='female'?"Women's":"Men's"):'',_qrTeeYds(t),rs].filter(Boolean).join(' · ');
-    return '<button type="button" class="qrw-teerow" onclick="window._qrTeeOpen(\''+g+'\')" aria-expanded="false"><span class="qrw-ico lg">'+_QRW_TEE_SVG+'</span>'
+    return '<button type="button" class="qrw-teerow" onclick="window.'+api.open+'(\''+g+'\')" aria-expanded="false"><span class="qrw-ico lg">'+_QRW_TEE_SVG+'</span>'
       +'<span class="qrw-rt"><span class="qrw-pn">'+_gtEsc(t?t.tee_name:'Choose a tee')+'</span>'+(sub?'<span class="qrw-rs">'+_gtEsc(sub)+'</span>':'')+'</span><span class="qrw-change">Change</span></button>';
   }
   return G.map(function(x){var on=open===x[0];
     var cnt=both?(x[0]==='female'?"Women's tees":"Men's tees")+' · '+x[1].length:x[1].length+(x[1].length===1?' tee':' tees');
     return (on
-      ?'<button type="button" class="qrw-teerow" onclick="window._qrTeeOpen(\''+x[0]+'\')" aria-expanded="true"><span class="qrw-ico lg">'+_QRW_TEE_SVG+'</span>'
+      ?'<button type="button" class="qrw-teerow" onclick="window.'+api.open+'(\''+x[0]+'\')" aria-expanded="true"><span class="qrw-ico lg">'+_QRW_TEE_SVG+'</span>'
         +'<span class="qrw-rt"><span class="qrw-pn">Pick a tee</span><span class="qrw-rs">'+_gtEsc(cnt)+'</span></span><span class="qrw-change">Done</span></button>'
-      :'<button type="button" class="qrw-teehd" onclick="window._qrTeeOpen(\''+x[0]+'\')" aria-expanded="false"><span class="qrw-lbl">'+(both?x[2]:'TEES')+' · '+x[1].length+'</span>'
+      :'<button type="button" class="qrw-teehd" onclick="window.'+api.open+'(\''+x[0]+'\')" aria-expanded="false"><span class="qrw-lbl">'+(both?x[2]:'TEES')+' · '+x[1].length+'</span>'
         +'<i class="ti ti-chevron-right" aria-hidden="true"></i></button>')
       +(on?'<div class="qrw-chips">'+chips(x[1],x[0])+'</div>':'');}).join('');
 }
@@ -5889,9 +5905,7 @@ function _qrCourseStepHtml(first,total,idx){
   } else {
     var cat=CATALOG[c]||{},pl=_qrwPlace(c),tees=cat.tees||{},m=tees.male||[],f=tees.female||[],sel=_qrS.tee||{};
     var chips=function(list,g){return list.map(function(t,i){var on=sel.gender===g&&sel.teeName===t.tee_name;
-      return '<button type="button" class="qrw-chip'+(on?' on':'')+'" onclick="window._qrTeeChip(\''+g+'\','+i+')" aria-pressed="'+on+'"><span>'+_gtEsc(t.tee_name)+'</span>'
-        +(_qrTeeYds(t)?'<small class="qrw-yd">'+_gtEsc(_qrTeeYds(t))+'</small>':'')
-        +(t.course_rating&&t.slope_rating?'<small>'+_gtEsc(t.course_rating+' / '+t.slope_rating)+'</small>':'')+'</button>';}).join('');};
+      return _qrChipHtml(t,on,"window._qrTeeChip('"+g+"',"+i+")");}).join('');};
     h+='<div class="qrw-card qrw-pick"><div class="qrw-pickhd"><span class="qrw-ico lg"><i class="ti ti-flag-3" aria-hidden="true"></i></span>'
       +'<span class="qrw-rt"><span class="qrw-pn">'+_gtEsc(courseDisp(c))+'</span>'+(pl?'<span class="qrw-rs">'+_gtEsc(pl)+'</span>':'')+'</span>'
       +'<button type="button" class="qrw-change" onclick="window._qrClearCourse()">Change</button></div>'
@@ -5920,31 +5934,52 @@ function _qrwFoot(note,label){
     +'<button type="button" class="qrw-cta" onclick="window._qrNext()">'+label+'</button></div>';
 }
 var _QRW_CHECK='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>';
+// v123.63: one Select all row, member row and allowance card for both wizards ('qr' round, 'tw' trip).
+var _WIZ_NS={qr:{tog:'_qrToggleMember',all:'_qrSelectAll',hcp:'qrhcp_',aria:'Handicap for this round',step:'_qrHdcpStep',pct:'qrHdcpPct',low:'qrNetOffLow',st:'_qrS'},
+  tw:{tog:'_twToggleMember',all:'_twSelectAll',hcp:'tw_hcp_',aria:'Handicap for this trip',step:'_twHdcpStep',pct:'tw_hdcpPct',low:'tw_netOffLow',st:'_twS'}};
+function _wizSelAllRow(ns,name,count,all){
+  var N=_WIZ_NS[ns];
+  return '<div class="qrw-lblrow"><span class="qrw-lbl">'+_gtEsc(name)+' · '+count+'</span>'
+    +(count>1?'<button type="button" class="qrw-change" onclick="window.'+N.all+'('+(all?0:1)+')">'+(all?'Clear':'Select all')+'</button>':'')+'</div>';
+}
+function _wizMemberRow(ns,m,midx,sel,me){
+  var N=_WIZ_NS[ns];
+  var isManaged=!m.user_id,isMe=!!(me&&m.user_id===me.id);
+  var ini=(m.display_name||'??').split(' ').filter(Boolean).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
+  var c=AVATAR_PALETTE[midx%AVATAR_PALETTE.length];
+  // v123.55: a 0 index is a value, not a blank (a scratch member's box was empty).
+  var hv=sel?((sel.hcp_index!=null&&sel.hcp_index!=='')?sel.hcp_index:(m.hcp_index!=null?m.hcp_index:'')):(m.hcp_index!=null?m.hcp_index:'');
+  var hd=(hv===''||hv==null)?'':(hv<0?'+'+Math.abs(hv):(''+hv));
+  var mid=_gtEsc(m.member_id);
+  var tag=isMe?'You':(isManaged?'Managed':'');
+  return '<div class="qrw-row qrw-mem'+(sel?' on':'')+'" role="button" tabindex="0" aria-pressed="'+!!sel+'" onclick="window.'+N.tog+'(\''+mid+'\')">'
+    +'<span class="qrw-av" style="background:'+c.bg+';color:'+c.fg+';'+(isManaged?'border:1.5px dashed '+c.fg+';':'')+'">'+_gtEsc(ini)+'</span>'
+    +'<span class="qrw-rt"><span class="qrw-rn">'+_gtEsc(m.display_name||'')+'</span>'+(tag?'<span class="qrw-rs">'+tag+'</span>':'')+'</span>'
+    +(sel?'<input id="'+N.hcp+mid+'" class="qrw-hbox" type="text" inputmode="decimal" value="'+_gtEsc(hd)+'" onclick="event.stopPropagation()" aria-label="'+N.aria+'"/>'
+      :'<span class="qrw-hbox off">'+(m.hcp_index==null?'-':(m.hcp_index<0?'+'+Math.abs(m.hcp_index):m.hcp_index))+'</span>')
+    +'<span class="qrw-chk">'+(sel?_QRW_CHECK:'')+'</span></div>';
+}
+function _wizPct(p){if(p<50)p=50;if(p>100)p=100;return p;}
+function _wizAllowHtml(ns,pct,low){
+  var N=_WIZ_NS[ns];
+  return '<div class="qrw-card qrw-pick"><div class="qrw-rt"><span class="qrw-rn">Handicap allowance</span><span class="qrw-rs">Share of each player&#39;s index used for strokes</span></div>'
+    +'<div class="qrw-step5"><button type="button" class="qrw-sbtn" onclick="window.'+N.step+'(-5)" aria-label="Less"'+(pct<=50?' disabled':'')+'><i class="ti ti-minus" aria-hidden="true"></i></button>'
+    +'<span class="qrw-pct">'+pct+'%</span>'
+    +'<button type="button" class="qrw-sbtn" onclick="window.'+N.step+'(5)" aria-label="More"'+(pct>=100?' disabled':'')+'><i class="ti ti-plus" aria-hidden="true"></i></button></div>'
+    +'<input type="hidden" id="'+N.pct+'" value="'+pct+'">'
+    +'<div class="qrw-hint c">'+(pct===100?'Full handicap. ':'')+'Steps of 5%, from 50% to 100%</div></div>'
+    +'<div class="qrw-card qrw-tog"><div class="qrw-rt"><span class="qrw-rn">Play off the low man</span><span class="qrw-rs">The best player gets 0 and everyone else gets the difference</span></div>'
+    +'<label class="toggle"><input type="checkbox" id="'+N.low+'"'+(low?' checked':'')+' onchange="'+N.st+'.netOffLow=this.checked" aria-label="Play off the low man"><span class="toggle-slider"></span></label></div>';
+}
 function _qrPlayersStepHtml(){
   var gid=window._pendingGroupId,grp=gid?_groupCache[gid]:null,members=(grp&&grp._members)||[],me=sbCurrentUser();
   var h='',note='',sub='';
   if(gid&&members.length>0){
     var S=_qrS.selectedMembers||[];
     var all=members.every(function(m){return S.some(function(s){return s.member_id===m.member_id;});});
-    h+='<div class="qrw-lblrow"><span class="qrw-lbl">'+_gtEsc(grp.name||'Group')+' · '+members.length+'</span>'
-      +(members.length>1?'<button type="button" class="qrw-change" onclick="window._qrSelectAll('+(all?0:1)+')">'+(all?'Clear':'Select all')+'</button>':'')+'</div>';
+    h+=_wizSelAllRow('qr',grp.name||'Group',members.length,all);
     h+='<div class="qrw-card">'+members.map(function(m,midx){
-      var sel=S.find(function(s){return s.member_id===m.member_id;});
-      var isManaged=!m.user_id,isMe=!!(me&&m.user_id===me.id);
-      var ini=(m.display_name||'??').split(' ').filter(Boolean).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
-      var c=AVATAR_PALETTE[midx%AVATAR_PALETTE.length];
-      // v123.55: a 0 index is a value, not a blank (a scratch member's box was empty).
-      var hv=sel?((sel.hcp_index!=null&&sel.hcp_index!=='')?sel.hcp_index:(m.hcp_index!=null?m.hcp_index:'')):(m.hcp_index!=null?m.hcp_index:'');
-      var hd=(hv===''||hv==null)?'':(hv<0?'+'+Math.abs(hv):(''+hv));
-      var mid=_gtEsc(m.member_id);
-      var tag=isMe?'You':(isManaged?'Managed':'');
-      return '<div class="qrw-row qrw-mem'+(sel?' on':'')+'" role="button" tabindex="0" aria-pressed="'+!!sel+'" onclick="window._qrToggleMember(\''+mid+'\')">'
-        +'<span class="qrw-av" style="background:'+c.bg+';color:'+c.fg+';'+(isManaged?'border:1.5px dashed '+c.fg+';':'')+'">'+_gtEsc(ini)+'</span>'
-        +'<span class="qrw-rt"><span class="qrw-rn">'+_gtEsc(m.display_name||'')+'</span>'+(tag?'<span class="qrw-rs">'+tag+'</span>':'')+'</span>'
-        +(sel?'<input id="qrhcp_'+mid+'" class="qrw-hbox" type="text" inputmode="decimal" value="'+_gtEsc(hd)+'" onclick="event.stopPropagation()" aria-label="Handicap for this round"/>'
-          :'<span class="qrw-hbox off">'+(m.hcp_index==null?'-':(m.hcp_index<0?'+'+Math.abs(m.hcp_index):m.hcp_index))+'</span>')
-        +'<span class="qrw-chk">'+(sel?_QRW_CHECK:'')+'</span></div>';
-    }).join('')+'</div>';
+      return _wizMemberRow('qr',m,midx,S.find(function(s){return s.member_id===m.member_id;}),me);}).join('')+'</div>';
     h+='<div class="qrw-hint c">Tap a handicap to change it for this round.</div>';
     var n=S.length;note=n===0?'None selected':n+' selected'+(n>_qrS.n?' - max '+_qrS.n:'');
   } else {
@@ -5982,21 +6017,13 @@ window._qrRemoveRow=function(i){
 };
 function _qrHcpStepHtml(){
   var pct=Math.round((_qrS.hdcpPct||1)*100);
-  var h='<div class="qrw-card qrw-pick"><div class="qrw-rt"><span class="qrw-rn">Handicap allowance</span><span class="qrw-rs">Share of each player&#39;s index used for strokes</span></div>'
-    +'<div class="qrw-step5"><button type="button" class="qrw-sbtn" onclick="window._qrHdcpStep(-5)" aria-label="Less"'+(pct<=50?' disabled':'')+'><i class="ti ti-minus" aria-hidden="true"></i></button>'
-    +'<span class="qrw-pct">'+pct+'%</span>'
-    +'<button type="button" class="qrw-sbtn" onclick="window._qrHdcpStep(5)" aria-label="More"'+(pct>=100?' disabled':'')+'><i class="ti ti-plus" aria-hidden="true"></i></button></div>'
-    +'<input type="hidden" id="qrHdcpPct" value="'+pct+'">'
-    +'<div class="qrw-hint c">'+(pct===100?'Full handicap. ':'')+'Steps of 5%, from 50% to 100%</div></div>'
-    +'<div class="qrw-card qrw-tog"><div class="qrw-rt"><span class="qrw-rn">Play off the low man</span><span class="qrw-rs">The best player gets 0 and everyone else gets the difference</span></div>'
-    +'<label class="toggle"><input type="checkbox" id="qrNetOffLow"'+(_qrS.netOffLow?' checked':'')+' onchange="_qrS.netOffLow=this.checked" aria-label="Play off the low man"><span class="toggle-slider"></span></label></div>';
+  var h=_wizAllowHtml('qr',pct,_qrS.netOffLow);
   return '<div class="qrw" data-qr-step="4">'+_qrwTop(false,3,3)+'<div class="qr-step-t qrw-title">Handicaps</div></div>'
     +'<div class="qrw-body">'+h+'</div>'+_qrwFoot('','Create round')+'</div>';
 }
 window._qrHdcpStep=function(d){
   var ne=document.getElementById('qrNetOffLow');if(ne)_qrS.netOffLow=!!ne.checked;
-  var p=Math.round((_qrS.hdcpPct||1)*100)+d;if(p<50)p=50;if(p>100)p=100;
-  _qrS.hdcpPct=p/100;_qrRender();
+  _qrS.hdcpPct=_wizPct(Math.round((_qrS.hdcpPct||1)*100)+d)/100;_qrRender();
 };
 window._qrPickCourse=function(cn){
   _qrS.course=cn;
@@ -7021,14 +7048,14 @@ function _twRender(){
   if(sc)sc.scrollTop=y;
   const nb=_qb();if(nb)nb.scrollTop=y2;
 }
-// v123.62: which screens wear the round wizard's look (v123.63 adds 2 to 4).
-function _twNewLook(){return _twS.step===1||_twS.step===5;}
+// v123.62: which screens wear the round wizard's look; v123.63: all five.
+function _twNewLook(){return _twS.step>=1&&_twS.step<=5;}
 function _twTop(idx){
   var g=window._pendingGroupId&&_groupCache[window._pendingGroupId];
   var ctx=(g&&g.name?_gtEsc(g.name)+' · ':'')+'New trip';
   var bar='';for(var i=0;i<_TW_TOTAL_STEPS;i++)bar+='<span'+(i<idx?' class="on"':'')+'></span>';
   return '<div class="qrw-top">'
-    +(idx===1?'<span class="qrw-ib"></span>':'<button type="button" class="qrw-ib" onclick="window._twBack()" aria-label="Back"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>')
+    +(idx===1?'<span class="qrw-ib"></span>':'<button type="button" class="qrw-ib" onclick="window.'+(idx===4&&_twS.pick!=null?'_twPickBack':'_twBack')+'()" aria-label="Back"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>')
     +'<span class="qrw-ctx">'+ctx+'</span>'
     +'<button type="button" class="qrw-ib" onclick="window._twCancel()" aria-label="Cancel"><i class="ti ti-x" aria-hidden="true"></i></button></div>'
     +'<div class="qrw-bar">'+bar+'</div>'
@@ -7120,80 +7147,35 @@ window._twSetRounds=function(el){
   pill.style.transform='translateX('+((n-1)*100)+'%)';
 };
 
-// Step 2: Players (member picker)
+// Step 2: Players. v123.63: the round wizard's member rows. The handicap boxes keep their tw_hcp_ ids,
+// which _twToggleMember, _twSelectAll and _twNext read before anything redraws.
 function _twStep2Html(){
-  const gid=window._pendingGroupId;
-  const grp=gid?_groupCache[gid]:null;
-  const members=(grp?._members)||[];
-  const groupName=grp?grp.name:'your group';
-  const me=sbCurrentUser();
-  let rows='';
-  members.forEach((m,idx)=>{
-    const sel=_twS.selectedMembers.some(s=>s.member_id===m.member_id);
-    const isManaged=!m.user_id;
-    const isMe=me&&m.user_id===me.id;
-    const ini=(m.display_name||'??').split(' ').filter(Boolean).map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
-    const c=AVATAR_PALETTE[idx%AVATAR_PALETTE.length];
-    const selBg=sel?'rgba(29,158,117,0.07)':'transparent';
-    const hcpVal=sel?(_twS.selectedMembers.find(s=>s.member_id===m.member_id)?.hcp_index??m.hcp_index??''):( m.hcp_index!=null?m.hcp_index:'');
-    const hcpDisp=(hcpVal===''||hcpVal==null)?'':(hcpVal<0?'+'+Math.abs(hcpVal):(''+hcpVal));
-    const hcpInput=sel
-      ?`<input id="tw_hcp_${m.member_id}" type="text" value="${hcpDisp}" style="width:52px;padding:5px 6px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;text-align:center;" onclick="event.stopPropagation()"/>`
-      :`<span style="font-size:13px;color:var(--color-text-tertiary);min-width:52px;text-align:center;display:inline-block;">${m.hcp_index==null?'-':(m.hcp_index<0?'+'+Math.abs(m.hcp_index):m.hcp_index)}</span>`;
-    const checkEl=sel
-      ?`<span style="width:22px;height:22px;border-radius:50%;background:#1D9E75;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ti-check" style="font-size:14px;color:#fff;"></i></span>`
-      :`<span style="width:22px;height:22px;border-radius:50%;border:1.5px solid var(--color-border-secondary);flex-shrink:0;box-sizing:border-box;"></span>`;
-    const badges=(isMe?`<span style="font-size:10px;font-weight:500;color:#185FA5;background:var(--color-background-info);border-radius:4px;padding:1px 6px;margin-left:4px;">You</span>`:'')+(isManaged?`<span style="font-size:10px;color:var(--color-text-secondary);background:var(--color-background-secondary);border-radius:4px;padding:1px 6px;margin-left:4px;">Managed</span>`:'');
-    rows+=`<div onclick="window._twToggleMember('${m.member_id}')" style="display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:var(--border-radius-md);background:${selBg};cursor:pointer;margin-bottom:2px;">`+
-      `<div style="width:34px;height:34px;border-radius:50%;background:${c.bg};color:${c.fg};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0;${isManaged?`border:1.5px dashed ${c.fg};box-sizing:border-box;`:''}"">${ini}</div>`+
-      `<div style="flex:1;">`+
-        `<div style="font-size:13px;${sel?'font-weight:500;':''}color:var(--color-text-${sel?'primary':'secondary'});">${m.display_name||'?'}${badges}</div>`+
-      `</div>`+
-      hcpInput+checkEl+
-    `</div>`;
-  });
-  // Add guest row
-  rows+=`<div onclick="window._twShowAddGuest()" style="display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:var(--border-radius-md);border:0.5px dashed var(--color-border-secondary);cursor:pointer;margin-top:4px;">`+
-    `<div style="width:34px;height:34px;border-radius:50%;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ti-plus" style="font-size:18px;color:var(--color-text-secondary);"></i></div>`+
-    `<div><div style="font-size:13px;color:var(--color-text-secondary);">Add guest</div><div style="font-size:11px;color:var(--color-text-tertiary);">Saved to the group for future trips</div></div>`+
-  `</div>`;
-  const _allSel=members.length>0&&members.every(function(m){
-    return _twS.selectedMembers.some(function(s){return s.member_id===m.member_id;});});
-  const _bulk=members.length>1
-    ?`<div style="display:flex;align-items:center;justify-content:space-between;padding:2px 8px 6px;">`
-      +`<span style="font-size:11px;color:var(--color-text-tertiary);">${members.length} in this group</span>`
-      +`<span onclick="window._twSelectAll(${_allSel?0:1})" style="font-size:12px;font-weight:500;color:#1D9E75;cursor:pointer;padding:4px 2px;">${_allSel?'Clear':'Select all'}</span>`
-      +`</div>`
-    :'';
-  const selCount=_twS.selectedMembers.length;
-  const tooMany=selCount>TW_MAX_PLAYERS;
-  const canNext=selCount>=2&&selCount<=TW_MAX_PLAYERS;
-  const countLabel=selCount===0?'None selected':`${selCount} selected${tooMany?' - max '+TW_MAX_PLAYERS:''}`;
-  return _twHeader('New trip','Players',`Pick who is playing from ${groupName}.`)+
-    `<div id="tw_guestError" style="display:none;margin:8px 16px 0;padding:8px 12px;background:#FAEEDA;border:0.5px solid #EFB880;border-radius:var(--border-radius-md);font-size:12px;color:#633806;"></div>`+
-    `<div style="padding:6px 12px 6px;">${_bulk}${rows}</div>`+
-    `<div style="padding:10px 20px 0;border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:12px;">`+
-    `<div style="font-size:12px;color:${tooMany?'#C0392B':'var(--color-text-secondary)'};">${countLabel}</div></div>`+
-    _twFooter('Next','Back');
+  var gid=window._pendingGroupId,grp=gid?_groupCache[gid]:null,members=(grp&&grp._members)||[],me=sbCurrentUser();
+  var S=_twS.selectedMembers||[],h='';
+  var all=members.length>0&&members.every(function(m){return S.some(function(s){return s.member_id===m.member_id;});});
+  h+='<div id="tw_guestError" class="ts-danger" style="display:none;font-size:13px;font-weight:600;text-align:center"></div>';
+  h+=_wizSelAllRow('tw',(grp&&grp.name)||'Group',members.length,all);
+  if(members.length)h+='<div class="qrw-card">'+members.map(function(m,midx){
+    return _wizMemberRow('tw',m,midx,S.find(function(x){return x.member_id===m.member_id;}),me);}).join('')+'</div>';
+  else h+='<div class="qrw-empty">No one in the group yet. Add a guest to start.</div>';
+  h+='<button type="button" class="qrw-add" onclick="window._twShowAddGuest()"><i class="ti ti-plus" aria-hidden="true"></i> Add guest</button>'
+    +'<div class="qrw-hint c">Guests are saved to the group for future trips. Tap a handicap to change it for this trip.</div>';
+  var n=S.length,note=_twS.plErr?'Pick at least 2 players.':(n===0?'None selected':n+' selected');
+  return '<div class="qrw" data-tw-step="2">'+_twTop(2)+'<div class="qr-step-t qrw-title">Who&#39;s playing?</div></div>'
+    +'<div class="qrw-body">'+h+'</div>'+_twFoot(note,'Continue')+'</div>';
 }
 
-// Step 3: Handicap options
+// Step 3: Handicaps. v123.63: the round wizard's stepper and switch.
 function _twStep3Html(){
-  return _twHeader('New trip','Handicap options','')+
-    `<div style="padding:14px 20px;">`+
-    `<div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;">`+
-    `<div style="padding:12px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:10px;">`+
-    `<div style="flex:1;"><div style="font-size:13px;color:var(--color-text-primary);">Handicap adjustment</div><div style="font-size:11px;color:var(--color-text-secondary);">% of USGA index applied to strokes</div></div>`+
-    `<select id="tw_hdcpPct" class="course-select" style="width:72px;">`+
-    [100,95,90,85,80,75,70,65,60,55,50].map(v=>`<option value="${v}"${_twS.hdcpPct===v?' selected':''}>${v}%</option>`).join('')+
-    `</select></div>`+
-    `<div onclick="window._twToggleNetOffLow()" style="padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer;">`+
-    `<div style="flex:1;"><div style="font-size:13px;color:var(--color-text-primary);">Net off low man</div><div style="font-size:11px;color:var(--color-text-secondary);">Lowest index plays off scratch</div></div>`+
-    `<div style="width:42px;height:24px;border-radius:12px;background:${_twS.netOffLow?'#1D9E75':'var(--color-border-secondary)'};position:relative;flex-shrink:0;">`+
-    `<span style="position:absolute;top:2px;${_twS.netOffLow?'right':'left'}:2px;width:20px;height:20px;border-radius:50%;background:#fff;"></span></div>`+
-    `</div></div></div>`+
-    _twFooter('Next','Back');
+  var pct=Math.max(50,Math.min(100,parseInt(_twS.hdcpPct,10)||100));
+  var h=_wizAllowHtml('tw',pct,_twS.netOffLow);
+  return '<div class="qrw" data-tw-step="3">'+_twTop(3)+'<div class="qr-step-t qrw-title">Handicaps</div></div>'
+    +'<div class="qrw-body">'+h+'</div>'+_twFoot('','Continue')+'</div>';
 }
+window._twHdcpStep=function(d){
+  var ne=document.getElementById('tw_netOffLow');if(ne)_twS.netOffLow=!!ne.checked;
+  _twS.hdcpPct=_wizPct((parseInt(_twS.hdcpPct,10)||100)+d);_twRender();
+};
 
 // Step 4: Courses
 
@@ -7230,34 +7212,95 @@ function _buildTeePicker(courseName,selectedGender,selectedTee,onchangeJs){
     +'<span style="position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:12px;color:#1D9E75;pointer-events:none">&#9662;</span>'
     +'</div>';
 }
-function _twStep4Html(){
-  const nR=_twS.numRounds;
-  let fields='';
-  for(let i=0;i<nR;i++){
-    const curVal=_twS.courses[i]||'';
-    const curTee=_twS.tees[i]||{};
-    const teePkr=curVal?_buildTeePicker(curVal,curTee.gender,curTee.teeName,
-      `var _v=event.target.value.split('|');window._twSetTee(${i},_v[0],_v[1])`):'';
-    // Show selected course name + Change link, or search box if nothing selected
-    const courseDisplay=curVal
-      ?`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);">`
-        +`<span style="flex:1;font-size:13px;font-weight:500">${curVal}</span>`
-        +`<button class="btn-sm" onclick="window._twClearCourse(${i})">Change</button>`
-        +`</div>${teePkr}`
-      :`<div style="display:flex;align-items:center;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);overflow:hidden;margin-bottom:4px">`
-        +`<input class="text-input" id="tw_csearch${i}" placeholder="Search by name..." style="flex:1;border:none;box-shadow:none;border-radius:0;margin:0" onkeydown="if(event.key==='Enter')window._twRoundSearch(${i})"/>`
-        +`<button onclick="window._twRoundSearch(${i})" style="border:none;background:transparent;padding:9px 12px;cursor:pointer;border-left:0.5px solid var(--color-border-tertiary);color:#1D9E75;display:flex;align-items:center;flex-shrink:0" aria-label="Search"><i class="ti ti-search" style="font-size:16px" aria-hidden="true"></i></button>`
-        +`</div>`
-        +`<div id="tw_rresults${i}"></div>`;
-    fields+=`<div style="margin-bottom:14px">`
-      +`<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Round ${i+1}</div>`
-      +courseDisplay
-      +`</div>`;
-  }
-  return _twHeader('New trip','Courses','Search for each round\'s course.')+
-    `<div style="padding:14px 20px">${fields}</div>`+
-    _twFooter('Next','Back');
+// Step 4: Courses. v123.63: a row per round; a row opens that round's picker (_twS.pick).
+function _twTeeOf(i){
+  var cn=_twS.courses[i],c=cn&&CATALOG[cn],sel=_twS.tees[i]||{};
+  var l=c&&c.tees&&(sel.gender==='female'?c.tees.female:c.tees.male);
+  return (l||[]).find(function(t){return t.tee_name===sel.teeName;})||null;
 }
+function _twStep4Html(){
+  if(_twS.pick!=null&&_twS.pick>=0&&_twS.pick<_twS.numRounds)return _twPickHtml(_twS.pick);
+  var nR=_twS.numRounds,miss=0,h='';
+  for(var i=0;i<nR;i++){
+    var cn=_twS.courses[i]||'',t=cn?_twTeeOf(i):null;if(!cn)miss++;
+    var sub=cn?[_qrwPlace(cn),t?t.tee_name:'',t?_qrTeeYds(t):''].filter(Boolean).join(' · '):'Not picked yet';
+    h+='<button type="button" class="tw-rd'+(cn?'':' empty')+'" onclick="window._twOpenRound('+i+')">'
+      +'<span class="tw-rdn"><small>RD</small>'+(i+1)+'</span>'
+      +'<span class="qrw-rt"><span class="qrw-rn">'+(cn?_gtEsc(courseDisp(cn)):'Choose a course')+'</span><span class="qrw-rs">'+_gtEsc(sub)+'</span></span>'
+      +'<span class="qrw-change">'+(cn?'Change':'Choose')+'</span></button>';
+  }
+  var note=miss?miss+' of '+nR+' round'+(nR===1?'':'s')+' still need'+(miss===1?'s':'')+' a course':'';
+  return '<div class="qrw" data-tw-step="4">'+_twTop(4)+'<div class="qr-step-t qrw-title">Where are you playing?</div><div class="qrw-sub">One course per round.</div></div>'
+    +'<div class="qrw-body"><div class="tw-rds">'+h+'</div><div class="qrw-hint c">Tap a round to choose its course: search, Recent, or Courses near me. Tees are picked there too.</div></div>'
+    +'<div class="qrw-foot">'+(note?'<div class="qrw-hint c">'+note+'</div>':'')
+    +'<button type="button" class="qrw-cta'+(miss?' off':'')+'" onclick="window._twNext()">Continue</button></div></div>';
+}
+function _twPickHtml(i){
+  var gid=window._pendingGroupId||'',cn=_twS.courses[i]||'',h='';
+  if(!cn){
+    h+='<div class="qrw-search"><i class="ti ti-search" aria-hidden="true"></i>'
+      +'<input id="tw_csearch'+i+'" placeholder="Search courses" enterkeyhint="search" autocomplete="off" aria-label="Search courses" onkeydown="if(event.key===&apos;Enter&apos;)window._twRoundSearch('+i+')"/>'
+      +'<button type="button" onclick="window._twRoundSearch('+i+')" aria-label="Search"><i class="ti ti-arrow-right" aria-hidden="true"></i></button></div>'
+      +'<div id="tw_rresults'+i+'" class="qrw-results"></div>';
+    var near=_twS.near,rec=_qrRecentCourses(gid),list=near||rec;
+    window._twListStash=list.map(function(x){return x.name;});
+    if(list.length){
+      var gn=gid&&_groupCache[gid]&&_groupCache[gid].name;
+      h+='<div class="qrw-lblrow"><span class="qrw-lbl">'+(near?'NEAR YOU':'RECENT')+'</span><span class="qrw-note">'+(near?'Courses already in the app':(gn?_gtEsc(gn):'Your rounds'))+'</span></div>'
+        +'<div class="qrw-card">'+list.map(function(x,k){var pl=_qrwPlace(x.name);
+          return '<button type="button" class="qrw-row" onclick="window._twPickListed('+i+','+k+')"><span class="qrw-ico"><i class="ti ti-flag-3" aria-hidden="true"></i></span>'
+            +'<span class="qrw-rt"><span class="qrw-rn">'+_gtEsc(courseDisp(x.name))+'</span>'+(pl?'<span class="qrw-rs">'+_gtEsc(pl)+'</span>':'')+'</span>'
+            +'<span class="qrw-rr">'+_gtEsc(x.right)+'</span></button>';}).join('')+'</div>';
+    } else h+='<div class="qrw-empty">Courses your group plays will show up here.</div>';
+    if(_twS.nearErr)h+='<div class="qrw-empty">'+_gtEsc(_twS.nearErr)+'</div>';
+    if(near)h+=rec.length?'<button type="button" class="qrw-link" onclick="window._twShowRecent()">Show recent</button>':'';
+    else if(_twS.nearAsk)h+='<div class="qrw-card qrw-ask"><div class="qrw-askt"><i class="ti ti-map-pin" aria-hidden="true"></i> Use your location?</div>'
+      +'<div class="qrw-rs">The Turn uses it once to sort courses by distance. It isn&#39;t saved.</div>'
+      +'<div class="qrw-askb"><button type="button" class="qrw-link" onclick="window._twNearNo()">Not now</button><button type="button" class="qrw-cta sm" onclick="window._twNearYes()">Continue</button></div></div>';
+    else h+='<button type="button" class="qrw-link" onclick="window._twNearMe()"><i class="ti ti-map-pin" aria-hidden="true"></i> '+(_twS.nearBusy?'Finding courses near you…':'Courses near me')+'</button>';
+  } else {
+    var pl=_qrwPlace(cn);
+    h+='<div class="qrw-card qrw-pick"><div class="qrw-pickhd"><span class="qrw-ico lg"><i class="ti ti-flag-3" aria-hidden="true"></i></span>'
+      +'<span class="qrw-rt"><span class="qrw-pn">'+_gtEsc(courseDisp(cn))+'</span>'+(pl?'<span class="qrw-rs">'+_gtEsc(pl)+'</span>':'')+'</span>'
+      +'<button type="button" class="qrw-change" onclick="window._twClearCourse('+i+')">Change</button></div>'
+      +_twTeesHtml(i)+'</div>';
+  }
+  return '<div class="qrw" data-tw-step="4" data-tw-pick="'+i+'">'+_twTop(4)+'<div class="qr-step-t qrw-title">Round '+(i+1)+'</div><div class="qrw-sub">Choose its course and tees.</div></div>'
+    +'<div class="qrw-body">'+h+'</div>'
+    +'<div class="qrw-foot"><button type="button" class="qrw-cta'+(cn?'':' off')+'" onclick="window._twPickBack()">Done</button></div></div>';
+}
+// The tees for round i: the round wizard's own renderer (_qrTeesHtml), pointed at this wizard's state.
+function _twTeesHtml(i){
+  var c=CATALOG[_twS.courses[i]]||{},tees=c.tees||{},sel=_twS.tees[i]||{};
+  return _qrTeesHtml(tees.male||[],tees.female||[],sel,function(list,g){return list.map(function(t,k){
+    return _qrChipHtml(t,sel.gender===g&&sel.teeName===t.tee_name,"window._twTeeChip("+i+",'"+g+"',"+k+")");}).join('');},
+    {open:'_twTeeOpen',state:_twS.teeOpen});
+}
+window._twOpenRound=function(i){if(!(i>=0&&i<_twS.numRounds))return;_twS.pick=i;_twS.teeOpen='';_twS.near=null;_twS.nearErr='';_twS.nearAsk=false;_twRender();};
+window._twPickBack=function(){_twS.pick=null;_twS.teeOpen='';_twRender();};
+window._twPickListed=function(i,k){var cn=window._twListStash&&window._twListStash[k];if(cn)window._twPickCourse(i,cn);};
+window._twTeeOpen=function(g){_twS.teeOpen=(_twS.teeOpen===g)?'':g;_twRender();};
+window._twTeeChip=function(i,g,k){
+  var c=CATALOG[_twS.courses[i]],l=c&&c.tees&&(g==='female'?c.tees.female:c.tees.male),t=l&&l[k];
+  if(t){_twS.tees[i]={gender:g,teeName:t.tee_name};_twS.teeOpen='';_twRender();}
+};
+// Courses near me, as in the round wizard (the same remembered yes on this phone).
+window._twNearMe=function(){
+  var ok=false;try{ok=localStorage.getItem('theturn_loc_ok')==='1';}catch(e){}
+  if(!ok){_twS.nearAsk=true;_twRender();return;}
+  window._twNearGo();
+};
+window._twNearYes=function(){try{localStorage.setItem('theturn_loc_ok','1');}catch(e){}_twS.nearAsk=false;window._twNearGo();};
+window._twNearNo=function(){_twS.nearAsk=false;_twRender();};
+window._twNearGo=function(){
+  if(!navigator.geolocation){_twS.nearErr='Location is not available here. Search instead.';_twRender();return;}
+  _twS.nearBusy=true;_twS.nearErr='';_twRender();
+  navigator.geolocation.getCurrentPosition(function(p){
+    _twS.nearBusy=false;var l=_qrNearCourses(p.coords.latitude,p.coords.longitude);
+    _twS.near=l.length?l:null;if(!l.length)_twS.nearErr='No courses with a location yet. Search instead.';_twRender();
+  },function(){_twS.nearBusy=false;_twS.nearErr='Location is off for this app. Search instead.';_twRender();},{timeout:10000,maximumAge:600000});
+};
+window._twShowRecent=function(){_twS.near=null;_twS.nearErr='';_twRender();};
 
 // Step 5: Money. v123.62: the stepper, the fixed winner tile, tie choices as radio rows.
 var _TW_TIES=[['countback','Countback','Lowest final-round net, then the last 9, 6, 3, 1'],['split','Split the pot','Tied players share it evenly'],['manual','Decide it ourselves','The app shows the tie; you settle it']];
@@ -7309,18 +7352,20 @@ window._twNext=function(){
       const el=document.getElementById('tw_hcp_'+m.member_id);
       if(el)m.hcp_index=idxFromInput(el.value,(m.hcp_index!=null?m.hcp_index:0));
     });
-    if(_twS.selectedMembers.length<2){alert('Please select at least 2 players.');return;}
+    if(_twS.selectedMembers.length<2){_twS.plErr=true;_twRender();return;}
     if(_twS.selectedMembers.length>TW_MAX_PLAYERS){alert('Maximum '+TW_MAX_PLAYERS+' players for a trip.');return;}
+    _twS.plErr=false;
     _twS.step=3;_twRender();return;
   }
   if(_twS.step===3){
-    _twS.hdcpPct=parseInt(document.getElementById('tw_hdcpPct')?.value||100);
-    // netOffLow already updated via _twToggleNetOffLow
+    _twS.hdcpPct=Math.max(50,Math.min(100,parseInt(_twS.hdcpPct,10)||100));
+    var _no=document.getElementById('tw_netOffLow');if(_no)_twS.netOffLow=!!_no.checked;
     _twS.step=4;_twRender();return;
   }
   if(_twS.step===4){
+    if(_twS.pick!=null){window._twPickBack();return;}
     for(let i=0;i<_twS.numRounds;i++){
-      if(!_twS.courses[i]){alert('Please select a course for Round '+(i+1)+'.');return;}
+      if(!_twS.courses[i])return;   // the footer already counts what is missing
     }
     _twS.step=5;_twRender();return;
   }
@@ -7340,6 +7385,7 @@ window._twToggleNetOffLow=function(){
   _twRender();
 };
 window._twBack=function(){
+  if(_twS.step===4&&_twS.pick!=null){window._twPickBack();return;}
   if(_twS.step>1){_twStash();_twS.step--;_twRender();}
 };
 
@@ -7525,6 +7571,7 @@ window._twToggleMember=function(memberId){
     }
     _twS.selectedMembers.push({member_id:m.member_id,display_name:m.display_name,hcp_index:m.hcp_index,venmo:m.venmo||'',user_id:m.user_id||null});
   }
+  if(_twS.selectedMembers.length>=2)_twS.plErr=false;
   _twRender();
 };
 
