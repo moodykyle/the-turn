@@ -842,6 +842,35 @@ body.force-light .gs-setup-toggle,body.force-light .gs-setup-body{box-shadow:0 2
 .gs-add-split{display:flex;align-items:center;gap:9px;margin:4px 0 10px;}
 .gs-add-split span{font-size:11px;font-weight:600;letter-spacing:0.03em;color:var(--color-text-tertiary);white-space:nowrap;}
 .gs-add-split i{flex:1 1 auto;height:0;border-top:0.5px solid var(--color-border-tertiary);}
+.gs-add-fsnote{font-size:12px;color:var(--color-text-secondary);text-align:center;line-height:1.5;padding:0 8px 10px;}
+.gs-add-fsnote button{all:unset;display:inline-block;padding:6px 2px;font-size:13px;font-weight:600;color:#1D9E75;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+/* v123.58: foursome prompt, above the tab bar */
+.fsp{position:fixed;left:10px;right:10px;bottom:calc(var(--tab-bar-h) + 12px + env(safe-area-inset-bottom,0px));z-index:950;max-width:460px;margin:0 auto;box-sizing:border-box;background:var(--fsp-sheet);border:1px solid var(--fsp-bd);border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,0.28);padding:14px 14px 12px;display:flex;flex-direction:column;gap:10px;color:var(--color-text-primary);}
+@media(prefers-color-scheme:light){body:not(.force-dark) .fsp{--fsp-sheet:#FFFFFF;--fsp-opt:#FFFFFF;--fsp-bd:#E3DED0;--fsp-field:#F4F1E8;--fsp-acc:#13795B;--fsp-link:#13795B;--fsp-title:#13795B;--fsp-sel:rgba(19,121,91,0.08);--fsp-offink:#8A8F98;}}
+body.force-light .fsp{--fsp-sheet:#FFFFFF;--fsp-opt:#FFFFFF;--fsp-bd:#E3DED0;--fsp-field:#F4F1E8;--fsp-acc:#13795B;--fsp-link:#13795B;--fsp-title:#13795B;--fsp-sel:rgba(19,121,91,0.08);--fsp-offink:#8A8F98;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .fsp{--fsp-sheet:#1C2C4B;--fsp-opt:#14213B;--fsp-bd:#34476B;--fsp-field:#14213B;--fsp-acc:#1D9E75;--fsp-link:#3CC79A;--fsp-title:#EFC456;--fsp-sel:rgba(29,158,117,0.16);--fsp-offink:#6F7D96;}}
+body.force-dark .fsp{--fsp-sheet:#1C2C4B;--fsp-opt:#14213B;--fsp-bd:#34476B;--fsp-field:#14213B;--fsp-acc:#1D9E75;--fsp-link:#3CC79A;--fsp-title:#EFC456;--fsp-sel:rgba(29,158,117,0.16);--fsp-offink:#6F7D96;}
+.fsp button{all:unset;box-sizing:border-box;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.fsp-hd{display:flex;align-items:flex-start;gap:10px;}
+.fsp-ico{width:32px;height:32px;border-radius:9px;background:var(--fsp-field);display:flex;align-items:center;justify-content:center;color:var(--fsp-link);flex-shrink:0;font-size:18px;}
+.fsp-tx{flex:1;display:flex;flex-direction:column;gap:2px;}
+.fsp-tx b{font-size:15px;font-weight:700;}
+.fsp-tx small,.fsp-ot small{font-size:12px;color:var(--color-text-secondary);line-height:1.4;}
+.fsp .fsp-x{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--color-text-secondary);font-size:16px;}
+.fsp-opts{display:flex;flex-direction:column;gap:6px;}
+.fsp .fsp-opt{display:flex;align-items:center;gap:10px;min-height:44px;padding:4px 12px;border-radius:10px;border:1px solid var(--fsp-bd);background:var(--fsp-opt);}
+.fsp .fsp-opt.on{border:1.5px solid var(--fsp-acc);background:var(--fsp-sel);}
+.fsp-dot{width:18px;height:18px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--fsp-bd);flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.fsp-opt.on .fsp-dot{border:2px solid var(--fsp-link);}
+.fsp-opt.on .fsp-dot::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--fsp-link);}
+.fsp-ot{flex:1;display:flex;flex-direction:column;}
+.fsp-ot b{font-size:14px;font-weight:700;}
+.fsp-opt.on .fsp-ot b{color:var(--fsp-title);}
+.fsp-ot small{font-size:11px;}
+.fsp-ft{display:flex;align-items:center;justify-content:space-between;padding-top:2px;}
+.fsp .fsp-link{font-size:13px;font-weight:600;color:var(--fsp-link);padding:8px 2px;}
+.fsp .fsp-apply{min-height:40px;padding:0 18px;border-radius:10px;display:flex;align-items:center;font-size:14px;font-weight:700;background:#13795B;color:#FFFFFF;}
+.fsp .fsp-apply:disabled{background:var(--fsp-field);color:var(--fsp-offink);cursor:default;}
 .gs-empty-state{
   text-align:center;color:var(--color-text-secondary);
   padding:2rem 1rem;
@@ -1205,6 +1234,109 @@ body.force-dark .rdsheet-hd,body.force-dark .board-section-label{color:#EDE6D3;}
 body.force-light .pg-title{color:#13795B;}
 @media(prefers-color-scheme:dark){body:not(.force-light) .pg-title{color:#EFC456;}}
 body.force-dark .pg-title{color:#EFC456;}
+/* v123.52: the round wizard's new look (canvas "Round wizard, step 1"), the course screen first. */
+#qrModal.qrw-full{background:var(--color-background-page)!important;align-items:stretch!important;justify-content:center!important;}
+#qrModal.qrw-full .qr-inner{width:100%;max-width:560px;height:100%;}
+@media(prefers-color-scheme:light){body:not(.force-dark) .qrw{--qrw-acc:#13795B;--qrw-link:#13795B;--qrw-lbl:#0F4D36;--qrw-title:#13795B;--qrw-sel:rgba(19,121,91,0.08);}}
+body.force-light .qrw{--qrw-acc:#13795B;--qrw-link:#13795B;--qrw-lbl:#0F4D36;--qrw-title:#13795B;--qrw-sel:rgba(19,121,91,0.08);}
+.qrw{display:flex;flex-direction:column;height:100%;background:var(--color-background-page);color:var(--color-text-primary);}
+@media(prefers-color-scheme:dark){body:not(.force-light) .qrw{--qrw-acc:#1D9E75;--qrw-link:#3CC79A;--qrw-lbl:#EDE6D3;--qrw-title:#EFC456;--qrw-sel:rgba(29,158,117,0.16);}}
+body.force-dark .qrw{--qrw-acc:#1D9E75;--qrw-link:#3CC79A;--qrw-lbl:#EDE6D3;--qrw-title:#EFC456;--qrw-sel:rgba(29,158,117,0.16);}
+.qrw-top{display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:env(safe-area-inset-top) 4px 0;flex-shrink:0;}
+.qrw-ib{all:unset;width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--color-text-secondary);cursor:pointer;font-size:22px;flex-shrink:0;}
+.qrw-ctx{font-size:13px;font-weight:600;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.qrw-bar{display:flex;gap:6px;padding:0 16px;flex-shrink:0;}
+.qrw-bar span{flex:1;height:4px;border-radius:2px;background:var(--color-background-secondary);}
+.qrw-bar span.on{background:var(--qrw-acc);}
+.qrw-head{padding:22px 16px 6px;flex-shrink:0;}
+.qrw-step{font-size:12px;font-weight:700;letter-spacing:0.08em;color:var(--color-text-secondary);margin-bottom:4px;}
+.qr-step-t.qrw-title{font-size:26px;font-weight:700;letter-spacing:-0.01em;line-height:1.2;}
+.qrw-body{flex:1;overflow-y:auto;padding:14px 16px 20px;display:flex;flex-direction:column;gap:12px;}
+.qrw-search{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 6px 0 14px;background:var(--color-background-primary);border:1.5px solid var(--qrw-acc);border-radius:12px;box-sizing:border-box;}
+.qrw-search>i{font-size:20px;color:var(--color-text-secondary);}
+.qrw-search input{flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:16px;color:var(--color-text-primary);font-family:inherit;padding:0;margin:0;box-shadow:none;}
+.qrw-search button{all:unset;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:9px;color:var(--qrw-link);cursor:pointer;font-size:20px;}
+.qrw-results:empty{display:none;}
+.qrw-lblrow{display:flex;align-items:baseline;justify-content:space-between;margin-top:6px;}
+.qrw-lbl{font-size:12px;font-weight:700;letter-spacing:0.08em;color:var(--qrw-lbl);}
+.qrw-note{font-size:12px;color:var(--color-text-secondary);}
+.qrw-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;overflow:hidden;}
+.qrw-row{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:8px 14px;cursor:pointer;border-bottom:0.5px solid var(--color-border-tertiary);}
+.qrw-row:last-child{border-bottom:none;}
+.qrw-ico{width:34px;height:34px;border-radius:9px;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;color:var(--qrw-link);flex-shrink:0;font-size:17px;}
+.qrw-ico.lg{width:40px;height:40px;border-radius:10px;font-size:19px;}
+.qrw-rt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.qrw-rn{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.qrw-rs{font-size:12px;color:var(--color-text-secondary);}
+.qrw-rr{font-size:12px;font-weight:600;color:var(--color-text-secondary);white-space:nowrap;}
+.qrw-empty{font-size:13px;color:var(--color-text-secondary);text-align:center;line-height:1.5;padding:8px 12px;}
+.qrw-link{all:unset;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;font-size:15px;font-weight:600;color:var(--qrw-link);cursor:pointer;}
+.qrw-pick{padding:14px;display:flex;flex-direction:column;gap:10px;}
+.qrw-pickhd{display:flex;align-items:center;gap:12px;}
+.qrw-pn{font-size:17px;font-weight:700;color:var(--qrw-title);}
+.qrw-change{all:unset;font-size:14px;font-weight:600;color:var(--qrw-link);cursor:pointer;padding:10px 4px;}
+.qrw-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.qrw-chip{all:unset;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;padding:5px 12px;border-radius:14px;border:1px solid var(--color-border-secondary);font-size:14px;font-weight:500;cursor:pointer;}
+.qrw-chip small{font-size:10px;font-weight:500;color:var(--color-text-secondary);}
+.qrw-chip small.qrw-yd{font-size:11px;font-weight:600;color:var(--color-text-primary);}
+.qrw-chip.on small.qrw-yd{color:var(--qrw-title);}
+.qrw-chip.on{border:1.5px solid var(--qrw-acc);background:var(--qrw-sel);font-weight:700;color:var(--qrw-title);}
+.qrw-seg{display:flex;gap:4px;padding:4px;background:var(--color-background-secondary);border-radius:12px;}
+.qrw-seg button{all:unset;flex:1 1 0;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;}
+.qrw-seg button small{font-size:10px;color:var(--color-text-secondary);}
+.qrw-seg button.on{background:var(--color-background-primary);font-weight:700;color:var(--qrw-title);box-shadow:0 1px 3px rgba(0,0,0,0.12);}
+.qrw-name{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:text;}
+.qrw-name>i{font-size:18px;color:var(--color-text-secondary);}
+.qrw-name-in{border:none;outline:none;background:transparent;padding:0;margin:0;font-size:15px;font-weight:600;color:var(--color-text-primary);font-family:inherit;width:100%;box-shadow:none;}
+.qrw-hint{font-size:12px;color:var(--color-text-secondary);line-height:1.5;padding:0 4px;}
+.qrw-hint.c{text-align:center;padding:0 0 8px;}
+.qrw-foot{flex-shrink:0;padding:12px 16px calc(16px + env(safe-area-inset-bottom));border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-page);}
+.qrw-cta{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:100%;height:50px;border-radius:12px;background:#13795B;color:#FFFFFF;font-size:16px;font-weight:600;cursor:pointer;}
+.qrw-cta.off{background:var(--color-background-secondary);color:var(--color-text-tertiary);}
+/* v123.53: players, handicaps, the location ask. */
+.qrw-lbl{text-transform:uppercase;}
+.qrw-sub{font-size:14px;color:var(--color-text-secondary);margin-top:4px;}
+.qrw-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;box-sizing:border-box;}
+.qrw-mem .qrw-rn{font-weight:500;}
+.qrw-mem.on .qrw-rn{font-weight:700;}
+.qrw-hbox{width:56px;height:34px;box-sizing:border-box;border-radius:8px;border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font-size:14px;font-weight:600;text-align:center;font-family:inherit;padding:0 4px;margin:0;}
+span.qrw-hbox{display:flex;align-items:center;justify-content:center;border-color:transparent;color:var(--color-text-tertiary);font-weight:500;}
+.qrw-chk{width:26px;height:26px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.qrw-mem.on .qrw-chk{border:none;background:var(--qrw-acc);}
+.qrw-prow{display:flex;align-items:center;gap:8px;min-height:60px;padding:8px 8px 8px 14px;box-sizing:border-box;border-bottom:0.5px solid var(--color-border-tertiary);}
+.qrw-prow:last-child{border-bottom:none;}
+.qrw-in{flex:1;min-width:0;height:40px;box-sizing:border-box;border:none;border-radius:10px;background:var(--color-background-secondary);color:var(--color-text-primary);font-size:15px;font-family:inherit;padding:0 10px;margin:0;outline:none;box-shadow:none;}
+.qrw-hcp{width:58px;height:40px;box-sizing:border-box;border-radius:10px;background:var(--color-background-secondary);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
+.qrw-hcp span{font-size:9px;font-weight:700;letter-spacing:0.06em;color:var(--color-text-secondary);}
+.qrw-hcp input{width:100%;border:none;background:transparent;text-align:center;font-size:14px;font-weight:600;color:var(--color-text-primary);font-family:inherit;padding:0;margin:0;outline:none;box-shadow:none;}
+.qrw-ib.sm{width:36px;height:36px;font-size:18px;}
+.qrw-add{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;height:48px;border-radius:12px;border:1.5px dashed var(--color-border-secondary);font-size:15px;font-weight:600;color:var(--qrw-link);cursor:pointer;}
+.qrw-step5{display:flex;align-items:center;justify-content:space-between;}
+.qrw-sbtn{all:unset;width:48px;height:48px;border-radius:12px;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--color-text-primary);cursor:pointer;}
+.qrw-sbtn:disabled{opacity:0.35;cursor:default;}
+.qrw-pct{font-size:36px;font-weight:700;color:var(--qrw-title);}
+.qrw-tog{display:flex;align-items:center;gap:12px;padding:14px;}
+.qrw-ask{padding:14px;display:flex;flex-direction:column;gap:6px;}
+.qrw-askt{font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px;}
+.qrw-askb{display:flex;justify-content:flex-end;gap:12px;align-items:center;margin-top:4px;}
+.qrw-cta.sm{width:auto;height:40px;padding:0 18px;font-size:15px;}
+/* v123.55: the sliding holes switch and the folded tees. */
+.qrw-seg{position:relative;gap:0;}
+.qrw-pill{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px) / 3);border-radius:9px;background:#13795B;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:transform 0.25s ease;pointer-events:none;z-index:0;}
+.qrw-seg button{position:relative;z-index:1;}
+.qrw-seg button.on{background:transparent;box-shadow:none;color:#FFFFFF;font-weight:700;}
+.qrw-seg button.on small{color:rgba(255,255,255,0.85);}
+.qrw-teerow{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;padding-top:12px;border-top:0.5px solid var(--color-border-tertiary);cursor:pointer;}
+.qrw-teesum,.qrw-teehd{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding-top:10px;border-top:0.5px solid var(--color-border-tertiary);cursor:pointer;}
+.qrw-teesum .qrw-lbl,.qrw-teehd .qrw-lbl{flex:1;}
+.qrw-teeval{display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
+.qrw-teeval b{font-size:15px;font-weight:700;color:var(--qrw-title);}
+.qrw-teeval small{font-size:11px;color:var(--color-text-secondary);}
+.qrw-teesum>i,.qrw-teehd>i{font-size:16px;color:var(--color-text-secondary);}
+/* v123.56: as the Vegas "Minimum to flip" selector: no tap flash, one weight, the colour fades with the pill. */
+.qrw button,.qrw [role=button]{-webkit-tap-highlight-color:transparent;}
+.qrw-seg button{transition:color 0.25s ease;}
+.qrw-seg button,.qrw-seg button.on{font-weight:600;}
 /* v123.45: the Best individual rounds heading, in the section-label colours. */
 .rr-hd{font-size:12px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;}
 @media(prefers-color-scheme:light){body:not(.force-dark) .rr-hd{color:#0F4D36;}}
@@ -1332,6 +1464,9 @@ body.force-light .gp-row .gp-tile.live{border-color:#13795B;}
 .is-chip{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#8FE3C4;background:rgba(29,158,117,0.15);border:0.5px solid rgba(29,158,117,0.4);border-radius:99px;padding:4px 12px;margin-bottom:12px;}
 .ap-addrow{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;border-top:0.5px solid var(--color-border-tertiary);font-size:13px;color:#1D9E75;cursor:pointer;}
 .ap-addrow:active{background:var(--color-background-secondary);}
+.fs-addp{display:flex;align-items:center;gap:10px;padding:10px 12px;font-size:13px;font-weight:600;color:var(--brand);cursor:pointer;}
+.fs-addp:active{background:var(--color-background-secondary);}
+.fs-addp-c{width:30px;height:30px;border-radius:50%;border:1.5px dashed var(--color-border-secondary);box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .ap-sec{font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-text-tertiary);padding:10px 14px 6px;}
 .ap-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer;}
 .ap-row:active{background:var(--color-background-secondary);}
@@ -1340,7 +1475,6 @@ body.force-light .gp-row .gp-tile.live{border-color:#13795B;}
 .fs-sh-sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-text-tertiary);padding:12px 14px 5px;}
 .fs-sh-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:0.5px solid var(--color-border-tertiary);cursor:pointer;}
 .fs-sh-row:active{background:var(--color-background-secondary);}
-.fs-addp{margin-top:4px;font-size:12.5px;color:#1D9E75;cursor:pointer;padding:6px 2px;display:inline-block;}
 .fs-addf{margin-top:8px;border:1px dashed var(--color-border-secondary);border-radius:11px;text-align:center;padding:11px;font-size:13px;color:var(--color-text-secondary);cursor:pointer;}
 .gf-filter{position:relative;display:flex;gap:3px;margin:8px 0 0;background:var(--color-background-tertiary);border:0.5px solid var(--color-border-secondary);border-radius:9px;padding:3px;overflow:hidden;}
 .gf-filter button{flex:1;position:relative;z-index:1;font-size:12px;font-weight:600;padding:6px 4px;border:0;background:transparent;color:var(--color-text-secondary);cursor:pointer;border-radius:7px;transition:color .2s ease;-webkit-tap-highlight-color:transparent;}
@@ -1997,7 +2131,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.51';
+const APP_VERSION='v123.61';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5368,8 +5502,13 @@ document.addEventListener('click',function(e){
   if(ov&&ov.style.display!=='none'&&e.target===ov)window.closeHmMemberSheet();
 });
 
-window._removeMember = async function(gid,memberId,name){
-  if(!confirm('Remove '+name+' from this group?'))return;
+// v123.61: the app's confirmation sheet, not the browser's box.
+window._removeMember = function(gid,memberId,name){
+  var gn=(_groupCache[gid]&&_groupCache[gid].name)||'';
+  _confirmSheet({icon:'ti-user-minus',danger:true,title:'Remove '+_gtEsc(name)+'?',body:'They come off the '+(gn?_gtEsc(gn)+' ':'')+'member list.',okLabel:'Remove',
+    onOk:function(){window._removeMemberGo(gid,memberId,name);}});
+};
+window._removeMemberGo = async function(gid,memberId,name){
   try{
     const tok=_sbSession?.access_token||SB_KEY;
     const r=await fetch(SB_URL+'/rest/v1/group_members?member_id=eq.'+encodeURIComponent(memberId),{
@@ -5483,15 +5622,17 @@ window._deleteGroupConfirm=async function(gid){
   }catch(e){window._grpShowErr('Could not delete the group. It may still have trips or rounds attached.');}
 };
 
-window._leaveGroup = async function(gid,name){
-  if(!confirm('Leave '+name+'?'))return;
-  const user=sbCurrentUser();
-  if(!user)return;
-  const g=_groupCache[gid];
-  const me=(g?._members||[]).find(m=>m.user_id===user.id);
-  if(!me)return;
-  await window._removeMember(gid,me.member_id,me.display_name||'yourself');
-  if(_activeGroup&&_activeGroup.group_id===gid)sbSetActiveGroup(null);
+window._leaveGroup = function(gid,name){
+  _confirmSheet({icon:'ti-door-exit',danger:true,title:'Leave '+_gtEsc(name)+'?',body:'You come off the member list. You can rejoin with the group code.',okLabel:'Leave',
+    onOk:async function(){
+      const user=sbCurrentUser();
+      if(!user)return;
+      const g=_groupCache[gid];
+      const me=(g?._members||[]).find(m=>m.user_id===user.id);
+      if(!me)return;
+      await window._removeMemberGo(gid,me.member_id,me.display_name||'yourself');
+      if(_activeGroup&&_activeGroup.group_id===gid)sbSetActiveGroup(null);
+    }});
 };
 
 window.startGroupQuickRound = function(gid){
@@ -5569,7 +5710,7 @@ function startNewWeekend(){
   // useless while the trip had already been dropped before Cancel was ever drawn.
   // v120.19.
   _twLastStep=null;
-  _twS={step:1,name:'',date:'',region:'',numRounds:4,selectedMembers:[],hdcpPct:80,netOffLow:false,courses:[],tees:[],games:{},buyIn:50,potTiebreak:'countback',potMethod:'netstroke'};
+  _twS={step:1,name:'',date:'',region:'',numRounds:4,selectedMembers:[],hdcpPct:100,netOffLow:false,courses:[],tees:[],games:{},buyIn:50,potTiebreak:'countback',potMethod:'netstroke'};
   const ws=document.getElementById('wizardScreen');
   ws.style.display='flex';
   _twRender();
@@ -5583,209 +5724,260 @@ function _qrRender(){
   if(!modal)return;
   const inner=modal.querySelector('.qr-inner');
   if(!inner)return;
+  // v123.52: the course step is full screen in the new look; the scroll lives in its body.
+  if(modal.classList)modal.classList[_qrS.step>=2?'add':'remove']('qrw-full');
+  const _sc=function(e){return (e&&e.querySelector&&e.querySelector('.qrw-body'))||e;};
   const old=inner.firstElementChild;
   const keep=(_qrLastStep===_qrS.step)&&old;
-  const y=keep?old.scrollTop:0;
+  const y=keep?_sc(old).scrollTop:0;
   inner.innerHTML=_qrStepHtml();
   _qrLastStep=_qrS.step;
   const nw=inner.firstElementChild;
-  if(nw)nw.scrollTop=y;
+  if(nw)_sc(nw).scrollTop=y;
 }
 
-// v123.37: the wizard's pill. The group's name in a group, else "New round".
-function _qrPillText(){
-  var g=window._pendingGroupId&&_groupCache[window._pendingGroupId];
-  return g&&g.name?_gtEsc(g.name):'New round';
-}
-// v123.38: the wizard's footer. A flow's first screen: Cancel alone. Every later screen:
-// Back on the left, Cancel on the right, one row.
-function _qrFoot(first){
-  var s='padding:10px 20px;font-size:14px;color:var(--color-text-tertiary);cursor:pointer';
-  if(first)return'<div onclick="window._qrCancel()" style="'+s+';text-align:center;border-top:0.5px solid var(--color-border-tertiary)">Cancel</div>';
-  return'<div style="display:flex;justify-content:space-between;border-top:0.5px solid var(--color-border-tertiary)">'
-    +'<div onclick="window._qrBack()" style="'+s+'">\u2190 Back</div>'
-    +'<div onclick="window._qrCancel()" style="'+s+'">Cancel</div></div>';
-}
 function _qrStepHtml(){
-  const pill='<div style="display:inline-block;font-size:11px;font-weight:500;color:#1D9E75;background:rgba(29,158,117,0.12);border-radius:4px;padding:2px 8px;margin-bottom:10px">'+_qrPillText()+'</div>';
-  // v123.37: group mode skips the count step, so its first screen is step 2 and it has three.
-  const _qrG=!!window._pendingGroupId,_qrFirst=_qrG?2:1;
-  const card='background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);overflow:hidden;width:340px;max-width:calc(100vw - 32px)';
-  // Dots
-  const dots=Array.from({length:_qrG?3:4},(_,i)=>'<div style="width:7px;height:7px;border-radius:50%;background:'+(_qrS.step===i+_qrFirst?'#1D9E75':'var(--color-border-secondary)')+'"></div>').join('');
-  const dotsRow='<div style="display:flex;justify-content:center;gap:6px;padding:12px 0 4px">'+dots+'</div>';
-
-  if(_qrS.step===1){
-    const rows=[1,2,3,4].map(function(n){
-      const active=n===_qrS.n;
-      return'<div onclick="window._qrSetN(this)" data-val="'+n+'" style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--color-border-tertiary);border-left:3px solid '+(active?'#1D9E75':'transparent')+';cursor:pointer">'
-        +'<span style="font-size:15px;font-weight:'+(active?500:400)+';color:var(--color-text-primary)">'+(n===1?'1 player (solo)':n+' players')+'</span>'
-        +'<div style="width:20px;height:20px;border-radius:50%;border:1.5px solid '+(active?'#1D9E75':'var(--color-border-secondary)')+';background:'+(active?'#1D9E75':'transparent')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(active?'<div style="width:8px;height:8px;border-radius:50%;background:#fff"></div>':'')+'</div>'
-        +'</div>';
-    }).join('');
-    return'<div style="'+card+'">'+dotsRow
-      +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div class="qr-step-t">How many players?</div></div>'
-      +rows
-      +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
-      +'<div onclick="window._qrCancel()" style="padding:10px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Cancel</div>'
+  // v123.53: three screens, the same for a group round and one outside a group.
+  if(_qrS.step===3)return _qrPlayersStepHtml();
+  if(_qrS.step===4)return _qrHcpStepHtml();
+  return _qrCourseStepHtml(true,3,1);
+}
+// v123.52: the new wizard look. The top of a screen: context, Back (not on a flow's first
+// screen), Cancel, the progress bar and the step line. The caller closes .qrw-head after its title.
+var _QRW_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function _qrwTop(first,total,idx){
+  var g=window._pendingGroupId&&_groupCache[window._pendingGroupId];
+  var ctx=(g&&g.name?_gtEsc(g.name)+' · ':'')+'New round';
+  var bar='';for(var i=0;i<total;i++)bar+='<span'+(i<idx?' class="on"':'')+'></span>';
+  return '<div class="qrw-top">'
+    +(first?'<span class="qrw-ib"></span>':'<button type="button" class="qrw-ib" onclick="window._qrBack()" aria-label="Back"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>')
+    +'<span class="qrw-ctx">'+ctx+'</span>'
+    +'<button type="button" class="qrw-ib" onclick="window._qrCancel()" aria-label="Cancel"><i class="ti ti-x" aria-hidden="true"></i></button></div>'
+    +'<div class="qrw-bar">'+bar+'</div>'
+    +'<div class="qrw-head"><div class="qrw-step">STEP '+idx+' OF '+total+'</div>';
+}
+// A trip date (YYYY-MM-DD, read by its parts) as "Oct 10", with the year when it is not this year.
+function _qrwDay(d){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d||''))return'';
+  var y=+d.slice(0,4);
+  return _QRW_MON[+d.slice(5,7)-1]+' '+(+d.slice(8,10))+(y!==new Date().getFullYear()?', '+y:'');
+}
+function _qrwPlace(cn){var l=CATALOG[cn]&&CATALOG[cn].location;return l?[l.city,l.state].filter(Boolean).join(', '):'';}
+// Recent: the group's courses (or your rounds outside a group), newest played first, one row per
+// course, only courses in the catalog, five at most.
+function _qrRecentCourses(gid){
+  var key=function(t){return /^\d{4}-\d{2}-\d{2}$/.test(t.date||'')?t.date:String(t.savedAt||'').slice(0,10);};
+  var ts=loadTrips().filter(function(t){return t&&(gid?t.group_id===gid:(t.is_quick_round&&!t.group_id));});
+  ts.sort(function(a,b){var ka=key(a),kb=key(b);return ka<kb?1:ka>kb?-1:0;});
+  var seen={},out=[];
+  ts.forEach(function(t){(t.courses||[]).forEach(function(cn){
+    if(out.length>=5||seen[cn]||!CATALOG[cn])return;seen[cn]=1;out.push({name:cn,right:_qrwDay(key(t))});});});
+  return out;
+}
+// Near me: catalog courses with coordinates, by distance from the phone (miles), five at most.
+// Only courses already in the app; a hand-entered course has no coordinates.
+function _qrNearCourses(lat,lng){
+  var R=3958.8,rad=Math.PI/180,out=[];
+  Object.keys(CATALOG).forEach(function(cn){
+    var l=CATALOG[cn]&&CATALOG[cn].location;if(!l||l.latitude==null||l.longitude==null)return;
+    var la=+l.latitude,lo=+l.longitude;if(!isFinite(la)||!isFinite(lo))return;
+    var dLa=(la-lat)*rad,dLo=(lo-lng)*rad;
+    var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(lat*rad)*Math.cos(la*rad)*Math.sin(dLo/2)*Math.sin(dLo/2);
+    out.push({name:cn,mi:2*R*Math.asin(Math.min(1,Math.sqrt(a)))});
+  });
+  out.sort(function(a,b){return a.mi-b.mi;});
+  return out.slice(0,5).map(function(x){return{name:x.name,right:(x.mi<1?'<1':Math.round(x.mi))+' mi'};});
+}
+// v123.53: ask in the app before the browser's own box; a yes is remembered on this phone.
+window._qrNearMe=function(){
+  var ok=false;try{ok=localStorage.getItem('theturn_loc_ok')==='1';}catch(e){}
+  if(!ok){_qrS.nearAsk=true;_qrRender();return;}
+  window._qrNearGo();
+};
+window._qrNearYes=function(){try{localStorage.setItem('theturn_loc_ok','1');}catch(e){}_qrS.nearAsk=false;window._qrNearGo();};
+window._qrNearNo=function(){_qrS.nearAsk=false;_qrRender();};
+window._qrNearGo=function(){
+  if(!navigator.geolocation){_qrS.nearErr='Location is not available here. Search instead.';_qrRender();return;}
+  _qrS.nearBusy=true;_qrS.nearErr='';_qrRender();
+  navigator.geolocation.getCurrentPosition(function(p){
+    _qrS.nearBusy=false;var l=_qrNearCourses(p.coords.latitude,p.coords.longitude);
+    _qrS.near=l.length?l:null;if(!l.length)_qrS.nearErr='No courses with a location yet. Search instead.';_qrRender();
+  },function(){_qrS.nearBusy=false;_qrS.nearErr='Location is off for this app. Search instead.';_qrRender();},{timeout:10000,maximumAge:600000});
+};
+window._qrShowRecent=function(){_qrS.near=null;_qrS.nearErr='';_qrRender();};
+window._qrPickListed=function(i){var cn=window._qrListStash&&window._qrListStash[i];if(cn)window._qrPickCourse(cn);};
+window._qrTeeChip=function(g,i){
+  var c=CATALOG[_qrS.course],l=c&&c.tees&&(g==='female'?c.tees.female:c.tees.male),t=l&&l[i];
+  if(t){_qrS.tee={gender:g,teeName:t.tee_name};_qrS.teeOpen='';_qrRender();}
+};
+// v123.55: tees folded. Closed: the picked tee on one row. Open: that gender's chips, the other
+// gender folded below; tapping the open header folds it.
+window._qrTeeOpen=function(g){_qrS.teeOpen=(_qrS.teeOpen===g)?'':g;_qrRender();};
+// v123.59: the tee row reads like the course row: tee icon, the tee in gold, gender / yards / rating
+// under it, Change. Open: "Pick a tee" with Done, the chips, the other gender folded below.
+var _QRW_TEE_SVG='<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14l-5 5h-4z"></path><path d="M10.5 10v8.5l1.5 2.5 1.5-2.5V10"></path></svg>';
+function _qrTeeYds(t){
+  if(!t)return '';
+  var y=+t.total_yards;
+  if(!(y>0))y=(Array.isArray(t.holes)?t.holes:[]).reduce(function(a,h){return a+(+(h&&h.yardage)||0);},0);
+  return y>0?y.toLocaleString('en-US')+' yds':'';
+}
+function _qrTeesHtml(m,f,sel,chips){
+  if(!m.length&&!f.length)return'';
+  var both=m.length&&f.length,open=_qrS.teeOpen||'';
+  var G=[['male',m,"MEN'S TEES"],['female',f,"WOMEN'S TEES"]].filter(function(x){return x[1].length;});
+  if(!open){
+    var g=sel.gender||(m.length?'male':'female'),list=g==='female'?f:m;
+    var t=list.find(function(x){return x.tee_name===sel.teeName;})||null;
+    var rs=t&&t.course_rating&&t.slope_rating?t.course_rating+' / '+t.slope_rating:'';
+    var sub=[both?(g==='female'?"Women's":"Men's"):'',_qrTeeYds(t),rs].filter(Boolean).join(' · ');
+    return '<button type="button" class="qrw-teerow" onclick="window._qrTeeOpen(\''+g+'\')" aria-expanded="false"><span class="qrw-ico lg">'+_QRW_TEE_SVG+'</span>'
+      +'<span class="qrw-rt"><span class="qrw-pn">'+_gtEsc(t?t.tee_name:'Choose a tee')+'</span>'+(sub?'<span class="qrw-rs">'+_gtEsc(sub)+'</span>':'')+'</span><span class="qrw-change">Change</span></button>';
+  }
+  return G.map(function(x){var on=open===x[0];
+    var cnt=both?(x[0]==='female'?"Women's tees":"Men's tees")+' · '+x[1].length:x[1].length+(x[1].length===1?' tee':' tees');
+    return (on
+      ?'<button type="button" class="qrw-teerow" onclick="window._qrTeeOpen(\''+x[0]+'\')" aria-expanded="true"><span class="qrw-ico lg">'+_QRW_TEE_SVG+'</span>'
+        +'<span class="qrw-rt"><span class="qrw-pn">Pick a tee</span><span class="qrw-rs">'+_gtEsc(cnt)+'</span></span><span class="qrw-change">Done</span></button>'
+      :'<button type="button" class="qrw-teehd" onclick="window._qrTeeOpen(\''+x[0]+'\')" aria-expanded="false"><span class="qrw-lbl">'+(both?x[2]:'TEES')+' · '+x[1].length+'</span>'
+        +'<i class="ti ti-chevron-right" aria-hidden="true"></i></button>')
+      +(on?'<div class="qrw-chips">'+chips(x[1],x[0])+'</div>':'');}).join('');
+}
+function _qrCourseStepHtml(first,total,idx){
+  var gid=window._pendingGroupId||'',c=_qrS.course,h='';
+  if(!c){
+    h+='<div class="qrw-search"><i class="ti ti-search" aria-hidden="true"></i>'
+      +'<input id="qrCourseSearch" placeholder="Search courses" enterkeyhint="search" autocomplete="off" aria-label="Search courses" onkeydown="if(event.key===&apos;Enter&apos;)window._qrSearchCourse()"/>'
+      +'<button type="button" onclick="window._qrSearchCourse()" aria-label="Search"><i class="ti ti-arrow-right" aria-hidden="true"></i></button></div>'
+      +'<div id="qrCourseResults" class="qrw-results"></div>';
+    var near=_qrS.near,rec=_qrRecentCourses(gid),list=near||rec;
+    window._qrListStash=list.map(function(x){return x.name;});
+    if(list.length){
+      var gn=gid&&_groupCache[gid]&&_groupCache[gid].name;
+      h+='<div class="qrw-lblrow"><span class="qrw-lbl">'+(near?'NEAR YOU':'RECENT')+'</span><span class="qrw-note">'+(near?'Courses already in the app':(gn?_gtEsc(gn):'Your rounds'))+'</span></div>'
+        +'<div class="qrw-card">'+list.map(function(x,i){var pl=_qrwPlace(x.name);
+          return '<button type="button" class="qrw-row" onclick="window._qrPickListed('+i+')"><span class="qrw-ico"><i class="ti ti-flag-3" aria-hidden="true"></i></span>'
+            +'<span class="qrw-rt"><span class="qrw-rn">'+_gtEsc(courseDisp(x.name))+'</span>'+(pl?'<span class="qrw-rs">'+_gtEsc(pl)+'</span>':'')+'</span>'
+            +'<span class="qrw-rr">'+_gtEsc(x.right)+'</span></button>';}).join('')+'</div>';
+    } else h+='<div class="qrw-empty">'+(gid?'Courses your group plays will show up here.':'Courses you play will show up here.')+'</div>';
+    if(_qrS.nearErr)h+='<div class="qrw-empty">'+_gtEsc(_qrS.nearErr)+'</div>';
+    if(near)h+=rec.length?'<button type="button" class="qrw-link" onclick="window._qrShowRecent()">Show recent</button>':'';
+    else if(_qrS.nearAsk)h+='<div class="qrw-card qrw-ask"><div class="qrw-askt"><i class="ti ti-map-pin" aria-hidden="true"></i> Use your location?</div>'
+      +'<div class="qrw-rs">The Turn uses it once to sort courses by distance. It isn&#39;t saved.</div>'
+      +'<div class="qrw-askb"><button type="button" class="qrw-link" onclick="window._qrNearNo()">Not now</button><button type="button" class="qrw-cta sm" onclick="window._qrNearYes()">Continue</button></div></div>';
+    else h+='<button type="button" class="qrw-link" onclick="window._qrNearMe()"><i class="ti ti-map-pin" aria-hidden="true"></i> '+(_qrS.nearBusy?'Finding courses near you…':'Courses near me')+'</button>';
+  } else {
+    var cat=CATALOG[c]||{},pl=_qrwPlace(c),tees=cat.tees||{},m=tees.male||[],f=tees.female||[],sel=_qrS.tee||{};
+    var chips=function(list,g){return list.map(function(t,i){var on=sel.gender===g&&sel.teeName===t.tee_name;
+      return '<button type="button" class="qrw-chip'+(on?' on':'')+'" onclick="window._qrTeeChip(\''+g+'\','+i+')" aria-pressed="'+on+'"><span>'+_gtEsc(t.tee_name)+'</span>'
+        +(_qrTeeYds(t)?'<small class="qrw-yd">'+_gtEsc(_qrTeeYds(t))+'</small>':'')
+        +(t.course_rating&&t.slope_rating?'<small>'+_gtEsc(t.course_rating+' / '+t.slope_rating)+'</small>':'')+'</button>';}).join('');};
+    h+='<div class="qrw-card qrw-pick"><div class="qrw-pickhd"><span class="qrw-ico lg"><i class="ti ti-flag-3" aria-hidden="true"></i></span>'
+      +'<span class="qrw-rt"><span class="qrw-pn">'+_gtEsc(courseDisp(c))+'</span>'+(pl?'<span class="qrw-rs">'+_gtEsc(pl)+'</span>':'')+'</span>'
+      +'<button type="button" class="qrw-change" onclick="window._qrClearCourse()">Change</button></div>'
+      +_qrTeesHtml(m,f,sel,chips)
       +'</div>';
   }
-
-  if(_qrS.step===2){
-    const holesOpts=[{val:'18',label:'18 holes',sub:''},{val:'front',label:'Front 9',sub:'Holes 1-9'},{val:'back',label:'Back 9',sub:'Holes 10-18'}];
-    const holesRows=holesOpts.map(function(o){
-      const active=o.val===_qrS.holes;
-      return'<div onclick="window._qrSetHoles(this)" data-val='+JSON.stringify(o.val)+' style="display:flex;align-items:center;justify-content:space-between;padding:13px 20px;border-bottom:0.5px solid var(--color-border-tertiary);border-left:3px solid '+(active?'#1D9E75':'transparent')+';cursor:pointer">'
-        +'<div>'+(o.sub?'<div style="font-size:15px;font-weight:'+(active?500:400)+';color:var(--color-text-primary)">'+o.label+'</div><div style="font-size:12px;color:var(--color-text-tertiary);margin-top:2px">'+o.sub+'</div>':'<span style="font-size:15px;font-weight:'+(active?500:400)+';color:var(--color-text-primary)">'+o.label+'</span>')+'</div>'
-        +'<div style="width:20px;height:20px;border-radius:50%;border:1.5px solid '+(active?'#1D9E75':'var(--color-border-secondary)')+';background:'+(active?'#1D9E75':'transparent')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(active?'<div style="width:8px;height:8px;border-radius:50%;background:#fff"></div>':'')+'</div>'
-        +'</div>';
-    }).join('');
-    const courseSection=_qrS.course
-      ?'<div style="padding:12px 20px;border-bottom:0.5px solid var(--color-border-tertiary)">'
-        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
-        +'<div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">'+courseDisp(_qrS.course)+'</div>'
-        +'<button onclick="window._qrClearCourse()" style="border:none;background:none;font-size:12px;color:#1D9E75;cursor:pointer;padding:0;text-decoration:underline">Change</button>'
-        +'</div>'
-        +_buildTeePicker(_qrS.course,_qrS.tee&&_qrS.tee.gender,_qrS.tee&&_qrS.tee.teeName,'window._qrTeePick(event.target.value)')
-        +'</div>'
-      :'<div style="padding:12px 20px;border-bottom:0.5px solid var(--color-border-tertiary)">'
-        +'<div style="display:flex;align-items:center;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);overflow:hidden;background:var(--color-background-primary)">'
-        +'<input id="qrCourseSearch" class="text-input" placeholder="Search by name..." style="flex:1;border:none;box-shadow:none;border-radius:0;margin:0;font-size:13px" onkeydown="if(event.key===&apos;Enter&apos;)window._qrSearchCourse()"/>'
-        +'<button onclick="window._qrSearchCourse()" style="border:none;background:transparent;padding:9px 12px;cursor:pointer;border-left:0.5px solid var(--color-border-tertiary);color:#1D9E75;display:flex;align-items:center;flex-shrink:0"><i class="ti ti-search" style="font-size:16px" aria-hidden="true"></i></button>'
-        +'</div>'
-        +'<div id="qrCourseResults" style="margin-top:6px"></div>'
-        +'</div>';
+  var HO=[['18','18 holes',''],['front','Front 9','1-9'],['back','Back 9','10-18']];
+  var _hi=Math.max(0,HO.findIndex(function(o){return o[0]===_qrS.holes;}));
+  h+='<div class="qrw-lbl">HOLES</div><div class="qrw-seg" id="qrHolesSeg" role="radiogroup" aria-label="Holes"><span class="qrw-pill" style="transform:translateX('+(_hi*100)+'%)"></span>'+HO.map(function(o){var on=_qrS.holes===o[0];
+    return '<button type="button" role="radio" aria-checked="'+on+'" class="'+(on?'on':'')+'" data-val="'+o[0]+'" onclick="window._qrSetHoles(this)"><span>'+o[1]+'</span>'+(o[2]?'<small>'+o[2]+'</small>':'')+'</button>';}).join('')+'</div>';
+  if(c){
     var _nmTyped=!!(_qrS.name||'').trim();
-    var nameSection=_qrS.course
-      ?'<div style="padding:12px 20px;border-bottom:0.5px solid var(--color-border-tertiary)">'
-        +'<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:5px">Round name</div>'
-        +'<input id="qrRoundName" class="text-input" style="width:100%;margin:0;font-size:14px" '
-        +'value="'+_clEsc(_qrRoundName())+'" oninput="window._qrSetName(this)">'
-        +'<div id="qrNameHint" style="font-size:11px;color:var(--color-text-tertiary);margin-top:5px;line-height:1.5">'
-        +(_nmTyped?'Your name. Clear the field to go back to the course name.':'Follows the course until you change it.')
-        +'</div></div>'
-      :'';
-    return'<div style="'+card+'">'+dotsRow
-      +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div class="qr-step-t">Course &amp; holes</div></div>'
-      +nameSection
-      +courseSection
-      +holesRows
-      +'<div id="qrCourseNeed" class="ts-danger" style="display:none;padding:10px 20px 0;font-size:13px;font-weight:600">Pick a course to continue.</div>'
-      +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
-      +_qrFoot(_qrFirst===2)
-      +'</div>';
+    h+='<label class="qrw-card qrw-name"><span class="qrw-rt"><span class="qrw-rs">Round name</span>'
+      +'<input id="qrRoundName" class="qrw-name-in" value="'+_clEsc(_qrRoundName())+'" oninput="window._qrSetName(this)"></span><i class="ti ti-pencil" aria-hidden="true"></i></label>'
+      +'<div id="qrNameHint" class="qrw-hint">'+(_nmTyped?'Your name. Clear the field to go back to the course name.':'Follows the course until you change it.')+'</div>';
   }
-
-  if(_qrS.step===3){
-    const gid=window._pendingGroupId;
-    const grp=gid?_groupCache[gid]:null;
-    const members=(grp?._members)||[];
-    const me=sbCurrentUser();
-    if(gid&&members.length>0){
-      let rows='';
-      members.forEach(function(m,midx){
-        const sel=(_qrS.selectedMembers||[]).some(function(s){return s.member_id===m.member_id;});
-        const isManaged=!m.user_id;
-        const isMe=me&&m.user_id===me.id;
-        const ini=(m.display_name||'??').split(' ').filter(Boolean).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
-        const c=AVATAR_PALETTE[midx%AVATAR_PALETTE.length];
-        const selBg=sel?'rgba(29,158,117,0.07)':'transparent';
-        const hcpVal=sel?((_qrS.selectedMembers||[]).find(function(s){return s.member_id===m.member_id;})||{}).hcp_index||m.hcp_index||'':m.hcp_index!=null?m.hcp_index:'';
-        const hcpDisp=(hcpVal===''||hcpVal==null)?'':(hcpVal<0?'+'+Math.abs(hcpVal):(''+hcpVal));
-        const hcpEl=sel
-          ?'<input id="qrhcp_'+m.member_id+'" type="text" value="'+hcpDisp+'" onclick="event.stopPropagation()" style="width:52px;padding:5px 6px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;text-align:center;background:var(--color-background-primary);color:var(--color-text-primary)"/>'
-          :'<span style="font-size:13px;color:var(--color-text-tertiary);min-width:52px;text-align:center;display:inline-block">'+(m.hcp_index==null?'-':(m.hcp_index<0?'+'+Math.abs(m.hcp_index):m.hcp_index))+'</span>';
-        const checkEl=sel
-          ?'<span style="width:22px;height:22px;border-radius:50%;background:#1D9E75;display:flex;align-items:center;justify-content:center;flex-shrink:0">&#10003;</span>'
-          :'<span style="width:22px;height:22px;border-radius:50%;border:1.5px solid var(--color-border-secondary);flex-shrink:0;box-sizing:border-box"></span>';
-        const meTag=isMe?'<span style="font-size:10px;font-weight:500;color:#185FA5;background:var(--color-background-info);border-radius:4px;padding:1px 6px;margin-left:4px">You</span>':'';
-        const mgtTag=isManaged?'<span style="font-size:10px;color:var(--color-text-secondary);background:var(--color-background-secondary);border-radius:4px;padding:1px 6px;margin-left:4px">Managed</span>':'';
-        rows+='<div onclick="window._qrToggleMember(\''+m.member_id+'\')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:'+selBg+';cursor:pointer;border-bottom:0.5px solid var(--color-border-tertiary)">'
-          +'<div style="width:34px;height:34px;border-radius:50%;background:'+c.bg+';color:'+c.fg+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0;'+(isManaged?'border:1.5px dashed '+c.fg+';box-sizing:border-box':'')+'">'+ini+'</div>'
-          +'<div style="flex:1;font-size:13px;'+(sel?'font-weight:500;':'')+'color:var(--color-text-'+(sel?'primary':'secondary')+')">'+m.display_name+meTag+mgtTag+'</div>'
-          +hcpEl+checkEl+'</div>';
-      });
-      const _qAll=members.length>0&&members.every(function(m){
-        return (_qrS.selectedMembers||[]).some(function(s){return s.member_id===m.member_id;});});
-      const _qBulk=members.length>1
-        ?'<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 20px 4px">'
-          +'<span style="font-size:11px;color:var(--color-text-tertiary)">'+members.length+' in this group</span>'
-          +'<span onclick="window._qrSelectAll('+(_qAll?0:1)+')" style="font-size:12px;font-weight:500;color:#1D9E75;cursor:pointer;padding:4px 2px">'
-          +(_qAll?'Clear':'Select all')+'</span></div>'
-        :'';
-      const selCount=(_qrS.selectedMembers||[]).length;
-      const countLabel=selCount===0?'None selected':selCount+' selected'+(selCount>_qrS.n?' - max '+_qrS.n:'');
-      return'<div style="'+card+';max-height:90vh;overflow-y:auto">'+dotsRow
-        +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div class="qr-step-t">Players</div><div style="font-size:12px;color:var(--color-text-secondary);margin-top:3px">Pick who is playing from '+(grp?grp.name:'your group')+'.</div></div>'
-        +_qBulk
-        +rows
-        +'<div style="padding:10px 20px;border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:12px"><div style="font-size:12px;color:var(--color-text-secondary)">'+countLabel+'</div></div>'
-        +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
-        +_qrFoot(false)
-        +'</div>';
-    } else {
-      const _me=sbCurrentUser();
-      const _meta=_me?.user_metadata||{};
-      const _meName=(_meta.full_name||_me?.email||'').trim();
-      const _meParts=_meName.split(/\s+/).filter(Boolean);
-      const _meFirst=_meParts[0]||'';
-      const _meLast=_meParts.slice(1).join(' ')||'';
-      const _myIdx=_myHcpIndex();
-      const _meHcp=_myIdx!=null?_myIdx:'';
-      const rows=Array.from({length:_qrS.n},function(_,i){
-        const c=AVATAR_PALETTE[i%AVATAR_PALETTE.length];
-        const saved=(_qrS.players||[])[i]||{};
-        const isMe=i===0&&!!_me;
-        const fVal=isMe?(saved.first||_meFirst):saved.first||'';
-        const lVal=isMe?(saved.last||_meLast):saved.last||'';
-        const hVal=isMe?(saved.idx!=null?saved.idx:_meHcp):(saved.idx!=null&&saved.idx!==''?saved.idx:'');
-        const ini=isMe&&_meFirst?(_meFirst[0]||'').toUpperCase()+(_meLast[0]||'').toUpperCase():'P'+(i+1);
-        const meTag=isMe?'<span style="font-size:10px;font-weight:500;color:#185FA5;background:var(--color-background-info);border-radius:4px;padding:1px 5px;margin-left:6px">You</span>':'';
-        return'<div style="display:flex;align-items:center;gap:8px;padding:10px 20px;border-bottom:0.5px solid var(--color-border-tertiary)">'
-          +'<div class="avatar" style="background:'+c.bg+';color:'+c.fg+';width:34px;height:34px;font-size:11px;flex-shrink:0">'+ini+'</div>'
-          +'<div style="flex:1;display:flex;gap:6px;min-width:0;align-items:center">'
-          +(isMe
-            ?'<div style="flex:1;font-size:13px;font-weight:500;color:var(--color-text-primary);padding:7px 0">'+(_meName||'You')+meTag+'</div>'
-              +'<input type="hidden" id="qrfirst'+i+'" value="'+_gtEsc(fVal)+'"/>'
-              +'<input type="hidden" id="qrlast'+i+'" value="'+_gtEsc(lVal)+'"/>'
-            :'<input class="text-input" id="qrfirst'+i+'" value="'+_gtEsc(fVal)+'" placeholder="First" style="flex:1;min-width:0;font-size:13px;padding:7px 8px"/>'
-              +'<input class="text-input" id="qrlast'+i+'" value="'+_gtEsc(lVal)+'" placeholder="Last" style="flex:1;min-width:0;font-size:13px;padding:7px 8px"/>')
-          +'</div>'
-          +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
-          +'<span style="font-size:11px;color:var(--color-text-secondary)">Hdcp</span>'
-          +'<input id="qridx'+i+'" type="text" value="'+(hVal===''?'':sbHcpDisplay(Number(hVal)))+'" style="width:56px;padding:7px 6px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary)" placeholder=""/>'
-          +'</div></div>';
-      }).join('');
-      const subTitle=_qrS.n===1?'Your round.':'You are Player 1. Add your playing partners below.';
-      return'<div style="'+card+';max-height:90vh;overflow-y:auto">'+dotsRow
-        +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div class="qr-step-t">Players</div><div style="font-size:12px;color:var(--color-text-secondary);margin-top:3px">'+subTitle+'</div></div>'
-        +rows
-        +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue →</button></div>'
-        +_qrFoot(false)
+  return '<div class="qrw" data-qr-step="2">'+_qrwTop(first,total,idx)+'<div class="qr-step-t qrw-title">Where are you playing?</div></div>'
+    +'<div class="qrw-body">'+h+'</div>'
+    +'<div class="qrw-foot">'+(c?'':'<div id="qrCourseHint" class="qrw-hint c">Choose a course to continue</div>')
+    +'<div id="qrCourseNeed" class="ts-danger" style="display:none;padding:0 0 8px;font-size:13px;font-weight:600;text-align:center">Pick a course to continue.</div>'
+    +'<button type="button" class="qrw-cta'+(c?'':' off')+'" onclick="window._qrNext()">Continue</button></div></div>';
+}
+// v123.53: the shared footer of the later screens.
+function _qrwFoot(note,label){
+  return '<div class="qrw-foot">'+(note?'<div class="qrw-hint c">'+note+'</div>':'')
+    +'<button type="button" class="qrw-cta" onclick="window._qrNext()">'+label+'</button></div>';
+}
+var _QRW_CHECK='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>';
+function _qrPlayersStepHtml(){
+  var gid=window._pendingGroupId,grp=gid?_groupCache[gid]:null,members=(grp&&grp._members)||[],me=sbCurrentUser();
+  var h='',note='',sub='';
+  if(gid&&members.length>0){
+    var S=_qrS.selectedMembers||[];
+    var all=members.every(function(m){return S.some(function(s){return s.member_id===m.member_id;});});
+    h+='<div class="qrw-lblrow"><span class="qrw-lbl">'+_gtEsc(grp.name||'Group')+' · '+members.length+'</span>'
+      +(members.length>1?'<button type="button" class="qrw-change" onclick="window._qrSelectAll('+(all?0:1)+')">'+(all?'Clear':'Select all')+'</button>':'')+'</div>';
+    h+='<div class="qrw-card">'+members.map(function(m,midx){
+      var sel=S.find(function(s){return s.member_id===m.member_id;});
+      var isManaged=!m.user_id,isMe=!!(me&&m.user_id===me.id);
+      var ini=(m.display_name||'??').split(' ').filter(Boolean).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
+      var c=AVATAR_PALETTE[midx%AVATAR_PALETTE.length];
+      // v123.55: a 0 index is a value, not a blank (a scratch member's box was empty).
+      var hv=sel?((sel.hcp_index!=null&&sel.hcp_index!=='')?sel.hcp_index:(m.hcp_index!=null?m.hcp_index:'')):(m.hcp_index!=null?m.hcp_index:'');
+      var hd=(hv===''||hv==null)?'':(hv<0?'+'+Math.abs(hv):(''+hv));
+      var mid=_gtEsc(m.member_id);
+      var tag=isMe?'You':(isManaged?'Managed':'');
+      return '<div class="qrw-row qrw-mem'+(sel?' on':'')+'" role="button" tabindex="0" aria-pressed="'+!!sel+'" onclick="window._qrToggleMember(\''+mid+'\')">'
+        +'<span class="qrw-av" style="background:'+c.bg+';color:'+c.fg+';'+(isManaged?'border:1.5px dashed '+c.fg+';':'')+'">'+_gtEsc(ini)+'</span>'
+        +'<span class="qrw-rt"><span class="qrw-rn">'+_gtEsc(m.display_name||'')+'</span>'+(tag?'<span class="qrw-rs">'+tag+'</span>':'')+'</span>'
+        +(sel?'<input id="qrhcp_'+mid+'" class="qrw-hbox" type="text" inputmode="decimal" value="'+_gtEsc(hd)+'" onclick="event.stopPropagation()" aria-label="Handicap for this round"/>'
+          :'<span class="qrw-hbox off">'+(m.hcp_index==null?'-':(m.hcp_index<0?'+'+Math.abs(m.hcp_index):m.hcp_index))+'</span>')
+        +'<span class="qrw-chk">'+(sel?_QRW_CHECK:'')+'</span></div>';
+    }).join('')+'</div>';
+    h+='<div class="qrw-hint c">Tap a handicap to change it for this round.</div>';
+    var n=S.length;note=n===0?'None selected':n+' selected'+(n>_qrS.n?' - max '+_qrS.n:'');
+  } else {
+    var _meta=(me&&me.user_metadata)||{},_meName=(_meta.full_name||(me&&me.email)||'').trim();
+    var _meParts=_meName.split(/\s+/).filter(Boolean),_meFirst=_meParts[0]||'',_meLast=_meParts.slice(1).join(' ')||'';
+    var _myIdx=_myHcpIndex(),_meHcp=_myIdx!=null?_myIdx:'';
+    var rows='';
+    for(var i=0;i<_qrS.n;i++){
+      var c=AVATAR_PALETTE[i%AVATAR_PALETTE.length],saved=(_qrS.players||[])[i]||{},isMe=i===0&&!!me;
+      var fVal=isMe?(saved.first||_meFirst):saved.first||'',lVal=isMe?(saved.last||_meLast):saved.last||'';
+      var hVal=isMe?(saved.idx!=null?saved.idx:_meHcp):(saved.idx!=null&&saved.idx!==''?saved.idx:'');
+      var ini=isMe&&_meFirst?(_meFirst[0]||'').toUpperCase()+(_meLast[0]||'').toUpperCase():'P'+(i+1);
+      rows+='<div class="qrw-prow"><span class="qrw-av" style="background:'+c.bg+';color:'+c.fg+'">'+_gtEsc(ini)+'</span>'
+        +(isMe?'<span class="qrw-rt"><span class="qrw-rn" style="font-weight:700">'+_gtEsc(_meName||'You')+'</span><span class="qrw-rs">You</span></span>'
+            +'<input type="hidden" id="qrfirst'+i+'" value="'+_gtEsc(fVal)+'"/><input type="hidden" id="qrlast'+i+'" value="'+_gtEsc(lVal)+'"/>'
+          :'<input class="qrw-in" id="qrfirst'+i+'" value="'+_gtEsc(fVal)+'" placeholder="First" aria-label="First name"/>'
+            +'<input class="qrw-in" id="qrlast'+i+'" value="'+_gtEsc(lVal)+'" placeholder="Last" aria-label="Last name"/>')
+        +'<label class="qrw-hcp"><span>HCP</span><input id="qridx'+i+'" type="text" inputmode="decimal" value="'+(hVal===''?'':sbHcpDisplay(Number(hVal)))+'" aria-label="Handicap index"/></label>'
+        +(i>0?'<button type="button" class="qrw-ib sm" onclick="window._qrRemoveRow('+i+')" aria-label="Remove player"><i class="ti ti-x" aria-hidden="true"></i></button>':'')
         +'</div>';
     }
+    h+='<div class="qrw-card">'+rows+'</div>'
+      +(_qrS.n<TW_MAX_PLAYERS?'<button type="button" class="qrw-add" onclick="window._qrAddRow()"><i class="ti ti-plus" aria-hidden="true"></i> Add player</button>':'')
+      +'<div class="qrw-hint c">5 or more split into foursomes when the round starts.</div>';
+    sub=me?'You&#39;re in. Add everyone playing.':'Add everyone playing.';
   }
-  if(_qrS.step===4){
-    const hdcpPct=Math.round((_qrS.hdcpPct||0.8)*100);
-    const _hOpts=[100,95,90,85,80,75,70,65,60,55,50];
-    const _hList=_hOpts.indexOf(hdcpPct)>=0?_hOpts:[hdcpPct].concat(_hOpts);
-    const hdcpOpts=_hList.map(function(v){return '<option value="'+v+'"'+(v===hdcpPct?' selected':'')+'>'+v+'%</option>';}).join('');
-    const netOffLow=_qrS.netOffLow||false;
-    return'<div style="'+card+'">'+dotsRow
-      +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div class="qr-step-t">Handicap options</div></div>'
-      +'<div style="padding:14px 20px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between">'
-        +'<div><div style="font-size:14px;font-weight:500;color:var(--color-text-primary)">Handicap adjustment</div><div style="font-size:12px;color:var(--color-text-tertiary);margin-top:2px">% of USGA index applied</div></div>'
-        +'<div style="display:flex;align-items:center;gap:6px"><select id="qrHdcpPct" style="width:76px;padding:7px 8px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:14px;background:var(--color-background-primary);color:var(--color-text-primary)">'+hdcpOpts+'</select></div>'
-      +'</div>'
-      +'<div style="padding:14px 20px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between">'
-        +'<div><div style="font-size:14px;font-weight:500;color:var(--color-text-primary)">Net off low man</div><div style="font-size:12px;color:var(--color-text-tertiary);margin-top:2px">Handicap strokes relative to lowest</div></div>'
-        +'<label class="toggle"><input type="checkbox" id="qrNetOffLow"'+(netOffLow?' checked':'')+' onchange="_qrS.netOffLow=this.checked"><span class="toggle-slider"></span></label>'
-      +'</div>'
-      +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue →</button></div>'
-      +_qrFoot(false)
-      +'</div>';
-  }
+  return '<div class="qrw" data-qr-step="3">'+_qrwTop(false,3,2)+'<div class="qr-step-t qrw-title">Who&#39;s playing?</div>'+(sub?'<div class="qrw-sub">'+sub+'</div>':'')+'</div>'
+    +'<div class="qrw-body">'+h+'</div>'+_qrwFoot(note,'Continue')+'</div>';
 }
+window._qrAddRow=function(){_qrStash();if(_qrS.n<TW_MAX_PLAYERS)_qrS.n++;_qrRender();};
+window._qrRemoveRow=function(i){
+  _qrStash();
+  if(i>0&&i<_qrS.n){(_qrS.players||[]).splice(i,1);_qrS.n--;}
+  _qrRender();
+};
+function _qrHcpStepHtml(){
+  var pct=Math.round((_qrS.hdcpPct||1)*100);
+  var h='<div class="qrw-card qrw-pick"><div class="qrw-rt"><span class="qrw-rn">Handicap allowance</span><span class="qrw-rs">Share of each player&#39;s index used for strokes</span></div>'
+    +'<div class="qrw-step5"><button type="button" class="qrw-sbtn" onclick="window._qrHdcpStep(-5)" aria-label="Less"'+(pct<=50?' disabled':'')+'><i class="ti ti-minus" aria-hidden="true"></i></button>'
+    +'<span class="qrw-pct">'+pct+'%</span>'
+    +'<button type="button" class="qrw-sbtn" onclick="window._qrHdcpStep(5)" aria-label="More"'+(pct>=100?' disabled':'')+'><i class="ti ti-plus" aria-hidden="true"></i></button></div>'
+    +'<input type="hidden" id="qrHdcpPct" value="'+pct+'">'
+    +'<div class="qrw-hint c">'+(pct===100?'Full handicap. ':'')+'Steps of 5%, from 50% to 100%</div></div>'
+    +'<div class="qrw-card qrw-tog"><div class="qrw-rt"><span class="qrw-rn">Play off the low man</span><span class="qrw-rs">The best player gets 0 and everyone else gets the difference</span></div>'
+    +'<label class="toggle"><input type="checkbox" id="qrNetOffLow"'+(_qrS.netOffLow?' checked':'')+' onchange="_qrS.netOffLow=this.checked" aria-label="Play off the low man"><span class="toggle-slider"></span></label></div>';
+  return '<div class="qrw" data-qr-step="4">'+_qrwTop(false,3,3)+'<div class="qr-step-t qrw-title">Handicaps</div></div>'
+    +'<div class="qrw-body">'+h+'</div>'+_qrwFoot('','Create round')+'</div>';
+}
+window._qrHdcpStep=function(d){
+  var ne=document.getElementById('qrNetOffLow');if(ne)_qrS.netOffLow=!!ne.checked;
+  var p=Math.round((_qrS.hdcpPct||1)*100)+d;if(p<50)p=50;if(p>100)p=100;
+  _qrS.hdcpPct=p/100;_qrRender();
+};
 window._qrPickCourse=function(cn){
   _qrS.course=cn;
   const c=CATALOG[cn];
@@ -5797,7 +5989,7 @@ window._qrPickCourse=function(cn){
   _qrRender();
 };
 window._qrSetTee=function(gender,teeName){_qrS.tee={gender,teeName};};
-window._qrClearCourse=function(){_qrS.course=null;_qrS.tee=null;_qrRender();};
+window._qrClearCourse=function(){_qrS.course=null;_qrS.tee=null;_qrS.teeOpen='';_qrRender();};
 window._qrSearchCourse=async function(){
   const q=(document.getElementById('qrCourseSearch')?.value||'').trim().toLowerCase();
   const el=document.getElementById('qrCourseResults');
@@ -5898,7 +6090,16 @@ window._qrSetName=function(el){
     ?'Your name. Clear the field to go back to the course name.'
     :'Follows the course until you change it.';
 };
-window._qrSetHoles=function(el){_qrS.holes=el.dataset.val;_qrRender();};
+// v123.55: the switch moves in place so the pill slides; a full redraw would jump it.
+window._qrSetHoles=function(el){
+  _qrS.holes=el.dataset.val;
+  var seg=document.getElementById('qrHolesSeg'),pill=seg&&seg.querySelector&&seg.querySelector('.qrw-pill');
+  if(!seg||!pill||!seg.querySelectorAll){_qrRender();return;}
+  var bs=seg.querySelectorAll('button'),idx=0;
+  for(var i=0;i<bs.length;i++){var on=bs[i].dataset.val===_qrS.holes;if(on)idx=i;bs[i].className=on?'on':'';bs[i].setAttribute('aria-checked',on?'true':'false');}
+  pill.style.transform='translateX('+(idx*100)+'%)';
+  var ne=document.getElementById('qrRoundName');if(ne&&!(_qrS.name||'').trim())ne.value=_qrRoundName();
+};
 window._qrSetN=function(el){_qrS.n=parseInt(el.dataset.val);_qrRender();};
 window._qrSet=function(key,val){_qrS[key]=val;_qrRender();};
 // v123.38: Players has a Back now. Keep what was typed there so Continue brings it back.
@@ -5918,7 +6119,7 @@ window._qrBack=function(){
   _qrStash();
   // Group mode never entered step 1, so Back must floor at 2 or it lands on a question
   // whose answer _qrNext throws away.
-  var _qrFloor=window._pendingGroupId?2:1;
+  var _qrFloor=2;  // v123.53: the course screen is every flow's first
   if(_qrS.step>_qrFloor){
     _qrS.step--;
     _qrRender();
@@ -5972,6 +6173,7 @@ window._qrSelectAll=function(on){
 };
 window._qrNext=function(){
   // v123.46: Course & holes needs a course. Without one the launch used the first catalog course.
+  if(_qrS.step===2&&!_qrS.course){var _ch=document.getElementById('qrCourseHint');if(_ch)_ch.style.display='none';}
   if(_qrS.step===2&&!_qrS.course){var _cn=document.getElementById('qrCourseNeed');if(_cn)_cn.style.display='block';return;}
   if(_qrS.step===3){
     const gid=window._pendingGroupId;
@@ -5980,7 +6182,7 @@ window._qrNext=function(){
     if(gid&&members.length>0){
       (_qrS.selectedMembers||[]).forEach(function(s){const el=document.getElementById('qrhcp_'+s.member_id);if(el)s.hcp_index=idxFromInput(el.value,(s.hcp_index!=null?s.hcp_index:0));});
       if(!_qrS.selectedMembers||_qrS.selectedMembers.length<2){alert('Please select at least 2 players.');return;}
-      _qrS.n=_qrS.selectedMembers.length;
+      // v123.54: n stays the selection ceiling (TW_MAX_PLAYERS); overwriting it capped the picker after Back.
     } else {
       const pl=[];for(let i=0;i<_qrS.n;i++){pl.push({first:(document.getElementById('qrfirst'+i)?.value||'').trim()||('Player '+(i+1)),last:(document.getElementById('qrlast'+i)?.value||'').trim(),idx:idxFromInput(document.getElementById('qridx'+i)?.value||'',10)});}
       _qrS.players=pl;
@@ -5992,7 +6194,7 @@ window._qrNext=function(){
     // Ripping the apply path out would touch money-adjacent setup for no benefit, and
     // add-round and the E9 wizard still populate it.
   }
-  if(_qrS.step===4){_qrS.hdcpPct=parseFloat(document.getElementById('qrHdcpPct')?.value||80)/100;_qrS.netOffLow=document.getElementById('qrNetOffLow')?.checked||false;}
+  if(_qrS.step===4){_qrS.hdcpPct=parseFloat(document.getElementById('qrHdcpPct')?.value||100)/100;_qrS.netOffLow=document.getElementById('qrNetOffLow')?.checked||false;}
   // The games step is gone: games are chosen on the launch pad, after the foursomes
   // exist and _gameLaneNote can gate them per group. Step 4 is now the last.
   if(_qrS.step<4){_qrS.step++;_qrRender();return;}
@@ -6052,7 +6254,7 @@ function _qrLaunchRound(){
     name:_qrRoundName(),
     date:today,region:'',players,
     rounds:[round],
-    hdcpPct:_qrS.hdcpPct||0.8,
+    hdcpPct:_qrS.hdcpPct||1,
     buyIn:0,potMethod:'netstroke',potTiebreak:'countback',
     isQuickRound:true,
     mpOn:false,mpGamesDefault:nineHole?1:g,mpGamesPerRound:[nineHole?1:g],gameVal:5,mpSettle:'perplayer',
@@ -6092,8 +6294,11 @@ function startQuickRound(){
   // answer _qrNext discards. Skip it and seat the ceiling as the selection cap. Standalone
   // mode has no members to pick from and keeps the step, where n decides how many
   // name-and-handicap rows step 3 renders.
+  // v123.53: the count screen is gone; both flows open on the course screen. Outside a group n is
+  // the number of typed rows (you plus one to start); Add player raises it up to TW_MAX_PLAYERS.
+  // New rounds start at 100% (Kyle).
   var _qrGroupMode=!!window._pendingGroupId;
-  _qrS={step:_qrGroupMode?2:1,n:_qrGroupMode?TW_MAX_PLAYERS:4,holes:'18',course:null,tee:null,players:[],selectedMembers:[],name:'',hdcpPct:0.8,netOffLow:false};
+  _qrS={step:2,n:_qrGroupMode?TW_MAX_PLAYERS:2,holes:'18',course:null,tee:null,players:[],selectedMembers:[],name:'',hdcpPct:1,netOffLow:false};
   _gsGames={};
   let modal=document.getElementById('qrModal');
   if(!modal){
@@ -6109,7 +6314,6 @@ function startQuickRound(){
   _qrLastStep=null;
   _qrRender();
 }
-function startQuickRoundWithPlayers(n){_qrS={step:1,n:n,holes:'18',course:null,tee:null,name:''};startQuickRound();}
 
 // Auto-resume breadcrumb: lets a cold boot (iOS PWA eviction) land back on the
 // active trip with zero taps. Written at the top of viewTrip (retry-safe if the
@@ -6774,7 +6978,7 @@ function buildCourseFields(){const nR=parseInt(document.getElementById('numRound
 // _twS: wizard state object
 // step 1=Trip setup, 2=Players, 3=Handicap, 4=Courses, 5=Money & games
 const TW_MAX_PLAYERS=40;
-let _twS={step:1,name:'',date:'',region:'',numRounds:4,selectedMembers:[],hdcpPct:80,netOffLow:false,courses:[],tees:[],games:{},buyIn:50,potTiebreak:'countback',potMethod:'netstroke'};
+let _twS={step:1,name:'',date:'',region:'',numRounds:4,selectedMembers:[],hdcpPct:100,netOffLow:false,courses:[],tees:[],games:{},buyIn:50,potTiebreak:'countback',potMethod:'netstroke'};
 const _TW_TOTAL_STEPS=5;
 
 let _twLastStep=null;
@@ -6811,8 +7015,13 @@ function _twFooter(nextLabel,backLabel){
   const bAction=_twS.step>1?'window._twBack()':'window._twCancel()';
   return`<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary);">`+
     `<button style="width:100%;background:#1D9E75;color:#fff;border:none;border-radius:var(--border-radius-md);padding:13px;font-size:15px;font-weight:500;cursor:pointer;" onclick="window._twNext()">${nLbl}</button></div>`+
-    `<div style="padding:10px 20px;text-align:center;border-top:0.5px solid var(--color-border-tertiary);">`+
-    `<button style="font-size:14px;color:var(--color-text-tertiary);background:none;border:none;cursor:pointer;" onclick="${bAction}">${bLbl}</button></div>`;
+    // v123.54: every screen after the first has Back and Cancel (Kyle: "no way to cancel out of it").
+    (_twS.step>1
+      ?`<div style="display:flex;justify-content:space-between;padding:10px 20px;border-top:0.5px solid var(--color-border-tertiary);">`+
+        `<button style="font-size:14px;color:var(--color-text-tertiary);background:none;border:none;cursor:pointer;" onclick="window._twBack()">${bLbl==='Back'?'\u2190 Back':bLbl}</button>`+
+        `<button style="font-size:14px;color:var(--color-text-tertiary);background:none;border:none;cursor:pointer;" onclick="window._twCancel()">Cancel</button></div>`
+      :`<div style="padding:10px 20px;text-align:center;border-top:0.5px solid var(--color-border-tertiary);">`+
+        `<button style="font-size:14px;color:var(--color-text-tertiary);background:none;border:none;cursor:pointer;" onclick="${bAction}">${bLbl}</button></div>`);
 }
 
 function _twStepHtml(){
@@ -7039,7 +7248,7 @@ window._twNext=function(){
     _twS.step=3;_twRender();return;
   }
   if(_twS.step===3){
-    _twS.hdcpPct=parseInt(document.getElementById('tw_hdcpPct')?.value||80);
+    _twS.hdcpPct=parseInt(document.getElementById('tw_hdcpPct')?.value||100);
     // netOffLow already updated via _twToggleNetOffLow
     _twS.step=4;_twRender();return;
   }
@@ -7955,6 +8164,7 @@ function _updateTabBar(v){
   }
 }
 function setView(v){
+  if(_fsP)window._fsPromptClose();
   // Normalize: 'scores' is the new name for entry; both route to view-entry content
   const contentView=(v==='scores')?'entry':v;
   ALL_VIEWS.forEach(n=>{
@@ -8024,7 +8234,7 @@ const _RZ5MODES=[
 function roundValFs(key,r,fi,tripDefault){const rd=WK.rounds&&WK.rounds[r];if(rd&&rd.independentGames&&fi!=null&&Array.isArray(rd.fsGames)&&rd.fsGames[fi]&&rd.fsGames[fi][key]!==undefined)return rd.fsGames[fi][key];return roundVal(key,r,tripDefault);}
 function _fsOff(game,r,fi){const rd=WK.rounds&&WK.rounds[r];return !!(rd&&rd.independentGames&&!gameOnFs(game,r,fi));}
 const OPT_PANELS=['menu','weekend','players','flights','courses','info','htp'];
-function setOptPanel(p){STATE.optPanel=p;OPT_PANELS.forEach(n=>{const panel=document.getElementById('opt-panel-'+n);if(panel){panel.classList.remove('active');if(n===p)panel.classList.add('active');}});const back=document.getElementById('opt-back'),backT=document.getElementById('opt-back-title'),menuT=document.getElementById('opt-menu-title');if(p==='players'&&typeof _plOpen!=='undefined')_plOpen={};
+function setOptPanel(p){if(_fsP)window._fsPromptClose();STATE.optPanel=p;OPT_PANELS.forEach(n=>{const panel=document.getElementById('opt-panel-'+n);if(panel){panel.classList.remove('active');if(n===p)panel.classList.add('active');}});const back=document.getElementById('opt-back'),backT=document.getElementById('opt-back-title'),menuT=document.getElementById('opt-menu-title');if(p==='players'&&typeof _plOpen!=='undefined')_plOpen={};
   const titles={weekend:(WK&&WK.isQuickRound)?'Round Setup':'Trip Setup',players:'Players',flights:'Foursomes',courses:'Courses',info:'Preferences',htp:'How It Works'};if(p==='menu'){if(back)back.style.display='none';if(menuT)menuT.style.display='';}else{if(back)back.style.display='';if(backT)backT.textContent=titles[p]||'';if(menuT)menuT.style.display='none';}renderOptPanel(p);_wireSimLongPress();}
 function renderOptions(){setOptPanel('menu');}
 function _toggleSimMember(){
@@ -12258,7 +12468,7 @@ function renderFlightsPanel(){
       html+='<div style="padding:8px 12px;font-size:11px;color:#D85A30;background:rgba(216,90,48,0.08);line-height:1.45">Bigger than a foursome. Move players out, or tap Auto-split.</div>';
     }
     if(!grp.length){
-      html+='<div style="padding:16px 12px;text-align:center;font-size:12px;color:var(--color-text-tertiary);line-height:1.5">Empty.<br>Tap a player above and move them here.</div>';
+      html+='<div style="padding:16px 12px;text-align:center;font-size:12px;color:var(--color-text-tertiary);line-height:1.5">Empty.<br>Add a player, or tap one above and move them here.</div>';
     }
     grp.forEach(function(pi,pos){
       const p=WK.players[pi];
@@ -12279,10 +12489,11 @@ function renderFlightsPanel(){
         +upEl+dnEl
         +'</div>';
     });
+    if(editable&&nP<TW_MAX_PLAYERS)html+='<div class="fs-addp" onclick="window._fsAddPlayerTo('+r+','+gi+')"><span class="fs-addp-c">+</span><span>Add player</span></div>';
     html+='</div>';
   });
   if(editable)html+='<div class="fs-addf" onclick="window._fsAddFoursome('+r+')">+ Add foursome</div>';
-  html+='<div style="font-size:11.5px;color:var(--color-text-secondary);line-height:1.5;margin:14px 2px 2px;padding:10px 12px">Tap a player to move or swap them. Use the arrows to reorder within a foursome. Each round keeps its own foursomes.</div>';
+  html+='<div style="font-size:11.5px;color:var(--color-text-secondary);line-height:1.5;margin:14px 2px 2px;padding:10px 12px">Tap a player to move or swap them. Add player puts someone new straight into that foursome. Each round keeps its own foursomes.</div>';
   document.getElementById('opt-panel-flights').innerHTML=html;
   renderRdPicker('flightsRdSel',r,'switchFlightsRound',false);
 }
@@ -12407,7 +12618,7 @@ window._fsTapPlayer=function(r,pi){
 };
 function toggleEditPanel(eid,btnId){const panel=document.getElementById(eid);const btn=document.getElementById(btnId);const display=document.getElementById(eid+'_display');if(!panel)return;const isOpen=panel.style.display!=='none';panel.style.display=isOpen?'none':'block';if(display)display.style.display=isOpen?'flex':'none';if(btn)btn.style.display=isOpen?'inline-block':'none';if(isOpen){const mc=eid.match(/^ce_(.+)$/);if(mc){const cname=mc[1].replace(/_/g,' ');if(CATALOG[cname])saveCourse(cname);}renderPlayersPanel();}}
 function toggleAddPlayerRow(){const row=document.getElementById('addPlayerRow');const btn=document.getElementById('addPlayerToggleBtn');if(!row)return;const opening=row.style.display==='none';row.style.display=opening?'block':'none';if(btn)btn.style.display=opening?'none':'inline-block';if(opening)setTimeout(function(){var el=document.getElementById('apFirst');if(el)el.focus();},50);}
-function confirmAddPlayer(){if(!canEditTrip())return;var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=idxFromInput(document.getElementById('apIdx')?document.getElementById('apIdx').value:'',10);if(!first){alert('Enter a first name.');return;}if(WK.players.length>=TW_MAX_PLAYERS)return;var c=pickColor();var newP={pid:s2NewTok(),name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};_seatPlayer(newP);}
+function confirmAddPlayer(){_apTarget=null;if(!canEditTrip())return;var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=idxFromInput(document.getElementById('apIdx')?document.getElementById('apIdx').value:'',10);if(!first){alert('Enter a first name.');return;}if(WK.players.length>=TW_MAX_PLAYERS)return;var c=pickColor();var newP={pid:s2NewTok(),name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};_seatPlayer(newP);}
 // Every roster add lands here: the wizard-equivalent seating sequence, in one place.
 // Pads each round's score rows for the new column, reconciles flights and every game
 // off the new membership, then renders and writes. Returns false when the add is
@@ -12418,12 +12629,19 @@ function _seatPlayer(newP){
   var allPlayers=WK.players.concat([newP]);resolveDisplayNames(allPlayers);
   WK.players.push(newP);
   WK.rounds.forEach(function(_,r){STATE.scores[r].forEach(function(h){h.push(null);});});
+  // v123.60: from a foursome's Add player, that foursome takes them in that round (unless locked since).
+  var _tg=_apTarget;_apTarget=null;
+  if(_tg&&STATE.roundFlights&&Array.isArray(STATE.roundFlights[_tg.r])&&Array.isArray(STATE.roundFlights[_tg.r][_tg.gi])
+    &&!(typeof isAnyFlightLocked==='function'&&isAnyFlightLocked(_tg.r)))STATE.roundFlights[_tg.r][_tg.gi].push(WK.players.length-1);
+  var _alone=_fsPlaceNewPlayer(WK.players.length-1);
   _rosterReconcileAll();
   if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';
   renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();
   renderMPHoleBox();renderVegasBoxWrap();
+  if(STATE.optPanel==='flights'&&typeof renderFlightsPanel==='function')renderFlightsPanel();
   if(typeof renderGamesTab==='function'&&document.getElementById('view-games')&&document.getElementById('view-games').style.display!=='none')renderGamesTab();
   autoSave();s2WriteActive();
+  _fsPromptOpen('add',_alone,WK.players.length-1);
   return true;
 }
 // Group members not already seated on this trip. member_id is the identity that makes
@@ -12447,9 +12665,14 @@ function _apAvailableMembers(){
   });
 }
 window._apClose=function(){var el=document.getElementById('apSheet');if(el)el.remove();};
-window._apOpen=async function(){
+// v123.60: the foursome an add came from (Foursomes' "+ Add player"), or null from the Players page.
+// _seatPlayer consumes it; every open resets it.
+var _apTarget=null;
+window._fsAddPlayerTo=function(r,gi){window._apOpen({r:r,gi:gi});};
+window._apOpen=async function(tg){
   if(!canEditTrip())return;
   if(WK.players.length>=TW_MAX_PLAYERS){alert('This trip is full at '+TW_MAX_PLAYERS+' players.');return;}
+  _apTarget=(tg&&typeof tg.r==='number'&&typeof tg.gi==='number')?{r:tg.r,gi:tg.gi}:null;
   var gid=WK._groupId;
   // Cold cache on a freshly loaded trip. Fetch before painting, or the sheet opens
   // claiming the group is empty when it is not.
@@ -12470,7 +12693,8 @@ function _apRender(showGuest){
   h+='<div style="background:var(--color-background-primary);border-radius:var(--border-radius-lg) var(--border-radius-lg) 0 0;width:100%;max-width:480px;overflow-y:auto;max-height:88vh">';
   h+='<div style="background:#0F6E56;padding:13px 14px">'
     +(gname?'<div style="font-size:10px;color:#9FE1CB;letter-spacing:0.06em;text-transform:uppercase">'+gname+'</div>':'')
-    +'<div style="font-size:17px;font-weight:500;color:#E1F5EE;margin-top:2px">Add player</div></div>';
+    +'<div style="font-size:17px;font-weight:500;color:#E1F5EE;margin-top:2px">Add player</div>'
+    +(_apTarget?'<div class="ap-joins" style="font-size:12px;color:#9FE1CB;margin-top:2px">Joins Foursome '+(_apTarget.gi+1)+'</div>':'')+'</div>';
   if(!showGuest){
     if(avail.length){
       h+='<div class="ap-sec">In the group, not in this trip</div>';
@@ -12553,7 +12777,7 @@ window._apGuestSubmit=async function(){
   _seatPlayer({pid:s2NewTok(),name:full,first:first,last:last,venmo:venmo,
     member_id:memberId,idx:hp.value,bg:c.bg,fg:c.fg,ini:''});
 };
-function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=TW_MAX_PLAYERS)return;const c=pickColor(),i=WK.players.length;WK.players.push({pid:s2NewTok(),name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));});_rosterReconcileAll();if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();autoSave();s2WriteActive();}
+function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=TW_MAX_PLAYERS)return;const c=pickColor(),i=WK.players.length;WK.players.push({pid:s2NewTok(),name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));});const _alone=_fsPlaceNewPlayer(WK.players.length-1);_rosterReconcileAll();if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();autoSave();s2WriteActive();_fsPromptOpen('add',_alone,WK.players.length-1);}
 var _rmPlayerBusy=false;
 async function removePlayer(idx){if(!canEditTrip())return;
 // v123.47: a round can drop to one player (the wizard starts one-player rounds); a trip keeps two.
@@ -12597,7 +12821,123 @@ WK.rounds.forEach(function(rd){
 function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=STATE.mpTeams.map(function(rd){return fixTeams(rd);});STATE.vegTeams=STATE.vegTeams.map(function(rd){return fixTeams(rd);});if(STATE.skinsTeams)STATE.skinsTeams=STATE.skinsTeams.map(function(rd){return fixTeams(rd);});if(STATE.hammerTeams)STATE.hammerTeams=STATE.hammerTeams.map(function(rd){return fixTeams(rd);});WK.rounds.forEach(function(rd){if(Array.isArray(rd.fbTeams))rd.fbTeams=rd.fbTeams.map(function(t){return t.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(STATE.roundFlights)STATE.roundFlights=STATE.roundFlights.map(function(fls){return fls.map(function(fl){return fl.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';
 // v123.47: no game seats one player, so a round left with one has every game off (round, every
 // foursome, and the trip-level ones) rather than a box that cannot settle.
-if(WK.isQuickRound&&WK.players.length===1){GAME_DEFS.forEach(function(d){if(d.tripLevel){WK[d.onField]=false;return;}WK.rounds.forEach(function(rd){if(!rd)return;rd[d.onField]=false;if(Array.isArray(rd.fsGames))rd.fsGames.forEach(function(f){if(f)f[d.onField]=false;});});});}_rosterReconcileAll();renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
+if(WK.isQuickRound&&WK.players.length===1){GAME_DEFS.forEach(function(d){if(d.tripLevel){WK[d.onField]=false;return;}WK.rounds.forEach(function(rd){if(!rd)return;rd[d.onField]=false;if(Array.isArray(rd.fsGames))rd.fsGames.forEach(function(f){if(f)f[d.onField]=false;});});});}const _odd=_fsCheckAfterRemove();_rosterReconcileAll();renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();_fsPromptOpen('rm',_odd,-1);}
+// v123.58: an add or a remove never moves anyone already in a foursome (v123.56/57 regrouped from
+// scratch). Both return the rounds left with odd groups, and the caller offers choices in a prompt.
+function _fsLive(fls){return (fls||[]).filter(function(f){return Array.isArray(f)&&f.length;});}
+// Rounds where the removal left more foursomes than the players need. Nothing is changed here.
+function _fsCheckAfterRemove(){
+  if(!STATE||!STATE.roundFlights||!WK||!WK.players)return [];
+  var nP=WK.players.length,need=Math.max(1,Math.ceil(nP/4)),R=[];
+  STATE.roundFlights.forEach(function(fls,r){
+    if(!Array.isArray(fls))return;
+    if(typeof isAnyFlightLocked==='function'&&isAnyFlightLocked(r))return;
+    if(_fsLive(fls).length>need)R.push(r);
+  });
+  return R;
+}
+// Per round: the smallest foursome with room takes the new player (an empty one made for them counts);
+// none has room, they start a foursome alone and that round is returned for the prompt. Locked: untouched.
+function _fsPlaceNewPlayer(pi){
+  if(!STATE||!STATE.roundFlights||!WK||!WK.players)return [];
+  var alone=[];
+  STATE.roundFlights=STATE.roundFlights.map(function(fls,r){
+    if(!Array.isArray(fls)||!fls.length)return fls;
+    if(fls.some(function(f){return Array.isArray(f)&&f.indexOf(pi)>=0;}))return fls;
+    if(typeof isAnyFlightLocked==='function'&&isAnyFlightLocked(r))return fls;
+    var room=fls.filter(function(f){return Array.isArray(f)&&f.length<4;}).sort(function(a,b){return a.length-b.length;})[0];
+    if(room){room.push(pi);return fls;}
+    alone.push(r);
+    return _fsLive(fls).concat([[pi]]);
+  });
+  return alone;
+}
+// Snake draft by index into g groups (the Auto-split button's order), for the prompt's split choices.
+function _fsSnake(g){
+  var order=WK.players.map(function(_,pi){return pi;}).sort(function(a,b){return WK.players[a].idx-WK.players[b].idx;});
+  var out=[];for(var i=0;i<g;i++)out.push([]);
+  order.forEach(function(pi,k){var row=Math.floor(k/g),col=k%g;out[(row%2===0)?col:(g-1-col)].push(pi);});
+  return out;
+}
+function _fsSizes(nP,g){var base=Math.floor(nP/g),rem=nP%g,o=[];for(var k=0;k<g;k++)o.push(base+(k<rem?1:0));return o;}
+function _fsWord(n){return ['Zero','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten'][n]||String(n);}
+function _fsSplitNote(nP,g){var z=_fsSizes(nP,g);
+  return (z[0]===z[z.length-1]?_fsWord(g)+' groups of '+z[0]:'Groups of '+z.slice(0,-1).join(', ')+' and '+z[z.length-1])+', balanced by index';}
+// --- the prompt --------------------------------------------------------------------------------
+var _fsP=null;
+var _FSP_SUB='Optional. Group sizes decide which games you can play.';
+function _fsPromptOpen(kind,R,pi){
+  if(!R||!R.length||!STATE||!WK)return;
+  var r0=R.indexOf(STATE.currentRound)>=0?STATE.currentRound:R[0];
+  var fls=STATE.roundFlights[r0],nP=WK.players.length,live=_fsLive(fls),opts=[];
+  var num=function(f){return fls.indexOf(f)+1;};
+  var P={kind:kind,R:R.slice(),r0:r0,pi:pi,nP:nP,sel:0};
+  if(kind==='add'){
+    var mine=live.filter(function(f){return f.indexOf(pi)>=0;})[0];if(!mine)return;
+    var others=live.filter(function(f){return f!==mine;}),nm=displayName(pi),last=others[others.length-1];
+    var g=Math.max(1,Math.ceil(nP/4));
+    P.head=nm+' is alone in Foursome '+num(mine);
+    P.sub=_FSP_SUB;
+    opts.push({label:'Leave as is',note:''});
+    if(last)opts.push({label:last.length!==4?'Put '+nm+' in Foursome '+num(last):(others.length===1?'Make Foursome '+num(last)+' a fivesome':'Fivesome in Foursome '+num(last)),
+      note:others.length===1?'Everyone in one group':nm+' joins the newest group',
+      run:function(fl){var lv=_fsLive(fl),me=lv.filter(function(f){return f.indexOf(pi)>=0;})[0];
+        if(!me||me.length!==1)return null;var rest=lv.filter(function(f){return f!==me;});if(!rest.length)return null;
+        rest[rest.length-1].push(pi);return rest;}});
+    if(g>1)opts.push({label:others.length===1&&g===2?'Split '+_fsSizes(nP,2).join(' and '):'Auto-split all',note:others.length===1&&g===2?'Balanced by index':_fsSplitNote(nP,g),
+      run:function(fl){var lv=_fsLive(fl),me=lv.filter(function(f){return f.indexOf(pi)>=0;})[0];
+        if(!me||me.length!==1)return null;return _fsSnake(g);}});
+  } else {
+    var need=Math.max(1,Math.ceil(nP/4));
+    if(live.length<=need)return;
+    P.head=nP+' players across '+live.length+' foursomes';
+    P.sub=_FSP_SUB;
+    opts.push({label:'Leave as is',note:''});
+    opts.push(need===1
+      ?{label:'Merge into one foursome',note:'All '+_fsWord(nP).toLowerCase()+' together',
+        run:function(fl){var lv=_fsLive(fl);if(lv.length<2)return null;return [[].concat.apply([],lv)];}}
+      :{label:'Regroup into '+need+' foursomes',note:_fsSplitNote(nP,need),
+        run:function(fl){if(_fsLive(fl).length<=need)return null;return _fsSnake(need);}});
+  }
+  P.opts=opts;_fsP=P;_fsPromptRender();
+}
+function _fsPromptHtml(){
+  var P=_fsP;if(!P)return '';
+  return '<div class="fsp-hd"><span class="fsp-ico"><i class="ti ti-users" aria-hidden="true"></i></span>'
+    +'<span class="fsp-tx"><b>'+_gtEsc(P.head)+'</b><small>'+_gtEsc(P.sub)+'</small></span>'
+    +'<button type="button" class="fsp-x" aria-label="Close" onclick="window._fsPromptClose()"><i class="ti ti-x" aria-hidden="true"></i></button></div>'
+    +'<div class="fsp-opts" role="radiogroup">'+P.opts.map(function(o,i){var on=i===P.sel;
+      return '<button type="button" class="fsp-opt'+(on?' on':'')+'" role="radio" aria-checked="'+on+'" onclick="window._fsPromptPick('+i+')"><span class="fsp-dot"></span>'
+        +'<span class="fsp-ot"><b>'+_gtEsc(o.label)+'</b>'+(o.note?'<small>'+_gtEsc(o.note)+'</small>':'')+'</span></button>';}).join('')+'</div>'
+    +'<div class="fsp-ft"><button type="button" class="fsp-link" onclick="window._fsPromptFoursomes()">Open foursomes ›</button>'
+    +'<button type="button" class="fsp-apply"'+(P.sel?'':' disabled')+' onclick="window._fsPromptApply()">Apply change</button></div>';
+}
+function _fsPromptRender(){
+  var el=document.getElementById('fsPrompt');
+  if(!_fsP){if(el)el.remove();return;}
+  if(!el){el=document.createElement('div');el.id='fsPrompt';el.className='fsp';el.setAttribute('role','dialog');el.setAttribute('aria-label','Foursomes');document.body.appendChild(el);}
+  el.innerHTML=_fsPromptHtml();
+}
+window._fsPromptClose=function(){_fsP=null;_fsPromptRender();};
+window._fsPromptPick=function(i){if(!_fsP||!_fsP.opts[i])return;_fsP.sel=i;_fsPromptRender();};
+window._fsPromptFoursomes=function(){var r=_fsP?_fsP.r0:STATE.currentRound;window._fsPromptClose();setView('setup');STATE.flightsViewRound=r;setOptPanel('flights');};
+// Apply: the picked choice on every round the prompt covers, skipping one locked since; a roster that
+// changed since it opened just closes it.
+window._fsPromptApply=function(){
+  var P=_fsP;if(!P||!P.sel||!P.opts[P.sel]||!P.opts[P.sel].run)return;
+  if(!canEditTrip()||!WK||WK.players.length!==P.nP){window._fsPromptClose();return;}
+  var o=P.opts[P.sel];
+  P.R.forEach(function(r){
+    if(typeof isAnyFlightLocked==='function'&&isAnyFlightLocked(r))return;
+    var fl=STATE.roundFlights&&STATE.roundFlights[r];if(!Array.isArray(fl))return;
+    var nx=o.run(JSON.parse(JSON.stringify(fl)),r);
+    if(nx)STATE.roundFlights[r]=_fsNormalize(nx,WK.players.length);
+  });
+  window._fsPromptClose();
+  _rosterReconcileAll();renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();
+  if(STATE.optPanel==='flights'&&typeof renderFlightsPanel==='function')renderFlightsPanel();
+  autoSave();s2WriteActive();
+};
 // Trip admin management handlers
 var _tripAdminPickerMembers=[];
 window._tripAdminAdd=function(idx){
@@ -15359,13 +15699,18 @@ window._gsOpenAddPicker=function(){
     const _yes=inactive.filter(def=>!_gameLaneNote(def.id,r,_laneAP));
     const _no=inactive.filter(def=>_gameLaneNote(def.id,r,_laneAP));
     const _split=(_yes.length&&_no.length)?'<div class="gs-add-split"><i></i><span>Not available for these foursomes</span><i></i></div>':'';
-    list.innerHTML=_yes.map(_mkRow).join('')+_split+_no.map(_mkRow).join('');
+    // v123.56: a game locked because a foursome is too small gets a way to the foursomes.
+    const _size=_no.some(def=>/Needs \d[\d, or]* players/.test(String(_gameLaneNote(def.id,r,_laneAP)||'')));
+    const _fsNote=_size?'<div class="gs-add-fsnote">Some foursomes are too small for these games. <button type="button" onclick="window._gsCheckFoursomes('+r+')">Check foursomes ›</button></div>':'';
+    // v123.57: the note heads the locked list, so it is seen without scrolling.
+    list.innerHTML=_yes.map(_mkRow).join('')+_split+_fsNote+_no.map(_mkRow).join('');
   }
   document.getElementById('gsAddPicker').classList.add('visible');
   document.getElementById('gsAddPickerList').scrollTop=0;
   requestAnimationFrame(window._gsAddMore);
 };
 window._gsCloseAddPicker=function(){document.getElementById('gsAddPicker').classList.remove('visible');};
+window._gsCheckFoursomes=function(r){window._gsCloseAddPicker();setView('setup');STATE.flightsViewRound=r;setOptPanel('flights');};
 // Shown only while there is more list below, and cleared at the end. Called from
 // the list's own onscroll rather than a listener bound at open, because the list
 // is rebuilt by innerHTML on every open and a listener has to outlive that.
