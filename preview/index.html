@@ -1205,6 +1205,63 @@ body.force-dark .rdsheet-hd,body.force-dark .board-section-label{color:#EDE6D3;}
 body.force-light .pg-title{color:#13795B;}
 @media(prefers-color-scheme:dark){body:not(.force-light) .pg-title{color:#EFC456;}}
 body.force-dark .pg-title{color:#EFC456;}
+/* v123.52: the round wizard's new look (canvas "Round wizard, step 1"), the course screen first. */
+#qrModal.qrw-full{background:var(--color-background-page)!important;align-items:stretch!important;justify-content:center!important;}
+#qrModal.qrw-full .qr-inner{width:100%;max-width:560px;height:100%;}
+@media(prefers-color-scheme:light){body:not(.force-dark) .qrw{--qrw-acc:#13795B;--qrw-link:#13795B;--qrw-lbl:#0F4D36;--qrw-title:#13795B;--qrw-sel:rgba(19,121,91,0.08);}}
+body.force-light .qrw{--qrw-acc:#13795B;--qrw-link:#13795B;--qrw-lbl:#0F4D36;--qrw-title:#13795B;--qrw-sel:rgba(19,121,91,0.08);}
+.qrw{display:flex;flex-direction:column;height:100%;background:var(--color-background-page);color:var(--color-text-primary);}
+@media(prefers-color-scheme:dark){body:not(.force-light) .qrw{--qrw-acc:#1D9E75;--qrw-link:#3CC79A;--qrw-lbl:#EDE6D3;--qrw-title:#EFC456;--qrw-sel:rgba(29,158,117,0.16);}}
+body.force-dark .qrw{--qrw-acc:#1D9E75;--qrw-link:#3CC79A;--qrw-lbl:#EDE6D3;--qrw-title:#EFC456;--qrw-sel:rgba(29,158,117,0.16);}
+.qrw-top{display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:env(safe-area-inset-top) 4px 0;flex-shrink:0;}
+.qrw-ib{all:unset;width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--color-text-secondary);cursor:pointer;font-size:22px;flex-shrink:0;}
+.qrw-ctx{font-size:13px;font-weight:600;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.qrw-bar{display:flex;gap:6px;padding:0 16px;flex-shrink:0;}
+.qrw-bar span{flex:1;height:4px;border-radius:2px;background:var(--color-background-secondary);}
+.qrw-bar span.on{background:var(--qrw-acc);}
+.qrw-head{padding:22px 16px 6px;flex-shrink:0;}
+.qrw-step{font-size:12px;font-weight:700;letter-spacing:0.08em;color:var(--color-text-secondary);margin-bottom:4px;}
+.qr-step-t.qrw-title{font-size:26px;font-weight:700;letter-spacing:-0.01em;line-height:1.2;}
+.qrw-body{flex:1;overflow-y:auto;padding:14px 16px 20px;display:flex;flex-direction:column;gap:12px;}
+.qrw-search{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 6px 0 14px;background:var(--color-background-primary);border:1.5px solid var(--qrw-acc);border-radius:12px;box-sizing:border-box;}
+.qrw-search>i{font-size:20px;color:var(--color-text-secondary);}
+.qrw-search input{flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:16px;color:var(--color-text-primary);font-family:inherit;padding:0;margin:0;box-shadow:none;}
+.qrw-search button{all:unset;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:9px;color:var(--qrw-link);cursor:pointer;font-size:20px;}
+.qrw-results:empty{display:none;}
+.qrw-lblrow{display:flex;align-items:baseline;justify-content:space-between;margin-top:6px;}
+.qrw-lbl{font-size:12px;font-weight:700;letter-spacing:0.08em;color:var(--qrw-lbl);}
+.qrw-note{font-size:12px;color:var(--color-text-secondary);}
+.qrw-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;overflow:hidden;}
+.qrw-row{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:8px 14px;cursor:pointer;border-bottom:0.5px solid var(--color-border-tertiary);}
+.qrw-row:last-child{border-bottom:none;}
+.qrw-ico{width:34px;height:34px;border-radius:9px;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;color:var(--qrw-link);flex-shrink:0;font-size:17px;}
+.qrw-ico.lg{width:40px;height:40px;border-radius:10px;font-size:19px;}
+.qrw-rt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.qrw-rn{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.qrw-rs{font-size:12px;color:var(--color-text-secondary);}
+.qrw-rr{font-size:12px;font-weight:600;color:var(--color-text-secondary);white-space:nowrap;}
+.qrw-empty{font-size:13px;color:var(--color-text-secondary);text-align:center;line-height:1.5;padding:8px 12px;}
+.qrw-link{all:unset;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;font-size:15px;font-weight:600;color:var(--qrw-link);cursor:pointer;}
+.qrw-pick{padding:14px;display:flex;flex-direction:column;gap:10px;}
+.qrw-pickhd{display:flex;align-items:center;gap:12px;}
+.qrw-pn{font-size:17px;font-weight:700;color:var(--qrw-title);}
+.qrw-change{all:unset;font-size:14px;font-weight:600;color:var(--qrw-link);cursor:pointer;padding:10px 4px;}
+.qrw-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.qrw-chip{all:unset;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:40px;padding:4px 12px;border-radius:20px;border:1px solid var(--color-border-secondary);font-size:14px;font-weight:500;cursor:pointer;}
+.qrw-chip small{font-size:10px;font-weight:500;color:var(--color-text-secondary);}
+.qrw-chip.on{border:1.5px solid var(--qrw-acc);background:var(--qrw-sel);font-weight:700;color:var(--qrw-title);}
+.qrw-seg{display:flex;gap:4px;padding:4px;background:var(--color-background-secondary);border-radius:12px;}
+.qrw-seg button{all:unset;flex:1 1 0;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;}
+.qrw-seg button small{font-size:10px;color:var(--color-text-secondary);}
+.qrw-seg button.on{background:var(--color-background-primary);font-weight:700;color:var(--qrw-title);box-shadow:0 1px 3px rgba(0,0,0,0.12);}
+.qrw-name{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:text;}
+.qrw-name>i{font-size:18px;color:var(--color-text-secondary);}
+.qrw-name-in{border:none;outline:none;background:transparent;padding:0;margin:0;font-size:15px;font-weight:600;color:var(--color-text-primary);font-family:inherit;width:100%;box-shadow:none;}
+.qrw-hint{font-size:12px;color:var(--color-text-secondary);line-height:1.5;padding:0 4px;}
+.qrw-hint.c{text-align:center;padding:0 0 8px;}
+.qrw-foot{flex-shrink:0;padding:12px 16px calc(16px + env(safe-area-inset-bottom));border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-page);}
+.qrw-cta{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:100%;height:50px;border-radius:12px;background:#13795B;color:#FFFFFF;font-size:16px;font-weight:600;cursor:pointer;}
+.qrw-cta.off{background:var(--color-background-secondary);color:var(--color-text-tertiary);}
 /* v123.45: the Best individual rounds heading, in the section-label colours. */
 .rr-hd{font-size:12px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;}
 @media(prefers-color-scheme:light){body:not(.force-dark) .rr-hd{color:#0F4D36;}}
@@ -1997,7 +2054,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.51';
+const APP_VERSION='v123.52';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5583,13 +5640,16 @@ function _qrRender(){
   if(!modal)return;
   const inner=modal.querySelector('.qr-inner');
   if(!inner)return;
+  // v123.52: the course step is full screen in the new look; the scroll lives in its body.
+  if(modal.classList)modal.classList[_qrS.step===2?'add':'remove']('qrw-full');
+  const _sc=function(e){return (e&&e.querySelector&&e.querySelector('.qrw-body'))||e;};
   const old=inner.firstElementChild;
   const keep=(_qrLastStep===_qrS.step)&&old;
-  const y=keep?old.scrollTop:0;
+  const y=keep?_sc(old).scrollTop:0;
   inner.innerHTML=_qrStepHtml();
   _qrLastStep=_qrS.step;
   const nw=inner.firstElementChild;
-  if(nw)nw.scrollTop=y;
+  if(nw)_sc(nw).scrollTop=y;
 }
 
 // v123.37: the wizard's pill. The group's name in a group, else "New round".
@@ -5631,50 +5691,7 @@ function _qrStepHtml(){
       +'</div>';
   }
 
-  if(_qrS.step===2){
-    const holesOpts=[{val:'18',label:'18 holes',sub:''},{val:'front',label:'Front 9',sub:'Holes 1-9'},{val:'back',label:'Back 9',sub:'Holes 10-18'}];
-    const holesRows=holesOpts.map(function(o){
-      const active=o.val===_qrS.holes;
-      return'<div onclick="window._qrSetHoles(this)" data-val='+JSON.stringify(o.val)+' style="display:flex;align-items:center;justify-content:space-between;padding:13px 20px;border-bottom:0.5px solid var(--color-border-tertiary);border-left:3px solid '+(active?'#1D9E75':'transparent')+';cursor:pointer">'
-        +'<div>'+(o.sub?'<div style="font-size:15px;font-weight:'+(active?500:400)+';color:var(--color-text-primary)">'+o.label+'</div><div style="font-size:12px;color:var(--color-text-tertiary);margin-top:2px">'+o.sub+'</div>':'<span style="font-size:15px;font-weight:'+(active?500:400)+';color:var(--color-text-primary)">'+o.label+'</span>')+'</div>'
-        +'<div style="width:20px;height:20px;border-radius:50%;border:1.5px solid '+(active?'#1D9E75':'var(--color-border-secondary)')+';background:'+(active?'#1D9E75':'transparent')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(active?'<div style="width:8px;height:8px;border-radius:50%;background:#fff"></div>':'')+'</div>'
-        +'</div>';
-    }).join('');
-    const courseSection=_qrS.course
-      ?'<div style="padding:12px 20px;border-bottom:0.5px solid var(--color-border-tertiary)">'
-        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
-        +'<div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">'+courseDisp(_qrS.course)+'</div>'
-        +'<button onclick="window._qrClearCourse()" style="border:none;background:none;font-size:12px;color:#1D9E75;cursor:pointer;padding:0;text-decoration:underline">Change</button>'
-        +'</div>'
-        +_buildTeePicker(_qrS.course,_qrS.tee&&_qrS.tee.gender,_qrS.tee&&_qrS.tee.teeName,'window._qrTeePick(event.target.value)')
-        +'</div>'
-      :'<div style="padding:12px 20px;border-bottom:0.5px solid var(--color-border-tertiary)">'
-        +'<div style="display:flex;align-items:center;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);overflow:hidden;background:var(--color-background-primary)">'
-        +'<input id="qrCourseSearch" class="text-input" placeholder="Search by name..." style="flex:1;border:none;box-shadow:none;border-radius:0;margin:0;font-size:13px" onkeydown="if(event.key===&apos;Enter&apos;)window._qrSearchCourse()"/>'
-        +'<button onclick="window._qrSearchCourse()" style="border:none;background:transparent;padding:9px 12px;cursor:pointer;border-left:0.5px solid var(--color-border-tertiary);color:#1D9E75;display:flex;align-items:center;flex-shrink:0"><i class="ti ti-search" style="font-size:16px" aria-hidden="true"></i></button>'
-        +'</div>'
-        +'<div id="qrCourseResults" style="margin-top:6px"></div>'
-        +'</div>';
-    var _nmTyped=!!(_qrS.name||'').trim();
-    var nameSection=_qrS.course
-      ?'<div style="padding:12px 20px;border-bottom:0.5px solid var(--color-border-tertiary)">'
-        +'<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:5px">Round name</div>'
-        +'<input id="qrRoundName" class="text-input" style="width:100%;margin:0;font-size:14px" '
-        +'value="'+_clEsc(_qrRoundName())+'" oninput="window._qrSetName(this)">'
-        +'<div id="qrNameHint" style="font-size:11px;color:var(--color-text-tertiary);margin-top:5px;line-height:1.5">'
-        +(_nmTyped?'Your name. Clear the field to go back to the course name.':'Follows the course until you change it.')
-        +'</div></div>'
-      :'';
-    return'<div style="'+card+'">'+dotsRow
-      +'<div style="padding:14px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill+'<div class="qr-step-t">Course &amp; holes</div></div>'
-      +nameSection
-      +courseSection
-      +holesRows
-      +'<div id="qrCourseNeed" class="ts-danger" style="display:none;padding:10px 20px 0;font-size:13px;font-weight:600">Pick a course to continue.</div>'
-      +'<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="window._qrNext()" style="width:100%;padding:12px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue \u2192</button></div>'
-      +_qrFoot(_qrFirst===2)
-      +'</div>';
-  }
+  if(_qrS.step===2)return _qrCourseStepHtml(_qrFirst===2,_qrG?3:4,_qrG?1:2);
 
   if(_qrS.step===3){
     const gid=window._pendingGroupId;
@@ -5785,6 +5802,113 @@ function _qrStepHtml(){
       +_qrFoot(false)
       +'</div>';
   }
+}
+// v123.52: the new wizard look. The top of a screen: context, Back (not on a flow's first
+// screen), Cancel, the progress bar and the step line. The caller closes .qrw-head after its title.
+var _QRW_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function _qrwTop(first,total,idx){
+  var g=window._pendingGroupId&&_groupCache[window._pendingGroupId];
+  var ctx=(g&&g.name?_gtEsc(g.name)+' · ':'')+'New round';
+  var bar='';for(var i=0;i<total;i++)bar+='<span'+(i<idx?' class="on"':'')+'></span>';
+  return '<div class="qrw-top">'
+    +(first?'<span class="qrw-ib"></span>':'<button type="button" class="qrw-ib" onclick="window._qrBack()" aria-label="Back"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>')
+    +'<span class="qrw-ctx">'+ctx+'</span>'
+    +'<button type="button" class="qrw-ib" onclick="window._qrCancel()" aria-label="Cancel"><i class="ti ti-x" aria-hidden="true"></i></button></div>'
+    +'<div class="qrw-bar">'+bar+'</div>'
+    +'<div class="qrw-head"><div class="qrw-step">STEP '+idx+' OF '+total+'</div>';
+}
+// A trip date (YYYY-MM-DD, read by its parts) as "Oct 10", with the year when it is not this year.
+function _qrwDay(d){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d||''))return'';
+  var y=+d.slice(0,4);
+  return _QRW_MON[+d.slice(5,7)-1]+' '+(+d.slice(8,10))+(y!==new Date().getFullYear()?', '+y:'');
+}
+function _qrwPlace(cn){var l=CATALOG[cn]&&CATALOG[cn].location;return l?[l.city,l.state].filter(Boolean).join(', '):'';}
+// Recent: the group's courses (or your rounds outside a group), newest played first, one row per
+// course, only courses in the catalog, five at most.
+function _qrRecentCourses(gid){
+  var key=function(t){return /^\d{4}-\d{2}-\d{2}$/.test(t.date||'')?t.date:String(t.savedAt||'').slice(0,10);};
+  var ts=loadTrips().filter(function(t){return t&&(gid?t.group_id===gid:(t.is_quick_round&&!t.group_id));});
+  ts.sort(function(a,b){var ka=key(a),kb=key(b);return ka<kb?1:ka>kb?-1:0;});
+  var seen={},out=[];
+  ts.forEach(function(t){(t.courses||[]).forEach(function(cn){
+    if(out.length>=5||seen[cn]||!CATALOG[cn])return;seen[cn]=1;out.push({name:cn,right:_qrwDay(key(t))});});});
+  return out;
+}
+// Near me: catalog courses with coordinates, by distance from the phone (miles), five at most.
+// Only courses already in the app; a hand-entered course has no coordinates.
+function _qrNearCourses(lat,lng){
+  var R=3958.8,rad=Math.PI/180,out=[];
+  Object.keys(CATALOG).forEach(function(cn){
+    var l=CATALOG[cn]&&CATALOG[cn].location;if(!l||l.latitude==null||l.longitude==null)return;
+    var la=+l.latitude,lo=+l.longitude;if(!isFinite(la)||!isFinite(lo))return;
+    var dLa=(la-lat)*rad,dLo=(lo-lng)*rad;
+    var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(lat*rad)*Math.cos(la*rad)*Math.sin(dLo/2)*Math.sin(dLo/2);
+    out.push({name:cn,mi:2*R*Math.asin(Math.min(1,Math.sqrt(a)))});
+  });
+  out.sort(function(a,b){return a.mi-b.mi;});
+  return out.slice(0,5).map(function(x){return{name:x.name,right:(x.mi<1?'<1':Math.round(x.mi))+' mi'};});
+}
+window._qrNearMe=function(){
+  if(!navigator.geolocation){_qrS.nearErr='Location is not available here. Search instead.';_qrRender();return;}
+  _qrS.nearBusy=true;_qrS.nearErr='';_qrRender();
+  navigator.geolocation.getCurrentPosition(function(p){
+    _qrS.nearBusy=false;var l=_qrNearCourses(p.coords.latitude,p.coords.longitude);
+    _qrS.near=l.length?l:null;if(!l.length)_qrS.nearErr='No courses with a location yet. Search instead.';_qrRender();
+  },function(){_qrS.nearBusy=false;_qrS.nearErr='Location is off for this app. Search instead.';_qrRender();},{timeout:10000,maximumAge:600000});
+};
+window._qrShowRecent=function(){_qrS.near=null;_qrS.nearErr='';_qrRender();};
+window._qrPickListed=function(i){var cn=window._qrListStash&&window._qrListStash[i];if(cn)window._qrPickCourse(cn);};
+window._qrTeeChip=function(g,i){
+  var c=CATALOG[_qrS.course],l=c&&c.tees&&(g==='female'?c.tees.female:c.tees.male),t=l&&l[i];
+  if(t){_qrS.tee={gender:g,teeName:t.tee_name};_qrRender();}
+};
+function _qrCourseStepHtml(first,total,idx){
+  var gid=window._pendingGroupId||'',c=_qrS.course,h='';
+  if(!c){
+    h+='<div class="qrw-search"><i class="ti ti-search" aria-hidden="true"></i>'
+      +'<input id="qrCourseSearch" placeholder="Search courses" enterkeyhint="search" autocomplete="off" aria-label="Search courses" onkeydown="if(event.key===&apos;Enter&apos;)window._qrSearchCourse()"/>'
+      +'<button type="button" onclick="window._qrSearchCourse()" aria-label="Search"><i class="ti ti-arrow-right" aria-hidden="true"></i></button></div>'
+      +'<div id="qrCourseResults" class="qrw-results"></div>';
+    var near=_qrS.near,rec=_qrRecentCourses(gid),list=near||rec;
+    window._qrListStash=list.map(function(x){return x.name;});
+    if(list.length){
+      var gn=gid&&_groupCache[gid]&&_groupCache[gid].name;
+      h+='<div class="qrw-lblrow"><span class="qrw-lbl">'+(near?'NEAR YOU':'RECENT')+'</span><span class="qrw-note">'+(near?'Courses already in the app':(gn?_gtEsc(gn):'Your rounds'))+'</span></div>'
+        +'<div class="qrw-card">'+list.map(function(x,i){var pl=_qrwPlace(x.name);
+          return '<button type="button" class="qrw-row" onclick="window._qrPickListed('+i+')"><span class="qrw-ico"><i class="ti ti-flag-3" aria-hidden="true"></i></span>'
+            +'<span class="qrw-rt"><span class="qrw-rn">'+_gtEsc(courseDisp(x.name))+'</span>'+(pl?'<span class="qrw-rs">'+_gtEsc(pl)+'</span>':'')+'</span>'
+            +'<span class="qrw-rr">'+_gtEsc(x.right)+'</span></button>';}).join('')+'</div>';
+    } else h+='<div class="qrw-empty">'+(gid?'Courses your group plays will show up here.':'Courses you play will show up here.')+'</div>';
+    if(_qrS.nearErr)h+='<div class="qrw-empty">'+_gtEsc(_qrS.nearErr)+'</div>';
+    if(near)h+=rec.length?'<button type="button" class="qrw-link" onclick="window._qrShowRecent()">Show recent</button>':'';
+    else h+='<button type="button" class="qrw-link" onclick="window._qrNearMe()"><i class="ti ti-map-pin" aria-hidden="true"></i> '+(_qrS.nearBusy?'Finding courses near you…':'Courses near me')+'</button>';
+  } else {
+    var cat=CATALOG[c]||{},pl=_qrwPlace(c),tees=cat.tees||{},m=tees.male||[],f=tees.female||[],sel=_qrS.tee||{};
+    var chips=function(list,g){return list.map(function(t,i){var on=sel.gender===g&&sel.teeName===t.tee_name;
+      return '<button type="button" class="qrw-chip'+(on?' on':'')+'" onclick="window._qrTeeChip(\''+g+'\','+i+')" aria-pressed="'+on+'"><span>'+_gtEsc(t.tee_name)+'</span>'
+        +(t.course_rating&&t.slope_rating?'<small>'+_gtEsc(t.course_rating+' / '+t.slope_rating)+'</small>':'')+'</button>';}).join('');};
+    h+='<div class="qrw-card qrw-pick"><div class="qrw-pickhd"><span class="qrw-ico lg"><i class="ti ti-flag-3" aria-hidden="true"></i></span>'
+      +'<span class="qrw-rt"><span class="qrw-pn">'+_gtEsc(courseDisp(c))+'</span>'+(pl?'<span class="qrw-rs">'+_gtEsc(pl)+'</span>':'')+'</span>'
+      +'<button type="button" class="qrw-change" onclick="window._qrClearCourse()">Change</button></div>'
+      +(m.length?'<div class="qrw-lbl">'+(f.length?"MEN'S TEES":'TEES')+'</div><div class="qrw-chips">'+chips(m,'male')+'</div>':'')
+      +(f.length?'<div class="qrw-lbl">'+(m.length?"WOMEN'S TEES":'TEES')+'</div><div class="qrw-chips">'+chips(f,'female')+'</div>':'')
+      +'</div>';
+  }
+  var HO=[['18','18 holes',''],['front','Front 9','1-9'],['back','Back 9','10-18']];
+  h+='<div class="qrw-lbl">HOLES</div><div class="qrw-seg" role="radiogroup" aria-label="Holes">'+HO.map(function(o){var on=_qrS.holes===o[0];
+    return '<button type="button" role="radio" aria-checked="'+on+'" class="'+(on?'on':'')+'" data-val="'+o[0]+'" onclick="window._qrSetHoles(this)"><span>'+o[1]+'</span>'+(o[2]?'<small>'+o[2]+'</small>':'')+'</button>';}).join('')+'</div>';
+  if(c){
+    var _nmTyped=!!(_qrS.name||'').trim();
+    h+='<label class="qrw-card qrw-name"><span class="qrw-rt"><span class="qrw-rs">Round name</span>'
+      +'<input id="qrRoundName" class="qrw-name-in" value="'+_clEsc(_qrRoundName())+'" oninput="window._qrSetName(this)"></span><i class="ti ti-pencil" aria-hidden="true"></i></label>'
+      +'<div id="qrNameHint" class="qrw-hint">'+(_nmTyped?'Your name. Clear the field to go back to the course name.':'Follows the course until you change it.')+'</div>';
+  }
+  return '<div class="qrw" data-qr-step="2">'+_qrwTop(first,total,idx)+'<div class="qr-step-t qrw-title">Where are you playing?</div></div>'
+    +'<div class="qrw-body">'+h+'</div>'
+    +'<div class="qrw-foot">'+(c?'':'<div id="qrCourseHint" class="qrw-hint c">Choose a course to continue</div>')
+    +'<div id="qrCourseNeed" class="ts-danger" style="display:none;padding:0 0 8px;font-size:13px;font-weight:600;text-align:center">Pick a course to continue.</div>'
+    +'<button type="button" class="qrw-cta'+(c?'':' off')+'" onclick="window._qrNext()">Continue</button></div></div>';
 }
 window._qrPickCourse=function(cn){
   _qrS.course=cn;
@@ -5972,6 +6096,7 @@ window._qrSelectAll=function(on){
 };
 window._qrNext=function(){
   // v123.46: Course & holes needs a course. Without one the launch used the first catalog course.
+  if(_qrS.step===2&&!_qrS.course){var _ch=document.getElementById('qrCourseHint');if(_ch)_ch.style.display='none';}
   if(_qrS.step===2&&!_qrS.course){var _cn=document.getElementById('qrCourseNeed');if(_cn)_cn.style.display='block';return;}
   if(_qrS.step===3){
     const gid=window._pendingGroupId;
