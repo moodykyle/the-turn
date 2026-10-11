@@ -842,7 +842,7 @@ body.force-light .gs-setup-toggle,body.force-light .gs-setup-body{box-shadow:0 2
 .gs-add-split{display:flex;align-items:center;gap:9px;margin:4px 0 10px;}
 .gs-add-split span{font-size:11px;font-weight:600;letter-spacing:0.03em;color:var(--color-text-tertiary);white-space:nowrap;}
 .gs-add-split i{flex:1 1 auto;height:0;border-top:0.5px solid var(--color-border-tertiary);}
-.gs-add-fsnote{font-size:12px;color:var(--color-text-secondary);text-align:center;line-height:1.5;padding:8px 8px 4px;}
+.gs-add-fsnote{font-size:12px;color:var(--color-text-secondary);text-align:center;line-height:1.5;padding:0 8px 10px;}
 .gs-add-fsnote button{all:unset;display:inline-block;padding:6px 2px;font-size:13px;font-weight:600;color:#1D9E75;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .gs-empty-state{
   text-align:center;color:var(--color-text-secondary);
@@ -2099,7 +2099,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.56';
+const APP_VERSION='v123.57';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -12574,6 +12574,7 @@ function _seatPlayer(newP){
   var allPlayers=WK.players.concat([newP]);resolveDisplayNames(allPlayers);
   WK.players.push(newP);
   WK.rounds.forEach(function(_,r){STATE.scores[r].forEach(function(h){h.push(null);});});
+  _fsPlaceNewPlayer(WK.players.length-1);
   _rosterReconcileAll();
   if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';
   renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();
@@ -12709,7 +12710,7 @@ window._apGuestSubmit=async function(){
   _seatPlayer({pid:s2NewTok(),name:full,first:first,last:last,venmo:venmo,
     member_id:memberId,idx:hp.value,bg:c.bg,fg:c.fg,ini:''});
 };
-function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=TW_MAX_PLAYERS)return;const c=pickColor(),i=WK.players.length;WK.players.push({pid:s2NewTok(),name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));});_rosterReconcileAll();if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();autoSave();s2WriteActive();}
+function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=TW_MAX_PLAYERS)return;const c=pickColor(),i=WK.players.length;WK.players.push({pid:s2NewTok(),name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));});_fsPlaceNewPlayer(WK.players.length-1);_rosterReconcileAll();if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();autoSave();s2WriteActive();}
 var _rmPlayerBusy=false;
 async function removePlayer(idx){if(!canEditTrip())return;
 // v123.47: a round can drop to one player (the wizard starts one-player rounds); a trip keeps two.
@@ -12770,6 +12771,24 @@ function _fsRegroupAfterRemove(){
     if(!played)return defaultFlights(nP);
     if(need===1)return [[].concat.apply([],live)];
     return fls;
+  });
+}
+// v123.57: a new player joins a foursome instead of piling into foursome 1 (the reconcile's default).
+// Per round: the smallest foursome with room takes them; all full and no scores yet, regroup as a
+// fresh round of this size; all full with scores, a new foursome; a locked round is left alone.
+function _fsPlaceNewPlayer(pi){
+  if(!STATE||!STATE.roundFlights||!WK||!WK.players)return;
+  var nP=WK.players.length;
+  STATE.roundFlights=STATE.roundFlights.map(function(fls,r){
+    if(!Array.isArray(fls)||!fls.length)return fls;
+    if(fls.some(function(f){return Array.isArray(f)&&f.indexOf(pi)>=0;}))return fls;
+    if(typeof isAnyFlightLocked==='function'&&isAnyFlightLocked(r))return fls;
+    var live=fls.filter(function(f){return Array.isArray(f)&&f.length;});
+    var room=fls.filter(function(f){return Array.isArray(f)&&f.length<4;}).sort(function(a,b){return a.length-b.length;})[0];
+    if(room){room.push(pi);return fls;}  // an empty foursome made for them counts as room
+    var sc=STATE.scores&&STATE.scores[r],played=Array.isArray(sc)&&sc.some(function(h){return Array.isArray(h)&&h.some(function(v){return v!=null;});});
+    if(!played)return defaultFlights(nP);
+    return live.concat([[pi]]);
   });
 }
 // Trip admin management handlers
@@ -15536,7 +15555,8 @@ window._gsOpenAddPicker=function(){
     // v123.56: a game locked because a foursome is too small gets a way to the foursomes.
     const _size=_no.some(def=>/Needs \d[\d, or]* players/.test(String(_gameLaneNote(def.id,r,_laneAP)||'')));
     const _fsNote=_size?'<div class="gs-add-fsnote">Some foursomes are too small for these games. <button type="button" onclick="window._gsCheckFoursomes('+r+')">Check foursomes ›</button></div>':'';
-    list.innerHTML=_yes.map(_mkRow).join('')+_split+_no.map(_mkRow).join('')+_fsNote;
+    // v123.57: the note heads the locked list, so it is seen without scrolling.
+    list.innerHTML=_yes.map(_mkRow).join('')+_split+_fsNote+_no.map(_mkRow).join('');
   }
   document.getElementById('gsAddPicker').classList.add('visible');
   document.getElementById('gsAddPickerList').scrollTop=0;
