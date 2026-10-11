@@ -1341,7 +1341,8 @@ span.qrw-hbox{display:flex;align-items:center;justify-content:center;border-colo
 .qrw-hcp span{font-size:9px;font-weight:700;letter-spacing:0.06em;color:var(--color-text-secondary);}
 .qrw-hcp input{width:100%;border:none;background:transparent;text-align:center;font-size:14px;font-weight:600;color:var(--color-text-primary);font-family:inherit;padding:0;margin:0;outline:none;box-shadow:none;}
 .qrw-ib.sm{width:36px;height:36px;font-size:18px;}
-.qrw-add{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;height:48px;border-radius:12px;border:1.5px dashed var(--color-border-secondary);font-size:15px;font-weight:600;color:var(--qrw-link);cursor:pointer;}
+.qrw-add{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;height:48px;border-radius:12px;font-size:15px;font-weight:600;color:var(--qrw-link);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.qrw-add:active{background:var(--color-background-secondary);}
 .qrw-step5{display:flex;align-items:center;justify-content:space-between;}
 .qrw-sbtn{all:unset;width:48px;height:48px;border-radius:12px;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--color-text-primary);cursor:pointer;}
 .qrw-sbtn:disabled{opacity:0.35;cursor:default;}
@@ -2162,7 +2163,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.64';
+const APP_VERSION='v123.65';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -6117,7 +6118,13 @@ window._qrImportCourse=async function(i){
   window._qrPickCourse(name);
 };
 window._qrClose=function(){const m=document.getElementById('qrModal');if(m)m.style.display='none';};
-window._qrCancel=function(){window._pendingGroupId=null;window._qrClose();};
+// v123.65: as the trip wizard: ask first once a course is picked or the flow is past its first screen.
+window._qrCancel=function(){
+  var started=!!_qrS&&(!!_qrS.course||_qrS.step>2);
+  if(!started){window._qrCancelNow();return;}
+  _confirmSheet({icon:'ti-alert-triangle',danger:true,title:'Discard this round?',body:'What you have set up so far will be lost.',okLabel:'Discard',cancelLabel:'Keep editing',onOk:function(){window._qrCancelNow();}});
+};
+window._qrCancelNow=function(){window._pendingGroupId=null;window._qrClose();};
 // What the round is called when nobody says otherwise. Identical to what v121.35 stamped
 // on at launch, so a wizard run where the field is never touched produces the same name it
 // always did.
@@ -7553,7 +7560,14 @@ window._twPickCourse=function(i,cn){
   _twAfterPick(i);
 };
 window._twSetTee=function(i,gender,teeName){_twS.tees[i]={gender,teeName};};
+// v123.65: the X asks first once something is set up (Kyle lost a trip to a stray tap in a round's tees).
 window._twCancel=function(){
+  if(_twS&&_twS.step===1)_twStash();
+  var started=!!_twS&&(_twS.step>1||!!(_twS.name||'').trim());
+  if(!started){window._twCancelNow();return;}
+  _confirmSheet({icon:'ti-alert-triangle',danger:true,title:'Discard this trip?',body:'What you have set up so far will be lost.',okLabel:'Discard',cancelLabel:'Keep editing',onOk:function(){window._twCancelNow();}});
+};
+window._twCancelNow=function(){
   var back=_twFromGid;
   document.getElementById('wizardScreen').style.display='none';
   window._pendingGroupId=null;
@@ -13233,7 +13247,7 @@ function _confirmSheet(opts){
     +'<div style="text-align:center;font-size:16px;font-weight:600;color:var(--color-text-primary);margin-bottom:6px">'+(opts.title||'Are you sure?')+'</div>'
     +'<div style="text-align:center;font-size:13px;color:var(--color-text-secondary);line-height:1.5;margin-bottom:16px">'+(opts.body||'')+'</div>'
     +'<div style="display:flex;gap:8px">'
-    +'<button id="_csCancel" style="flex:1;font-size:14px;font-weight:500;color:var(--color-text-primary);background:transparent;border:0.5px solid var(--color-border-secondary);padding:11px 0;border-radius:10px">Cancel</button>'
+    +'<button id="_csCancel" style="flex:1;font-size:14px;font-weight:500;color:var(--color-text-primary);background:transparent;border:0.5px solid var(--color-border-secondary);padding:11px 0;border-radius:10px">'+(opts.cancelLabel||'Cancel')+'</button>'
     +'<button id="_csOk" style="flex:1;font-size:14px;font-weight:600;'+okStyle+';border:none;padding:11px 0;border-radius:10px">'+(opts.okLabel||'Confirm')+'</button>'
     +'</div>';
   ov.appendChild(card);
