@@ -844,6 +844,35 @@ body.force-light .gs-setup-toggle,body.force-light .gs-setup-body{box-shadow:0 2
 .gs-add-split i{flex:1 1 auto;height:0;border-top:0.5px solid var(--color-border-tertiary);}
 .gs-add-fsnote{font-size:12px;color:var(--color-text-secondary);text-align:center;line-height:1.5;padding:0 8px 10px;}
 .gs-add-fsnote button{all:unset;display:inline-block;padding:6px 2px;font-size:13px;font-weight:600;color:#1D9E75;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+/* v123.58: foursome prompt, above the tab bar */
+.fsp{position:fixed;left:10px;right:10px;bottom:calc(var(--tab-bar-h) + 12px + env(safe-area-inset-bottom,0px));z-index:950;max-width:460px;margin:0 auto;box-sizing:border-box;background:var(--fsp-sheet);border:1px solid var(--fsp-bd);border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,0.28);padding:14px 14px 12px;display:flex;flex-direction:column;gap:10px;color:var(--color-text-primary);}
+@media(prefers-color-scheme:light){body:not(.force-dark) .fsp{--fsp-sheet:#FFFFFF;--fsp-bd:#E3DED0;--fsp-field:#F4F1E8;--fsp-acc:#13795B;--fsp-link:#13795B;--fsp-title:#13795B;--fsp-sel:rgba(19,121,91,0.08);--fsp-offink:#8A8F98;}}
+body.force-light .fsp{--fsp-sheet:#FFFFFF;--fsp-bd:#E3DED0;--fsp-field:#F4F1E8;--fsp-acc:#13795B;--fsp-link:#13795B;--fsp-title:#13795B;--fsp-sel:rgba(19,121,91,0.08);--fsp-offink:#8A8F98;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .fsp{--fsp-sheet:#1C2C4B;--fsp-bd:#34476B;--fsp-field:#14213B;--fsp-acc:#1D9E75;--fsp-link:#3CC79A;--fsp-title:#EFC456;--fsp-sel:rgba(29,158,117,0.16);--fsp-offink:#6F7D96;}}
+body.force-dark .fsp{--fsp-sheet:#1C2C4B;--fsp-bd:#34476B;--fsp-field:#14213B;--fsp-acc:#1D9E75;--fsp-link:#3CC79A;--fsp-title:#EFC456;--fsp-sel:rgba(29,158,117,0.16);--fsp-offink:#6F7D96;}
+.fsp button{all:unset;box-sizing:border-box;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.fsp-hd{display:flex;align-items:flex-start;gap:10px;}
+.fsp-ico{width:32px;height:32px;border-radius:9px;background:var(--fsp-field);display:flex;align-items:center;justify-content:center;color:var(--fsp-link);flex-shrink:0;font-size:18px;}
+.fsp-tx{flex:1;display:flex;flex-direction:column;gap:2px;}
+.fsp-tx b{font-size:15px;font-weight:700;}
+.fsp-tx small,.fsp-ot small{font-size:12px;color:var(--color-text-secondary);line-height:1.4;}
+.fsp .fsp-x{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--color-text-secondary);font-size:16px;}
+.fsp-note{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border-radius:10px;background:var(--fsp-field);font-size:12px;line-height:1.4;color:var(--color-text-secondary);}
+.fsp-note i{color:var(--fsp-link);font-size:14px;flex-shrink:0;padding-top:1px;}
+.fsp-opts{display:flex;flex-direction:column;gap:6px;}
+.fsp .fsp-opt{display:flex;align-items:center;gap:10px;min-height:46px;padding:4px 12px;border-radius:10px;border:1px solid var(--fsp-bd);background:var(--fsp-field);}
+.fsp .fsp-opt.on{border:1.5px solid var(--fsp-acc);background:var(--fsp-sel);}
+.fsp-dot{width:18px;height:18px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--fsp-bd);flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.fsp-opt.on .fsp-dot{border:2px solid var(--fsp-link);}
+.fsp-opt.on .fsp-dot::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--fsp-link);}
+.fsp-ot{flex:1;display:flex;flex-direction:column;}
+.fsp-ot b{font-size:14px;font-weight:700;}
+.fsp-opt.on .fsp-ot b{color:var(--fsp-title);}
+.fsp-ot small{font-size:11px;}
+.fsp-ft{display:flex;align-items:center;justify-content:space-between;padding-top:2px;}
+.fsp .fsp-link{font-size:13px;font-weight:600;color:var(--fsp-link);padding:8px 2px;}
+.fsp .fsp-apply{min-height:40px;padding:0 18px;border-radius:10px;display:flex;align-items:center;font-size:14px;font-weight:700;background:#13795B;color:#FFFFFF;}
+.fsp .fsp-apply:disabled{background:var(--fsp-field);color:var(--fsp-offink);cursor:default;}
 .gs-empty-state{
   text-align:center;color:var(--color-text-secondary);
   padding:2rem 1rem;
@@ -2099,7 +2128,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.57';
+const APP_VERSION='v123.58';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -8111,6 +8140,7 @@ function _updateTabBar(v){
   }
 }
 function setView(v){
+  if(_fsP)window._fsPromptClose();
   // Normalize: 'scores' is the new name for entry; both route to view-entry content
   const contentView=(v==='scores')?'entry':v;
   ALL_VIEWS.forEach(n=>{
@@ -8180,7 +8210,7 @@ const _RZ5MODES=[
 function roundValFs(key,r,fi,tripDefault){const rd=WK.rounds&&WK.rounds[r];if(rd&&rd.independentGames&&fi!=null&&Array.isArray(rd.fsGames)&&rd.fsGames[fi]&&rd.fsGames[fi][key]!==undefined)return rd.fsGames[fi][key];return roundVal(key,r,tripDefault);}
 function _fsOff(game,r,fi){const rd=WK.rounds&&WK.rounds[r];return !!(rd&&rd.independentGames&&!gameOnFs(game,r,fi));}
 const OPT_PANELS=['menu','weekend','players','flights','courses','info','htp'];
-function setOptPanel(p){STATE.optPanel=p;OPT_PANELS.forEach(n=>{const panel=document.getElementById('opt-panel-'+n);if(panel){panel.classList.remove('active');if(n===p)panel.classList.add('active');}});const back=document.getElementById('opt-back'),backT=document.getElementById('opt-back-title'),menuT=document.getElementById('opt-menu-title');if(p==='players'&&typeof _plOpen!=='undefined')_plOpen={};
+function setOptPanel(p){if(_fsP)window._fsPromptClose();STATE.optPanel=p;OPT_PANELS.forEach(n=>{const panel=document.getElementById('opt-panel-'+n);if(panel){panel.classList.remove('active');if(n===p)panel.classList.add('active');}});const back=document.getElementById('opt-back'),backT=document.getElementById('opt-back-title'),menuT=document.getElementById('opt-menu-title');if(p==='players'&&typeof _plOpen!=='undefined')_plOpen={};
   const titles={weekend:(WK&&WK.isQuickRound)?'Round Setup':'Trip Setup',players:'Players',flights:'Foursomes',courses:'Courses',info:'Preferences',htp:'How It Works'};if(p==='menu'){if(back)back.style.display='none';if(menuT)menuT.style.display='';}else{if(back)back.style.display='';if(backT)backT.textContent=titles[p]||'';if(menuT)menuT.style.display='none';}renderOptPanel(p);_wireSimLongPress();}
 function renderOptions(){setOptPanel('menu');}
 function _toggleSimMember(){
@@ -12574,13 +12604,14 @@ function _seatPlayer(newP){
   var allPlayers=WK.players.concat([newP]);resolveDisplayNames(allPlayers);
   WK.players.push(newP);
   WK.rounds.forEach(function(_,r){STATE.scores[r].forEach(function(h){h.push(null);});});
-  _fsPlaceNewPlayer(WK.players.length-1);
+  var _alone=_fsPlaceNewPlayer(WK.players.length-1);
   _rosterReconcileAll();
   if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';
   renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();
   renderMPHoleBox();renderVegasBoxWrap();
   if(typeof renderGamesTab==='function'&&document.getElementById('view-games')&&document.getElementById('view-games').style.display!=='none')renderGamesTab();
   autoSave();s2WriteActive();
+  _fsPromptOpen('add',_alone,WK.players.length-1);
   return true;
 }
 // Group members not already seated on this trip. member_id is the identity that makes
@@ -12710,7 +12741,7 @@ window._apGuestSubmit=async function(){
   _seatPlayer({pid:s2NewTok(),name:full,first:first,last:last,venmo:venmo,
     member_id:memberId,idx:hp.value,bg:c.bg,fg:c.fg,ini:''});
 };
-function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=TW_MAX_PLAYERS)return;const c=pickColor(),i=WK.players.length;WK.players.push({pid:s2NewTok(),name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));});_fsPlaceNewPlayer(WK.players.length-1);_rosterReconcileAll();if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();autoSave();s2WriteActive();}
+function addPlayer(){if(!canEditTrip())return;if(WK.players.length>=TW_MAX_PLAYERS)return;const c=pickColor(),i=WK.players.length;WK.players.push({pid:s2NewTok(),name:'Player '+(i+1),idx:10,bg:c.bg,fg:c.fg,ini:'P'+(i+1)});WK.rounds.forEach((_,r)=>{STATE.scores[r].forEach(h=>h.push(null));});const _alone=_fsPlaceNewPlayer(WK.players.length-1);_rosterReconcileAll();if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();autoSave();s2WriteActive();_fsPromptOpen('add',_alone,WK.players.length-1);}
 var _rmPlayerBusy=false;
 async function removePlayer(idx){if(!canEditTrip())return;
 // v123.47: a round can drop to one player (the wizard starts one-player rounds); a trip keeps two.
@@ -12754,43 +12785,123 @@ WK.rounds.forEach(function(rd){
 function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=STATE.mpTeams.map(function(rd){return fixTeams(rd);});STATE.vegTeams=STATE.vegTeams.map(function(rd){return fixTeams(rd);});if(STATE.skinsTeams)STATE.skinsTeams=STATE.skinsTeams.map(function(rd){return fixTeams(rd);});if(STATE.hammerTeams)STATE.hammerTeams=STATE.hammerTeams.map(function(rd){return fixTeams(rd);});WK.rounds.forEach(function(rd){if(Array.isArray(rd.fbTeams))rd.fbTeams=rd.fbTeams.map(function(t){return t.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(STATE.roundFlights)STATE.roundFlights=STATE.roundFlights.map(function(fls){return fls.map(function(fl){return fl.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';
 // v123.47: no game seats one player, so a round left with one has every game off (round, every
 // foursome, and the trip-level ones) rather than a box that cannot settle.
-if(WK.isQuickRound&&WK.players.length===1){GAME_DEFS.forEach(function(d){if(d.tripLevel){WK[d.onField]=false;return;}WK.rounds.forEach(function(rd){if(!rd)return;rd[d.onField]=false;if(Array.isArray(rd.fsGames))rd.fsGames.forEach(function(f){if(f)f[d.onField]=false;});});});}_fsRegroupAfterRemove();_rosterReconcileAll();renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
-// v123.56: after a removal, fewer foursomes may be needed (six in two threes, two removed, left four
-// split two and two, so four-player games read "Needs 4 players"). Per round: no scores yet, regroup
-// as a fresh round of this size; scores entered, merge only when everyone fits in one; a locked
-// round is never touched. _rosterReconcileAll runs next and reconciles every team array.
-function _fsRegroupAfterRemove(){
-  if(!STATE||!STATE.roundFlights||!WK||!WK.players)return;
-  var nP=WK.players.length,need=Math.max(1,Math.ceil(nP/4));
-  STATE.roundFlights=STATE.roundFlights.map(function(fls,r){
-    if(!Array.isArray(fls))return fls;
-    var live=fls.filter(function(f){return Array.isArray(f)&&f.length;});
-    if(live.length<=need)return fls;
-    if(typeof isAnyFlightLocked==='function'&&isAnyFlightLocked(r))return fls;
-    var sc=STATE.scores&&STATE.scores[r],played=Array.isArray(sc)&&sc.some(function(h){return Array.isArray(h)&&h.some(function(v){return v!=null;});});
-    if(!played)return defaultFlights(nP);
-    if(need===1)return [[].concat.apply([],live)];
-    return fls;
+if(WK.isQuickRound&&WK.players.length===1){GAME_DEFS.forEach(function(d){if(d.tripLevel){WK[d.onField]=false;return;}WK.rounds.forEach(function(rd){if(!rd)return;rd[d.onField]=false;if(Array.isArray(rd.fsGames))rd.fsGames.forEach(function(f){if(f)f[d.onField]=false;});});});}const _odd=_fsCheckAfterRemove();_rosterReconcileAll();renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();_fsPromptOpen('rm',_odd,-1);}
+// v123.58: an add or a remove never moves anyone already in a foursome (v123.56/57 regrouped from
+// scratch). Both return the rounds left with odd groups, and the caller offers choices in a prompt.
+function _fsLive(fls){return (fls||[]).filter(function(f){return Array.isArray(f)&&f.length;});}
+// Rounds where the removal left more foursomes than the players need. Nothing is changed here.
+function _fsCheckAfterRemove(){
+  if(!STATE||!STATE.roundFlights||!WK||!WK.players)return [];
+  var nP=WK.players.length,need=Math.max(1,Math.ceil(nP/4)),R=[];
+  STATE.roundFlights.forEach(function(fls,r){
+    if(!Array.isArray(fls))return;
+    if(typeof isAnyFlightLocked==='function'&&isAnyFlightLocked(r))return;
+    if(_fsLive(fls).length>need)R.push(r);
   });
+  return R;
 }
-// v123.57: a new player joins a foursome instead of piling into foursome 1 (the reconcile's default).
-// Per round: the smallest foursome with room takes them; all full and no scores yet, regroup as a
-// fresh round of this size; all full with scores, a new foursome; a locked round is left alone.
+// Per round: the smallest foursome with room takes the new player (an empty one made for them counts);
+// none has room, they start a foursome alone and that round is returned for the prompt. Locked: untouched.
 function _fsPlaceNewPlayer(pi){
-  if(!STATE||!STATE.roundFlights||!WK||!WK.players)return;
-  var nP=WK.players.length;
+  if(!STATE||!STATE.roundFlights||!WK||!WK.players)return [];
+  var alone=[];
   STATE.roundFlights=STATE.roundFlights.map(function(fls,r){
     if(!Array.isArray(fls)||!fls.length)return fls;
     if(fls.some(function(f){return Array.isArray(f)&&f.indexOf(pi)>=0;}))return fls;
     if(typeof isAnyFlightLocked==='function'&&isAnyFlightLocked(r))return fls;
-    var live=fls.filter(function(f){return Array.isArray(f)&&f.length;});
     var room=fls.filter(function(f){return Array.isArray(f)&&f.length<4;}).sort(function(a,b){return a.length-b.length;})[0];
-    if(room){room.push(pi);return fls;}  // an empty foursome made for them counts as room
-    var sc=STATE.scores&&STATE.scores[r],played=Array.isArray(sc)&&sc.some(function(h){return Array.isArray(h)&&h.some(function(v){return v!=null;});});
-    if(!played)return defaultFlights(nP);
-    return live.concat([[pi]]);
+    if(room){room.push(pi);return fls;}
+    alone.push(r);
+    return _fsLive(fls).concat([[pi]]);
   });
+  return alone;
 }
+// Snake draft by index into g groups (the Auto-split button's order), for the prompt's split choices.
+function _fsSnake(g){
+  var order=WK.players.map(function(_,pi){return pi;}).sort(function(a,b){return WK.players[a].idx-WK.players[b].idx;});
+  var out=[];for(var i=0;i<g;i++)out.push([]);
+  order.forEach(function(pi,k){var row=Math.floor(k/g),col=k%g;out[(row%2===0)?col:(g-1-col)].push(pi);});
+  return out;
+}
+function _fsSizes(nP,g){var base=Math.floor(nP/g),rem=nP%g,o=[];for(var k=0;k<g;k++)o.push(base+(k<rem?1:0));return o;}
+function _fsWord(n){return ['Zero','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten'][n]||String(n);}
+function _fsSplitNote(nP,g){var z=_fsSizes(nP,g);
+  return (z[0]===z[z.length-1]?_fsWord(g)+' groups of '+z[0]:'Groups of '+z.slice(0,-1).join(', ')+' and '+z[z.length-1])+', balanced by index';}
+// --- the prompt --------------------------------------------------------------------------------
+var _fsP=null;
+function _fsPromptOpen(kind,R,pi){
+  if(!R||!R.length||!STATE||!WK)return;
+  var r0=R.indexOf(STATE.currentRound)>=0?STATE.currentRound:R[0];
+  var fls=STATE.roundFlights[r0],nP=WK.players.length,live=_fsLive(fls),opts=[];
+  var num=function(f){return fls.indexOf(f)+1;};
+  var P={kind:kind,R:R.slice(),r0:r0,pi:pi,nP:nP,sel:0};
+  if(kind==='add'){
+    var mine=live.filter(function(f){return f.indexOf(pi)>=0;})[0];if(!mine)return;
+    var others=live.filter(function(f){return f!==mine;}),nm=displayName(pi),last=others[others.length-1];
+    var g=Math.max(1,Math.ceil(nP/4));
+    P.head=nm+' is alone in Foursome '+num(mine);
+    P.sub=others.length===1?'Foursome '+num(others[0])+' was full.':(others.length===2?'Foursomes '+num(others[0])+' and '+num(others[1])+' were full.':'Every foursome was full.');
+    opts.push({label:'Leave as is',note:others.length===1?'Foursome '+num(others[0])+': '+others[0].length+' · Foursome '+num(mine)+': '+nm:'Foursome '+num(mine)+': '+nm+', others can join later'});
+    if(last)opts.push({label:last.length!==4?'Put '+nm+' in Foursome '+num(last):(others.length===1?'Make Foursome '+num(last)+' a fivesome':'Fivesome in Foursome '+num(last)),
+      note:others.length===1?'Everyone in one group':nm+' joins the newest group',
+      run:function(fl){var lv=_fsLive(fl),me=lv.filter(function(f){return f.indexOf(pi)>=0;})[0];
+        if(!me||me.length!==1)return null;var rest=lv.filter(function(f){return f!==me;});if(!rest.length)return null;
+        rest[rest.length-1].push(pi);return rest;}});
+    if(g>1)opts.push({label:others.length===1&&g===2?'Split '+_fsSizes(nP,2).join(' and '):'Auto-split all',note:_fsSplitNote(nP,g),
+      run:function(fl){var lv=_fsLive(fl),me=lv.filter(function(f){return f.indexOf(pi)>=0;})[0];
+        if(!me||me.length!==1)return null;return _fsSnake(g);}});
+  } else {
+    var need=Math.max(1,Math.ceil(nP/4));
+    if(live.length<=need)return;
+    P.head=nP+' players across '+live.length+' foursomes';
+    P.sub=need===1?'Everyone left fits in one group.':'Everyone left fits in '+need+' foursomes.';
+    opts.push({label:'Leave as is',note:live.map(function(f){return 'Foursome '+num(f)+': '+f.length;}).join(' · ')});
+    opts.push(need===1
+      ?{label:'Merge into one foursome',note:'All '+_fsWord(nP).toLowerCase()+' together',
+        run:function(fl){var lv=_fsLive(fl);if(lv.length<2)return null;return [[].concat.apply([],lv)];}}
+      :{label:'Regroup into '+need+' foursomes',note:_fsSplitNote(nP,need),
+        run:function(fl){if(_fsLive(fl).length<=need)return null;return _fsSnake(need);}});
+  }
+  P.opts=opts;_fsP=P;_fsPromptRender();
+}
+function _fsPromptHtml(){
+  var P=_fsP;if(!P)return '';
+  return '<div class="fsp-hd"><span class="fsp-ico"><i class="ti ti-users" aria-hidden="true"></i></span>'
+    +'<span class="fsp-tx"><b>'+_gtEsc(P.head)+'</b><small>'+_gtEsc(P.sub)+'</small></span>'
+    +'<button type="button" class="fsp-x" aria-label="Close" onclick="window._fsPromptClose()"><i class="ti ti-x" aria-hidden="true"></i></button></div>'
+    +'<div class="fsp-note"><i class="ti ti-info-circle" aria-hidden="true"></i><span>Just a suggestion. Leave it, pick a change, or set up foursomes yourself. Group sizes decide which games you can play.</span></div>'
+    +'<div class="fsp-opts" role="radiogroup">'+P.opts.map(function(o,i){var on=i===P.sel;
+      return '<button type="button" class="fsp-opt'+(on?' on':'')+'" role="radio" aria-checked="'+on+'" onclick="window._fsPromptPick('+i+')"><span class="fsp-dot"></span>'
+        +'<span class="fsp-ot"><b>'+_gtEsc(o.label)+'</b><small>'+_gtEsc(o.note)+'</small></span></button>';}).join('')+'</div>'
+    +'<div class="fsp-ft"><button type="button" class="fsp-link" onclick="window._fsPromptFoursomes()">Open foursomes ›</button>'
+    +'<button type="button" class="fsp-apply"'+(P.sel?'':' disabled')+' onclick="window._fsPromptApply()">Apply change</button></div>';
+}
+function _fsPromptRender(){
+  var el=document.getElementById('fsPrompt');
+  if(!_fsP){if(el)el.remove();return;}
+  if(!el){el=document.createElement('div');el.id='fsPrompt';el.className='fsp';el.setAttribute('role','dialog');el.setAttribute('aria-label','Foursomes');document.body.appendChild(el);}
+  el.innerHTML=_fsPromptHtml();
+}
+window._fsPromptClose=function(){_fsP=null;_fsPromptRender();};
+window._fsPromptPick=function(i){if(!_fsP||!_fsP.opts[i])return;_fsP.sel=i;_fsPromptRender();};
+window._fsPromptFoursomes=function(){var r=_fsP?_fsP.r0:STATE.currentRound;window._fsPromptClose();setView('setup');STATE.flightsViewRound=r;setOptPanel('flights');};
+// Apply: the picked choice on every round the prompt covers, skipping one locked since; a roster that
+// changed since it opened just closes it.
+window._fsPromptApply=function(){
+  var P=_fsP;if(!P||!P.sel||!P.opts[P.sel]||!P.opts[P.sel].run)return;
+  if(!canEditTrip()||!WK||WK.players.length!==P.nP){window._fsPromptClose();return;}
+  var o=P.opts[P.sel];
+  P.R.forEach(function(r){
+    if(typeof isAnyFlightLocked==='function'&&isAnyFlightLocked(r))return;
+    var fl=STATE.roundFlights&&STATE.roundFlights[r];if(!Array.isArray(fl))return;
+    var nx=o.run(JSON.parse(JSON.stringify(fl)),r);
+    if(nx)STATE.roundFlights[r]=_fsNormalize(nx,WK.players.length);
+  });
+  window._fsPromptClose();
+  _rosterReconcileAll();renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();
+  if(STATE.optPanel==='flights'&&typeof renderFlightsPanel==='function')renderFlightsPanel();
+  autoSave();s2WriteActive();
+};
 // Trip admin management handlers
 var _tripAdminPickerMembers=[];
 window._tripAdminAdd=function(idx){
