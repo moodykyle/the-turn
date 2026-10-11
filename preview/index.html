@@ -842,6 +842,8 @@ body.force-light .gs-setup-toggle,body.force-light .gs-setup-body{box-shadow:0 2
 .gs-add-split{display:flex;align-items:center;gap:9px;margin:4px 0 10px;}
 .gs-add-split span{font-size:11px;font-weight:600;letter-spacing:0.03em;color:var(--color-text-tertiary);white-space:nowrap;}
 .gs-add-split i{flex:1 1 auto;height:0;border-top:0.5px solid var(--color-border-tertiary);}
+.gs-add-fsnote{font-size:12px;color:var(--color-text-secondary);text-align:center;line-height:1.5;padding:8px 8px 4px;}
+.gs-add-fsnote button{all:unset;display:inline-block;padding:6px 2px;font-size:13px;font-weight:600;color:#1D9E75;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .gs-empty-state{
   text-align:center;color:var(--color-text-secondary);
   padding:2rem 1rem;
@@ -1301,6 +1303,10 @@ span.qrw-hbox{display:flex;align-items:center;justify-content:center;border-colo
 .qrw-teeval b{font-size:15px;font-weight:700;color:var(--qrw-title);}
 .qrw-teeval small{font-size:11px;color:var(--color-text-secondary);}
 .qrw-teesum>i,.qrw-teehd>i{font-size:16px;color:var(--color-text-secondary);}
+/* v123.56: as the Vegas "Minimum to flip" selector: no tap flash, one weight, the colour fades with the pill. */
+.qrw button,.qrw [role=button]{-webkit-tap-highlight-color:transparent;}
+.qrw-seg button{transition:color 0.25s ease;}
+.qrw-seg button,.qrw-seg button.on{font-weight:600;}
 /* v123.45: the Best individual rounds heading, in the section-label colours. */
 .rr-hd{font-size:12px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;}
 @media(prefers-color-scheme:light){body:not(.force-dark) .rr-hd{color:#0F4D36;}}
@@ -2093,7 +2099,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.55';
+const APP_VERSION='v123.56';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -12747,7 +12753,25 @@ WK.rounds.forEach(function(rd){
 function fixTeams(teams){return teams.map(rdT=>rdT.map(game=>game.map(team=>team.map(pi=>pi===idx?0:pi>idx?pi-1:pi))));}STATE.mpTeams=STATE.mpTeams.map(function(rd){return fixTeams(rd);});STATE.vegTeams=STATE.vegTeams.map(function(rd){return fixTeams(rd);});if(STATE.skinsTeams)STATE.skinsTeams=STATE.skinsTeams.map(function(rd){return fixTeams(rd);});if(STATE.hammerTeams)STATE.hammerTeams=STATE.hammerTeams.map(function(rd){return fixTeams(rd);});WK.rounds.forEach(function(rd){if(Array.isArray(rd.fbTeams))rd.fbTeams=rd.fbTeams.map(function(t){return t.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(STATE.roundFlights)STATE.roundFlights=STATE.roundFlights.map(function(fls){return fls.map(function(fl){return fl.filter(function(pi){return pi!==idx;}).map(function(pi){return pi>idx?pi-1:pi;});});});if(WK.players.length<4&&WK.skinsFmt==='team'&&!WK._skinsFmtManual)WK.skinsFmt='individual';
 // v123.47: no game seats one player, so a round left with one has every game off (round, every
 // foursome, and the trip-level ones) rather than a box that cannot settle.
-if(WK.isQuickRound&&WK.players.length===1){GAME_DEFS.forEach(function(d){if(d.tripLevel){WK[d.onField]=false;return;}WK.rounds.forEach(function(rd){if(!rd)return;rd[d.onField]=false;if(Array.isArray(rd.fsGames))rd.fsGames.forEach(function(f){if(f)f[d.onField]=false;});});});}_rosterReconcileAll();renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
+if(WK.isQuickRound&&WK.players.length===1){GAME_DEFS.forEach(function(d){if(d.tripLevel){WK[d.onField]=false;return;}WK.rounds.forEach(function(rd){if(!rd)return;rd[d.onField]=false;if(Array.isArray(rd.fsGames))rd.fsGames.forEach(function(f){if(f)f[d.onField]=false;});});});}_fsRegroupAfterRemove();_rosterReconcileAll();renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();autoSave();s2WriteActive();}
+// v123.56: after a removal, fewer foursomes may be needed (six in two threes, two removed, left four
+// split two and two, so four-player games read "Needs 4 players"). Per round: no scores yet, regroup
+// as a fresh round of this size; scores entered, merge only when everyone fits in one; a locked
+// round is never touched. _rosterReconcileAll runs next and reconciles every team array.
+function _fsRegroupAfterRemove(){
+  if(!STATE||!STATE.roundFlights||!WK||!WK.players)return;
+  var nP=WK.players.length,need=Math.max(1,Math.ceil(nP/4));
+  STATE.roundFlights=STATE.roundFlights.map(function(fls,r){
+    if(!Array.isArray(fls))return fls;
+    var live=fls.filter(function(f){return Array.isArray(f)&&f.length;});
+    if(live.length<=need)return fls;
+    if(typeof isAnyFlightLocked==='function'&&isAnyFlightLocked(r))return fls;
+    var sc=STATE.scores&&STATE.scores[r],played=Array.isArray(sc)&&sc.some(function(h){return Array.isArray(h)&&h.some(function(v){return v!=null;});});
+    if(!played)return defaultFlights(nP);
+    if(need===1)return [[].concat.apply([],live)];
+    return fls;
+  });
+}
 // Trip admin management handlers
 var _tripAdminPickerMembers=[];
 window._tripAdminAdd=function(idx){
@@ -15509,13 +15533,17 @@ window._gsOpenAddPicker=function(){
     const _yes=inactive.filter(def=>!_gameLaneNote(def.id,r,_laneAP));
     const _no=inactive.filter(def=>_gameLaneNote(def.id,r,_laneAP));
     const _split=(_yes.length&&_no.length)?'<div class="gs-add-split"><i></i><span>Not available for these foursomes</span><i></i></div>':'';
-    list.innerHTML=_yes.map(_mkRow).join('')+_split+_no.map(_mkRow).join('');
+    // v123.56: a game locked because a foursome is too small gets a way to the foursomes.
+    const _size=_no.some(def=>/Needs \d[\d, or]* players/.test(String(_gameLaneNote(def.id,r,_laneAP)||'')));
+    const _fsNote=_size?'<div class="gs-add-fsnote">Some foursomes are too small for these games. <button type="button" onclick="window._gsCheckFoursomes('+r+')">Check foursomes ›</button></div>':'';
+    list.innerHTML=_yes.map(_mkRow).join('')+_split+_no.map(_mkRow).join('')+_fsNote;
   }
   document.getElementById('gsAddPicker').classList.add('visible');
   document.getElementById('gsAddPickerList').scrollTop=0;
   requestAnimationFrame(window._gsAddMore);
 };
 window._gsCloseAddPicker=function(){document.getElementById('gsAddPicker').classList.remove('visible');};
+window._gsCheckFoursomes=function(r){window._gsCloseAddPicker();setView('setup');STATE.flightsViewRound=r;setOptPanel('flights');};
 // Shown only while there is more list below, and cleared at the end. Called from
 // the list's own onscroll rather than a listener bound at open, because the list
 // is rebuilt by innerHTML on every open and a listener has to outlive that.
