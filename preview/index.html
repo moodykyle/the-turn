@@ -1475,7 +1475,6 @@ body.force-light .gp-row .gp-tile.live{border-color:#13795B;}
 .fs-sh-sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-text-tertiary);padding:12px 14px 5px;}
 .fs-sh-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:0.5px solid var(--color-border-tertiary);cursor:pointer;}
 .fs-sh-row:active{background:var(--color-background-secondary);}
-.fs-addp{margin-top:4px;font-size:12.5px;color:#1D9E75;cursor:pointer;padding:6px 2px;display:inline-block;}
 .fs-addf{margin-top:8px;border:1px dashed var(--color-border-secondary);border-radius:11px;text-align:center;padding:11px;font-size:13px;color:var(--color-text-secondary);cursor:pointer;}
 .gf-filter{position:relative;display:flex;gap:3px;margin:8px 0 0;background:var(--color-background-tertiary);border:0.5px solid var(--color-border-secondary);border-radius:9px;padding:3px;overflow:hidden;}
 .gf-filter button{flex:1;position:relative;z-index:1;font-size:12px;font-weight:600;padding:6px 4px;border:0;background:transparent;color:var(--color-text-secondary);cursor:pointer;border-radius:7px;transition:color .2s ease;-webkit-tap-highlight-color:transparent;}
@@ -2132,7 +2131,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.60';
+const APP_VERSION='v123.61';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5503,8 +5502,13 @@ document.addEventListener('click',function(e){
   if(ov&&ov.style.display!=='none'&&e.target===ov)window.closeHmMemberSheet();
 });
 
-window._removeMember = async function(gid,memberId,name){
-  if(!confirm('Remove '+name+' from this group?'))return;
+// v123.61: the app's confirmation sheet, not the browser's box.
+window._removeMember = function(gid,memberId,name){
+  var gn=(_groupCache[gid]&&_groupCache[gid].name)||'';
+  _confirmSheet({icon:'ti-user-minus',danger:true,title:'Remove '+_gtEsc(name)+'?',body:'They come off the '+(gn?_gtEsc(gn)+' ':'')+'member list.',okLabel:'Remove',
+    onOk:function(){window._removeMemberGo(gid,memberId,name);}});
+};
+window._removeMemberGo = async function(gid,memberId,name){
   try{
     const tok=_sbSession?.access_token||SB_KEY;
     const r=await fetch(SB_URL+'/rest/v1/group_members?member_id=eq.'+encodeURIComponent(memberId),{
@@ -5618,15 +5622,17 @@ window._deleteGroupConfirm=async function(gid){
   }catch(e){window._grpShowErr('Could not delete the group. It may still have trips or rounds attached.');}
 };
 
-window._leaveGroup = async function(gid,name){
-  if(!confirm('Leave '+name+'?'))return;
-  const user=sbCurrentUser();
-  if(!user)return;
-  const g=_groupCache[gid];
-  const me=(g?._members||[]).find(m=>m.user_id===user.id);
-  if(!me)return;
-  await window._removeMember(gid,me.member_id,me.display_name||'yourself');
-  if(_activeGroup&&_activeGroup.group_id===gid)sbSetActiveGroup(null);
+window._leaveGroup = function(gid,name){
+  _confirmSheet({icon:'ti-door-exit',danger:true,title:'Leave '+_gtEsc(name)+'?',body:'You come off the member list. You can rejoin with the group code.',okLabel:'Leave',
+    onOk:async function(){
+      const user=sbCurrentUser();
+      if(!user)return;
+      const g=_groupCache[gid];
+      const me=(g?._members||[]).find(m=>m.user_id===user.id);
+      if(!me)return;
+      await window._removeMemberGo(gid,me.member_id,me.display_name||'yourself');
+      if(_activeGroup&&_activeGroup.group_id===gid)sbSetActiveGroup(null);
+    }});
 };
 
 window.startGroupQuickRound = function(gid){
