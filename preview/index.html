@@ -1606,7 +1606,25 @@ body.force-light .gp-row .gp-tile.live{border-color:#13795B;}
 .fs-pick-opt .fpo-who{font-size:11px;color:var(--color-text-secondary);margin-left:auto;}
 .fs-launch-pad{padding:22px 14px;text-align:center;}
 .fs-launch-pad .fpp-t{font-size:14px;font-weight:600;color:var(--color-text-primary);margin-bottom:12px;}
-.fs-launch-pad .lp-primary{justify-content:center;font-weight:500;color:#E1F5EE;background:#0F6E56;border-color:#0F6E56;}
+.fs-launch-pad .lp-primary{justify-content:center;gap:8px;min-height:50px;box-sizing:border-box;font-size:16px;font-weight:600;color:#FFFFFF;background:#13795B;border-color:#13795B;margin:4px 0 6px;}
+.fs-launch-pad .lp-primary.lp-off{background:var(--color-background-secondary);border-color:var(--color-border-tertiary);color:var(--color-text-secondary);cursor:default;}
+.lp-names{font-size:13px;color:var(--color-text-secondary);margin:-6px 0 10px;}
+.lp-hole{font-size:12px;color:var(--color-text-secondary);margin:0 0 8px;}
+.lp-view{padding:10px 0 4px;font-size:14px;font-weight:600;color:#3CC79A;cursor:pointer;}
+.lp-take{margin-top:2px;padding:11px 0;font-size:14px;font-weight:600;color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary);border-radius:11px;cursor:pointer;}
+.fs-launch-pad .lp-fs{align-items:flex-start;}
+.fs-launch-pad .lp-fs.lp-sel{border:1.5px solid #1D9E75;background:rgba(29,158,117,0.14);}
+.lp-dot{position:relative;width:18px;height:18px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--color-border-secondary);flex-shrink:0;margin-top:1px;}
+.lp-sel .lp-dot{border:2px solid #1D9E75;}
+.lp-sel .lp-dot::after{content:'';position:absolute;inset:3px;border-radius:50%;background:#1D9E75;}
+.lp-fs-b{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.lp-fs-n{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--color-text-primary);}
+.lp-you{font-size:9px;font-weight:700;letter-spacing:.06em;color:#3CC79A;border:1px solid currentColor;border-radius:5px;padding:1px 5px;}
+.lp-fs-w{font-size:12.5px;color:var(--color-text-primary);}
+.lp-st{font-size:11.5px;color:var(--color-text-secondary);}
+.lp-st.held{color:#e0b44a;}
+@media(prefers-color-scheme:light){body:not(.force-dark) .lp-view,body:not(.force-dark) .lp-you{color:#13795B;}body:not(.force-dark) .lp-st.held{color:#8A5A00;}}
+body.force-light .lp-view,body.force-light .lp-you{color:#13795B;}body.force-light .lp-st.held{color:#8A5A00;}
 .lp-tools{margin-top:14px;padding-top:14px;border-top:0.5px solid var(--color-border-tertiary);}
 .lp-tool{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:11px 14px;
   background:rgba(29,158,117,0.10);border:0.5px solid rgba(29,158,117,0.45);border-radius:11px;
@@ -2103,6 +2121,56 @@ window._lpStart=function(fi){
 window._lpFoursomes=function(){
   setView('setup');STATE.flightsViewRound=STATE.currentRound;setOptPanel('flights');
 };
+window._lpPlayers=function(){setView('setup');setOptPanel('players');};
+function _lpHoleNav(on){var el=document.querySelector('.hole-nav');if(el&&el.style)el.style.display=on?'':'none';}
+// v123.71: the foursome holding the signed-in player in round r, or -1 (an organizer who is not
+// playing, a round with no group, a cold member cache). Membership is member_id, the join key.
+function _lpMyFi(r){
+  var g=(WK&&WK._groupId&&typeof _groupCache!=='undefined')?_groupCache[WK._groupId]:null;
+  var mid=g&&g.member_id;if(!mid)return -1;
+  var fl=flightsForRound(r)||[];
+  for(var fi=0;fi<fl.length;fi++){
+    if((fl[fi]||[]).some(function(pi){var p=WK.players[pi];return !!(p&&p.member_id===mid);}))return fi;
+  }
+  return -1;
+}
+// The row picked on a several-foursome pad, before its button commits it. In memory, per trip and
+// round: a choice on this screen, not a foursome pick (that is setFlightPick's, and only the
+// button makes one).
+var _lpSelMap={};
+function _lpSelKey(r){return (WK&&(WK._id||WK.tripName)||'')+':'+r;}
+function _lpSelFi(r){
+  var n=(flightsForRound(r)||[]).length,k=_lpSelKey(r);
+  if(Object.prototype.hasOwnProperty.call(_lpSelMap,k)&&_lpSelMap[k]>=0&&_lpSelMap[k]<n)return _lpSelMap[k];
+  return _lpMyFi(r);
+}
+// What the pad offers for foursome fi: 'score' (a pencil to take, or no pencil at all), 'mine'
+// (you hold it), 'other' (someone else does), 'view' (read only, or the foursome is finished).
+function _lpMode(r,fi){
+  if(isReadOnly)return 'view';
+  if(isFlightLocked(r,fi)||_fsAllScored(r,fi))return 'view';
+  if(!_pencilActive())return 'score';
+  if(holdsPencil(r,fi))return 'mine';
+  if(pencilUnheld(r,fi))return 'score';
+  return 'other';
+}
+function _lpFirstNames(r,fi){
+  return ((flightsForRound(r)||[])[fi]||[]).filter(function(pi){return pi>=0&&WK.players[pi];})
+    .map(function(pi){var p=WK.players[pi];return _gtEsc(p.first||displayName(pi));}).join(', ');
+}
+window._lpPick=function(fi){_lpSelMap[_lpSelKey(STATE.currentRound)]=fi;renderScorecard();};
+// The pad's buttons. Each commits foursome fi and opens it where that group left off. 'score'
+// takes the pencil when there is one to take; 'take' asks first (the takeover sheet); 'view'
+// takes nothing.
+window._lpGo=function(fi,how){
+  var r=STATE.currentRound;
+  if(typeof fi!=='number'||fi<0||fi>=(flightsForRound(r)||[]).length)return;
+  setFlightPick(r,fi);
+  STATE.currentHole=_flightResumeHole(r,fi);
+  if(how==='score'&&!isReadOnly&&_pencilActive()&&pencilUnheld(r,fi))window._pencilClaim();
+  updateHoleUI();
+  if(how==='take')window._pencilTakeoverConfirm();
+};
 window._lpGames=function(){
   // NO PICK IS COMMITTED HERE, deliberately. v121.3 committed one so the add picker would
   // have a lane, and that single line made the entire pad disappear the moment the user
@@ -2201,7 +2269,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.70';
+const APP_VERSION='v123.71';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -8141,6 +8209,8 @@ function _updateActionRow(){
   // bar over Games/Money/etc. Mirrors the rule _updateTabBar already enforces on nav.
   if(!document.getElementById('tab-entry')?.classList.contains('active')){row.className='';return;}
   const r=STATE.currentRound,hi=STATE.currentHole;
+  // v123.71: the pad carries its own buttons. A bar under it was a second call to action.
+  if(_launchPadPending(r)){row.className='';row.style.gridTemplateColumns='';row.style.background='';row.innerHTML='';return;}
   const isCard=_scViewMode==='card';
   if(isCard){
     row.className='visible cardmode';
@@ -8152,17 +8222,6 @@ function _updateActionRow(){
   row.style.gridTemplateColumns='';
   row.style.background='';
   var _gridBtn='<button class="act-tog" id="actTogBtn" onclick="window._actToggleView()" title="Card view"><i class="ti ti-layout-grid"></i></button>';
-  // No foursome picked yet. Start Scoring here would claim foursome 0's pencil for
-  // whoever taps it, and Save & Continue would demand a score from every player in the
-  // field. Text-plus-grid shape borrowed from the viewing state, in neutral grey: nothing
-  // is held, there is simply no foursome yet. The grid button stays because card view is
-  // field-wide and needs no pick.
-  if(_fsPickPending(r)){
-    row.style.gridTemplateColumns='1fr 64px';
-    row.innerHTML='<div class="act-fs-pending" style="display:flex;align-items:center;min-width:0;font-size:13px;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Pick your foursome to start scoring</div>'+_gridBtn;
-    _updateActionRowGameLock();
-    return;
-  }
   // v123.20. The bar is a pure readout of two facts about THIS foursome: is it locked or
   // fully scored, and do you hold the pencil. No mode, no flag. Locked is checked outside
   // _pencilActive on purpose: a trip with no group has no pencil, and the Lock Round button
@@ -9000,6 +9059,7 @@ function renderScorecard(){
   // from _fsPickPending on purpose; see its definition.
   if(_launchPadPending(r)){
     _fsBlankGameBoxes();
+    _lpHoleNav(false);
     document.getElementById('scorecard').innerHTML=_launchPadHtml(r);
     return;
   }
@@ -9007,10 +9067,12 @@ function renderScorecard(){
     _fp=getFlightPick(r);
     if(_fp===null){
       _fsBlankGameBoxes();
+      _lpHoleNav(false);
       document.getElementById('scorecard').innerHTML=_launchPadHtml(r);
       return;
     }
   }
+  _lpHoleNav(true);
   const wolfActive=gameOnFs('wolf',r,_fp)&&(flightsForRound(r)[_fp]||[]).length>=4;let displayOrder=wolfActive?wolfTeeOrder(hi,r,_fp):(isMultiFlight(r)?(flightsForRound(r)[_fp]||[]).slice():WK.players.map((_,idx)=>idx));
   if(isMultiFlight(r)){
     const _flSet={};(flightsForRound(r)[_fp]||[]).forEach(pi=>{_flSet[pi]=1;});
@@ -11388,21 +11450,50 @@ function reconcileWolfOrder(r){
 function _launchPadHtml(r){
   var fl=(typeof flightsForRound==='function')?flightsForRound(r):[[]];
   var multi=fl.length>1;
+  var fi=multi?_lpSelFi(r):0;
+  var mode=fi>=0?_lpMode(r,fi):'none';
+  var pen='<i class="ti ti-pencil" aria-hidden="true"></i>';
   var h='<div class="fs-launch-pad">';
-  h+='<div class="fpp-t">'+(multi?'Select your foursome':'Ready to play')+'</div>';
   if(multi){
-    for(var fi=0;fi<fl.length;fi++){
-      h+='<div class="fs-pick-opt" onclick="_fsPillPick('+fi+')">Foursome '+(fi+1)
-        +'<span class="fpo-who">'+flightMemberInitials(r,fi)+'</span></div>';
+    h+='<div class="fpp-t">Pick your foursome</div>';
+    var me=_lpMyFi(r);
+    for(var g=0;g<fl.length;g++){
+      var gm=_lpMode(r,g),st='';
+      if(gm==='other')st='<span class="lp-st held">'+_gtEsc(_pencilHolderName(r,g))+' is scoring</span>';
+      else if(gm==='mine')st='<span class="lp-st">You are scoring</span>';
+      else if(gm==='view'&&(isFlightLocked(r,g)||_fsAllScored(r,g)))st='<span class="lp-st">Finished</span>';
+      else if(gm==='score'&&_pencilActive())st='<span class="lp-st">No one is scoring yet</span>';
+      h+='<div class="fs-pick-opt lp-fs'+(g===fi?' lp-sel':'')+'" onclick="window._lpPick('+g+')">'
+        +'<span class="lp-dot" aria-hidden="true"></span>'
+        +'<span class="lp-fs-b"><span class="lp-fs-n">Foursome '+(g+1)+(g===me?'<span class="lp-you">YOU</span>':'')+'</span>'
+        +'<span class="lp-fs-w">'+_lpFirstNames(r,g)+'</span>'+st+'</span></div>';
     }
   } else {
-    // NOT "Start scoring": that label belongs to the action row's _pencilClaim, which is a
-    // different action. This button only opens the card, exactly as a foursome row does on
-    // a multi-group round.
-    h+='<div class="lp-start fs-pick-opt lp-primary" onclick="window._lpStart(0)">Go to the scorecard</div>';
+    var done=isFlightLocked(r,0)||_fsAllScored(r,0);
+    h+='<div class="fpp-t">'+(mode==='other'?_gtEsc(_pencilHolderName(r,0))+' is scoring':(done?'Finished':'Ready to play'))+'</div>';
+    h+='<div class="lp-names">'+_lpFirstNames(r,0)+'</div>';
+  }
+  if(fi>=0&&mode!=='view'){
+    var sh=_flightResumeHole(r,fi),hd=(WK.rounds[r]&&WK.rounds[r].course&&WK.rounds[r].course.holes||[])[sh];
+    h+='<div class="lp-hole">Starts on hole '+(sh+1)+(hd&&hd.par?' &middot; Par '+hd.par:'')+'</div>';
+  }
+  // One button, the same place for one foursome or several. Several name the foursome.
+  var nm=multi&&fi>=0?' Foursome '+(fi+1):'';
+  if(fi<0){
+    h+='<div class="lp-start fs-pick-opt lp-primary lp-off">'+pen+'Start scoring</div>';
+  } else if(mode==='score'||mode==='mine'){
+    h+='<div class="lp-start fs-pick-opt lp-primary" onclick="window._lpGo('+fi+',\'score\')">'+pen+'Start scoring'+nm+'</div>';
+    if(mode==='score'&&_pencilActive())h+='<div class="lp-view" onclick="window._lpGo('+fi+',\'view\')">Just view the card</div>';
+  } else {
+    h+='<div class="lp-start fs-pick-opt lp-primary" onclick="window._lpGo('+fi+',\'view\')">'+(multi?'View'+nm:'View the card')+'</div>';
+    if(mode==='other')h+='<div class="lp-take" onclick="window._lpGo('+fi+',\'take\')">Take over scoring</div>';
   }
   h+='<div class="lp-tools">';
-  h+='<div class="lp-tool lp-foursomes" onclick="window._lpFoursomes()">Configure foursomes'
+  // One foursome of four or fewer has nothing to split; what you might want first is the roster.
+  if(!multi&&(fl[0]||[]).filter(function(pi){return pi>=0;}).length<=4)
+    h+='<div class="lp-tool lp-players" onclick="window._lpPlayers()">Players'
+      +'<span class="lp-sub">Add players, change handicaps</span></div>';
+  else h+='<div class="lp-tool lp-foursomes" onclick="window._lpFoursomes()">Configure foursomes'
     +'<span class="lp-sub">Move players between groups</span></div>';
   h+='<div class="lp-tool lp-games" onclick="window._lpGames()">Select games'
     +'<span class="lp-sub">Choose what this group is playing for</span></div>';
