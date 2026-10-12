@@ -426,7 +426,6 @@ body.force-dark .home-gtile-tag.live{color:#3CC79A;}body.force-dark .home-gtile-
 .home-wb-all{background:none;border:none;padding:0;color:#1D9E75;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
 .home-wb-btn{display:flex;align-items:center;justify-content:center;width:100%;height:48px;margin-top:10px;border:none;border-radius:12px;background:#1D9E75;color:#FFFFFF;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;}
 .home-wb-btn:active{background:#13795B;}
-.home-wb-btn.ghost{height:46px;background:transparent;border:1.5px solid #1D9E75;color:#13795B;}
 .home-wb-btn.home-wb-resume{height:auto;min-height:62px;justify-content:flex-start;gap:12px;padding:11px 14px;margin-top:4px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);font-size:inherit;font-weight:inherit;text-align:left;}
 .home-wb-btn.home-wb-resume:active{background:var(--color-background-secondary);}
 .home-wb-resume .grp-act2-t{font-size:15px;font-weight:700;}
@@ -437,8 +436,6 @@ body.force-dark .home-gtile-tag.live{color:#3CC79A;}body.force-dark .home-gtile-
 @media(prefers-color-scheme:dark){body:not(.force-light) .ts-danger{color:#F28B82;}body:not(.force-light) .ts-danger-bg{background:rgba(242,139,130,0.14);}}
 body.force-dark .ts-danger{color:#F28B82;}
 body.force-dark .ts-danger-bg{background:rgba(242,139,130,0.14);}
-@media(prefers-color-scheme:dark){body:not(.force-light) .home-wb-btn.ghost{color:#3CC79A;}}
-body.force-dark .home-wb-btn.ghost{color:#3CC79A;}
 .home-cont-row{display:flex;align-items:center;gap:10px;}
 .home-cont-eyebrow{display:flex;align-items:center;gap:5px;margin-bottom:7px;}
 .home-cont-eyebrow-ic{width:16px;height:16px;border-radius:50%;background:var(--tint);display:grid;place-items:center;flex-shrink:0;}
@@ -1125,6 +1122,7 @@ body.force-light{
 .grp-act2-ic .ti{font-size:20px;color:var(--brand);}
 /* v123.46: inline icons in the action tiles (the webfont has no filled glyphs). */
 .grp-act2-ic .ic-play{color:var(--brand);display:block;}
+.grp-act2-ic .ic-cal{color:var(--brand);display:block;}
 .grp-act2-tx{flex:1;min-width:0;display:flex;flex-direction:column;}
 .grp-act2-t{font-size:14px;font-weight:600;color:var(--color-text-primary);}
 .grp-act2-d{font-size:12px;color:var(--color-text-secondary);margin-top:2px;}
@@ -1243,8 +1241,10 @@ body.force-dark .pg-title{color:#EFC456;}
 .e9-game{display:flex;align-items:center;gap:12px;min-height:52px;padding:6px 14px;box-sizing:border-box;border-bottom:0.5px solid var(--color-border-tertiary);}
 .e9-game:last-child{border-bottom:none;}
 .e9-game.off{opacity:0.45;}
-.tw-addrd{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:100%;height:44px;border-radius:10px;font-size:14px;font-weight:600;color:var(--brand);cursor:pointer;-webkit-tap-highlight-color:transparent;}
-.tw-addrd:active{background:var(--color-background-secondary);}
+.tw-addrow{padding:10px 12px 11px;}
+.tw-addrd{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:flex-start;min-height:28px;padding:8px 0;margin:-8px 0;font-size:15px;font-weight:600;color:var(--brand);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.tw-addrd:active{opacity:0.6;}
+.tw-addrow-n{font-size:11px;line-height:1.5;color:var(--color-text-tertiary);margin-top:2px;}
 input[type=date]{text-align:left;}
 input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;}
 /* v123.62: the trip wizard's new screens, full screen */
@@ -2174,7 +2174,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.66';
+const APP_VERSION='v123.67';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -6626,6 +6626,22 @@ function _wbDay(d){
   var y=+d.slice(0,4);
   return MON[+d.slice(5,7)-1]+' '+(+d.slice(8,10))+(y!==new Date().getFullYear()?', '+y:'');
 }
+// v123.67: days from today to an ISO date (local calendar days); null for no date or free text.
+function _wbRel(d){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d||''))return null;
+  var n=new Date(),a=new Date(n.getFullYear(),n.getMonth(),n.getDate()),b=new Date(+d.slice(0,4),+d.slice(5,7)-1,+d.slice(8,10));
+  return Math.round((b-a)/86400000);
+}
+// v123.67: the welcome block's tile, shared by Resume and the coming-up trip. icon is 'play' or 'cal';
+// label and line arrive escaped.
+function _wbTile(id,cls,icon,label,line){
+  var ic=icon==='cal'?'<svg class="ic-cal" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>'
+    :'<svg class="ic-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>';
+  return '<button class="home-wb-btn home-wb-resume'+cls+' grp-act2" onclick="viewTrip(\''+_gtEsc(id)+'\')">'
+    +'<span class="grp-act2-ic">'+ic+'</span>'
+    +'<span class="grp-act2-tx"><span class="grp-act2-t">'+label+'</span><span class="home-wb-line">'+line+'</span></span>'
+    +'<span class="grp-act2-chev" aria-hidden="true">&#8250;</span></button>';
+}
 function _renderContinueSection(){
   const el=document.getElementById('homeContinueSec');if(!el)return;
   const trips=loadTrips().filter(function(t){return!_pendingRoundDeletes.has(t.id);});
@@ -6654,10 +6670,7 @@ function _renderContinueSection(){
     }
     // v123.41: Resume is a tile like the Group page's actions; the line rides inside it.
     h+=(inProg.length>1?'<div class="home-wb-row only-all"><button class="home-wb-all" onclick="window._hmShowAllInProgress()">See all ('+inProg.length+')</button></div>':'')
-      +'<button class="home-wb-btn home-wb-resume grp-act2" onclick="viewTrip(\''+_gtEsc(ct.id)+'\')">'
-      +'<span class="grp-act2-ic"><svg class="ic-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>'
-      +'<span class="grp-act2-tx"><span class="grp-act2-t">'+label+'</span><span class="home-wb-line">'+line+'</span></span>'
-      +'<span class="grp-act2-chev" aria-hidden="true">&#8250;</span></button>';
+      +_wbTile(ct.id,'','play',label,line);
     // Leader, runner-up and you; the top three when you are among them or not in the trip.
     // Nothing before somebody posts a hole: every player sits at 0 and the order is roster accident.
     const st=Array.isArray(ct.standings)?ct.standings:[];
@@ -6688,10 +6701,12 @@ function _renderContinueSection(){
       return recent(a,b);
     })[0]||null;
     if(up){
-      var day=_wbDay(up.date),g=grpOf(up);
-      var upLine=day?_gtEsc(g||up.name||'Your trip')+' tees off '+day:[g,up.name||'Unnamed Trip'].filter(Boolean).map(_gtEsc).join(' \u00b7 ');
-      h+='<div class="home-wb-row"><p class="home-wb-line">'+upLine+'</p></div>'
-        +'<button class="home-wb-btn ghost" onclick="viewTrip(\''+_gtEsc(up.id)+'\')">Open trip</button>';
+      // v123.67: the same tile as Resume. Begin trip on the day itself, View trip otherwise.
+      // _wbDay escapes a free-text date itself, so the parts are escaped one by one.
+      var day=_wbDay(up.date),g=grpOf(up),rel=_wbRel(up.date);
+      var when=rel===0?'tees off today':rel===1?'tees off tomorrow':day;
+      var upLine=[g?_gtEsc(g):'',_gtEsc(up.name||'Unnamed Trip'),when].filter(Boolean).join(' \u00b7 ');
+      h+=_wbTile(up.id,' home-wb-next','cal',rel===0?'Begin trip':'View trip',upLine);
     } else {
       h+='<div class="home-wb-row"><p class="home-wb-line">Ready for your next golf adventure?</p></div>';
     }
@@ -13654,7 +13669,7 @@ function renderWeekendPanel(){
     return row;
   };
   const orderedRounds=WK.rounds.map((rd,i)=>({rd,i})).sort((a,b)=>{const ae=a.rd.isE9&&!a.rd.inStandings?1:0;const be=b.rd.isE9&&!b.rd.inStandings?1:0;return ae-be;}).map(x=>x.rd);
-  html+=`<div class="section-card"><div class="section-hd">Rounds</div>${orderedRounds.map(roundRow).join('')}<div style="padding:11px 14px;border-top:0.5px solid var(--color-border-tertiary)"><button class="tw-addrd" onclick="launchE9()">+ Add round</button></div><div style="font-size:11px;color:var(--color-text-tertiary);padding:0 14px 12px;line-height:1.5">A round that does not count toward standings is labeled E9 or E18.</div></div>`;
+  html+=`<div class="section-card"><div class="section-hd">Rounds</div>${orderedRounds.map(roundRow).join('')}<div class="tw-addrow"><button class="tw-addrd" onclick="launchE9()">+ Add round</button><div class="tw-addrow-n">Doesn&#39;t count toward standings? It&#39;s labeled E9 or E18.</div></div></div>`;
 
   // --- Handicap ---
   html+=`<div class="section-card" id="hdcpCard" style="margin-bottom:14px"><div class="section-hd">Handicap</div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net off low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffLow?'checked':''} onchange="STATE.netOffLow=this.checked;autoSave();s2WriteActive();renderWeekendPanel();renderScorecard();renderBanner()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net games off foursome low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffFlightLow?'checked':''} onchange="STATE.netOffFlightLow=this.checked;autoSave();s2WriteActive();renderScorecard();renderBanner();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px"><span style="font-size:12px;color:var(--color-text-secondary)">Handicap adjustment</span><div style="display:flex;align-items:center;gap:4px"><select class="ie-sel" style="width:76px" onchange="WK.hdcpPct=parseInt(this.value)/100;autoSave();s2WriteActive();renderWeekendPanel();renderScorecard()">${(()=>{const _c=Math.round(WK.hdcpPct*100);const _o=[100,95,90,85,80,75,70,65,60,55,50];return(_o.includes(_c)?_o:[_c,..._o]).map(v=>`<option value="${v}"${v===_c?' selected':''}>${v}%</option>`).join('');})()}</select></div></div>`
