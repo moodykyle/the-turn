@@ -1496,6 +1496,7 @@ body.force-light .gp-row .gp-tile.live{border-color:#13795B;}
 .pl-row{display:grid;grid-template-columns:30px minmax(0,1fr) 104px 20px;gap:8px;align-items:center;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary);}
 .pl-chev{font-size:10px;color:var(--color-text-tertiary);text-align:center;cursor:pointer;background:transparent;border:none;padding:0;font-family:inherit;}
 .pl-chev.hot{color:#C2792B;}
+.pl-sheet-body .pl-body{background:transparent;border-bottom:none;padding-top:0;}
 .pl-body{background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);padding:4px 0 10px;}
 .pl-idx{font-size:14px;font-weight:600;text-align:center;color:var(--color-text-primary);}
 .pl-idx .set{font-size:8.5px;font-weight:700;color:var(--color-text-tertiary);display:block;letter-spacing:0.05em;margin-top:1px;}
@@ -2269,7 +2270,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.71';
+const APP_VERSION='v123.72';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -8473,7 +8474,7 @@ const _RZ5MODES=[
 function roundValFs(key,r,fi,tripDefault){const rd=WK.rounds&&WK.rounds[r];if(rd&&rd.independentGames&&fi!=null&&Array.isArray(rd.fsGames)&&rd.fsGames[fi]&&rd.fsGames[fi][key]!==undefined)return rd.fsGames[fi][key];return roundVal(key,r,tripDefault);}
 function _fsOff(game,r,fi){const rd=WK.rounds&&WK.rounds[r];return !!(rd&&rd.independentGames&&!gameOnFs(game,r,fi));}
 const OPT_PANELS=['menu','weekend','players','flights','courses','info','htp'];
-function setOptPanel(p){if(_fsP)window._fsPromptClose();STATE.optPanel=p;OPT_PANELS.forEach(n=>{const panel=document.getElementById('opt-panel-'+n);if(panel){panel.classList.remove('active');if(n===p)panel.classList.add('active');}});const back=document.getElementById('opt-back'),backT=document.getElementById('opt-back-title'),menuT=document.getElementById('opt-menu-title');if(p==='players'&&typeof _plOpen!=='undefined')_plOpen={};
+function setOptPanel(p){if(p==='flights'&&_plMerged())p='players';if(_fsP)window._fsPromptClose();STATE.optPanel=p;OPT_PANELS.forEach(n=>{const panel=document.getElementById('opt-panel-'+n);if(panel){panel.classList.remove('active');if(n===p)panel.classList.add('active');}});const back=document.getElementById('opt-back'),backT=document.getElementById('opt-back-title'),menuT=document.getElementById('opt-menu-title');if(p==='players'&&typeof _plOpen!=='undefined')_plOpen={};
   const titles={weekend:(WK&&WK.isQuickRound)?'Round Setup':'Trip Setup',players:'Players',flights:'Foursomes',courses:'Courses',info:'Preferences',htp:'How It Works'};if(p==='menu'){if(back)back.style.display='none';if(menuT)menuT.style.display='';}else{if(back)back.style.display='';if(backT)backT.textContent=titles[p]||'';if(menuT)menuT.style.display='none';}renderOptPanel(p);_wireSimLongPress();}
 function renderOptions(){setOptPanel('menu');}
 function _toggleSimMember(){
@@ -8522,8 +8523,8 @@ function renderOptMenu(){
   const row=(icon,title,sub,onclick)=>`<div class="opt-menu-row" onclick="${onclick}"><div class="opt-menu-ico"><i class="ti ${icon}"></i></div><div class="opt-menu-text"><div class="opt-menu-title">${title}</div><div class="opt-menu-sub">${sub}</div></div><div class="opt-menu-chev">›</div></div>`;
   el.innerHTML='<div class="opt-menu-card">'
     +row('ti-calendar-event',setupTitle,setupSub,"setOptPanel('weekend')")
-    +row('ti-users','Players',nP+' player'+(nP===1?'':'s'),"setOptPanel('players')")
-    +row('ti-users-group','Foursomes','Split rounds into groups',"setOptPanel('flights')")
+    +row('ti-users','Players',nP+' player'+(nP===1?'':'s')+(isQ?' \u00b7 foursomes and handicaps':''),"setOptPanel('players')")
+    +(isQ?'':row('ti-users-group','Foursomes','Split rounds into groups',"setOptPanel('flights')"))
     +row('ti-map-pin','Courses','Course library',"setOptPanel('courses')")
     +row('ti-adjustments-horizontal','Preferences','Appearance, version',"setOptPanel('info')")
     +'</div><div class="opt-menu-gap"></div><div class="opt-menu-card">'
@@ -12604,36 +12605,27 @@ function _plAnyRoundDone(){
   for(var r=0;r<WK.rounds.length;r++){try{if(isRoundComplete(r))return true;}catch(e){}}
   return false;
 }
-function renderPlayersPanel(){
+// v123.72: one player's editing body (name, index, the handicap lines, Save / Cancel, Remove),
+// shared by the Players page's open row and, in a round, the player sheet. o.sheet: Remove
+// closes the sheet first.
+function _plBodyHtml(i,o){
+  o=o||{};
+  const p=WK.players[i];if(!p)return '';
   const canEd=canEditTrip();
   const anyDone=_plAnyRoundDone();
   const nR=(WK.rounds||[]).length;
-  // The mode moved into the column it describes. Two labels for one fact in one header
-  // was the redundancy, and the column header is where the reader is already looking.
   const followMode=_hcpMode()==='round';
-  let html=`<div class="section-card" style="margin-bottom:14px">`;
-  html+=`<div class="pl-hd"><span></span><span>Player</span><span style="text-align:center">${followMode?'Round index':'Trip index'}<button class="pl-q" onclick="window._snapshotInfo()" aria-label="About these handicaps">?</button></span><span></span></div>`;
-  WK.players.forEach((p,i)=>{
-    const pid=p.pid||('i'+i);
-    const open=!!_plOpen[pid];
-    const live=_memberHcpFor(p);
-    const drifted=!!(live&&Number(live.index)!==Number(p.idx));
-    // Once ANY round is finished the trip index cannot move without rescoring it, so
-    // there is nothing to act on and nothing to point at. v123.0 showed the line with a
-    // disabled button and a paragraph explaining why the button was dead, which is a
-    // prompt that exists only to be refused. Hidden outright, chevron included.
-    const showDrift=!anyDone;
-    const draft=_plDraft[pid]||null;
-    // Built from first and last rather than p.name, so the box holds the real full name
-    // whatever resolveDisplayNames may have left in p.name.
-    const fullName=((p.first||'')+(p.last?' '+p.last:'')).trim()||p.name||'';
-    html+=`<div class="pl-row">`
-      +`<div class="avatar" id="plav_${pid}" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div>`
-      +`<div class="pl-name" id="plnm_${pid}">${fullName}</div>`
-      +`<div class="pl-idx">${sbHcpDisplay(p.idx)}${(followMode&&p.idxSetHere)?'<span class="set">TRIP ONLY</span>':''}</div>`
-      +`<button class="pl-chev" onclick="window._plToggle('${pid}')" aria-label="Player details">${open?'&#9650;':'&#9660;'}</button>`
-      +`</div>`;
-    if(open){
+  const pid=_plPid(p,i);
+  const live=_memberHcpFor(p);
+  const drifted=!!(live&&Number(live.index)!==Number(p.idx));
+  // Once ANY round is finished the trip index cannot move without rescoring it, so
+  // there is nothing to act on and nothing to point at. v123.0 showed the line with a
+  // disabled button and a paragraph explaining why the button was dead, which is a
+  // prompt that exists only to be refused. Hidden outright, chevron included.
+  const showDrift=!anyDone;
+  const draft=_plDraft[pid]||null;
+  const fullName=_plFullName(p);
+  let html='';
       const seat=_hcpDate(p.seatedAt);
       const who=p.first||p.name||'this player';
       void showDrift;void drifted;
@@ -12692,9 +12684,46 @@ function renderPlayersPanel(){
           +`<button class="pl-cancel" id="plcancel_${pid}" onclick="window._plCancelRow(${i})" style="display:${draft?'block':'none'}">Cancel</button>`
           +`</div>`;
       }
-      if(WK.players.length>(WK.isQuickRound?1:2)&&canEd)html+=`<button class="pl-remove" onclick="removePlayer(${i})">${WK.isQuickRound?'Remove from round':'Remove from trip'}</button>`;
+      if(WK.players.length>(WK.isQuickRound?1:2)&&canEd)html+=`<button class="pl-remove" onclick="${o.sheet?'window._plSheetRemove':'removePlayer'}(${i})">${WK.isQuickRound?'Remove from round':'Remove from trip'}</button>`;
       html+=`</div>`;
+  return html;
+}
+// v123.72: a round's roster IS its foursomes, so in a round Players and Foursomes are one page.
+// Trips keep both: a trip's Players is the weekend roster and its foursomes change by round.
+function _plMerged(){return !!(WK&&WK.isQuickRound);}
+function _plFullName(p){return ((p.first||'')+(p.last?' '+p.last:'')).trim()||p.name||'';}
+var _plSheetPi=null;
+window._plSheetRemove=function(i){_plSheetPi=null;window._fsCloseSheet();removePlayer(i);};
+function renderPlayersPanel(){
+  if(_plMerged()){
+    STATE.flightsViewRound=0;
+    if(!STATE.roundFlights)STATE.roundFlights=WK.rounds.map(()=>defaultFlights(WK.players.length));
+    document.getElementById('opt-panel-players').innerHTML=_fsPanelHtml(0,true);
+    // Save and Cancel redraw the page; the open sheet follows, or closes if its player left.
+    if(_plSheetPi!==null&&document.getElementById('fsSheet')){
+      if(WK.players[_plSheetPi])window._fsTapPlayer(0,_plSheetPi);else window._fsCloseSheet();
     }
+    return;
+  }
+  const canEd=canEditTrip();
+  // The mode moved into the column it describes. Two labels for one fact in one header
+  // was the redundancy, and the column header is where the reader is already looking.
+  const followMode=_hcpMode()==='round';
+  let html=`<div class="section-card" style="margin-bottom:14px">`;
+  html+=`<div class="pl-hd"><span></span><span>Player</span><span style="text-align:center">${followMode?'Round index':'Trip index'}<button class="pl-q" onclick="window._snapshotInfo()" aria-label="About these handicaps">?</button></span><span></span></div>`;
+  WK.players.forEach((p,i)=>{
+    const pid=p.pid||('i'+i);
+    const open=!!_plOpen[pid];
+    // Built from first and last rather than p.name, so the box holds the real full name
+    // whatever resolveDisplayNames may have left in p.name.
+    const fullName=((p.first||'')+(p.last?' '+p.last:'')).trim()||p.name||'';
+    html+=`<div class="pl-row">`
+      +`<div class="avatar" id="plav_${pid}" style="width:30px;height:30px;font-size:11px;background:${p.bg};color:${p.fg}">${p.ini}</div>`
+      +`<div class="pl-name" id="plnm_${pid}">${fullName}</div>`
+      +`<div class="pl-idx">${sbHcpDisplay(p.idx)}${(followMode&&p.idxSetHere)?'<span class="set">TRIP ONLY</span>':''}</div>`
+      +`<button class="pl-chev" onclick="window._plToggle('${pid}')" aria-label="Player details">${open?'&#9650;':'&#9660;'}</button>`
+      +`</div>`;
+    if(open)html+=_plBodyHtml(i);
   });
   if(WK.players.length<TW_MAX_PLAYERS&&canEd){html+=`<div class="ap-addrow" onclick="window._apOpen()"><i class="ti ti-plus" style="font-size:15px"></i> Add player</div>`;}
   html+=`</div>`;
@@ -12730,10 +12759,21 @@ function renderFlightsPanel(){
   const nP=WK.players.length;
   if(!STATE.roundFlights)STATE.roundFlights=WK.rounds.map(()=>defaultFlights(nP));
   const fl=_fsNormalize(STATE.roundFlights[r]||defaultFlights(nP),nP);
+  document.getElementById('opt-panel-flights').innerHTML=_fsPanelHtml(r,false);
+  renderRdPicker('flightsRdSel',r,'switchFlightsRound',false);
+  if(_plMerged()&&STATE.optPanel==='players')renderPlayersPanel();
+}
+// The foursome page. merged: a round's Players page (no round picker; a tap opens the player
+// sheet even once moves are frozen, for name and index; the handicap mode in the summary line).
+function _fsPanelHtml(r,merged){
+  const nP=WK.players.length;
+  const fl=_fsNormalize(STATE.roundFlights[r]||defaultFlights(nP),nP);
   const editable=canEditTrip()&&!isAnyFlightLocked(r);
-  let html='<div id="flightsRdSel"></div>';
+  const tappable=merged?canEditTrip():editable;
+  let html=merged?'':'<div id="flightsRdSel"></div>';
   html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px 2px;font-size:12px;color:var(--color-text-secondary)">'
-    +'<span><b style="color:var(--color-text-primary)">'+nP+' player'+(nP===1?'':'s')+'</b> \u00b7 '+fl.length+' foursome'+(fl.length===1?'':'s')+'</span>'
+    +'<span><b style="color:var(--color-text-primary)">'+nP+' player'+(nP===1?'':'s')+'</b> \u00b7 '+fl.length+' foursome'+(fl.length===1?'':'s')
+    +(merged?' \u00b7 '+(_hcpMode()==='round'?'Round index':'Trip index')+'<button class="pl-q" onclick="window._snapshotInfo()" aria-label="About these handicaps">?</button>':'')+'</span>'
     +(editable?'<button class="btn-sm" style="color:#1D9E75" onclick="window._fsAutoSplit('+r+')">Auto-split</button>':'')
     +'</div>';
   fl.forEach(function(grp,gi){
@@ -12751,7 +12791,7 @@ function renderFlightsPanel(){
     }
     grp.forEach(function(pi,pos){
       const p=WK.players[pi];
-      const click=editable?' onclick="window._fsTapPlayer('+r+','+pi+')"':'';
+      const click=tappable?' onclick="window._fsTapPlayer('+r+','+pi+')"':'';
       // Arrows reorder within the foursome. stopPropagation keeps a nudge from also
       // firing the row's onclick and opening the move sheet on every tap.
       const canUp=editable&&pos>0,canDn=editable&&pos<grp.length-1;
@@ -12761,7 +12801,7 @@ function renderFlightsPanel(){
       const dnEl=editable?('<span class="fs-nudge'+(canDn?'':' off')+'"'
         +(canDn?' onclick="event.stopPropagation();window._fsNudge('+r+','+pi+',1)"':'')
         +' aria-label="Move down"><i class="ti ti-chevron-down"></i></span>'):'';
-      html+='<div class="fs-prow"'+click+' style="'+(editable?'cursor:pointer':'')+'">'
+      html+='<div class="fs-prow"'+click+' style="'+(tappable?'cursor:pointer':'')+'">'
         +'<div class="fs-slot-dot" style="width:30px;height:30px;font-size:11px;background:'+p.bg+';color:'+p.fg+'">'+p.ini+'</div>'
         +'<span style="font-size:14px;flex:1">'+displayName(pi)+'</span>'
         +'<span style="font-size:12px;color:var(--color-text-secondary);margin-right:2px">'+sbHcpDisplay(idxForRound(pi,r))+'</span>'
@@ -12772,9 +12812,12 @@ function renderFlightsPanel(){
     html+='</div>';
   });
   if(editable)html+='<div class="fs-addf" onclick="window._fsAddFoursome('+r+')">+ Add foursome</div>';
-  html+='<div style="font-size:11.5px;color:var(--color-text-secondary);line-height:1.5;margin:14px 2px 2px;padding:10px 12px">Tap a player to move or swap them. Add player puts someone new straight into that foursome. Each round keeps its own foursomes.</div>';
-  document.getElementById('opt-panel-flights').innerHTML=html;
-  renderRdPicker('flightsRdSel',r,'switchFlightsRound',false);
+  // Moves frozen (a foursome finished): the round can still take a player, as Players always could.
+  else if(merged&&canEditTrip()&&nP<TW_MAX_PLAYERS)html+='<div class="ap-addrow" onclick="window._apOpen()"><i class="ti ti-plus" style="font-size:15px"></i> Add player</div>';
+  html+='<div style="font-size:11.5px;color:var(--color-text-secondary);line-height:1.5;margin:14px 2px 2px;padding:10px 12px">'
+    +(merged?'Tap a player to change their name or handicap, or to move or swap them. The arrows set the order in a foursome.'
+      :'Tap a player to move or swap them. Add player puts someone new straight into that foursome. Each round keeps its own foursomes.')+'</div>';
+  return html;
 }
 // Every mutation goes through _flightsMutate, which normalizes afterwards. That is what
 // makes the invariant hold even if some future path tries to break it.
@@ -12851,9 +12894,13 @@ window._fsAutoSplit=function(r){
     fl.length=0;out.forEach(function(x){fl.push(x);});
   });
 };
-window._fsCloseSheet=function(){const el=document.getElementById('fsSheet');if(el)el.remove();};
+window._fsCloseSheet=function(){_plSheetPi=null;const el=document.getElementById('fsSheet');if(el)el.remove();};
 window._fsTapPlayer=function(r,pi){
-  if(!canEditTrip()||isAnyFlightLocked(r))return;
+  if(!canEditTrip())return;
+  const _frozen=isAnyFlightLocked(r);
+  if(_frozen&&!_plMerged())return;
+  if(document.getElementById('fsSheet'))window._fsCloseSheet();
+  _plSheetPi=_plMerged()?pi:null;
   const fl=_fsNormalize(STATE.roundFlights[r]||defaultFlights(WK.players.length),WK.players.length);
   const gi=_fsGroupOf(fl,pi);
   if(gi<0)return;
@@ -12864,6 +12911,8 @@ window._fsTapPlayer=function(r,pi){
     +'<div><div style="font-size:10px;color:#9FE1CB;letter-spacing:0.06em;text-transform:uppercase">Foursome '+(gi+1)+'</div>'
     +'<div style="font-size:17px;font-weight:500;color:#E1F5EE;margin-top:2px">'+displayName(pi)+'</div></div>'
     +'<div class="fs-slot-dot" style="width:36px;height:36px;font-size:12px;background:'+p.bg+';color:'+p.fg+'">'+p.ini+'</div></div>';
+  if(_plMerged())h+='<div class="fs-sh-sec">Player</div><div class="pl-sheet-body">'+_plBodyHtml(pi,{sheet:true})+'</div>';
+  if(!_frozen){
   h+='<div class="fs-sh-sec">Move to</div>';
   fl.forEach(function(grp,g2){
     if(g2===gi)return;
@@ -12888,10 +12937,11 @@ window._fsTapPlayer=function(r,pi){
       h+='<div class="fs-sh-row" onclick="window._fsSwap('+r+','+pi+','+o.q+')">'
         +'<div class="fs-slot-dot" style="width:30px;height:30px;font-size:11px;background:'+op.bg+';color:'+op.fg+'">'+op.ini+'</div>'
         +'<span style="font-size:14px;flex:1">'+displayName(o.q)+'</span>'
-        +'<span style="font-size:11px;color:var(--color-text-tertiary)">F'+(o.g+1)+' \u00b7 '+sbHcpDisplay(idxForRound(o.pi,r))+'</span></div>';
+        +'<span style="font-size:11px;color:var(--color-text-tertiary)">F'+(o.g+1)+' \u00b7 '+sbHcpDisplay(idxForRound(o.q,r))+'</span></div>';
     });
   }
-  h+='<div style="padding:12px 14px 18px"><button style="width:100%;padding:11px;font-size:14px;font-weight:500;border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);font-family:inherit;cursor:pointer" onclick="window._fsCloseSheet()">Cancel</button></div>';
+  }
+  h+='<div style="padding:12px 14px 18px"><button style="width:100%;padding:11px;font-size:14px;font-weight:500;border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);font-family:inherit;cursor:pointer" onclick="window._fsCloseSheet()">'+(_plMerged()?'Done':'Cancel')+'</button></div>';
   h+='</div></div>';
   const ov=document.createElement('div');ov.innerHTML=h;document.body.appendChild(ov.firstChild);
 };
