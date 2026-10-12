@@ -894,12 +894,12 @@ body.force-dark .fsp{--fsp-sheet:#1C2C4B;--fsp-opt:#14213B;--fsp-bd:#34476B;--fs
   display:none;gap:9px;align-items:flex-start;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 #appToast.show{display:flex}
 #appToast.top{top:calc(env(safe-area-inset-top) + 12px);bottom:auto}
-/* v123.69: the confirm sheet's text box (Rename course). */
-.cs-in{display:block;width:100%;box-sizing:border-box;height:48px;padding:0 14px;margin:0 0 6px;border-radius:12px;border:1.5px solid #1D9E75;background:var(--color-background-page);color:var(--color-text-primary);font-size:16px;font-weight:600;font-family:inherit;outline:none;}
-.cs-in.bad{border-color:#B42318;}
-@media(prefers-color-scheme:dark){body:not(.force-light) .cs-in.bad{border-color:#F28B82;}}
-body.force-dark .cs-in.bad{border-color:#F28B82;}
-.cs-err{min-height:18px;margin:0 0 10px;font-size:13px;font-weight:600;text-align:center;}
+/* v123.70: Edit's display name error. */
+.geo-err{font-size:13px;font-weight:600;margin:-6px 0 12px;}
+.geo-err:empty{display:none;}
+.text-input.geo-bad{border-color:#B42318!important;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .text-input.geo-bad{border-color:#F28B82!important;}}
+body.force-dark .text-input.geo-bad{border-color:#F28B82!important;}
 #appToast .ti{color:#E0A45C;font-size:14px;line-height:1.35;flex-shrink:0}
 #appToast .tt{font-size:12.5px;line-height:1.45;color:#F0DFC6}
 
@@ -2201,7 +2201,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.69';
+const APP_VERSION='v123.70';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -8517,6 +8517,14 @@ function toggleInfoSection(id){
   if(chev)chev.textContent=open?'▲':'▼';
 }
 function courseDisp(cn){const c=CATALOG[cn];return (c&&c.displayName)?c.displayName:cn;}
+// v123.70: the other course (its catalog key) already shown as name, by key or display name, ignoring
+// case; null when none. cn is the course being named (skipped), or null for a new one.
+function _courseNameClash(cn,name){
+  var k=String(name==null?'':name).trim().toLowerCase();if(!k)return null;
+  for(var o in CATALOG){if(o===cn)continue;var d=CATALOG[o]&&CATALOG[o].displayName;
+    if(String(o).trim().toLowerCase()===k||(d&&String(d).trim().toLowerCase()===k))return o;}
+  return null;
+}
 function rdLabel(i){const rd=WK.rounds[i];if(rd.isE9&&!rd.inStandings)return courseDisp(rd.courseName);const cn=rd.courseName,dn=courseDisp(cn),nonE9=WK.rounds.filter(r=>!r.isE9&&r.courseName===cn).length;if(nonE9>1){let o=0;for(let j=0;j<=i;j++)if(!WK.rounds[j].isE9&&WK.rounds[j].courseName===cn)o++;return dn+' ('+o+')';}return dn;}
 function renderRdPicker(cid,cur,fn,showInfo){
   const el=document.getElementById(cid);if(!el)return;
@@ -13286,7 +13294,6 @@ function _confirmSheet(opts){
   card.innerHTML=iconHtml
     +'<div style="text-align:center;font-size:16px;font-weight:600;color:var(--color-text-primary);margin-bottom:6px">'+(opts.title||'Are you sure?')+'</div>'
     +'<div style="text-align:center;font-size:13px;color:var(--color-text-secondary);line-height:1.5;margin-bottom:16px">'+(opts.body||'')+'</div>'
-    +(opts.input?'<input id="_csIn" class="cs-in" type="text" autocomplete="off"'+(opts.input.maxlength?' maxlength="'+opts.input.maxlength+'"':'')+' placeholder="'+_gtEsc(opts.input.placeholder||'')+'" value="'+_gtEsc(opts.input.value||'')+'"><div id="_csErr" class="cs-err ts-danger"></div>':'')
     +'<div style="display:flex;gap:8px">'
     +'<button id="_csCancel" style="flex:1;font-size:14px;font-weight:500;color:var(--color-text-primary);background:transparent;border:0.5px solid var(--color-border-secondary);padding:11px 0;border-radius:10px">'+(opts.cancelLabel||'Cancel')+'</button>'
     +'<button id="_csOk" style="flex:1;font-size:14px;font-weight:600;'+okStyle+';border:none;padding:11px 0;border-radius:10px">'+(opts.okLabel||'Confirm')+'</button>'
@@ -13297,17 +13304,6 @@ function _confirmSheet(opts){
   function dismiss(){close();if(typeof opts.onCancel==='function')opts.onCancel();}
   ov.addEventListener('click',function(e){if(e.target===ov)dismiss();});
   card.querySelector('#_csCancel').addEventListener('click',dismiss);
-  if(opts.input){
-    var _in=card.querySelector('#_csIn'),_er=card.querySelector('#_csErr');
-    var _go=function(){var v=String(_in.value||'').trim(),e=typeof opts.validate==='function'?opts.validate(v):'';
-      if(e){_er.textContent=e;_in.classList.add('bad');return;}
-      close();if(typeof opts.onOk==='function')opts.onOk(v);};
-    card.querySelector('#_csOk').addEventListener('click',_go);
-    _in.addEventListener('input',function(){_er.textContent='';_in.classList.remove('bad');});
-    _in.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();_go();}});
-    setTimeout(function(){try{_in.focus();_in.select();}catch(_){}},60);
-    return;
-  }
   card.querySelector('#_csOk').addEventListener('click',function(){close();if(typeof opts.onOk==='function')opts.onOk();});
 }
 window._pencilTakeoverConfirm=function(){
@@ -13919,7 +13915,7 @@ function _hcStatus(){
   var msg='';
   if(!si.ok)msg=si.msg;
   else if(sl&&!(/^\d+$/.test(sl)&&sv>=55&&sv<=155))msg='Slope runs 55 to 155.';
-  else if(name&&CATALOG[name])msg='A course called '+_gtEsc(name)+' is already in the list.';
+  else if(name&&_courseNameClash(null,name))msg='A course called '+_gtEsc(name)+' is already in the list.';
   else if(!name&&s.tried)msg='Name the course to save it.';
   return {ok:!!name&&!msg,msg:msg,bad:si.bad};
 }
@@ -14559,14 +14555,6 @@ window._gcaToggleMenu=function(menuId,btn){
     });
   },0);
 };
-window._gcaRename=function(eid){
-  const name=window._gcaNameByEid[eid];
-  if(!name)return;
-  // v123.69: the confirm sheet with a text box (was prompt()).
-  _confirmSheet({title:'Rename course',body:_gtEsc(courseDisp(name)),okLabel:'Save',input:{value:name,placeholder:'Course name',maxlength:80},
-    validate:function(v){if(!v)return 'Enter a name.';if(v!==name&&CATALOG[v])return 'A course called '+v+' is already in the list.';return '';},
-    onOk:function(v){if(v&&v!==name)renameCourse(name,v);}});
-};
 window._gcaRemove=function(eid){
   const name=window._gcaNameByEid[eid];
   if(name)removeCourseFromPanel(name);
@@ -14670,7 +14658,8 @@ window._gcaOpenEdit=function(ri,eid,_stagedName){
     +'<div style="font-size:11px;line-height:1.5;color:var(--color-text-secondary);margin-bottom:14px;padding:8px 10px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border-left:2px solid #1D9E75">If anything looks off from what we pulled online, correct it here.</div>'
     +'<div style="font-size:11px;color:var(--color-text-tertiary);font-weight:500;letter-spacing:0.04em;margin-bottom:4px">DISPLAY NAME</div>'
     +'<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:6px">Shown in the app. Does not change the course record.</div>'
-    +'<input id="geo_name" class="text-input" value="'+(c.displayName||cn)+'" style="width:100%;box-sizing:border-box;margin-bottom:12px"/>'
+    +'<input id="geo_name" class="text-input" value="'+_gtEsc(c.displayName||cn)+'" oninput="window._gcaNameTyped()" style="width:100%;box-sizing:border-box;margin-bottom:12px"/>'
+    +'<div id="geo_nameErr" class="ts-danger geo-err"></div>'
     +'<div style="font-size:11px;color:var(--color-text-tertiary);font-weight:500;letter-spacing:0.04em;margin-bottom:6px">RATING &amp; SLOPE</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">'
     +'<div><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Rating</div><input id="geo_rating" class="text-input" type="number" step="0.1" value="'+_editRating+'" placeholder="--"/></div>'
@@ -14698,6 +14687,7 @@ window._gcaOpenEdit=function(ri,eid,_stagedName){
   document.body.appendChild(ov);
 };
 window._gcaCloseEdit=function(){const ov=document.getElementById('gcaEditOverlay');if(ov)ov.remove();};
+window._gcaNameTyped=function(){var e=document.getElementById('geo_nameErr'),i=document.getElementById('geo_name');if(e)e.textContent='';if(i&&i.classList)i.classList.remove('geo-bad');};
 window._gcaSaveEditOverlay=function(ri,eid,_stagedName){
   const newDisplayName=(document.getElementById('geo_name')?.value||'').trim();
   const newRating=parseFloat(document.getElementById('geo_rating')?.value)||null;
@@ -14705,6 +14695,14 @@ window._gcaSaveEditOverlay=function(ri,eid,_stagedName){
   const rd=ri!=null?WK.rounds[ri]:null;
   const cn=rd?rd.courseName:(_stagedName||'');
   if(!cn)return;
+  // v123.70: a changed name may not match another course's name or display name.
+  const _was=String((CATALOG[cn]&&CATALOG[cn].displayName)||cn).trim(),_shown=newDisplayName||cn;
+  if(_shown.toLowerCase()!==_was.toLowerCase()&&_courseNameClash(cn,_shown)){
+    const _e=document.getElementById('geo_nameErr'),_i=document.getElementById('geo_name');
+    if(_e)_e.textContent='Another course is already called '+_shown+'. Pick a different name.';
+    if(_i&&_i.classList)_i.classList.add('geo-bad');
+    return;
+  }
   const holes=[];
   for(let h=0;h<18;h++)holes.push({yardage:parseInt(document.getElementById('geo_yds_'+h)?.value)||0,par:parseInt(document.getElementById('geo_par_'+h)?.value)||4,si:parseInt(document.getElementById('geo_si_'+h)?.value)||h+1});
   if(!CATALOG[cn])CATALOG[cn]={};
