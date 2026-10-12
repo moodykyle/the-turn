@@ -426,7 +426,6 @@ body.force-dark .home-gtile-tag.live{color:#3CC79A;}body.force-dark .home-gtile-
 .home-wb-all{background:none;border:none;padding:0;color:#1D9E75;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
 .home-wb-btn{display:flex;align-items:center;justify-content:center;width:100%;height:48px;margin-top:10px;border:none;border-radius:12px;background:#1D9E75;color:#FFFFFF;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;}
 .home-wb-btn:active{background:#13795B;}
-.home-wb-btn.ghost{height:46px;background:transparent;border:1.5px solid #1D9E75;color:#13795B;}
 .home-wb-btn.home-wb-resume{height:auto;min-height:62px;justify-content:flex-start;gap:12px;padding:11px 14px;margin-top:4px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);font-size:inherit;font-weight:inherit;text-align:left;}
 .home-wb-btn.home-wb-resume:active{background:var(--color-background-secondary);}
 .home-wb-resume .grp-act2-t{font-size:15px;font-weight:700;}
@@ -437,8 +436,6 @@ body.force-dark .home-gtile-tag.live{color:#3CC79A;}body.force-dark .home-gtile-
 @media(prefers-color-scheme:dark){body:not(.force-light) .ts-danger{color:#F28B82;}body:not(.force-light) .ts-danger-bg{background:rgba(242,139,130,0.14);}}
 body.force-dark .ts-danger{color:#F28B82;}
 body.force-dark .ts-danger-bg{background:rgba(242,139,130,0.14);}
-@media(prefers-color-scheme:dark){body:not(.force-light) .home-wb-btn.ghost{color:#3CC79A;}}
-body.force-dark .home-wb-btn.ghost{color:#3CC79A;}
 .home-cont-row{display:flex;align-items:center;gap:10px;}
 .home-cont-eyebrow{display:flex;align-items:center;gap:5px;margin-bottom:7px;}
 .home-cont-eyebrow-ic{width:16px;height:16px;border-radius:50%;background:var(--tint);display:grid;place-items:center;flex-shrink:0;}
@@ -1125,6 +1122,7 @@ body.force-light{
 .grp-act2-ic .ti{font-size:20px;color:var(--brand);}
 /* v123.46: inline icons in the action tiles (the webfont has no filled glyphs). */
 .grp-act2-ic .ic-play{color:var(--brand);display:block;}
+.grp-act2-ic .ic-cal{color:var(--brand);display:block;}
 .grp-act2-tx{flex:1;min-width:0;display:flex;flex-direction:column;}
 .grp-act2-t{font-size:14px;font-weight:600;color:var(--color-text-primary);}
 .grp-act2-d{font-size:12px;color:var(--color-text-secondary);margin-top:2px;}
@@ -1177,7 +1175,7 @@ body.force-light .home-dash-sec-label::before,body.force-light .me-seclbl.brand-
 .gp-tile .m{font-size:10px;font-weight:700;letter-spacing:0.12em;color:var(--color-text-secondary);}
 .gp-tile .d{font-size:24px;font-weight:700;line-height:1.05;color:var(--color-text-primary);}
 .gp-tile .y{font-size:9px;font-weight:700;letter-spacing:0.12em;color:var(--color-text-secondary);}
-.gp-tile.none{border-style:dashed;border-width:1.5px;}
+.gp-tile.none{opacity:0.7;}
 .gp-info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:12px 8px 12px 14px;}
 .gp-name{font-size:16px;font-weight:600;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .gp-meta{font-size:13px;color:var(--color-text-secondary);}
@@ -1237,6 +1235,18 @@ body.force-dark .pg-title{color:#EFC456;}
 /* v123.52: the round wizard's new look (canvas "Round wizard, step 1"), the course screen first. */
 #qrModal.qrw-full{background:var(--color-background-page)!important;align-items:stretch!important;justify-content:center!important;}
 #qrModal.qrw-full .qr-inner{width:100%;max-width:560px;height:100%;}
+/* v123.66: the emergency round wizard, full screen */
+#e9Modal.qrw-full{background:var(--color-background-page)!important;align-items:stretch!important;justify-content:center!important;}
+#e9Modal.qrw-full .e9i{width:100%;max-width:560px;height:100%;}
+.e9-game{display:flex;align-items:center;gap:12px;min-height:52px;padding:6px 14px;box-sizing:border-box;border-bottom:0.5px solid var(--color-border-tertiary);}
+.e9-game:last-child{border-bottom:none;}
+.e9-game.off{opacity:0.45;}
+.tw-addrow{padding:10px 12px 11px;}
+.tw-addrd{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:flex-start;min-height:28px;padding:8px 0;margin:-8px 0;font-size:15px;font-weight:600;color:var(--brand);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.tw-addrd:active{opacity:0.6;}
+.tw-addrow-n{font-size:11px;line-height:1.5;color:var(--color-text-tertiary);margin-top:2px;}
+input[type=date]{text-align:left;}
+input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;}
 /* v123.62: the trip wizard's new screens, full screen */
 #wizardScreen.qrw-full{background:var(--color-background-page)!important;padding:0!important;align-items:stretch!important;justify-content:center!important;overflow:hidden!important;}
 #wizardScreen.qrw-full #twInner{max-width:560px!important;max-height:none!important;height:100%;border:none!important;border-radius:0!important;overflow:hidden!important;background:var(--color-background-page)!important;}
@@ -1252,7 +1262,7 @@ body.force-dark .pg-title{color:#EFC456;}
 .tw-in::-webkit-date-and-time-value{text-align:left;margin:0;}
 .tw-rds{display:flex;flex-direction:column;gap:10px;}
 .tw-rd{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
-.tw-rd.empty{border:1.5px dashed var(--color-border-secondary);}
+.tw-rd.empty{border-color:var(--color-border-tertiary);}
 .tw-rd.empty .qrw-rn{font-weight:500;color:var(--color-text-secondary);}
 .tw-rdn{width:40px;height:40px;border-radius:10px;background:var(--color-background-secondary);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;font-weight:700;line-height:1.05;}
 .tw-rdn small{font-size:9px;font-weight:700;letter-spacing:0.06em;color:var(--color-text-secondary);}
@@ -1498,16 +1508,17 @@ body.force-light .gp-row .gp-tile.live{border-color:#13795B;}
 .ap-addrow:active{background:var(--color-background-secondary);}
 .fs-addp{display:flex;align-items:center;gap:10px;padding:10px 12px;font-size:13px;font-weight:600;color:var(--brand);cursor:pointer;}
 .fs-addp:active{background:var(--color-background-secondary);}
-.fs-addp-c{width:30px;height:30px;border-radius:50%;border:1.5px dashed var(--color-border-secondary);box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.fs-addp-c{width:30px;height:30px;border-radius:50%;background:var(--color-background-secondary);box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .ap-sec{font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-text-tertiary);padding:10px 14px 6px;}
 .ap-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer;}
 .ap-row:active{background:var(--color-background-secondary);}
-.ap-guest{margin:10px 12px;padding:11px 12px;border:0.5px dashed var(--color-border-secondary);border-radius:var(--border-radius-md);display:flex;align-items:center;gap:10px;cursor:pointer;}
-.fs-addf{border:1px dashed var(--color-border-secondary);border-radius:var(--border-radius-md);padding:13px;text-align:center;font-size:13px;color:#1D9E75;cursor:pointer;margin-top:10px;}
+.ap-guest{margin:10px 12px;padding:11px 12px;border-radius:var(--border-radius-md);display:flex;align-items:center;gap:10px;cursor:pointer;}
+.fs-addf{border-radius:var(--border-radius-md);padding:13px;text-align:center;font-size:13px;color:#1D9E75;cursor:pointer;margin-top:10px;}
 .fs-sh-sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-text-tertiary);padding:12px 14px 5px;}
 .fs-sh-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:0.5px solid var(--color-border-tertiary);cursor:pointer;}
 .fs-sh-row:active{background:var(--color-background-secondary);}
-.fs-addf{margin-top:8px;border:1px dashed var(--color-border-secondary);border-radius:11px;text-align:center;padding:11px;font-size:13px;color:var(--color-text-secondary);cursor:pointer;}
+.fs-addf{margin-top:8px;border-radius:11px;text-align:center;padding:11px;font-size:14px;font-weight:600;color:var(--brand);cursor:pointer;}
+.fs-addf:active{background:var(--color-background-secondary);}
 .gf-filter{position:relative;display:flex;gap:3px;margin:8px 0 0;background:var(--color-background-tertiary);border:0.5px solid var(--color-border-secondary);border-radius:9px;padding:3px;overflow:hidden;}
 .gf-filter button{flex:1;position:relative;z-index:1;font-size:12px;font-weight:600;padding:6px 4px;border:0;background:transparent;color:var(--color-text-secondary);cursor:pointer;border-radius:7px;transition:color .2s ease;-webkit-tap-highlight-color:transparent;}
 .gf-filter button.on{color:#fff;}
@@ -2163,7 +2174,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.65';
+const APP_VERSION='v123.67';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -6150,13 +6161,19 @@ window._qrSetName=function(el){
     :'Follows the course until you change it.';
 };
 // v123.55: the switch moves in place so the pill slides; a full redraw would jump it.
+// v123.66: moves a segmented control's pill to the button whose data-val is val, in place.
+// False when the control is not on screen, so the caller redraws instead.
+function _wizSegTo(seg,val){
+  var pill=seg&&seg.querySelector&&seg.querySelector('.qrw-pill');
+  if(!seg||!pill||!seg.querySelectorAll)return false;
+  var bs=seg.querySelectorAll('button'),idx=0;
+  for(var i=0;i<bs.length;i++){var on=bs[i].dataset.val===val;if(on)idx=i;bs[i].className=on?'on':'';bs[i].setAttribute('aria-checked',on?'true':'false');}
+  pill.style.transform='translateX('+(idx*100)+'%)';
+  return true;
+}
 window._qrSetHoles=function(el){
   _qrS.holes=el.dataset.val;
-  var seg=document.getElementById('qrHolesSeg'),pill=seg&&seg.querySelector&&seg.querySelector('.qrw-pill');
-  if(!seg||!pill||!seg.querySelectorAll){_qrRender();return;}
-  var bs=seg.querySelectorAll('button'),idx=0;
-  for(var i=0;i<bs.length;i++){var on=bs[i].dataset.val===_qrS.holes;if(on)idx=i;bs[i].className=on?'on':'';bs[i].setAttribute('aria-checked',on?'true':'false');}
-  pill.style.transform='translateX('+(idx*100)+'%)';
+  if(!_wizSegTo(document.getElementById('qrHolesSeg'),_qrS.holes)){_qrRender();return;}
   var ne=document.getElementById('qrRoundName');if(ne&&!(_qrS.name||'').trim())ne.value=_qrRoundName();
 };
 window._qrSetN=function(el){_qrS.n=parseInt(el.dataset.val);_qrRender();};
@@ -6609,6 +6626,22 @@ function _wbDay(d){
   var y=+d.slice(0,4);
   return MON[+d.slice(5,7)-1]+' '+(+d.slice(8,10))+(y!==new Date().getFullYear()?', '+y:'');
 }
+// v123.67: days from today to an ISO date (local calendar days); null for no date or free text.
+function _wbRel(d){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d||''))return null;
+  var n=new Date(),a=new Date(n.getFullYear(),n.getMonth(),n.getDate()),b=new Date(+d.slice(0,4),+d.slice(5,7)-1,+d.slice(8,10));
+  return Math.round((b-a)/86400000);
+}
+// v123.67: the welcome block's tile, shared by Resume and the coming-up trip. icon is 'play' or 'cal';
+// label and line arrive escaped.
+function _wbTile(id,cls,icon,label,line){
+  var ic=icon==='cal'?'<svg class="ic-cal" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>'
+    :'<svg class="ic-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>';
+  return '<button class="home-wb-btn home-wb-resume'+cls+' grp-act2" onclick="viewTrip(\''+_gtEsc(id)+'\')">'
+    +'<span class="grp-act2-ic">'+ic+'</span>'
+    +'<span class="grp-act2-tx"><span class="grp-act2-t">'+label+'</span><span class="home-wb-line">'+line+'</span></span>'
+    +'<span class="grp-act2-chev" aria-hidden="true">&#8250;</span></button>';
+}
 function _renderContinueSection(){
   const el=document.getElementById('homeContinueSec');if(!el)return;
   const trips=loadTrips().filter(function(t){return!_pendingRoundDeletes.has(t.id);});
@@ -6637,10 +6670,7 @@ function _renderContinueSection(){
     }
     // v123.41: Resume is a tile like the Group page's actions; the line rides inside it.
     h+=(inProg.length>1?'<div class="home-wb-row only-all"><button class="home-wb-all" onclick="window._hmShowAllInProgress()">See all ('+inProg.length+')</button></div>':'')
-      +'<button class="home-wb-btn home-wb-resume grp-act2" onclick="viewTrip(\''+_gtEsc(ct.id)+'\')">'
-      +'<span class="grp-act2-ic"><svg class="ic-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>'
-      +'<span class="grp-act2-tx"><span class="grp-act2-t">'+label+'</span><span class="home-wb-line">'+line+'</span></span>'
-      +'<span class="grp-act2-chev" aria-hidden="true">&#8250;</span></button>';
+      +_wbTile(ct.id,'','play',label,line);
     // Leader, runner-up and you; the top three when you are among them or not in the trip.
     // Nothing before somebody posts a hole: every player sits at 0 and the order is roster accident.
     const st=Array.isArray(ct.standings)?ct.standings:[];
@@ -6671,10 +6701,12 @@ function _renderContinueSection(){
       return recent(a,b);
     })[0]||null;
     if(up){
-      var day=_wbDay(up.date),g=grpOf(up);
-      var upLine=day?_gtEsc(g||up.name||'Your trip')+' tees off '+day:[g,up.name||'Unnamed Trip'].filter(Boolean).map(_gtEsc).join(' \u00b7 ');
-      h+='<div class="home-wb-row"><p class="home-wb-line">'+upLine+'</p></div>'
-        +'<button class="home-wb-btn ghost" onclick="viewTrip(\''+_gtEsc(up.id)+'\')">Open trip</button>';
+      // v123.67: the same tile as Resume. Begin trip on the day itself, View trip otherwise.
+      // _wbDay escapes a free-text date itself, so the parts are escaped one by one.
+      var day=_wbDay(up.date),g=grpOf(up),rel=_wbRel(up.date);
+      var when=rel===0?'tees off today':rel===1?'tees off tomorrow':day;
+      var upLine=[g?_gtEsc(g):'',_gtEsc(up.name||'Unnamed Trip'),when].filter(Boolean).join(' \u00b7 ');
+      h+=_wbTile(up.id,' home-wb-next','cal',rel===0?'Begin trip':'View trip',upLine);
     } else {
       h+='<div class="home-wb-row"><p class="home-wb-line">Ready for your next golf adventure?</p></div>';
     }
@@ -7152,11 +7184,7 @@ function _twStep1Html(){
 window._twSetRounds=function(el){
   var n=parseInt(el&&el.dataset&&el.dataset.val,10);if(!(n>=1&&n<=6))return;
   _twS.numRounds=n;
-  var seg=document.getElementById('twRoundsSeg'),pill=seg&&seg.querySelector&&seg.querySelector('.qrw-pill');
-  if(!seg||!pill||!seg.querySelectorAll){_twStash();_twRender();return;}
-  var bs=seg.querySelectorAll('button');
-  for(var i=0;i<bs.length;i++){var on=parseInt(bs[i].dataset.val,10)===n;bs[i].className=on?'on':'';bs[i].setAttribute('aria-checked',on?'true':'false');}
-  pill.style.transform='translateX('+((n-1)*100)+'%)';
+  if(!_wizSegTo(document.getElementById('twRoundsSeg'),String(n))){_twStash();_twRender();}
 };
 
 // Step 2: Players. v123.63: the round wizard's member rows. The handicap boxes keep their tw_hcp_ ids,
@@ -13641,7 +13669,7 @@ function renderWeekendPanel(){
     return row;
   };
   const orderedRounds=WK.rounds.map((rd,i)=>({rd,i})).sort((a,b)=>{const ae=a.rd.isE9&&!a.rd.inStandings?1:0;const be=b.rd.isE9&&!b.rd.inStandings?1:0;return ae-be;}).map(x=>x.rd);
-  html+=`<div class="section-card"><div class="section-hd">Rounds</div>${orderedRounds.map(roundRow).join('')}<div style="padding:11px 14px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="launchE9()" style="width:100%;background:transparent;border:1px dashed #1D9E75;color:#1D9E75;padding:10px;border-radius:var(--border-radius-md);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">+ Add Round</button></div><div style="font-size:11px;color:var(--color-text-tertiary);padding:0 14px 12px;line-height:1.5">A round that does not count toward standings is labeled E9 or E18.</div></div>`;
+  html+=`<div class="section-card"><div class="section-hd">Rounds</div>${orderedRounds.map(roundRow).join('')}<div class="tw-addrow"><button class="tw-addrd" onclick="launchE9()">+ Add round</button><div class="tw-addrow-n">Doesn&#39;t count toward standings? It&#39;s labeled E9 or E18.</div></div></div>`;
 
   // --- Handicap ---
   html+=`<div class="section-card" id="hdcpCard" style="margin-bottom:14px"><div class="section-hd">Handicap</div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net off low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffLow?'checked':''} onchange="STATE.netOffLow=this.checked;autoSave();s2WriteActive();renderWeekendPanel();renderScorecard();renderBanner()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net games off foursome low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffFlightLow?'checked':''} onchange="STATE.netOffFlightLow=this.checked;autoSave();s2WriteActive();renderScorecard();renderBanner();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px"><span style="font-size:12px;color:var(--color-text-secondary)">Handicap adjustment</span><div style="display:flex;align-items:center;gap:4px"><select class="ie-sel" style="width:76px" onchange="WK.hdcpPct=parseInt(this.value)/100;autoSave();s2WriteActive();renderWeekendPanel();renderScorecard()">${(()=>{const _c=Math.round(WK.hdcpPct*100);const _o=[100,95,90,85,80,75,70,65,60,55,50];return(_o.includes(_c)?_o:[_c,..._o]).map(v=>`<option value="${v}"${v===_c?' selected':''}>${v}%</option>`).join('');})()}</select></div></div>`
@@ -13754,7 +13782,7 @@ window._wkSetCourse=function(ri,cn){
 };
 function addRound(){if(!canEditTrip())return;const cn=document.getElementById('newRoundCourse')?.value||Object.keys(CATALOG)[0];WK.rounds.push({rid:s2NewTok(),courseName:cn,course:CATALOG[cn]});const nP=WK.players.length;STATE.scores.push(Array(18).fill(null).map(()=>Array(nP).fill(null)));const g=WK.mpGamesDefault;WK.mpGamesPerRound.push(g);WK.vegasSegsPerRound.push(WK.vegasSegsDefault);if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=[];WK.skinsGamesPerRound.push(0);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams.push([Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);const vg=vegasSegForRound(WK.rounds.length-1);STATE.vegTeams.push([Array(vg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);if(!STATE.hammerTeams)STATE.hammerTeams=[];STATE.hammerTeams.push([defaultHammerTeams(WK.rounds.length-1)]);if(!STATE.hammerState)STATE.hammerState=[];STATE.hammerState.push([Array(18).fill(null)]);if(!WK.hammerSegsPerRound)WK.hammerSegsPerRound=[];WK.hammerSegsPerRound.push(WK.hammerSegsDefault||1);if(!STATE.pressState)STATE.pressState=[];STATE.pressState.push([[]]);if(!STATE.skinsTeams)STATE.skinsTeams=[];const sg=skinsGamesForRound(WK.rounds.length-1);STATE.skinsTeams.push([Array(sg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);const _newR=WK.rounds.length-1;STATE.roundFlights[_newR]=_flightsForNewRound(_newR-1);reconcileWolfOrder(_newR);reconcileSnakeHolders(_newR);reconcileMPTeams(_newR);reconcileVegasTeams(_newR);reconcileHammerTeams(_newR);reconcileSkinsTeams(_newR);reconcileRazzleOrder(_newR);reconcileFBTeams(_newR);renderWeekendPanel();}
 function launchE9(){
-  _e9State={step:1,cn:null,nineHole:null,inStandings:false,tee:null,pendingCn:null};
+  _e9State={step:1,cn:null,nineHole:null,inStandings:false,tee:null,pendingCn:null,teeOpen:'',near:null,nearErr:'',nearAsk:false,nearBusy:false};
   _showE9Modal();
 }
 let _e9State={step:1,cn:null,nineHole:null,inStandings:false,tee:null,pendingCn:null};
@@ -13852,6 +13880,8 @@ function _showE9Modal(){
     modal.appendChild(inner);
     document.body.appendChild(modal);
   }
+  // v123.66: full screen in the new look (the hand-entry form keeps its card for now).
+  if(modal.classList)modal.classList[_e9State.step===1.5?'remove':'add']('qrw-full');
   modal.querySelector('.e9i').innerHTML=_e9ModalHtml();
   modal.style.display='flex';
 }
@@ -13861,34 +13891,9 @@ function _e9ModalHtml(){
   const card=`background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);overflow:hidden;width:320px;max-width:calc(100vw - 40px)`;
   const row=(label,sub,sel,onclick)=>`<div onclick="${onclick}" style="display:flex;align-items:center;justify-content:space-between;padding:13px 20px;border-bottom:0.5px solid var(--color-border-tertiary);border-left:3px solid ${sel?'#1D9E75':'transparent'};cursor:pointer"><div><div style="font-size:15px;font-weight:${sel?500:400};color:var(--color-text-primary)">${label}</div>${sub?`<div style="font-size:12px;color:var(--color-text-tertiary);margin-top:2px">${sub}</div>`:''}</div><div style="width:20px;height:20px;border-radius:50%;border:1.5px solid ${sel?'#1D9E75':'var(--color-border-secondary)'};background:${sel?'#1D9E75':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${sel?'<div style="width:8px;height:8px;border-radius:50%;background:#fff"></div>':''}</div></div>`;
 
-  if(_e9State.step===1){
-    // Course selection
-    const tripCourses=_e9TripCourses();
-    const otherCourses=Object.keys(CATALOG).filter(cn=>!tripCourses.includes(cn));
-    const _e9PendingCn=_e9State.pendingCn||null;
-    const _e9TeePicker=_e9PendingCn?_buildTeePicker(_e9PendingCn,_e9State.tee&&_e9State.tee.gender,_e9State.tee&&_e9State.tee.teeName,'window._e9TeePick(event.target.value)'):'';
-    const tripRows=tripCourses.map(cn=>row(cn,'',_e9State.cn===cn,`_e9Pick('cn','${cn.replace(/'/g,"\\'")}');_e9AutoTee('${cn.replace(/'/g,"\\'")}')`)).join('');
-    return`<div style="${card}">
-      <div style="padding:16px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">${pill}<p style="font-size:17px;font-weight:500;color:var(--color-text-primary);margin:0">Which course?</p></div>
-      <div style="font-size:11px;color:var(--color-text-tertiary);padding:8px 20px 4px;letter-spacing:0.05em;text-transform:uppercase">This trip</div>
-      ${tripRows}
-      <div style="font-size:11px;color:var(--color-text-tertiary);padding:8px 20px 4px;letter-spacing:0.05em;text-transform:uppercase">Add a course</div>
-      <div style="padding:8px 16px 10px;border-bottom:0.5px solid var(--color-border-tertiary)">
-        <div style="display:flex;align-items:center;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);overflow:hidden;background:var(--color-background-primary)">
-          <input id="e9CourseSearch" class="text-input" placeholder="Search by name..." style="flex:1;border:none;box-shadow:none;border-radius:0;margin:0;font-size:13px" onkeydown="if(event.key==='Enter')window._e9SearchCourse()"/>
-          <button onclick="window._e9SearchCourse()" style="border:none;background:transparent;padding:9px 12px;cursor:pointer;border-left:0.5px solid var(--color-border-tertiary);color:#1D9E75;display:flex;align-items:center;flex-shrink:0"><i class="ti ti-search" style="font-size:16px" aria-hidden="true"></i></button>
-        </div>
-        <div id="e9CourseResults" style="margin-top:6px"></div>
-      </div>
-      <div onclick="_e9StartAddCourse()" style="padding:12px 20px;display:flex;align-items:center;gap:8px;cursor:pointer;border-bottom:0.5px solid var(--color-border-tertiary)">
-        <span style="font-size:18px;color:#1D9E75;line-height:1">+</span>
-        <span style="font-size:14px;color:#1D9E75">Add a new course</span>
-      </div>
-      ${_e9TeePicker?`<div style="padding:8px 16px"><div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:6px">${_e9PendingCn} - Select a tee</div>${_e9TeePicker}</div>`:''}
-      ${_e9PendingCn?`<div style="padding:8px 16px 4px"><button onclick="_e9State.cn=_e9State.pendingCn;_e9State.pendingCn=null;_e9Next()" style="width:100%;padding:11px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue →</button></div>`:''}
-      ${cancel}
-    </div>`;
-  } else if(_e9State.step===1.5){
+  // v123.66: two screens in the round wizard's look; the hand form (1.5) keeps its card.
+  if(_e9State.step===1)return _e9CourseHtml();
+  if(_e9State.step===1.5){
     // Add new course inline (replace modal content)
     return`<div style="${card};max-height:90vh;overflow-y:auto">
       <div style="padding:16px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:10px">
@@ -13912,51 +13917,134 @@ function _e9ModalHtml(){
         <button class="btn-primary" onclick="_e9SaveNewCourse()" style="width:100%;padding:10px">Save &amp; Continue</button>
       </div>
     </div>`;
-  } else if(_e9State.step===2){
-    // Holes selection
-    const cn=_e9State.cn||'';
-    return`<div style="${card}">
-      <div style="padding:16px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:flex-start;gap:10px"><div onclick="_e9State.step=1;_showE9Modal()" style="font-size:13px;color:#1D9E75;cursor:pointer;padding-top:2px">&#8592; Back</div><div>${pill}<p style="font-size:17px;font-weight:500;color:var(--color-text-primary);margin:0">How many holes?</p><p style="font-size:12px;color:var(--color-text-secondary);margin:3px 0 0">${cn}</p></div></div>
-      ${row('18 holes','',_e9State.nineHole===null,"_e9Pick('nineHole',null);_showE9Modal()")}
-      ${row('Front 9','Holes 1-9',_e9State.nineHole==='front',"_e9Pick('nineHole','front');_showE9Modal()")}
-      ${row('Back 9','Holes 10-18',_e9State.nineHole==='back',"_e9Pick('nineHole','back');_showE9Modal()")}
-      <div onclick="_e9Advance()" style="padding:13px 20px;text-align:center;font-size:14px;font-weight:500;color:#1D9E75;border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Continue →</div>
-      ${cancel}
-    </div>`;
-  } else if(_e9State.step===3){
-    // Step 3: standings toggle
-    const cn=_e9State.cn||'';
-    const holeLabel=_e9State.nineHole==='front'?' - Front 9':_e9State.nineHole==='back'?' - Back 9':'';
-    const tog=_e9State.inStandings;
-    return`<div style="${card}">
-      <div style="padding:16px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:flex-start;gap:10px"><div onclick="_e9State.step=2;_showE9Modal()" style="font-size:13px;color:#1D9E75;cursor:pointer;padding-top:2px">&#8592; Back</div><div>${pill}<p style="font-size:17px;font-weight:500;color:var(--color-text-primary);margin:0">Include in standings?</p><p style="font-size:12px;color:var(--color-text-secondary);margin:3px 0 0">${cn}${holeLabel}</p></div></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--color-border-tertiary)">
-        <div style="flex:1;padding-right:12px">
-          <div style="font-size:14px;font-weight:500;color:var(--color-text-primary)">Count toward weekend</div>
-          <div style="font-size:12px;color:var(--color-text-tertiary);margin-top:2px">Feeds leaderboard and weekend bet</div>
-        </div>
-        <div onclick="_e9Pick('inStandings',!${tog});_showE9Modal()" style="width:44px;height:24px;border-radius:12px;background:${tog?'#1D9E75':'var(--color-border-secondary)'};cursor:pointer;position:relative;flex-shrink:0">
-          <div style="position:absolute;top:3px;${tog?'right:3px':'left:3px'};width:18px;height:18px;border-radius:50%;background:#fff"></div>
-        </div>
-      </div>
-      <div style="padding:12px 20px">
-        <button onclick="_e9Advance()" style="width:100%;padding:13px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Continue →</button>
-      </div>
-      ${cancel}
-    </div>`;
-  } else {
-    // Step 4: games
-    const cn4=_e9State.cn||'';const hl4=_e9State.nineHole==='front'?' - Front 9':_e9State.nineHole==='back'?' - Back 9':'';
-    const pill4='<div style="display:inline-block;font-size:11px;font-weight:500;color:#185FA5;background:rgba(55,138,221,0.12);border-radius:4px;padding:2px 8px;margin-bottom:8px">&#9889; Emergency Round</div>';
-    const _e9nP=(WK&&WK.players)?WK.players.length:4;const _e9grey={};if(_e9nP<4){_e9grey['Vegas']=true;_e9grey['Razzle Dazzle']=true;}if(_e9nP<3){_e9grey['Wolf']=true;}const _e9games=['Match Play','Vegas','Skins','Razzle Dazzle','Wolf','Hammer',"Two's Club",'Snake','Four-Ball'];const _e9MinP={'Vegas':4,'Razzle Dazzle':4,'Wolf':3};const _e9rows=_e9games.map(function(g,i){const greyed=!!_e9grey[g];const on=!greyed&&!!_gsGames[g];const isLast=i===_e9games.length-1;const _e9NeedLbl=greyed&&_e9MinP[g]?'<span style="font-size:11px;color:var(--color-text-tertiary);margin-right:8px">Needs '+_e9MinP[g]+'</span>':'';return'<div '+(greyed?'':'onclick="window._e9ToggleGame('+i+')"')+' style="display:flex;align-items:center;padding:11px 12px;'+(isLast?'':'border-bottom:0.5px solid var(--color-border-tertiary);')+(greyed?'opacity:0.35;':'cursor:pointer;')+'">'+'<div style="width:3px;height:28px;border-radius:1px;background:'+(on?'#1D9E75':'transparent')+';margin-right:10px;flex-shrink:0"></div>'+'<div style="flex:1;font-size:13px;color:var(--color-text-'+(on?'primary':'secondary')+')">'+g+'</div>'+_e9NeedLbl+'<div onclick="event.stopPropagation();window._e9ToggleGame('+i+')" style="width:42px;height:24px;border-radius:12px;background:'+(on?'#1D9E75':'var(--color-border-secondary)')+';position:relative;cursor:pointer;flex-shrink:0">'+'<span style="position:absolute;top:2px;'+(on?'right':'left')+':2px;width:20px;height:20px;border-radius:50%;background:#fff"></span></div></div>';}).join('');const body4='<div style="padding:16px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'+pill4+'<p style="font-size:17px;font-weight:500;color:var(--color-text-primary);margin:0">Games</p>'+'<p style="font-size:12px;color:var(--color-text-secondary);margin:3px 0 0">'+cn4+hl4+'</p></div>'+'<div style="padding:6px 0"><div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;margin:8px 16px">'+_e9rows+'</div></div>'+'<div style="padding:10px 20px 12px;text-align:center;font-size:12px;color:var(--color-text-secondary);border-top:0.5px solid var(--color-border-tertiary)">Change games, stakes, or any setting in the Games tab after the round starts.</div>';
-    const cta4='<div style="padding:12px 20px;border-top:0.5px solid var(--color-border-tertiary)"><button onclick="addE9Round()" style="width:100%;padding:13px;background:#1D9E75;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:500;cursor:pointer">Start Round →</button></div><div onclick="addE9Round()" style="padding:12px 20px;text-align:center;font-size:14px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);cursor:pointer">Skip - no games</div>';
-    const back4='<div style="padding:12px 20px;border-bottom:0.5px solid var(--color-border-tertiary)"><span onclick="_e9State.step=3;_showE9Modal()" style="font-size:13px;color:#1D9E75;cursor:pointer">&#8592; Back</span></div>';
-    return`<div style="${card};max-height:90vh;overflow-y:auto">${back4}${body4}${cta4}</div>`;
   }
+  return _e9CountHtml();
 }
+var _E9_GAMES=['Match Play','Vegas','Skins','Razzle Dazzle','Wolf','Hammer',"Two's Club",'Snake','Four-Ball'];
+var _E9_MINP={'Vegas':4,'Razzle Dazzle':4,'Wolf':3};
+function _e9Top(idx){
+  var ctx=(WK&&WK.name?_gtEsc(WK.name)+' · ':'')+'Emergency round';
+  var bar='';for(var i=0;i<2;i++)bar+='<span'+(i<idx?' class="on"':'')+'></span>';
+  return '<div class="qrw-top">'
+    +(idx===1?'<span class="qrw-ib"></span>':'<button type="button" class="qrw-ib" onclick="window._e9Back()" aria-label="Back"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>')
+    +'<span class="qrw-ctx">'+ctx+'</span>'
+    +'<button type="button" class="qrw-ib" onclick="window._e9Cancel()" aria-label="Cancel"><i class="ti ti-x" aria-hidden="true"></i></button></div>'
+    +'<div class="qrw-bar">'+bar+'</div>'
+    +'<div class="qrw-head"><div class="qrw-step">STEP '+idx+' OF 2</div>';
+}
+// The round a trip course was first played in ("Rd 2"), blank for one only played as a side round.
+function _e9RdOf(cn){
+  var sr=0,lab=null;
+  (WK.rounds||[]).forEach(function(rd){var counts=!rd.isE9||rd.inStandings;if(counts)sr++;if(lab===null&&rd.courseName===cn)lab=counts?'Rd '+sr:'';});
+  return lab||'';
+}
+function _e9CourseHtml(){
+  var cn=_e9State.cn,h='';
+  if(!cn){
+    var trip=_e9TripCourses().filter(function(x){return CATALOG[x];});
+    window._e9TripStash=trip;
+    if(trip.length)h+='<div class="qrw-lblrow"><span class="qrw-lbl">THIS TRIP</span><span class="qrw-note">Courses you have played this weekend</span></div>'
+      +'<div class="qrw-card">'+trip.map(function(x,k){var pl=_qrwPlace(x);
+        return '<button type="button" class="qrw-row" onclick="window._e9PickTrip('+k+')"><span class="qrw-ico"><i class="ti ti-flag-3" aria-hidden="true"></i></span>'
+          +'<span class="qrw-rt"><span class="qrw-rn">'+_gtEsc(courseDisp(x))+'</span>'+(pl?'<span class="qrw-rs">'+_gtEsc(pl)+'</span>':'')+'</span>'
+          +'<span class="qrw-rr">'+_gtEsc(_e9RdOf(x))+'</span></button>';}).join('')+'</div>';
+    h+='<div class="qrw-search"><i class="ti ti-search" aria-hidden="true"></i>'
+      +'<input id="e9CourseSearch" placeholder="Search for another course" enterkeyhint="search" autocomplete="off" aria-label="Search courses" onkeydown="if(event.key===&apos;Enter&apos;)window._e9SearchCourse()"/>'
+      +'<button type="button" onclick="window._e9SearchCourse()" aria-label="Search"><i class="ti ti-arrow-right" aria-hidden="true"></i></button></div>'
+      +'<div id="e9CourseResults" class="qrw-results"></div>';
+    var near=_e9State.near;
+    if(near){
+      window._e9NearStash=near.map(function(x){return x.name;});
+      h+='<div class="qrw-lblrow"><span class="qrw-lbl">NEAR YOU</span><span class="qrw-note">Courses already in the app</span></div>'
+        +'<div class="qrw-card">'+near.map(function(x,k){var pl=_qrwPlace(x.name);
+          return '<button type="button" class="qrw-row" onclick="window._e9PickNear('+k+')"><span class="qrw-ico"><i class="ti ti-flag-3" aria-hidden="true"></i></span>'
+            +'<span class="qrw-rt"><span class="qrw-rn">'+_gtEsc(courseDisp(x.name))+'</span>'+(pl?'<span class="qrw-rs">'+_gtEsc(pl)+'</span>':'')+'</span>'
+            +'<span class="qrw-rr">'+_gtEsc(x.right)+'</span></button>';}).join('')+'</div>';
+    }
+    if(_e9State.nearErr)h+='<div class="qrw-empty">'+_gtEsc(_e9State.nearErr)+'</div>';
+    if(!near&&_e9State.nearAsk)h+='<div class="qrw-card qrw-ask"><div class="qrw-askt"><i class="ti ti-map-pin" aria-hidden="true"></i> Use your location?</div>'
+      +'<div class="qrw-rs">The Turn uses it once to sort courses by distance. It isn&#39;t saved.</div>'
+      +'<div class="qrw-askb"><button type="button" class="qrw-link" onclick="window._e9NearNo()">Not now</button><button type="button" class="qrw-cta sm" onclick="window._e9NearYes()">Continue</button></div></div>';
+    else if(!near)h+='<button type="button" class="qrw-link" onclick="window._e9NearMe()"><i class="ti ti-map-pin" aria-hidden="true"></i> '+(_e9State.nearBusy?'Finding courses near you…':'Courses near me')+'</button>';
+    h+='<div class="qrw-hint c">Not in the course list? <button type="button" class="qrw-change" onclick="_e9StartAddCourse()">Add one by hand</button></div>';
+  } else {
+    var cat=CATALOG[cn]||{},pl=_qrwPlace(cn),tees=cat.tees||{},sel=_e9State.tee||{};
+    h+='<div class="qrw-card qrw-pick"><div class="qrw-pickhd"><span class="qrw-ico lg"><i class="ti ti-flag-3" aria-hidden="true"></i></span>'
+      +'<span class="qrw-rt"><span class="qrw-pn">'+_gtEsc(courseDisp(cn))+'</span>'+(pl?'<span class="qrw-rs">'+_gtEsc(pl)+'</span>':'')+'</span>'
+      +'<button type="button" class="qrw-change" onclick="window._e9ClearCourse()">Change</button></div>'
+      +_qrTeesHtml(tees.male||[],tees.female||[],sel,function(list,g){return list.map(function(t,k){
+        return _qrChipHtml(t,sel.gender===g&&sel.teeName===t.tee_name,"window._e9TeeChip('"+g+"',"+k+")");}).join('');},{open:'_e9TeeOpen',state:_e9State.teeOpen})
+      +'</div>';
+    var HO=[[null,'18 holes',''],['front','Front 9','1-9'],['back','Back 9','10-18']];
+    var hi=Math.max(0,HO.findIndex(function(o){return o[0]===(_e9State.nineHole||null);}));
+    h+='<div class="qrw-lbl">HOLES</div><div class="qrw-seg" id="e9HolesSeg" role="radiogroup" aria-label="Holes"><span class="qrw-pill" style="transform:translateX('+(hi*100)+'%)"></span>'
+      +HO.map(function(o,k){var on=k===hi;
+        return '<button type="button" role="radio" aria-checked="'+on+'" class="'+(on?'on':'')+'" data-val="'+(o[0]||'18')+'" onclick="window._e9SetHoles(this)"><span>'+o[1]+'</span>'+(o[2]?'<small>'+o[2]+'</small>':'')+'</button>';}).join('')+'</div>';
+  }
+  return '<div class="qrw" data-e9-step="1">'+_e9Top(1)+'<div class="qr-step-t qrw-title">Where are you playing?</div></div>'
+    +'<div class="qrw-body">'+h+'</div>'
+    +'<div class="qrw-foot">'+(cn?'':'<div class="qrw-hint c">Choose a course to continue</div>')
+    +'<button type="button" class="qrw-cta'+(cn?'':' off')+'" onclick="window._e9Next()">Continue</button></div></div>';
+}
+function _e9CountHtml(){
+  var on=!!_e9State.inStandings,nh=_e9State.nineHole;
+  var nStand=(WK.rounds||[]).filter(function(x){return !x.isE9||x.inStandings;}).length;
+  var sub=on?'Shows as Rd '+(nStand+1)+': feeds the leaderboard and the weekend bet.'
+    :'Off: money only. Shows as '+(nh?'E9':'E18')+' and stays out of the leaderboard and weekend bet.';
+  var nP=(WK&&WK.players)?WK.players.length:4;
+  var h='<div class="qrw-card qrw-tog"><div class="qrw-rt"><span class="qrw-rn">Count toward the weekend</span><span class="qrw-rs">'+sub+'</span></div>'
+    +'<label class="toggle"><input type="checkbox" id="e9InStandings"'+(on?' checked':'')+' onchange="_e9Pick(\'inStandings\',this.checked);_showE9Modal()" aria-label="Count toward the weekend"><span class="toggle-slider"></span></label></div>';
+  h+='<div class="qrw-lblrow"><span class="qrw-lbl">GAMES</span><span class="qrw-note">'+(nh==='front'?'Front 9':nh==='back'?'Back 9':'18 holes')+' · '+nP+' players</span></div>'
+    +'<div class="qrw-card">'+_E9_GAMES.map(function(g,i){
+      var need=_E9_MINP[g]||0,grey=nP<need,sel=!grey&&!!_gsGames[g];
+      return '<div class="e9-game'+(grey?' off':'')+'"><span class="qrw-rt"><span class="qrw-rn">'+_gtEsc(g)+'</span></span>'
+        +(grey?'<span class="qrw-rs">Needs '+need+'</span>':'')
+        +'<label class="toggle"><input type="checkbox"'+(sel?' checked':'')+(grey?' disabled':'')+' onchange="window._e9ToggleGame('+i+')" aria-label="'+_gtEsc(g)+'"><span class="toggle-slider"></span></label></div>';}).join('')+'</div>'
+    +'<div class="qrw-hint c">Stakes and settings are in the Games tab once the round starts.</div>';
+  return '<div class="qrw" data-e9-step="2">'+_e9Top(2)+'<div class="qr-step-t qrw-title">How does it count?</div></div>'
+    +'<div class="qrw-body">'+h+'</div>'
+    +'<div class="qrw-foot"><button type="button" class="qrw-cta" onclick="addE9Round()">Add round</button></div></div>';
+}
+window._e9PickTrip=function(k){var cn=window._e9TripStash&&window._e9TripStash[k];if(cn){_e9Pick('cn',cn);_e9AutoTee(cn);}};
+window._e9PickNear=function(k){var cn=window._e9NearStash&&window._e9NearStash[k];if(cn){_e9Pick('cn',cn);_e9AutoTee(cn);}};
+window._e9ClearCourse=function(){_e9State.cn=null;_e9State.tee=null;_e9State.teeOpen='';_e9State.pendingCn=null;_showE9Modal();};
+window._e9TeeOpen=function(g){_e9State.teeOpen=(_e9State.teeOpen===g)?'':g;_showE9Modal();};
+window._e9TeeChip=function(g,k){
+  var c=CATALOG[_e9State.cn],l=c&&c.tees&&(g==='female'?c.tees.female:c.tees.male),t=l&&l[k];
+  if(t){_e9State.tee={gender:g,teeName:t.tee_name};_e9State.teeOpen='';_showE9Modal();}
+};
+// The holes pill moves in place, as the round wizard's does.
+window._e9SetHoles=function(el){
+  var v=el&&el.dataset&&el.dataset.val;if(v!=='18'&&v!=='front'&&v!=='back')return;
+  _e9State.nineHole=v==='18'?null:v;
+  if(!_wizSegTo(document.getElementById('e9HolesSeg'),v))_showE9Modal();
+};
+window._e9Back=function(){if(_e9State.step===2){_e9State.step=1;_showE9Modal();}};
+window._e9Cancel=function(){
+  if(!_e9State.cn){window._e9CancelNow();return;}
+  _confirmSheet({icon:'ti-alert-triangle',danger:true,title:'Discard this round?',body:'What you have set up so far will be lost.',okLabel:'Discard',cancelLabel:'Keep editing',onOk:function(){window._e9CancelNow();}});
+};
+window._e9CancelNow=function(){var m=document.getElementById('e9Modal');if(m)m.style.display='none';};
+window._e9NearMe=function(){
+  var ok=false;try{ok=localStorage.getItem('theturn_loc_ok')==='1';}catch(e){}
+  if(!ok){_e9State.nearAsk=true;_showE9Modal();return;}
+  window._e9NearGo();
+};
+window._e9NearYes=function(){try{localStorage.setItem('theturn_loc_ok','1');}catch(e){}_e9State.nearAsk=false;window._e9NearGo();};
+window._e9NearNo=function(){_e9State.nearAsk=false;_showE9Modal();};
+window._e9NearGo=function(){
+  if(!navigator.geolocation){_e9State.nearErr='Location is not available here. Search instead.';_showE9Modal();return;}
+  _e9State.nearBusy=true;_e9State.nearErr='';_showE9Modal();
+  navigator.geolocation.getCurrentPosition(function(p){
+    _e9State.nearBusy=false;var l=_qrNearCourses(p.coords.latitude,p.coords.longitude);
+    _e9State.near=l.length?l:null;if(!l.length)_e9State.nearErr='No courses with a location yet. Search instead.';_showE9Modal();
+  },function(){_e9State.nearBusy=false;_e9State.nearErr='Location is off for this app. Search instead.';_showE9Modal();},{timeout:10000,maximumAge:600000});
+};
 function _e9Pick(key,val){_e9State[key]=val;}
-function _e9Next(){_e9State.step=2;_showE9Modal();}
-function _e9Advance(){if(_e9State.step===2){_e9State.step=3;}else if(_e9State.step===3){_gsGames={};_e9State.step=4;}else{_e9State.step++;}_showE9Modal();}
+// v123.66: Continue from the course screen (a course is required) to count and games.
+function _e9Next(){if(!_e9State.cn)return;_gsGames={};_e9State.step=2;_showE9Modal();}
+function _e9Advance(){_e9Next();}
+window._e9Next=_e9Next;
 window._e9ToggleGame=function(i){var games=['Match Play','Vegas','Skins','Razzle Dazzle','Wolf','Hammer',"Two's Club",'Snake','Four-Ball'];var g=games[i];if(!g)return;if(_gsGames[g])delete _gsGames[g];else _gsGames[g]=true;_showE9Modal();};
 function _e9StartAddCourse(){_e9State.step=1.5;_showE9Modal();}
 function _e9SaveNewCourse(){
@@ -13973,12 +14061,12 @@ function _e9SaveNewCourse(){
   const back=parsePairs(document.getElementById('e9NewBP')?.value,document.getElementById('e9NewBSI')?.value);
   CATALOG[name]={slope,holes:[...front,...back]};
   saveCourse(name);
-  _e9Pick('cn',name);
-  _e9Next();
+  _e9Pick('cn',name);_e9State.tee=null;
+  _e9State.step=1;_showE9Modal();   // v123.66: back to the course screen, with the holes to set
 }
 function _gsRefresh(){
   const em=document.getElementById('e9Modal');
-  if(em&&em.style.display!=='none'&&_e9State.step===4){_showE9Modal();}
+  if(em&&em.style.display!=='none'&&_e9State.step===2){_showE9Modal();}
   // The quick-round wizard had a games step here; v121.3 removed it. Nothing in that
   // wizard reacts to a game-config change any more.
 }
@@ -13988,8 +14076,9 @@ function _e9AutoTee(cn){
     const m=(c.tees.male||[]);const f=(c.tees.female||[]);
     const d=m.length>1?m[1]:m[0]||f[0];
     _e9State.tee=d?{gender:m.indexOf(d)>=0?'male':'female',teeName:d.tee_name}:null;
-    _e9State.pendingCn=cn;_showE9Modal();
-  }else{_e9State.tee=null;_e9Next();}
+  }else{_e9State.tee=null;}
+  // v123.66: the course screen shows the picked course, its tees and the holes.
+  _e9State.cn=cn;_e9State.pendingCn=null;_e9State.teeOpen='';_e9State.near=null;_e9State.nearErr='';_e9State.nearAsk=false;_showE9Modal();
 }
 function _e9SetTee(g,t){_e9State.tee={gender:g,teeName:t};}
 function addE9Round(){
@@ -14243,8 +14332,8 @@ window._e9PickSearch=function(ri){
   const name=window._e9LocalStash&&window._e9LocalStash[ri];
   if(!name)return;
   _e9Pick('cn',name);_e9AutoTee(name);
-  document.getElementById('e9CourseSearch').value='';
-  document.getElementById('e9CourseResults').innerHTML='';
+  var _es=document.getElementById('e9CourseSearch');if(_es)_es.value='';
+  var _er=document.getElementById('e9CourseResults');if(_er)_er.innerHTML='';
 };
 window._e9OnlineSearch=async function(q){
   const el=document.getElementById('e9CourseResults');if(!el)return;
@@ -14283,8 +14372,7 @@ window._e9ImportCourse=async function(i){
     return;
   }
   _e9Pick('cn',name);_e9AutoTee(name);
-  document.getElementById('e9CourseSearch').value='';
-  if(el)el.innerHTML='';
+  var _es=document.getElementById('e9CourseSearch');if(_es)_es.value='';
 };
 window._gcaTeePick2=function(name,val){var _v=val.split('|');window._gcaSetStagedTee(name,_v[0],_v[1]);};
 window._gcaSetStagedTee=function(name,g,t){
