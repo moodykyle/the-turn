@@ -2270,7 +2270,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.73';
+const APP_VERSION='v123.74';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -11504,8 +11504,9 @@ function _launchPadHtml(r){
   return h;
 }
 function _wolfNeedsFoursomesHtml(compact){
-  var msg='This trip has more than 4 players. Set your foursomes first so each group plays its own games.';
-  var btn='<button style="background:#0F6E56;color:#E1F5EE;border:none;padding:10px 18px;border-radius:var(--border-radius-md);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit" onclick="setView(\'setup\');STATE.flightsViewRound=STATE.currentRound;setOptPanel(\'flights\')">Set Foursomes</button>';
+  // v123.74: says round or trip, and names Wolf, the only reason this prompt shows.
+  var msg='Wolf needs a group of four, and this '+(WK&&WK.isQuickRound?'round':'trip')+' has more than four in one group. Split it into foursomes, or turn Wolf off in Games.';
+  var btn='<button style="background:#0F6E56;color:#E1F5EE;border:none;padding:10px 18px;border-radius:var(--border-radius-md);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit" onclick="setView(\'setup\');STATE.flightsViewRound=STATE.currentRound;setOptPanel(\'flights\')">Set foursomes</button>';
   if(compact){
     return '<div style="padding:14px 12px"><div style="font-size:13px;color:var(--color-text-secondary);line-height:1.5;margin-bottom:10px">'+msg+'</div>'+btn+'</div>';
   }
