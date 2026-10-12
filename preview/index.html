@@ -889,10 +889,17 @@ body.force-dark .fsp{--fsp-sheet:#1C2C4B;--fsp-opt:#14213B;--fsp-bd:#34476B;--fs
   background:var(--tint);border-radius:999px;padding:4px 10px;cursor:pointer}
 .gs-net.warn{border-left-color:#D8862F}
 .gs-net.warn .t b{color:#E0A45C}
-#appToast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab-bar-h) + 62px);z-index:900;
+#appToast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab-bar-h) + 62px);z-index:10003;
   background:#2A1F14;border:1px solid #5C4423;border-radius:10px;padding:11px 13px;
   display:none;gap:9px;align-items:flex-start;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 #appToast.show{display:flex}
+#appToast.top{top:calc(env(safe-area-inset-top) + 12px);bottom:auto}
+/* v123.69: the confirm sheet's text box (Rename course). */
+.cs-in{display:block;width:100%;box-sizing:border-box;height:48px;padding:0 14px;margin:0 0 6px;border-radius:12px;border:1.5px solid #1D9E75;background:var(--color-background-page);color:var(--color-text-primary);font-size:16px;font-weight:600;font-family:inherit;outline:none;}
+.cs-in.bad{border-color:#B42318;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .cs-in.bad{border-color:#F28B82;}}
+body.force-dark .cs-in.bad{border-color:#F28B82;}
+.cs-err{min-height:18px;margin:0 0 10px;font-size:13px;font-weight:600;text-align:center;}
 #appToast .ti{color:#E0A45C;font-size:14px;line-height:1.35;flex-shrink:0}
 #appToast .tt{font-size:12.5px;line-height:1.45;color:#F0DFC6}
 
@@ -2194,7 +2201,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.68';
+const APP_VERSION='v123.69';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -4680,18 +4687,30 @@ async function saveNewCourse(name){
   }catch(e){console.warn('[saveNewCourse] exception:',e);}
   autoSave();
 }
-async function renameCourse(oldName,newName){newName=newName.trim();if(!newName||newName===oldName)return;if(CATALOG[newName]){alert('A course named "'+newName+'" already exists.');return;}CATALOG[newName]=CATALOG[oldName];delete CATALOG[oldName];WK.rounds.forEach((rd,i)=>{if(rd.courseName===oldName){WK.rounds[i].courseName=newName;}});try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}try{await fetch(SB_URL+'/rest/v1/courses?name=eq.'+encodeURIComponent(oldName),{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer(),'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name:newName})});}catch(e){}renderCoursesPanel();renderWeekendPanel();autoSave();}
+async function renameCourse(oldName,newName){newName=newName.trim();if(!newName||newName===oldName)return;if(CATALOG[newName]){showMsg('A course named "'+newName+'" already exists.');return;}CATALOG[newName]=CATALOG[oldName];delete CATALOG[oldName];WK.rounds.forEach((rd,i)=>{if(rd.courseName===oldName){WK.rounds[i].courseName=newName;}});try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}try{await fetch(SB_URL+'/rest/v1/courses?name=eq.'+encodeURIComponent(oldName),{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer(),'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({name:newName})});}catch(e){}renderCoursesPanel();renderWeekendPanel();autoSave();}
 function loadTripsLocal(){try{const d=localStorage.getItem(LS_TRIPS);return d?JSON.parse(d):[];}catch(e){return[];}}
 function loadTrips(){return loadTripsLocal();}
 function saveTrips(trips){try{localStorage.setItem(LS_TRIPS,JSON.stringify(trips));}catch(e){}scheduleSbSave();}
 function autoSave(silent){if(!WK||!STATE||isReadOnly)return;s2MarkDirty(['trip','players','expenses']);const trips=loadTrips();const holesPlayed=totalHolesPlayed(),totalH=totalHoles(),complete=holesPlayed>=totalH;const winner=tripWinnerName();const snapshot={id:WK._id||(WK._id=Date.now()+''),name:WK.name,is_quick_round:!!WK.isQuickRound,group_id:WK._groupId||null,date:WK.date,region:WK.region||'',playerNames:WK.players.map((p,i)=>displayName(i)),playerInis:WK.players.map(p=>p.ini),playerColors:WK.players.map(p=>({bg:p.bg,fg:p.fg})),courses:WK.rounds.map(r=>r.courseName),holesPlayed,totalHoles:totalH,complete,winner,standings:summaryStandings(),roundStatus:tripRoundStatus().label,currentCourse:(()=>{const rs=tripRoundStatus();return rs.r>=0?(WK.rounds[rs.r]?.courseName||''):'';})(),savedAt:new Date().toISOString()};const idx=trips.findIndex(t=>t.id===snapshot.id);if(idx>=0)trips[idx]=snapshot;else trips.unshift(snapshot);saveTrips(trips);if(!silent)showSaveToast();}
-// In-app message. The two things you hit MID-ROUND with a phone in one hand went through
-// alert(), which on a phone is a system dialog reading "localhost:8080 says" that has to be
-// dismissed. The other 24 alerts live in setup and wizard flows where a native dialog is fine.
+// In-app message (the amber toast). v123.69: every message in the app comes here; no alert() is left.
+// It sits above every sheet, and when a sheet or full-screen page covers its usual spot above the tab
+// bar it shows at the top of the screen instead, so it never hides the sheet's buttons.
 let _appToastT=null;
+function _toastTop(){
+  try{
+    var e=document.elementFromPoint(window.innerWidth/2,window.innerHeight-140);
+    while(e&&e!==document.body&&e!==document.documentElement){
+      if(e.id!=='appToast'){var c=getComputedStyle(e);if(c.position==='fixed'&&(parseInt(c.zIndex,10)||0)>=1000)return true;}
+      e=e.parentElement;
+    }
+  }catch(_){}
+  return false;
+}
 function showMsg(m){
   const el=document.getElementById('appToast'),tx=document.getElementById('appToastMsg');
   if(!el||!tx){alert(m);return;}
+  el.classList.remove('show');
+  el.classList[_toastTop()?'add':'remove']('top');
   tx.textContent=m;el.classList.add('show');
   if(_appToastT)clearTimeout(_appToastT);
   _appToastT=setTimeout(function(){el.classList.remove('show');},3200);
@@ -5521,7 +5540,7 @@ window._gmSaveManaged = async function(gid,idx){
   if(m.user_id)return;
   const errEl=document.getElementById('gmError');
   const btn=document.getElementById('gmSaveBtn');
-  function showErr(msg){if(errEl){errEl.textContent=msg;errEl.style.display='block';}else{alert(msg);}}
+  function showErr(msg){if(errEl){errEl.textContent=msg;errEl.style.display='block';}else{showMsg(msg);}}
   if(errEl)errEl.style.display='none';
   const raw=document.getElementById('gmHcp')?document.getElementById('gmHcp').value:'';
   const venmo=(document.getElementById('gmVenmo')?document.getElementById('gmVenmo').value:'').trim().replace(/^@+/,'');
@@ -5585,8 +5604,8 @@ window._removeMemberGo = async function(gid,memberId,name){
       if(_groupCache[gid])delete _groupCache[gid]._members;
       renderGroupPage(gid);
       _loadGroupMembersIntoTile(gid);
-    } else {alert('Remove failed. Please try again.');}
-  }catch(e){alert('Remove failed. Please try again.');}
+    } else {showMsg('Remove failed. Please try again.');}
+  }catch(e){showMsg('Remove failed. Please try again.');}
 };
 
 // ── GROUP SETTINGS SHEET ────────────────────────────────────────────────────
@@ -5711,13 +5730,15 @@ window.startGroupQuickRound = function(gid){
 window.sbConfirmRemoveAnonymize = async function(){
   const user=sbCurrentUser();
   if(!user)return;
-  if(!confirm('Remove and anonymize your account?\n\nThis strips your name, email, phone, Venmo, and handicap everywhere. Past scores stay under your initials. This cannot be undone.'))return;
-  try{
-    // Clear user_metadata
-    await sbUpdateUser({full_name:'',phone:'',venmo:'',hcp:null});
-    // Sign out
-    await sbSignOut();
-  }catch(e){alert('Could not complete removal. Please try again.');}
+  // v123.69: the app's red sheet (was confirm()).
+  _confirmSheet({icon:'ti-user-x',danger:true,title:'Remove and anonymize your account?',
+    body:'This strips your name, email, phone, Venmo, and handicap everywhere. Past scores stay under your initials. This cannot be undone.',
+    okLabel:'Remove',onOk:async function(){
+      try{
+        await sbUpdateUser({full_name:'',phone:'',venmo:'',hcp:null});
+        await sbSignOut();
+      }catch(e){showMsg('Could not complete removal. Please try again.');}
+    }});
 };
 
 // Close user menu on outside tap
@@ -5760,14 +5781,16 @@ function renderLibrarySection(){
   el.innerHTML=html;
 }
 
-async function removeCourseFromPanel(name){
-  if(!confirm('Remove '+name+' from catalog? This cannot be undone.'))return;
+// v123.69: asks in the app's sheet (was confirm()).
+function removeCourseFromPanel(name){
+  _confirmSheet({icon:'ti-trash',danger:true,title:'Remove '+_gtEsc(courseDisp(name))+'?',body:'It comes off the shared course list for everyone. This cannot be undone.',okLabel:'Remove',onOk:function(){_removeCourseNow(name);}});
+}
+async function _removeCourseNow(name){
   delete CATALOG[name];
   try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}
   try{await fetch(SB_URL+'/rest/v1/courses?name=eq.'+encodeURIComponent(name),{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});}catch(e){}
   renderCoursesPanel();
 }
-async function homeRemoveCourse(name){if(!confirm('Remove '+name+' from catalog?'))return;delete CATALOG[name];try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}try{await fetch(SB_URL+'/rest/v1/courses?name=eq.'+encodeURIComponent(name),{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});}catch(e){}renderLibrarySection();}
 var _twFromGid=null; // v123.35: the Group page the wizard was opened from, if any
 function startNewWeekend(){
   _twFromGid=_gpOpenGid();
@@ -5966,10 +5989,12 @@ function _qrCourseStepHtml(first,total,idx){
     +'<button type="button" class="qrw-cta'+(c?'':' off')+'" onclick="window._qrNext()">Continue</button></div></div>';
 }
 // v123.53: the shared footer of the later screens.
-function _qrwFoot(note,label){
-  return '<div class="qrw-foot">'+(note?'<div class="qrw-hint c">'+note+'</div>':'')
-    +'<button type="button" class="qrw-cta" onclick="window._qrNext()">'+label+'</button></div>';
+// v123.69: one footer for both wizards: the note (red when warn) and the Continue button.
+function _wizFoot(note,label,warn,next){
+  return '<div class="qrw-foot">'+(note?'<div class="qrw-hint c'+(warn?' qrw-warn ts-danger':'')+'">'+note+'</div>':'')
+    +'<button type="button" class="qrw-cta" onclick="'+next+'">'+label+'</button></div>';
 }
+function _qrwFoot(note,label,warn){return _wizFoot(note,label,warn,'window._qrNext()');}
 var _QRW_CHECK='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>';
 // v123.63: one Select all row, member row and allowance card for both wizards ('qr' round, 'tw' trip).
 var _WIZ_NS={qr:{tog:'_qrToggleMember',all:'_qrSelectAll',hcp:'qrhcp_',aria:'Handicap for this round',step:'_qrHdcpStep',pct:'qrHdcpPct',low:'qrNetOffLow',st:'_qrS'},
@@ -6018,7 +6043,7 @@ function _qrPlayersStepHtml(){
     h+='<div class="qrw-card">'+members.map(function(m,midx){
       return _wizMemberRow('qr',m,midx,S.find(function(s){return s.member_id===m.member_id;}),me);}).join('')+'</div>';
     h+='<div class="qrw-hint c">Tap a handicap to change it for this round.</div>';
-    var n=S.length;note=n===0?'None selected':n+' selected'+(n>_qrS.n?' - max '+_qrS.n:'');
+    var n=S.length;note=(_qrS.plErr&&n<2)?'Pick at least 2 players.':(n===0?'None selected':n+' selected'+(n>_qrS.n?' - max '+_qrS.n:''));
   } else {
     var _meta=(me&&me.user_metadata)||{},_meName=(_meta.full_name||(me&&me.email)||'').trim();
     var _meParts=_meName.split(/\s+/).filter(Boolean),_meFirst=_meParts[0]||'',_meLast=_meParts.slice(1).join(' ')||'';
@@ -6044,7 +6069,7 @@ function _qrPlayersStepHtml(){
     sub=me?'You&#39;re in. Add everyone playing.':'Add everyone playing.';
   }
   return '<div class="qrw" data-qr-step="3">'+_qrwTop(false,3,2)+'<div class="qr-step-t qrw-title">Who&#39;s playing?</div>'+(sub?'<div class="qrw-sub">'+sub+'</div>':'')+'</div>'
-    +'<div class="qrw-body">'+h+'</div>'+_qrwFoot(note,'Continue')+'</div>';
+    +'<div class="qrw-body">'+h+'</div>'+_qrwFoot(note,'Continue',!!_qrS.plErr&&(_qrS.selectedMembers||[]).length<2&&!!window._pendingGroupId)+'</div>';
 }
 window._qrAddRow=function(){_qrStash();if(_qrS.n<TW_MAX_PLAYERS)_qrS.n++;_qrRender();};
 window._qrRemoveRow=function(i){
@@ -6277,7 +6302,8 @@ window._qrNext=function(){
     const members=(grp?._members)||[];
     if(gid&&members.length>0){
       (_qrS.selectedMembers||[]).forEach(function(s){const el=document.getElementById('qrhcp_'+s.member_id);if(el)s.hcp_index=idxFromInput(el.value,(s.hcp_index!=null?s.hcp_index:0));});
-      if(!_qrS.selectedMembers||_qrS.selectedMembers.length<2){alert('Please select at least 2 players.');return;}
+      if(!_qrS.selectedMembers||_qrS.selectedMembers.length<2){_qrS.plErr=true;_qrRender();return;}
+      _qrS.plErr=false;
       // v123.54: n stays the selection ceiling (TW_MAX_PLAYERS); overwriting it capped the picker after Back.
     } else {
       const pl=[];for(let i=0;i<_qrS.n;i++){pl.push({first:(document.getElementById('qrfirst'+i)?.value||'').trim()||('Player '+(i+1)),last:(document.getElementById('qrlast'+i)?.value||'').trim(),idx:idxFromInput(document.getElementById('qridx'+i)?.value||'',10)});}
@@ -7124,10 +7150,7 @@ function _twTop(idx){
     +'<div class="qrw-bar">'+bar+'</div>'
     +'<div class="qrw-head"><div class="qrw-step">STEP '+idx+' OF '+_TW_TOTAL_STEPS+'</div>';
 }
-function _twFoot(note,label,warn){
-  return '<div class="qrw-foot">'+(note?'<div class="qrw-hint c'+(warn?' qrw-warn ts-danger':'')+'">'+note+'</div>':'')
-    +'<button type="button" class="qrw-cta" onclick="window._twNext()">'+label+'</button></div>';
-}
+function _twFoot(note,label,warn){return _wizFoot(note,label,warn,'window._twNext()');}
 var _TW_ICO={
   name:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"></path></svg>',
   date:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M4 10h16M9 3v4M15 3v4"></path></svg>',
@@ -7420,7 +7443,7 @@ window._twNext=function(){
       if(el)m.hcp_index=idxFromInput(el.value,(m.hcp_index!=null?m.hcp_index:0));
     });
     if(_twS.selectedMembers.length<2){_twS.plErr=true;_twRender();return;}
-    if(_twS.selectedMembers.length>TW_MAX_PLAYERS){alert('Maximum '+TW_MAX_PLAYERS+' players for a trip.');return;}
+    if(_twS.selectedMembers.length>TW_MAX_PLAYERS){showMsg('Maximum '+TW_MAX_PLAYERS+' players for a trip.');return;}
     _twS.plErr=false;
     _twS.step=3;_twRender();return;
   }
@@ -7696,7 +7719,7 @@ window._twToggleCourseForm=function(){
 // Add guest sheet
 window._twShowAddGuest=function(){
   const gid=window._pendingGroupId;
-  if(!gid){alert('No group selected.');return;}
+  if(!gid){showMsg('No group selected.');return;}
   // Build overlay
   let ov=document.getElementById('twAddGuestOverlay');
   if(!ov){
@@ -7787,8 +7810,8 @@ window._twAddGuestSubmit=async function(gid){
   const hcpRaw=document.getElementById('twg_hcp')?.value;
   const _hcpP=sbParseHcp(hcpRaw);const hcp_index=_hcpP.ok?_hcpP.value:null;
   const venmo=(document.getElementById('twg_venmo')?.value||'').trim();
-  if(!name){alert('Please enter a name.');return;}
-  if(hcp_index==null||isNaN(hcp_index)){alert('Please enter a handicap index.');return;}
+  if(!name){showMsg('Please enter a name.');return;}
+  if(hcp_index==null||isNaN(hcp_index)){showMsg('Please enter a handicap index.');return;}
   try{
     const newMember=await window.createManagedPlayer(gid,{name,hcp_index,venmo});
     // Refresh group cache
@@ -7801,7 +7824,7 @@ window._twAddGuestSubmit=async function(gid){
     }
     document.getElementById('twAddGuestOverlay').style.display='none';
     _twRender();
-  }catch(e){alert('Could not add guest: '+(e.message||'Unknown error'));}
+  }catch(e){showMsg('Could not add guest: '+(e.message||'Unknown error'));}
 };
 
 // ── _twLaunch: build WK/STATE from _twS and start the trip ──────────────────
@@ -12403,7 +12426,7 @@ window._plSaveRow=async function(i){
       // the old number straight back and silently undo the edit.
       WK.players[i].idxSetHere=!(wants&&pushed&&diff&&diff.idx!==null);
     }
-    if(wants&&diff&&!pushed)alert('Saved to this trip. Updating the group record failed, so this index applies here only.');
+    if(wants&&diff&&!pushed)showMsg('Saved to this trip. Updating the group record failed, so this index applies here only.');
     finish();
   }
   if(d&&d.idx!==undefined&&d.idx!==null)_plIdxGuard(i,d.idx,function(){apply();});
@@ -12775,7 +12798,7 @@ window._fsTapPlayer=function(r,pi){
 };
 function toggleEditPanel(eid,btnId){const panel=document.getElementById(eid);const btn=document.getElementById(btnId);const display=document.getElementById(eid+'_display');if(!panel)return;const isOpen=panel.style.display!=='none';panel.style.display=isOpen?'none':'block';if(display)display.style.display=isOpen?'flex':'none';if(btn)btn.style.display=isOpen?'inline-block':'none';if(isOpen){const mc=eid.match(/^ce_(.+)$/);if(mc){const cname=mc[1].replace(/_/g,' ');if(CATALOG[cname])saveCourse(cname);}renderPlayersPanel();}}
 function toggleAddPlayerRow(){const row=document.getElementById('addPlayerRow');const btn=document.getElementById('addPlayerToggleBtn');if(!row)return;const opening=row.style.display==='none';row.style.display=opening?'block':'none';if(btn)btn.style.display=opening?'none':'inline-block';if(opening)setTimeout(function(){var el=document.getElementById('apFirst');if(el)el.focus();},50);}
-function confirmAddPlayer(){_apTarget=null;if(!canEditTrip())return;var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=idxFromInput(document.getElementById('apIdx')?document.getElementById('apIdx').value:'',10);if(!first){alert('Enter a first name.');return;}if(WK.players.length>=TW_MAX_PLAYERS)return;var c=pickColor();var newP={pid:s2NewTok(),name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};_seatPlayer(newP);}
+function confirmAddPlayer(){_apTarget=null;if(!canEditTrip())return;var first=(document.getElementById('apFirst')?document.getElementById('apFirst').value:'').trim();var last=(document.getElementById('apLast')?document.getElementById('apLast').value:'').trim();var idx=idxFromInput(document.getElementById('apIdx')?document.getElementById('apIdx').value:'',10);if(!first){showMsg('Enter a first name.');return;}if(WK.players.length>=TW_MAX_PLAYERS)return;var c=pickColor();var newP={pid:s2NewTok(),name:'',first:first,last:last,idx:idx,bg:c.bg,fg:c.fg,ini:first.substring(0,2).toUpperCase()};_seatPlayer(newP);}
 // Every roster add lands here: the wizard-equivalent seating sequence, in one place.
 // Pads each round's score rows for the new column, reconciles flights and every game
 // off the new membership, then renders and writes. Returns false when the add is
@@ -12828,7 +12851,7 @@ var _apTarget=null;
 window._fsAddPlayerTo=function(r,gi){window._apOpen({r:r,gi:gi});};
 window._apOpen=async function(tg){
   if(!canEditTrip())return;
-  if(WK.players.length>=TW_MAX_PLAYERS){alert('This trip is full at '+TW_MAX_PLAYERS+' players.');return;}
+  if(WK.players.length>=TW_MAX_PLAYERS){showMsg('This trip is full at '+TW_MAX_PLAYERS+' players.');return;}
   _apTarget=(tg&&typeof tg.r==='number'&&typeof tg.gi==='number')?{r:tg.r,gi:tg.gi}:null;
   var gid=WK._groupId;
   // Cold cache on a freshly loaded trip. Fetch before painting, or the sheet opens
@@ -12903,7 +12926,7 @@ window._apGuestSubmit=async function(){
   var idxRaw=document.getElementById('apgIdx')?document.getElementById('apgIdx').value:'';
   var venmo=(document.getElementById('apgVenmo')?document.getElementById('apgVenmo').value:'').trim().replace(/^@+/,'');
   var errEl=document.getElementById('apGuestError');
-  function showErr(msg){if(errEl){errEl.textContent=msg;errEl.style.display='block';}else{alert(msg);}}
+  function showErr(msg){if(errEl){errEl.textContent=msg;errEl.style.display='block';}else{showMsg(msg);}}
   if(errEl)errEl.style.display='none';
   if(!first){showErr('Enter a first name.');return;}
   var hp=sbParseHcp(idxRaw);
@@ -12939,7 +12962,7 @@ var _rmPlayerBusy=false;
 async function removePlayer(idx){if(!canEditTrip())return;
 // v123.47: a round can drop to one player (the wizard starts one-player rounds); a trip keeps two.
 var _rmMin=WK.isQuickRound?1:2;
-if(WK.players.length<=_rmMin){alert(_rmMin===1?'A round needs at least 1 player.':'Need at least 2 players.');return;}
+if(WK.players.length<=_rmMin){showMsg(_rmMin===1?'A round needs at least 1 player.':'Need at least 2 players.');return;}
 // v123.44: the players row is deleted FIRST and awaited, before anything local changes. The splice
 // below shifts everyone above this player down one position; if the row survived (a failed
 // delete), the player came back on reload sharing a player_index with whoever moved into the slot.
@@ -12950,7 +12973,7 @@ const _deadPid=s2PlayerId(idx),_nm=_p.name||'this player';
 _rmPlayerBusy=true;
 let _ok=false;
 try{_ok=await s2DeleteWhere('players','player_id=eq.'+encodeURIComponent(_deadPid));}catch(e){_ok=false;}
-if(!_ok){_rmPlayerBusy=false;alert('Could not remove '+_nm+'. Check your connection and try again.');return;}
+if(!_ok){_rmPlayerBusy=false;showMsg('Could not remove '+_nm+'. Check your connection and try again.');return;}
 // A score row left behind is ignored by s2ReadTrip (its player is not in the roster), so a failed
 // scores delete does not block the removal.
 try{if(!await s2DeleteWhere('scores','player_id=eq.'+encodeURIComponent(_deadPid)))console.warn('[removePlayer] scores delete failed');}catch(e){console.warn('[removePlayer] scores delete threw',e);}
@@ -13263,6 +13286,7 @@ function _confirmSheet(opts){
   card.innerHTML=iconHtml
     +'<div style="text-align:center;font-size:16px;font-weight:600;color:var(--color-text-primary);margin-bottom:6px">'+(opts.title||'Are you sure?')+'</div>'
     +'<div style="text-align:center;font-size:13px;color:var(--color-text-secondary);line-height:1.5;margin-bottom:16px">'+(opts.body||'')+'</div>'
+    +(opts.input?'<input id="_csIn" class="cs-in" type="text" autocomplete="off"'+(opts.input.maxlength?' maxlength="'+opts.input.maxlength+'"':'')+' placeholder="'+_gtEsc(opts.input.placeholder||'')+'" value="'+_gtEsc(opts.input.value||'')+'"><div id="_csErr" class="cs-err ts-danger"></div>':'')
     +'<div style="display:flex;gap:8px">'
     +'<button id="_csCancel" style="flex:1;font-size:14px;font-weight:500;color:var(--color-text-primary);background:transparent;border:0.5px solid var(--color-border-secondary);padding:11px 0;border-radius:10px">'+(opts.cancelLabel||'Cancel')+'</button>'
     +'<button id="_csOk" style="flex:1;font-size:14px;font-weight:600;'+okStyle+';border:none;padding:11px 0;border-radius:10px">'+(opts.okLabel||'Confirm')+'</button>'
@@ -13273,6 +13297,17 @@ function _confirmSheet(opts){
   function dismiss(){close();if(typeof opts.onCancel==='function')opts.onCancel();}
   ov.addEventListener('click',function(e){if(e.target===ov)dismiss();});
   card.querySelector('#_csCancel').addEventListener('click',dismiss);
+  if(opts.input){
+    var _in=card.querySelector('#_csIn'),_er=card.querySelector('#_csErr');
+    var _go=function(){var v=String(_in.value||'').trim(),e=typeof opts.validate==='function'?opts.validate(v):'';
+      if(e){_er.textContent=e;_in.classList.add('bad');return;}
+      close();if(typeof opts.onOk==='function')opts.onOk(v);};
+    card.querySelector('#_csOk').addEventListener('click',_go);
+    _in.addEventListener('input',function(){_er.textContent='';_in.classList.remove('bad');});
+    _in.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();_go();}});
+    setTimeout(function(){try{_in.focus();_in.select();}catch(_){}},60);
+    return;
+  }
   card.querySelector('#_csOk').addEventListener('click',function(){close();if(typeof opts.onOk==='function')opts.onOk();});
 }
 window._pencilTakeoverConfirm=function(){
@@ -14193,7 +14228,7 @@ function addE9Round(){
   updateHoleUI();
   renderHoleDots();
 }
-function removeRound(idx){if(WK.rounds.length<=1){alert('Need at least 1 round.');return;}
+function removeRound(idx){if(WK.rounds.length<=1){showMsg('Need at least 1 round.');return;}
 // Capture the id BEFORE the splice — after it, index idx names a different round.
 const _deadRid=(WK.rounds[idx]&&WK.rounds[idx].rid)?(WK._id+':round:'+WK.rounds[idx].rid):null;
 if(_deadRid)s2DeleteWhere('scores','round_id=eq.'+encodeURIComponent(_deadRid));
@@ -14527,9 +14562,10 @@ window._gcaToggleMenu=function(menuId,btn){
 window._gcaRename=function(eid){
   const name=window._gcaNameByEid[eid];
   if(!name)return;
-  const newName=prompt('Rename course:',name);
-  if(!newName||newName.trim()===name)return;
-  renameCourse(name,newName.trim());
+  // v123.69: the confirm sheet with a text box (was prompt()).
+  _confirmSheet({title:'Rename course',body:_gtEsc(courseDisp(name)),okLabel:'Save',input:{value:name,placeholder:'Course name',maxlength:80},
+    validate:function(v){if(!v)return 'Enter a name.';if(v!==name&&CATALOG[v])return 'A course called '+v+' is already in the list.';return '';},
+    onOk:function(v){if(v&&v!==name)renameCourse(name,v);}});
 };
 window._gcaRemove=function(eid){
   const name=window._gcaNameByEid[eid];
@@ -14563,10 +14599,10 @@ window._gcaImport=async function(){
   const apiCourse=window._gcaPendingCourse;
   if(!apiCourse)return;
   const sel=document.querySelector('input[name="gcaTee"]:checked');
-  if(!sel){alert('Pick a tee first.');return;}
+  if(!sel){showMsg('Pick a tee first.');return;}
   const [gender,teeName]=sel.value.split('|');
   const entry=_gcaResolveTee(apiCourse,gender,teeName);
-  if(!entry){alert('Could not resolve tee data.');return;}
+  if(!entry){showMsg('Could not resolve tee data.');return;}
   const displayName=apiCourse.club_name+(apiCourse.course_name&&apiCourse.course_name!==apiCourse.club_name?' - '+apiCourse.course_name:'');
   // Dedupe: if external_id already exists, update existing entry
   const existingName=Object.keys(CATALOG).find(n=>CATALOG[n].external_id===apiCourse.id);
@@ -18544,11 +18580,11 @@ function saveExp(){
   // Capped on SAVE, not only by the maxlength attribute: maxlength is a UI
   // courtesy that a paste or an older cached form can walk straight past.
   const note=(document.getElementById('eNote')?.value||'').slice(0,EXP_NOTE_MAX);
-  if(!desc){alert('Enter a description.');return;}
-  if(!amount){alert('Enter an amount.');return;}
+  if(!desc){showMsg('Enter a description.');return;}
+  if(!amount){showMsg('Enter an amount.');return;}
   const chips=document.querySelectorAll('#eChips .pchip');
   const active=[];chips.forEach((c,i)=>{if(c.classList.contains('active'))active.push(i);});
-  if(!active.length){alert('Select who owes.');return;}
+  if(!active.length){showMsg('Select who owes.');return;}
   const share=amount/active.length;
   const owes=custom?active.map(pi=>({pi,amt:parseFloat(document.getElementById('eShare'+pi)?.value||0)})):active.map(pi=>({pi,amt:share}));
   if(!STATE.expenses)STATE.expenses=[];
@@ -18731,15 +18767,16 @@ function undoHammer(r,hi){
   if(isFlightLocked(r,fi))return;
   if(!STATE.hammerState||!STATE.hammerState[r]||!STATE.hammerState[r][fi]||!STATE.hammerState[r][fi][hi])return;
   const hs=STATE.hammerState[r][fi][hi];
+  // v123.69: asked in the app's sheet (was confirm()). The hole is checked again on OK.
+  var _done=function(){autoSave();renderHammerBox();if(document.getElementById('view-games').style.display!=='none')renderGamesTab();};
+  var _still=function(){return !isReadOnly&&!isFlightLocked(r,fi)&&STATE.hammerState&&STATE.hammerState[r]&&STATE.hammerState[r][fi]&&STATE.hammerState[r][fi][hi]===hs;};
   if(hs.conceded||hs.accepted){
-    if(!confirm('Clear this result and return to hammer state?'))return;
-    hs.conceded=false;hs.concedeVal=0;hs.concededBy=undefined;hs.accepted=false;
+    _confirmSheet({icon:'ti-arrow-back-up',title:'Clear this result?',body:'The hole goes back to its hammer state.',okLabel:'Clear',
+      onOk:function(){if(!_still())return;hs.conceded=false;hs.concedeVal=0;hs.concededBy=undefined;hs.accepted=false;_done();}});
   } else if(hs.throws.length>0){
-    if(!confirm('Remove the last hammer throw?'))return;
-    hs.throws.pop();
-    hs.accepted=false;
+    _confirmSheet({icon:'ti-arrow-back-up',title:'Remove the last hammer throw?',body:'The hole goes back to before it was thrown.',okLabel:'Remove',
+      onOk:function(){if(!_still())return;hs.throws.pop();hs.accepted=false;_done();}});
   }
-  autoSave();renderHammerBox();if(document.getElementById('view-games').style.display!=='none')renderGamesTab();
 }
 function throwHammer(teamIdx,r,hi){
   if(isReadOnly)return;
