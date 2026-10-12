@@ -2270,7 +2270,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.72';
+const APP_VERSION='v123.73';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -9047,9 +9047,11 @@ function renderScorecard(){
   if(!WK.rounds[r]||!WK.rounds[r].course||!WK.rounds[r].course.holes){console.error('renderScorecard: missing course data for round',r);return;}
   if(!STATE.scores||!STATE.scores[r]||!STATE.scores[r][hi]){console.error('renderScorecard: missing scores for round',r,'hole',hi);return;}
   const hole=WK.rounds[r].course.holes[hi]||{par:4,si:hi+1};
-  // More than 4 players and not yet split into foursomes: Wolf's rotation cannot render
-  // a meaningful card (it would show only 4 of the group). Guide to the Foursomes editor.
-  if(flightsForRound(r).length===1&&(flightsForRound(r)[0]||[]).length>4){
+  // More than 4 players in one group with Wolf on: Wolf's rotation cannot render a meaningful
+  // card (it would show only 4 of the group). Guide to the Foursomes editor.
+  // v123.73: only with Wolf on. Before, any group over four got this prompt, so a fivesome (an
+  // option since v123.58) never reached the start page or the card.
+  if(flightsForRound(r).length===1&&(flightsForRound(r)[0]||[]).length>4&&gameOnFs('wolf',r,0)){
     document.getElementById('scorecard').innerHTML=_wolfNeedsFoursomesHtml(false);
     return;
   }
