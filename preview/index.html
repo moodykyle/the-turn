@@ -1156,6 +1156,43 @@ body.force-dark .home-dash-sec-label::before,body.force-dark .me-seclbl.brand-lb
 @media(prefers-color-scheme:light){body:not(.force-dark) .home-dash-sec-label,body:not(.force-dark) .sec-hd{color:#0F4D36;}body:not(.force-dark) .home-dash-sec-label::before,body:not(.force-dark) .me-seclbl.brand-lbl::before,body:not(.force-dark) .sec-hd::before{background:#C99A2E;}}
 body.force-light .home-dash-sec-label,body.force-light .sec-hd{color:#0F4D36;}
 body.force-light .home-dash-sec-label::before,body.force-light .me-seclbl.brand-lbl::before,body.force-light .sec-hd::before{background:#C99A2E;}
+/* v123.75 game settings: Home's section heading, one row shape, the sliding pill. */
+.gs-sec{margin:16px 2px 6px;font-size:19px;}
+.gs-sec:first-child{margin-top:4px;}
+.gs-sec::before{height:17px;}
+.setup-row.gs-row{display:flex;align-items:center;gap:12px;padding:10px 2px;}
+.setup-row.gs-row.gs-wide{flex-direction:column;align-items:stretch;gap:8px;}
+.gs-lbl{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.gs-lbl b{font-size:14px;font-weight:500;color:var(--color-text-primary);}
+.gs-lbl small{font-size:11.5px;line-height:1.35;color:var(--color-text-secondary);}
+.qrw-seg.gs-seg{flex-shrink:0;padding:3px;border-radius:10px;background:var(--color-background-tertiary);border:0.5px solid var(--color-border-secondary);}
+.qrw-seg.gs-seg .qrw-pill{top:3px;bottom:3px;left:3px;width:calc((100% - 6px) / var(--n));border-radius:8px;}
+.qrw-seg.gs-seg button{min-height:32px;padding:0 12px;font-size:13px;white-space:nowrap;border-radius:8px;}
+.gs-wide .qrw-seg.gs-seg button{padding:0 6px;}
+.gs-money{display:flex;align-items:center;flex-shrink:0;border:0.5px solid var(--color-border-secondary);border-radius:10px;overflow:hidden;}
+.gs-money button{all:unset;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--color-text-secondary);background:var(--color-background-tertiary);cursor:pointer;}
+.gs-money span{font-size:14px;color:var(--color-text-secondary);padding-left:8px;}
+.gs-money input.ie-num{width:58px;border:none;background:transparent;text-align:center;font-size:15px;font-weight:600;padding:0 4px 0 2px;}
+.gs-tline{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 2px;border-top:0.5px solid var(--color-border-tertiary);cursor:pointer;}
+.gs-tline .gs-tg{width:66px;flex-shrink:0;display:flex;flex-direction:column;}
+.gs-tline .gs-tg b{font-size:12.5px;font-weight:700;color:#13795B;}
+.gs-tline .gs-tg small{font-size:11px;color:var(--color-text-secondary);}
+.gs-tline .gs-tp{flex:1 1 auto;min-width:0;font-size:13.5px;color:var(--color-text-primary);line-height:1.35;}
+.gs-tline .gs-tp i{font-style:normal;font-size:11px;color:var(--color-text-secondary);padding:0 3px;}
+.gs-tline .gs-tc{color:var(--color-text-secondary);font-size:14px;}
+.gs-tline.gs-off{cursor:default;}
+.gs-tnote{font-size:11.5px;color:var(--color-text-secondary);padding:6px 2px 4px;line-height:1.4;}
+.gs-rot{all:unset;font-size:11.5px;font-weight:600;color:#13795B;border:0.5px solid var(--color-border-secondary);border-radius:7px;padding:4px 9px;cursor:pointer;margin-left:auto;font-family:inherit;letter-spacing:0;text-transform:none;}
+.gs-pair{display:flex;align-items:center;gap:12px;margin:6px 14px;padding:11px 12px;border-radius:11px;border:0.5px solid var(--color-border-secondary);cursor:pointer;}
+.gs-pair.on{border:1.5px solid #1D9E75;background:rgba(29,158,117,0.14);}
+.gs-pair .gs-dot{width:18px;height:18px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--color-border-secondary);flex-shrink:0;position:relative;}
+.gs-pair.on .gs-dot{border:2px solid #1D9E75;}
+.gs-pair.on .gs-dot::after{content:'';position:absolute;inset:3px;border-radius:50%;background:#1D9E75;}
+.gs-pair b{display:block;font-size:14px;font-weight:600;color:var(--color-text-primary);}
+.gs-pair small{display:block;font-size:11.5px;color:var(--color-text-secondary);margin-top:2px;}
+.gs-pair i{font-style:normal;font-size:11px;font-weight:400;color:var(--color-text-secondary);padding:0 4px;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .gs-tline .gs-tg b{color:#EFC456;}body:not(.force-light) .gs-rot{color:#3CC79A;}}
+body.force-dark .gs-tline .gs-tg b{color:#EFC456;}body.force-dark .gs-rot{color:#3CC79A;}
 /* v123.31 Group page. */
 .gp-head{position:sticky;top:0;z-index:10;background:var(--color-background-page);padding:14px 8px 0;}
 .gp-head-row{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;}
@@ -2270,7 +2307,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.74';
+const APP_VERSION='v123.75';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7047,12 +7084,12 @@ function renderPressCfgRows(r){
   const apOn=autoPressOnForRound(r);
   const apThr=autoPressThresholdForRound(r);
   const pv=pressValForRound(r);
-  let h='<div class="setup-row" style="gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Presses</span><label class="toggle"><input type="checkbox" '+(pOn?'checked':'')+' onchange="setPressesOnForRound('+r+',this.checked);_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>';
+  let h='<div class="setup-row gs-row"><div class="gs-lbl"><b>Presses</b><small>A new bet when a team falls behind</small></div><label class="toggle"><input type="checkbox" '+(pOn?'checked':'')+' onchange="setPressesOnForRound('+r+',this.checked);_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>';
   if(pOn){
-    h+='<div class="setup-row" style="gap:10px"><span style="font-size:12px;color:var(--color-text-secondary)">Press value ($)</span><input class="ie-num" type="number" placeholder="same as game" value="'+pv+'" style="width:90px" oninput="const v=this.value.trim();if(v===\'\'){delete WK.rounds['+r+'].pressVal;}else{WK.rounds['+r+'].pressVal=parseFloat(v);}autoSave();"/></div>';
-    h+='<div class="setup-row" style="gap:10px"><span style="font-size:12px;color:var(--color-text-secondary);flex:1">Auto-press</span><label class="toggle"><input type="checkbox" '+(apOn?'checked':'')+' onchange="setAutoPressOnForRound('+r+',this.checked);_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>';
+    h+='<div class="setup-row gs-row"><div class="gs-lbl"><b>Press value</b><small>Blank means the same as the game</small></div><div class="gs-money"><span>$</span><input class="ie-num" type="number" inputmode="decimal" placeholder="same" value="'+pv+'" style="width:70px" oninput="const v=this.value.trim();if(v===\'\'){delete WK.rounds['+r+'].pressVal;}else{WK.rounds['+r+'].pressVal=parseFloat(v);}autoSave();"/></div></div>';
+    h+='<div class="setup-row gs-row"><div class="gs-lbl"><b>Auto-press</b><small>Starts the press without asking</small></div><label class="toggle"><input type="checkbox" '+(apOn?'checked':'')+' onchange="setAutoPressOnForRound('+r+',this.checked);_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>';
     if(apOn){
-      h+='<div class="setup-row" style="border-bottom:none;gap:10px"><span style="font-size:12px;color:var(--color-text-secondary)">Threshold</span><select class="ie-sel" onchange="setAutoPressThresholdForRound('+r+',parseInt(this.value))"><option value="2"'+(apThr===2?' selected':'')+'>2 down</option><option value="3"'+(apThr===3?' selected':'')+'>3 down</option><option value="4"'+(apThr===4?' selected':'')+'>4 down</option></select></div>';
+      h+=_gsRow('Press when','How far behind a team is before it presses',_gsSeg([['2','2 down'],['3','3 down'],['4','4 down']],String(apThr),'setAutoPressThresholdForRound('+r+',parseInt(VAL))'),true);
     }
   }
   return h;
@@ -16725,22 +16762,153 @@ function _gsTwosSetupBody(r){
   h+=`<div class="gs-trip-note">Applies to the whole trip, not just this round.</div>`;
   return h;
 }
+// v123.75: the shared pieces of a game's settings.
+function _gsSec(t,extra){return '<div class="sec-hd gs-sec">'+t+(extra||'')+'</div>';}
+function _gsRow(label,sub,ctl,wide){
+  return '<div class="setup-row gs-row'+(wide?' gs-wide':'')+'"><div class="gs-lbl"><b>'+label+'</b>'+(sub?'<small>'+sub+'</small>':'')+'</div>'+ctl+'</div>';
+}
+// A sliding choice. opts: [[value,label],...]; tap(value) is the JS run after the pill moves,
+// as a string with VAL in place of the quoted value.
+function _gsSeg(opts,cur,tap,delay){
+  var n=opts.length,idx=0;
+  for(var i=0;i<n;i++)if(String(opts[i][0])===String(cur))idx=i;
+  var h='<div class="qrw-seg gs-seg" role="radiogroup" style="--n:'+n+'"><div class="qrw-pill" style="transform:translateX('+(idx*100)+'%)"></div>';
+  opts.forEach(function(o,i){
+    var v=String(o[0]),js=tap.split('VAL').join("'"+v+"'");
+    h+='<button type="button" role="radio" aria-checked="'+(i===idx)+'" class="'+(i===idx?'on':'')+'" data-val="'+v+'"'
+      +' onclick="if(this.className===\'on\')return;_wizSegTo(this.parentNode,this.dataset.val);'+(delay?'setTimeout(function(){'+js+'},260)':js)+'">'+o[1]+'</button>';
+  });
+  return h+'</div>';
+}
+// Dollar amount: the same box (blank means the trip default) with - and + around it.
+function _gsMoney(key,r,ph,stepAmt,attrs){
+  return '<div class="gs-money"><button type="button" aria-label="Less" onclick="_gsMoneyStep(this,\''+key+'\','+r+',-'+stepAmt+')">\u2212</button><span>$</span>'
+    +'<input class="ie-num" type="number" inputmode="decimal" placeholder="'+ph+'" value="'+_gsStakeVal(key,r)+'"'+(attrs||'')
+    +' oninput="_gsStakeSet(\''+key+'\','+r+',this.value);autoSave();s2WriteActive();"/>'
+    +'<button type="button" aria-label="More" onclick="_gsMoneyStep(this,\''+key+'\','+r+','+stepAmt+')">+</button></div>';
+}
+window._gsMoneyStep=function(btn,key,r,d){
+  if(!canEditTrip())return;
+  var inp=btn.parentNode.querySelector('input');if(!inp)return;
+  var cur=parseFloat(inp.value!==''?inp.value:inp.placeholder)||0;
+  var v=Math.max(0,Math.round((cur+d)*100)/100);
+  inp.value=v;_gsStakeSet(key,r,String(v));autoSave();s2WriteActive();
+};
+// ---- teams as one line per game (Match Play, Hammer) ----
+function _gsTeamsArr(game,r){return game==='hammer'?STATE.hammerTeams:STATE.mpTeams;}
+// The three ways a foursome of four splits into two pairs. k: who partners the first member.
+// Heads up reads a split as two 1 v 1 matches instead of two teams.
+function _gsSplits(mem){var m=mem.slice(0,4).sort(function(a,b){return a-b;});
+  return [[[m[0],m[1]],[m[2],m[3]]],[[m[0],m[2]],[m[1],m[3]]],[[m[0],m[3]],[m[1],m[2]]]];}
+function _gsSplitOf(game,r,tm,mem){
+  if(!tm||!Array.isArray(tm[0])||!Array.isArray(tm[1]))return -1;
+  var hu=game==='mp'&&isHeadsUp(r);
+  var p=hu?[[tm[0][0],tm[1][0]],[tm[0][1],tm[1][1]]]:[tm[0],tm[1]];
+  var sp=_gsSplits(mem),key=function(x){return x.slice().sort(function(a,b){return a-b;}).join(',');};
+  for(var k=0;k<3;k++){var a=key(sp[k][0]),b=key(sp[k][1]),c=key(p[0]),d=key(p[1]);if((a===c&&b===d)||(a===d&&b===c))return k;}
+  return -1;
+}
+function _gsWriteSplit(game,r,fi,si,k,mem){
+  var arr=_gsTeamsArr(game,r);if(!arr||!arr[r]||!arr[r][fi])return;
+  var sp=_gsSplits(mem)[k];
+  arr[r][fi][si]=(game==='mp'&&isHeadsUp(r))?[[sp[0][0],sp[1][0]],[sp[0][1],sp[1][1]]]:[sp[0].slice(),sp[1].slice()];
+}
+function _gsSplitLabel(game,r,sp){
+  var f=function(pi){var p=WK.players[pi];return _gtEsc((p&&p.first)||displayName(pi));};
+  if(game==='mp'&&isHeadsUp(r))return f(sp[0][0])+'<i>v</i>'+f(sp[0][1])+' \u00b7 '+f(sp[1][0])+'<i>v</i>'+f(sp[1][1]);
+  return f(sp[0][0])+' &amp; '+f(sp[0][1])+'<i>v</i>'+f(sp[1][0])+' &amp; '+f(sp[1][1]);
+}
+function _gsSegsFor(game,r,fi){return game==='hammer'?getSegments(hammerSegsForRound(r,fi)):getSegments(mpGamesForRound(r,fi),roundHoleCount(r));}
+function _gsTeamsHtml(game,r){
+  var fl=flightsForRound(r),multi=fl.length>1,h='';
+  var sel=game==='hammer'?(STATE.hammerViewFlight==null?-1:STATE.hammerViewFlight):(STATE.mpViewFlight===undefined?-1:STATE.mpViewFlight);
+  var off=game==='hammer'?holeOffset(r):0;
+  var anyRot=false;
+  for(var fi=0;fi<fl.length;fi++){
+    if(multi&&sel!==-1&&sel!==fi)continue;
+    var mem=(fl[fi]||[]).filter(function(pi){return pi>=0;});
+    var segs=_gsSegsFor(game,r,fi);
+    if(multi)h+='<div style="display:flex;align-items:center;gap:7px;padding:8px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(fi+1)+'</span></div>';
+    if(mem.length<4){
+      h+=segs.map(function(seg,si){return '<div class="gs-tline gs-off"><div class="gs-tg"><b>Game '+(si+1)+'</b><small>'+(seg.start+off+1)+' to '+(seg.end+off)+'</small></div><div class="gs-tp">'
+        +mem.map(function(pi){return _gtEsc(displayName(pi));}).join('<i>v</i>')+'</div></div>';}).join('');
+      continue;
+    }
+    if(segs.length>1)anyRot=true;
+    var arr=_gsTeamsArr(game,r);
+    h+=segs.map(function(seg,si){
+      var tm=arr&&arr[r]&&arr[r][fi]?arr[r][fi][si]:null,k=_gsSplitOf(game,r,tm,mem);
+      var lbl=k>=0?_gsSplitLabel(game,r,_gsSplits(mem)[k]):'Pick the teams';
+      return '<div class="gs-tline" onclick="window._gsPairOpen(\''+game+'\','+r+','+fi+','+si+')"><div class="gs-tg"><b>Game '+(si+1)+'</b><small>'+(seg.start+off+1)+' to '+(seg.end+off)+'</small></div>'
+        +'<div class="gs-tp">'+lbl+'</div><span class="gs-tc">\u203a</span></div>';
+    }).join('');
+  }
+  var rot=anyRot&&canEditTrip()?'<button type="button" class="gs-rot" onclick="window._gsRotate(\''+game+'\','+r+')">Rotate partners</button>':'';
+  return _gsSec('Teams',rot)+_gsLaneLabelHtml(r)+h
+    +'<div class="gs-tnote">'+(anyRot?'Each game is its own match with its own teams. Tap a game to change them.':'Tap the game to change the teams.')+'</div>';
+}
+function _gsTeamsChanged(){autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderScorecard();if(typeof renderMPHoleBox==='function')renderMPHoleBox();}
+// Pick game si's split. Earlier games never change. Each later game keeps its split if no
+// earlier game has it, else takes the first one left, so partners stay unique by default.
+window._gsPickSplit=function(game,r,fi,si,k){
+  if(!canEditTrip())return;
+  var mem=(flightsForRound(r)[fi]||[]).filter(function(pi){return pi>=0;});if(mem.length<4)return;
+  var arr=_gsTeamsArr(game,r);if(!arr||!arr[r]||!arr[r][fi])return;
+  _gsWriteSplit(game,r,fi,si,k,mem);
+  var segs=_gsSegsFor(game,r,fi),used={};
+  for(var j=0;j<=si;j++){var kj=_gsSplitOf(game,r,arr[r][fi][j],mem);if(kj>=0)used[kj]=1;}
+  for(var j2=si+1;j2<segs.length;j2++){
+    var cur=_gsSplitOf(game,r,arr[r][fi][j2],mem);
+    if(cur<0||used[cur]){var nk=[0,1,2].filter(function(x){return !used[x];})[0];if(nk!==undefined){_gsWriteSplit(game,r,fi,j2,nk,mem);cur=nk;}}
+    if(cur>=0)used[cur]=1;
+  }
+  var sh=document.getElementById('gsPairSheet');if(sh)sh.remove();
+  _gsTeamsChanged();
+};
+window._gsRotate=function(game,r){
+  if(!canEditTrip())return;
+  var fl=flightsForRound(r),arr=_gsTeamsArr(game,r);
+  fl.forEach(function(g,fi){
+    var mem=(g||[]).filter(function(pi){return pi>=0;});
+    if(mem.length<4||!arr||!arr[r]||!arr[r][fi])return;
+    _gsSegsFor(game,r,fi).forEach(function(_,si){_gsWriteSplit(game,r,fi,si,si%3,mem);});
+  });
+  _gsTeamsChanged();
+};
+window._gsPairOpen=function(game,r,fi,si){
+  var mem=(flightsForRound(r)[fi]||[]).filter(function(pi){return pi>=0;});if(mem.length<4)return;
+  var arr=_gsTeamsArr(game,r);if(!arr||!arr[r]||!arr[r][fi])return;
+  var segs=_gsSegsFor(game,r,fi),seg=segs[si];if(!seg)return;
+  var off=game==='hammer'?holeOffset(r):0,cur=_gsSplitOf(game,r,arr[r][fi][si],mem),sp=_gsSplits(mem);
+  var ed=canEditTrip(),hu=game==='mp'&&isHeadsUp(r);
+  var others=function(k){var g=[];segs.forEach(function(_,j){if(j!==si&&_gsSplitOf(game,r,arr[r][fi][j],mem)===k)g.push(j+1);});return g;};
+  var h='<div style="background:#0F6E56;padding:13px 14px"><div style="font-size:10px;color:#9FE1CB;letter-spacing:0.06em;text-transform:uppercase">'+(game==='hammer'?'Hammer':'Match Play')+' \u00b7 Game '+(si+1)+'</div>'
+    +'<div style="font-size:17px;font-weight:600;color:#E1F5EE;margin-top:2px">Holes '+(seg.start+off+1)+' to '+(seg.end+off)+'</div></div>'
+    +'<div class="fs-sh-sec">'+(hu?'Pick the matches':'Pick the teams')+'</div>';
+  sp.forEach(function(x,k){
+    var o=others(k),also=o.length?'Game'+(o.length>1?'s ':' ')+o.join(' and ')+(o.length>1?' have':' has')+' this':'';
+    var note=k===cur?('Selected'+(also?' · '+also+' too':'')):also;
+    h+='<div class="gs-pair'+(k===cur?' on':'')+'"'+(ed?' onclick="window._gsPickSplit(\''+game+'\','+r+','+fi+','+si+','+k+')"':'')+'><span class="gs-dot"></span><span><b>'+_gsSplitLabel(game,r,x)+'</b>'+(note?'<small>'+note+'</small>':'')+'</span></div>';
+  });
+  if(segs.length>1)h+='<div class="gs-tnote" style="padding:8px 14px 0">Later games change to keep partners new. Earlier games keep theirs.</div>';
+  h+='<div style="padding:12px 14px calc(16px + env(safe-area-inset-bottom))"><button type="button" style="width:100%;padding:12px;font-size:14px;font-weight:600;border-radius:10px;background:var(--color-background-secondary);color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary);font-family:inherit" onclick="document.getElementById(\'gsPairSheet\').remove()">Done</button></div>';
+  var ex=document.getElementById('gsPairSheet');if(ex)ex.remove();
+  var ov=document.createElement('div');ov.id='gsPairSheet';
+  ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center';
+  ov.innerHTML='<div style="width:100%;max-width:480px;background:var(--color-background-primary);border-radius:16px 16px 0 0;overflow:hidden">'+h+'</div>';
+  ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
+  document.body.appendChild(ov);
+};
+function _gsSegOpts(r){return roundHoleCount(r)===9?[[1,'1 \u00d7 9'],[3,'3 \u00d7 3']]:[[1,'1 \u00d7 18'],[2,'2 \u00d7 9'],[3,'3 \u00d7 6']];}
+function _gsSegSub(r){return roundHoleCount(r)===9?'One match over 9 holes, or three 3-hole matches':'One match over 18 holes, or separate 9s or 6s';}
+function _gsSettleRow(cur,tap){return _gsRow('Settlement','Each player wins the amount, or the team splits it',_gsSeg([['perplayer','Per player'],['perteam','Per team']],cur,tap),true);}
 function _gsMPSetupBody(r){
   const _lfi=_segLaneFi(r);
-  const mpG=mpGamesForRound(r,_lfi),_th_mp=roundHoleCount(r),mpSegs=getSegments(mpG,_th_mp);
+  const mpG=mpGamesForRound(r,_lfi);
   const _hu=isHeadsUp(r),_np=WK.players.length;
-  let h=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Segments</span><select class="ie-sel" onchange="setMPGamesForRound(${r},parseInt(this.value))">${segOptionHtml(roundHoleCount(r),mpG)}</select></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per game</span>$<input class="ie-num" type="number" placeholder="${_gsStakePh('gameVal',r,WK.gameVal)}" value="${_gsStakeVal('gameVal',r)}" style="width:80px" oninput="_gsStakeSet('gameVal',${r},this.value);autoSave();s2WriteActive();"/></div>`;
-  if(_np>=4){
-    h+=`<div style="display:flex;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);overflow:hidden;margin:8px 0 4px">`
-    +`<div onclick="_setMPFormat(${r},'team')" `
-    +`style="flex:1;padding:7px 8px;font-size:12px;text-align:center;cursor:pointer;${!_hu?'background:#1D9E75;color:#E1F5EE;font-weight:500':'background:var(--color-background-secondary);color:var(--color-text-secondary)'}">Team</div>`
-    +`<div onclick="_setMPFormat(${r},'headsup')" `
-    +`style="flex:1;padding:7px 8px;font-size:12px;text-align:center;cursor:pointer;${_hu?'background:#1D9E75;color:#E1F5EE;font-weight:500':'background:var(--color-background-secondary);color:var(--color-text-secondary)'}">Heads up</div>`
-    +`</div>`;
-  }
-  const _mpFl=flightsForRound(r);const _mpMulti=_mpFl.length>1;let _mpSel=(STATE.mpViewFlight===undefined?-1:STATE.mpViewFlight);h+=_gsLaneLabelHtml(r);for(let _fi=0;_fi<_mpFl.length;_fi++){if(_mpMulti&&_mpSel!==-1&&_mpSel!==_fi)continue;const _mem=_mpFl[_fi]||[];if(_mpMulti){h+='<div style="display:flex;align-items:center;gap:7px;padding:6px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,_fi)+'</span></div>';}h+=getSegments(mpGamesForRound(r,_fi),_th_mp).map((seg,si)=>{const tm=STATE.mpTeams[r]?.[_fi]?.[si];if(!tm)return'';if(_hu){const _nMatches=tm[0].length;const a0=tm[0][0],a1=tm[0][1],b0=tm[1][0],b1=tm[1][1];return`<div class="team-game-row">`+`<div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}-${seg.end}</div></div>`+`<div style="flex:1">`+`<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">`+`<span style="font-size:11px;color:#1D9E75;width:44px">M1:</span>`+`<select class="team-dropdown" onchange="setDropHU(${si},0,0,parseInt(this.value),${r},${_fi})">${pOpts(a0,_mem)}</select>`+`<span style="font-size:11px;color:var(--color-text-tertiary)">vs</span>`+`<select class="team-dropdown" onchange="setDropHU(${si},1,0,parseInt(this.value),${r},${_fi})">${pOpts(b0,_mem)}</select>`+`</div>`+(_nMatches>1?`<div style="display:flex;align-items:center;gap:4px">`+`<span style="font-size:11px;color:#185FA5;width:44px">M2:</span>`+`<select class="team-dropdown" onchange="setDropHU(${si},0,1,parseInt(this.value),${r},${_fi})">${pOpts(a1,_mem)}</select>`+`<span style="font-size:11px;color:var(--color-text-tertiary)">vs</span>`+`<select class="team-dropdown" onchange="setDropHU(${si},1,1,parseInt(this.value),${r},${_fi})">${pOpts(b1,_mem)}</select>`+`</div>`:'')+`</div></div>`;}else{const[a0,a1]=tm[0],[b0,b1]=tm[1];return`<div class="team-game-row">`+`<div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}-${seg.end}</div></div>`+`<div style="flex:1">`+`<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">`+`<span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span>`+`<select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},false,${_fi})">${pOpts(a0,_mem)}</select>`+`<select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},false,${_fi})">${pOpts(a1,_mem)}</select>`+`</div>`+`<div style="display:flex;align-items:center;gap:4px">`+`<span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span>`+`<select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},false,${_fi})">${pOpts(b0,_mem)}</select>`+`<select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},false,${_fi})">${pOpts(b1,_mem)}</select>`+`</div></div></div>`;}}).join('');}
-  if(_hu){h+=`<div class="setup-row"><div style="flex:1"><div style="font-size:13px;color:var(--color-text-secondary)">Net off match low</div><div style="font-size:11px;color:var(--color-text-tertiary);margin-top:1px">On: higher handicap gets the difference. Off: full handicap.</div></div><label class="toggle"><input type="checkbox" ${huNetOffMatchLow(r,_gsLane()==='both'?null:_gsLane())?'checked':''} onchange="_gsOptSet('mpHUNetOffMatchLow',${r},this.checked);autoSave();s2WriteActive();renderScorecard();renderBanner();renderMPHoleBox();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>`;}if(!_hu){h+=`<div class="setup-row" style="gap:10px"><span style="font-size:13px;color:var(--color-text-secondary);flex:1">Settlement</span><select class="ie-sel" onchange="WK.mpSettle=this.value;autoSave();s2WriteActive()"><option value="perplayer"${(WK.mpSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.mpSettle==='perteam'?' selected':''}>Per team</option></select></div>`;}
+  let h=_gsSec('Format');
+  h+=_gsRow('Segments',_gsSegSub(r),_gsSeg(_gsSegOpts(r),mpG,'setMPGamesForRound('+r+',parseInt(VAL));_gsRefreshAfterEdit()',true),true);
+  if(_np>=4)h+=_gsRow('Match type','Two against two on best ball, or one against one',_gsSeg([['team','Team'],['headsup','Heads up']],_hu?'headsup':'team','_setMPFormat('+r+',VAL);_gsRefreshAfterEdit()',true));
   // Unfinished match. The key has been read, defaulted and persisted since v119.30 with
   // no writer anywhere, so an undecided segment always went to the leader and nobody
   // could choose otherwise. Same two options and the same words as Razzle's control, one
@@ -16749,8 +16917,14 @@ function _gsMPSetupBody(r){
   // _gsOptVal/_gsOptSet carry the lane, so this is per foursome wherever the sheet is.
   // Outside the !_hu branch on purpose: _mpSegDisposition governs both lanes.
   const _mpFin=_gsOptVal('mpFinalSeg',r,'leader');
-  h+=`<div class="setup-row" style="gap:10px"><div style="flex:1"><div style="font-size:13px;color:var(--color-text-secondary)">Unfinished match</div><div style="font-size:11px;color:var(--color-text-tertiary);margin-top:1px">When play ends before a match is decided.</div></div><select class="ie-sel" onchange="_gsOptSet('mpFinalSeg',${r},this.value);autoSave();s2WriteActive();_gsRefreshAfterEdit()"><option value="leader"${_mpFin!=='void'?' selected':''}>Leader wins</option><option value="void"${_mpFin==='void'?' selected':''}>No winner</option></select></div>`;
+  h+=_gsRow('Unfinished match','When play ends before a match is decided',_gsSeg([['leader','Leader wins'],['void','No winner']],_mpFin!=='void'?'leader':'void',"_gsOptSet('mpFinalSeg',"+r+",VAL);autoSave();s2WriteActive()"),true);
+  if(_hu){h+=`<div class="setup-row gs-row"><div class="gs-lbl"><b>Net off match low</b><small>On: the higher handicap gets the difference. Off: full handicap.</small></div><label class="toggle"><input type="checkbox" ${huNetOffMatchLow(r,_gsLane()==='both'?null:_gsLane())?'checked':''} onchange="_gsOptSet('mpHUNetOffMatchLow',${r},this.checked);autoSave();s2WriteActive();renderScorecard();renderBanner();renderMPHoleBox();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>`;}
+  h+=_gsSec('Money');
+  h+=_gsRow('Per game','Each match',_gsMoney('gameVal',r,_gsStakePh('gameVal',r,WK.gameVal),5));
+  if(!_hu)h+=_gsSettleRow(WK.mpSettle||'perplayer','WK.mpSettle=VAL;autoSave();s2WriteActive()');
+  h+=_gsSec('Presses');
   h+=renderPressCfgRows(r);
+  h+=_gsTeamsHtml('mp',r);
   return h;
 }
 function _hammerFlip(){
@@ -16769,23 +16943,19 @@ function _gsHammerSetupBody(r){
   if(!STATE.hammerTeams)STATE.hammerTeams=WK.rounds.map((_,ri)=>flightsForRound(ri).map((_f,fi)=>defaultHammerTeamsForFlight(ri,fi)));
   if(!STATE.hammerTeams[r])STATE.hammerTeams[r]=flightsForRound(r).map((_f,fi)=>defaultHammerTeamsForFlight(r,fi));
   const _lfi=_segLaneFi(r);
-  const hSegs=hammerSegsForRound(r,_lfi),segs=getSegments(hSegs);
-  let h=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Segments</span><select class="ie-sel" onchange="setHammerSegsForRound(${r},parseInt(this.value))">${segOptionHtml(roundHoleCount(r),hSegs)}</select></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per hole</span>$<input class="ie-num" type="number" placeholder="${_gsStakePh('hammerVal',r,WK.hammerVal||2)}" value="${_gsStakeVal('hammerVal',r)}" step="0.25" style="width:80px" oninput="_gsStakeSet('hammerVal',${r},this.value);autoSave();s2WriteActive();"/></div>`;
-  {let _hgFl=flightsForRound(r);let _hgMulti=_hgFl.length>1;let _hgSel=(STATE.hammerViewFlight===undefined||STATE.hammerViewFlight===null?-1:STATE.hammerViewFlight);
-  h+=_gsLaneLabelHtml(r);
-  for(let _fi=0;_fi<_hgFl.length;_fi++){
-    if(_hgMulti&&_hgSel!==-1&&_hgSel!==_fi)continue;
-    const _mem=_hgFl[_fi]||[];
-    if(_hgMulti){h+='<div style="display:flex;align-items:center;gap:7px;padding:6px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,_fi)+'</span></div>';}
-    h+=getSegments(hammerSegsForRound(r,_fi)).map((seg,si)=>{const tm=STATE.hammerTeams?.[r]?.[_fi]?.[si];if(_mem.length<4){return `<div class="team-game-row"><div class="team-game-label">Game ${si+1}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</div></div><div style="flex:1;display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:var(--color-text-primary)">${displayName(_mem[0])}</span><span style="font-size:11px;color:var(--color-text-tertiary)">vs</span><span style="font-size:13px;color:var(--color-text-primary)">${displayName(_mem[1])}</span></div></div>`;}if(!tm||!Array.isArray(tm[0])||!Array.isArray(tm[1]))return'';const[a0,a1]=tm[0],[b0,b1]=tm[1];return `<div class="team-game-row"><div class="team-game-label">Game ${si+1}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setHammerDrop(${si},'a0',parseInt(this.value),${r},${_fi})">${pOpts(a0,_mem)}</select><select class="team-dropdown" onchange="setHammerDrop(${si},'a1',parseInt(this.value),${r},${_fi})">${pOpts(a1,_mem)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setHammerDrop(${si},'b0',parseInt(this.value),${r},${_fi})">${pOpts(b0,_mem)}</select><select class="team-dropdown" onchange="setHammerDrop(${si},'b1',parseInt(this.value),${r},${_fi})">${pOpts(b1,_mem)}</select></div></div></div>`;}).join('');
-  }}
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Scoring</span><select class="ie-sel" onchange="_gsOptSet('hammerScoring',${r},this.value);autoSave();s2WriteActive()"><option value="bestball"${_gsOptVal('hammerScoring',r,WK.hammerScoring||'bestball')==='bestball'?' selected':''}>Better ball</option><option value="combined"${_gsOptVal('hammerScoring',r,WK.hammerScoring||'bestball')==='combined'?' selected':''}>Combined net</option></select></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Hammer mode</span><select class="ie-sel" onchange="_gsOptSet('hammerMode',${r},this.value);autoSave();s2WriteActive();_gsRefreshAfterEdit()"><option value="any"${_gsOptVal('hammerMode',r,WK.hammerMode||'any')==='any'?' selected':''}>Anyone anytime</option><option value="alt"${_gsOptVal('hammerMode',r,WK.hammerMode||'any')==='alt'?' selected':''}>Alternating</option></select></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Max hammers / hole</span><select class="ie-sel" onchange="_gsOptSet('hammerMax',${r},parseInt(this.value));autoSave();s2WriteActive()"><option value="0"${_gsOptVal('hammerMax',r,WK.hammerMax!=null?WK.hammerMax:0)===0?' selected':''}>Unlimited</option><option value="1"${_gsOptVal('hammerMax',r,WK.hammerMax!=null?WK.hammerMax:0)===1?' selected':''}>1</option><option value="2"${_gsOptVal('hammerMax',r,WK.hammerMax!=null?WK.hammerMax:0)===2?' selected':''}>2</option></select></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Settlement</span><select class="ie-sel" onchange="_gsOptSet('hammerPayout',${r},this.value);autoSave();s2WriteActive()"><option value="perplayer"${_gsOptVal('hammerPayout',r,WK.hammerPayout||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${_gsOptVal('hammerPayout',r,WK.hammerPayout||'perplayer')==='perteam'?' selected':''}>Per team</option></select></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">After a halve</span><select class="ie-sel" onchange="_gsOptSet('hammerHalve',${r},this.value);autoSave();s2WriteActive()"><option value="carry"${_gsOptVal('hammerHalve',r,WK.hammerHalve||'carry')==='carry'?' selected':''}>Carry forward</option><option value="reset"${_gsOptVal('hammerHalve',r,WK.hammerHalve||'carry')==='reset'?' selected':''}>Reset</option></select></div>`;
-  
+  const hSegs=hammerSegsForRound(r,_lfi);
+  const _o=(k,d)=>_gsOptVal(k,r,d);
+  const _set=k=>"_gsOptSet('"+k+"',"+r+",VAL);autoSave();s2WriteActive()";
+  let h=_gsSec('Format');
+  h+=_gsRow('Segments',_gsSegSub(r),_gsSeg(_gsSegOpts(r),hSegs,'setHammerSegsForRound('+r+',parseInt(VAL));_gsRefreshAfterEdit()',true),true);
+  h+=_gsRow('Scoring','The team\u2019s best net, or both nets added',_gsSeg([['bestball','Better ball'],['combined','Combined']],_o('hammerScoring',WK.hammerScoring||'bestball'),_set('hammerScoring')));
+  h+=_gsRow('Hammer mode','Either team any time, or the teams take turns',_gsSeg([['any','Anyone'],['alt','Alternating']],_o('hammerMode',WK.hammerMode||'any'),_set('hammerMode')+';_gsRefreshAfterEdit()',true),true);
+  h+=_gsRow('Max hammers a hole','How many times the value can double on one hole',_gsSeg([['0','No limit'],['1','1'],['2','2']],String(_o('hammerMax',WK.hammerMax!=null?WK.hammerMax:0)),"_gsOptSet('hammerMax',"+r+",parseInt(VAL));autoSave();s2WriteActive()"),true);
+  h+=_gsRow('After a halve','The hole\u2019s value rolls on, or starts over',_gsSeg([['carry','Carry'],['reset','Reset']],_o('hammerHalve',WK.hammerHalve||'carry'),_set('hammerHalve')));
+  h+=_gsSec('Money');
+  h+=_gsRow('Per hole','Before any hammers',_gsMoney('hammerVal',r,_gsStakePh('hammerVal',r,WK.hammerVal||2),1,' step="0.25"'));
+  h+=_gsSettleRow(_o('hammerPayout',WK.hammerPayout||'perplayer'),_set('hammerPayout'));
+  h+=_gsTeamsHtml('hammer',r);
   return h;
 }
 function _gsSetupPlaceholder(def,r){
