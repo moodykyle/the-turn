@@ -1184,6 +1184,12 @@ body.force-light .sec-hd.gs-sec{color:#13795B;}
 .gs-desc>span.off{visibility:hidden;}
 .gs-rzpos{display:flex;align-items:center;gap:10px;}
 .gs-rzpos>span{width:36px;flex-shrink:0;font-size:12px;font-weight:700;color:var(--color-text-secondary);}
+.gs-wsel{flex:1 1 0;min-width:0;display:flex;position:relative;}
+.gs-rzpos>.gs-wsel{width:auto;font-size:14px;font-weight:400;}
+.gs-dd.gs-wd{padding-right:70px;}
+.gs-wtag{position:absolute;right:30px;top:50%;transform:translateY(-50%);font-style:normal;font-size:11px;font-weight:700;letter-spacing:0.04em;color:#13795B;pointer-events:none;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .gs-wtag{color:#EFC456;}}
+body.force-dark .gs-wtag{color:#EFC456;}
 .gs-rzm{display:flex;align-items:center;gap:12px;padding:9px 2px;border-top:0.5px solid var(--color-border-tertiary);}
 .gs-rzn{width:58px;flex-shrink:0;display:flex;flex-direction:column;}
 .gs-rzn b{font-size:12px;font-weight:700;color:#13795B;}
@@ -2360,7 +2366,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.87';
+const APP_VERSION='v123.88';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -16782,32 +16788,49 @@ function _gsVegasSetupBody(r){
   return h;
 }
 function _gsWolfSetupBody(r){
-  const fl=flightsForRound(r);
-  const multi=fl.length>1;
-  const needsFoursomes=fl.length===1&&(fl[0]||[]).length>4;
-  let h='';
-  if(needsFoursomes){
-    h+=_wolfNeedsFoursomesHtml(true);
-  }else{
-  h+=`<div class="setup-row" style="display:block;padding-bottom:4px"><div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:2px">Tee order</div><div style="font-size:11px;color:var(--color-text-tertiary)">Hitting order each hole. Wolf placement sets who hits last (wolf) or first.</div></div>`;
-  fl.forEach((flightPlayers,fi)=>{
-    if(fl.length>1&&STATE.wolfViewFlight!=null&&STATE.wolfViewFlight!==-1&&STATE.wolfViewFlight!==fi)return;
-    const wOrd=_ensureWolfOrderSlot(r,fi);
-    if(multi){
-      h+=`<div style="display:flex;align-items:center;gap:7px;padding:8px 12px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${_flightsAccent0(fi)}"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome ${fi+1}</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">${flightMemberInitials(r,fi)}</span></div>`;
-    }
-    h+=`<div style="padding:0 0 8px">`;
-    for(let pos=0;pos<4;pos++){h+=`<div style="display:flex;align-items:center;gap:6px;margin:0 12px 4px"><span style="font-size:11px;color:var(--color-text-tertiary);width:40px">Pos ${pos+1}</span><select class="team-dropdown" onchange="setWolfOrder(${r},${pos},parseInt(this.value),${fi})">${pOptsForFlight(wOrd[pos],flightPlayers)}</select></div>`;}
-    h+=`</div>`;
-    if(multi&&fi<fl.length-1)h+=`<div style="height:0.5px;background:var(--color-border-tertiary)"></div>`;
-  });
-  }
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Wolf placement</span><select class="ie-sel" onchange="_gsOptSet('wolfPlacement',${r},this.value);renderScorecard();autoSave();s2WriteActive()"><option value="last"${(_gsOptVal('wolfPlacement',r,WK.wolfPlacement||'last')==='last')?' selected':''}>Last to hit</option><option value="first"${(_gsOptVal('wolfPlacement',r,WK.wolfPlacement)==='first')?' selected':''}>First to hit</option></select></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per point</span>$<input class="ie-num" type="number" placeholder="${_gsStakePh('wolfVal',r,WK.wolfVal||1)}" value="${_gsStakeVal('wolfVal',r)}" step="0.25" style="width:80px" oninput="_gsStakeSet('wolfVal',${r},this.value);autoSave();s2WriteActive();"/></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Blind wolf</span><select class="ie-sel" onchange="_gsOptSet('wolfBlindMult',${r},parseInt(this.value));autoSave();s2WriteActive()"><option value="2"${(_gsOptVal('wolfBlindMult',r,WK.wolfBlindMult)||2)===2?' selected':''}>2x points</option><option value="3"${(_gsOptVal('wolfBlindMult',r,WK.wolfBlindMult)||2)===3?' selected':''}>3x points</option><option value="1"${(_gsOptVal('wolfBlindMult',r,WK.wolfBlindMult)||2)===1?' selected':''}>Off</option></select></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Lone wolf scoring</span><select class="ie-sel" onchange="_gsOptSet('wolfLoneMode',${r},this.value);autoSave();s2WriteActive()"><option value="A"${(_gsOptVal('wolfLoneMode',r,WK.wolfLoneMode||'A')==='A')?' selected':''}>vs best net of 3</option><option value="B"${(_gsOptVal('wolfLoneMode',r,WK.wolfLoneMode||'A')==='B')?' selected':''}>score x2 vs best 2</option></select></div>`;
-  h+=`<div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Partner scoring</span><select class="ie-sel" onchange="_gsOptSet('wolfPartnerMode',${r},this.value);autoSave();s2WriteActive()"><option value="bestball"${(_gsOptVal('wolfPartnerMode',r,WK.wolfPartnerMode||'bestball')==='bestball')?' selected':''}>Best ball</option><option value="combined"${(_gsOptVal('wolfPartnerMode',r,WK.wolfPartnerMode||'bestball')==='combined')?' selected':''}>Combined net</option></select></div>`;
+  // v123.88: the Match Play pattern. Format, Money, then the tee order in Razzle's rotation look.
+  const _o=(k,d)=>_gsOptVal(k,r,d);
+  const _set=k=>"_gsOptSet('"+k+"',"+r+",VAL);autoSave();s2WriteActive()";
+  const OFF=' class="off" aria-hidden="true"';
+  const lone=_o('wolfLoneMode',WK.wolfLoneMode||'A')==='B'?'B':'A';
+  let h=_gsSec('Format');
+  h+=_gsRow('Wolf hits','Where the wolf tees off',_gsSeg([['last','Last'],['first','First']],_o('wolfPlacement',WK.wolfPlacement||'last')==='first'?'first':'last',_set('wolfPlacement')+';renderScorecard();_gsRefreshAfterEdit()',true));
+  h+=_gsRow('Blind wolf','Called before anyone hits',_gsSeg([['2','2x'],['3','3x'],['1','Off']],String(_o('wolfBlindMult',WK.wolfBlindMult)||2),"_gsOptSet('wolfBlindMult',"+r+",parseInt(VAL));autoSave();s2WriteActive()"));
+  // Kyle 13 Oct: the line under Lone wolf explains the pick, and breaks before "vs" ("vs their best": "best net" wrapped at 360px). Both lines sit in
+  // one place, the unused one hidden, so the row never changes height.
+  h+='<div class="setup-row gs-row" data-k="Lone wolf"><div class="gs-lbl"><b>Lone wolf</b><small class="gs-alt">'
+    +'<span'+(lone==='A'?'':OFF)+'>Wolf net<br>vs their best</span><span'+(lone==='B'?'':OFF)+'>Wolf net ×2<br>vs their best 2</span></small></div>'
+    +_gsSeg([['A','Best ball'],['B','Doubled']],lone,_set('wolfLoneMode')+';_gsRefreshAfterEdit()',true)+'</div>';
+  h+=_gsRow('With partner','Best net, or both added',_gsSeg([['bestball','Best ball'],['combined','Combined']],_o('wolfPartnerMode',WK.wolfPartnerMode||'bestball')==='combined'?'combined':'bestball',_set('wolfPartnerMode')));
+  h+=_gsSec('Money');
+  h+=_gsRow('Per point','Each point<br>±$1 or type any',_gsMoney('wolfVal',r,_gsStakePh('wolfVal',r,WK.wolfVal||1),1,' step="0.25"'));
+  h+=_gsWolfOrderHtml(r);
   return h;
+}
+// v123.88: Wolf's tee order. Same lane rules and foursome pill as Razzle's rotation order.
+function _gsWolfOrderHtml(r){
+  var fl=flightsForRound(r),multi=fl.length>1,h='';
+  if(fl.length===1&&(fl[0]||[]).length>4)return _gsSec('Tee order')+_wolfNeedsFoursomesHtml(true);
+  var ln=_gsLane(),sel=(ln==='both'||ln==null)?-1:ln;
+  var fp=_gsFsPill('wolf',r,fl,sel),pick=fp.pick,pillRow=fp.html;
+  var nm=function(pi){return _gtEsc(displayName(pi));};
+  for(var fi=0;fi<fl.length;fi++){
+    if(multi&&sel!==-1&&sel!==fi)continue;
+    if(pick>=0&&fi!==pick)continue;
+    var mem=(fl[fi]||[]).filter(function(pi){return pi>=0;});
+    if(mem.length<4){h+='<div class="gs-tnote">Needs 4 players for Wolf.</div>';continue;}
+    var ord=_ensureWolfOrderSlot(r,fi);
+    var wpos=roundValFs('wolfPlacement',r,fi,WK.wolfPlacement||'last')==='first'?0:3;
+    var dis=isReadOnly?' disabled':'';
+    h+='<div class="gs-tblk"><div class="gs-th"><b>Hole 1</b><small>The order moves up one each hole</small></div>';
+    for(var pos=0;pos<4;pos++){
+      h+='<div class="gs-rzpos"><span>Pos '+(pos+1)+'</span><span class="gs-wsel"><select class="gs-dd'+(pos===wpos?' gs-wd':'')+'"'+dis+' onchange="setWolfOrder('+r+','+pos+',parseInt(this.value),'+fi+')">'
+        +mem.map(function(pi){return '<option value="'+pi+'"'+(pi===ord[pos]?' selected':'')+'>'+nm(pi)+'</option>';}).join('')+'</select>'
+        +(pos===wpos?'<i class="gs-wtag">WOLF</i>':'')+'</span></div>';
+    }
+    h+='</div>';
+  }
+  return _gsSec('Tee order')+_gsLaneLabelHtml(r)+pillRow+h+'<div class="gs-tnote">Pick anyone in any box. A player already in the order swaps places.</div>';
 }
 function _gsTwosSetupBody(r){
   const pot=(WK.twosAmt*WK.players.length).toFixed(0);
