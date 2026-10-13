@@ -2334,7 +2334,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.80';
+const APP_VERSION='v123.81';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -2962,7 +2962,7 @@ async function s2WriteActive(){
           ...(Array.isArray(rd.fsGames)&&rd.fsGames.length&&{fsGames:rd.fsGames}),
           ...(Array.isArray(rd.fsEndHoles)&&rd.fsEndHoles.length&&{fsEndHoles:rd.fsEndHoles}),
           ...(rd.shortInStandings!=null&&{shortInStandings:rd.shortInStandings}),
-          ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),
+          ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),...(rd.mpUnique!=null&&{mpUnique:rd.mpUnique}),...(rd.hammerUnique!=null&&{hammerUnique:rd.hammerUnique}),
           ...(rd.hammerVal!=null&&{hammerVal:rd.hammerVal}),
           ...(rd.hammerSegs!=null&&{hammerSegs:rd.hammerSegs}),
           ...(rd.hammerMode!=null&&{hammerMode:rd.hammerMode}),
@@ -3359,7 +3359,7 @@ async function s2ReadTrip(tripId){
         ...(Array.isArray(rd.fsGames)&&rd.fsGames.length&&{fsGames:rd.fsGames}),
         ...(Array.isArray(rd.fsEndHoles)&&rd.fsEndHoles.length&&{fsEndHoles:rd.fsEndHoles}),
         ...(rd.shortInStandings!=null&&{shortInStandings:rd.shortInStandings}),
-        ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),
+        ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),...(rd.mpUnique!=null&&{mpUnique:rd.mpUnique}),...(rd.hammerUnique!=null&&{hammerUnique:rd.hammerUnique}),
         ...(rd.hammerVal!=null&&{hammerVal:rd.hammerVal}),
         ...(rd.hammerSegs!=null&&{hammerSegs:rd.hammerSegs}),
         ...(rd.hammerMode!=null&&{hammerMode:rd.hammerMode}),
@@ -7115,7 +7115,7 @@ function renderPressCfgRows(r){
   const pv=pressValForRound(r);
   let h='<div class="setup-row gs-row"><div class="gs-lbl"><b>Presses</b><small>A new bet when a team falls behind</small></div><label class="toggle"><input type="checkbox" '+(pOn?'checked':'')+' onchange="setPressesOnForRound('+r+',this.checked);_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>';
   if(pOn){
-    h+='<div class="setup-row gs-row"><div class="gs-lbl"><b>Press value</b><small>Blank means the same as the game</small></div><div class="gs-money"><button type="button" aria-label="Less" onclick="_gsPressStep(this,'+r+',-5)">\u2212</button><span>$</span><input class="ie-num" type="number" inputmode="decimal" placeholder="'+roundVal('gameVal',r,WK.gameVal)+'" value="'+pv+'" oninput="const v=this.value.trim();if(v===\'\'){delete WK.rounds['+r+'].pressVal;}else{WK.rounds['+r+'].pressVal=parseFloat(v);}autoSave();"/><button type="button" aria-label="More" onclick="_gsPressStep(this,'+r+',5)">+</button></div></div>';
+    h+='<div class="setup-row gs-row"><div class="gs-lbl"><b>Press value</b><small>Blank = game amt<br>\u00b1$5 or type any</small></div><div class="gs-money"><button type="button" aria-label="Less" onclick="_gsPressStep(this,'+r+',-5)">\u2212</button><span>$</span><input class="ie-num" type="number" inputmode="decimal" placeholder="'+roundVal('gameVal',r,WK.gameVal)+'" value="'+pv+'" oninput="const v=this.value.trim();if(v===\'\'){delete WK.rounds['+r+'].pressVal;}else{WK.rounds['+r+'].pressVal=parseFloat(v);}autoSave();"/><button type="button" aria-label="More" onclick="_gsPressStep(this,'+r+',5)">+</button></div></div>';
     h+='<div class="setup-row gs-row"><div class="gs-lbl"><b>Auto-press</b><small>Starts the press without asking</small></div><label class="toggle"><input type="checkbox" '+(apOn?'checked':'')+' onchange="setAutoPressOnForRound('+r+',this.checked);_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>';
     if(apOn){
       h+=_gsRow('Press when','How far behind a team is before it presses',_gsSeg([['2','2 down'],['3','3 down'],['4','4 down']],String(apThr),'setAutoPressThresholdForRound('+r+',parseInt(VAL))'),true);
@@ -16918,8 +16918,14 @@ function _gsTeamsHtml(game,r){
   }
   // v123.76: the default teams already rotate, so the button only appears once a game is off it.
   var rot=offRot&&canEditTrip()?'<button type="button" class="gs-rot" onclick="window._gsRotate(\''+game+'\','+r+')">Reset to rotation</button>':'';
-  return _gsSec('Teams')+_gsLaneLabelHtml(r)+h+rot
-    +'<div class="gs-tnote">'+(anyRot?(game==='mp'&&isHeadsUp(r)?'Pick anyone in any box. A player already in that game swaps places. If two games end up with the same matches, the other game trades so matchups don\u2019t repeat.':'Pick anyone in any box. A player already in that game swaps places. If two games end up with the same teams, the other game trades so partners don\u2019t repeat.'):'Pick anyone in any box. A player already in the match swaps places.')+'</div>';
+  // v123.81: Unique partners. On (default) games trade so no one repeats; off, each game is set on
+  // its own. Shown only when a game is split. Two fixed lines, so the row never changes height.
+  var uk=game==='hammer'?'hammerUnique':'mpUnique',uon=_gsOptVal(uk,r,true)!==false,hu2=game==='mp'&&isHeadsUp(r);
+  var usw=anyRot?_gsRow(hu2?'Unique matchups':'Unique partners','On: games trade, no repeats<br>Off: each game set alone',
+    '<label class="toggle"><input type="checkbox"'+(uon?' checked':'')+(isReadOnly?' disabled':'')+' onchange="_gsOptSet(\''+uk+'\','+r+',this.checked);autoSave();s2WriteActive();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label>'):'';
+  var swap='Pick anyone in any box. A player already in that game swaps places.';
+  return _gsSec('Teams')+_gsLaneLabelHtml(r)+usw+h+rot
+    +'<div class="gs-tnote">'+(anyRot&&uon?swap+' If two games end up with the same '+(hu2?'matches':'teams')+', the other game trades.':swap)+'</div>';
 }
 function _gsTeamsChanged(){autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderScorecard();if(typeof renderMPHoleBox==='function')renderMPHoleBox();}
 // v123.80: Match Play teams lock only while someone else holds a live pencil for the foursome.
@@ -16947,7 +16953,7 @@ window._gsDrop=function(game,r,fi,si,t,p,pi){
   for(var a=0;a<2;a++)for(var b=0;b<2;b++)if(tm[a][b]===pi&&!(a===t&&b===p))tm[a][b]=old;
   tm[t][p]=pi;
   var k1=_gsSplitOf(game,r,tm,mem),moved=-1;
-  if(k0>=0&&k1>=0&&k1!==k0){
+  if(k0>=0&&k1>=0&&k1!==k0&&roundValFs(game==='hammer'?'hammerUnique':'mpUnique',r,fi,true)!==false){
     var segs=_gsSegsFor(game,r,fi);
     for(var j=0;j<segs.length&&moved<0;j++)if(j!==si&&_gsSplitOf(game,r,arr[r][fi][j],mem)===k1){_gsWriteSplit(game,r,fi,j,k0,mem);moved=j;}
   }
@@ -16976,7 +16982,7 @@ function _gsMPSetupBody(r){
   const _hu=isHeadsUp(r),_np=WK.players.length;
   let h=_gsSec('Format');
   h+=_gsRow('Segments',_gsSegSub(r),_gsSeg(_gsSegOpts(r),mpG,'setMPGamesForRound('+r+',parseInt(VAL))',true),true);
-  if(_np>=4)h+=_gsRow('Match type','Two against two on best ball, or one against one',_gsSeg([['team','Team'],['headsup','Heads up']],_hu?'headsup':'team','_setMPFormat('+r+',VAL)',true));
+  if(_np>=4)h+=_gsRow('Match type','2 v 2 best ball, or 1 v 1',_gsSeg([['team','Team'],['headsup','Heads up']],_hu?'headsup':'team','_setMPFormat('+r+',VAL)',true));
   // v123.76: always shown, greyed for Team, so changing Match type never reshuffles the rows.
   // v123.78: right under Match type, the choice it depends on.
   h+=_gsRow('Net off match low','On: strokes off the lower player<br>Off: full handicaps',`<label class="toggle"><input type="checkbox" ${huNetOffMatchLow(r,_gsLane()==='both'?null:_gsLane())?'checked':''}${_hu?'':' disabled'} onchange="_gsOptSet('mpHUNetOffMatchLow',${r},this.checked);autoSave();s2WriteActive();renderScorecard();renderBanner();renderMPHoleBox();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label>`,false,!_hu,'Heads up only');
@@ -16990,7 +16996,7 @@ function _gsMPSetupBody(r){
   const _mpFin=_gsOptVal('mpFinalSeg',r,'leader');
   h+=_gsRow('Unfinished match','When play ends before a match is decided',_gsSeg([['leader','Leader wins'],['void','No winner']],_mpFin!=='void'?'leader':'void',"_gsOptSet('mpFinalSeg',"+r+",VAL);autoSave();s2WriteActive()"),true);
   h+=_gsSec('Money');
-  h+=_gsRow('Per game','Each match',_gsMoney('gameVal',r,_gsStakePh('gameVal',r,WK.gameVal),5));
+  h+=_gsRow('Per game','Each match<br>\u00b1$5 or type any',_gsMoney('gameVal',r,_gsStakePh('gameVal',r,WK.gameVal),5));
   h+=_gsSettleRow(WK.mpSettle||'perplayer','WK.mpSettle=VAL;autoSave();s2WriteActive()',_hu);
   h+=_gsSec('Presses');
   h+=renderPressCfgRows(r);
@@ -17018,12 +17024,12 @@ function _gsHammerSetupBody(r){
   const _set=k=>"_gsOptSet('"+k+"',"+r+",VAL);autoSave();s2WriteActive()";
   let h=_gsSec('Format');
   h+=_gsRow('Segments',_gsSegSub(r),_gsSeg(_gsSegOpts(r),hSegs,'setHammerSegsForRound('+r+',parseInt(VAL))',true),true);
-  h+=_gsRow('Scoring','The team\u2019s best net, or both nets added',_gsSeg([['bestball','Better ball'],['combined','Combined']],_o('hammerScoring',WK.hammerScoring||'bestball'),_set('hammerScoring')));
+  h+=_gsRow('Scoring','Best net, or both nets added',_gsSeg([['bestball','Better ball'],['combined','Combined']],_o('hammerScoring',WK.hammerScoring||'bestball'),_set('hammerScoring')));
   h+=_gsRow('Hammer mode','Either team any time, or the teams take turns',_gsSeg([['any','Anyone'],['alt','Alternating']],_o('hammerMode',WK.hammerMode||'any'),_set('hammerMode')+';_gsRefreshAfterEdit()',true),true);
   h+=_gsRow('Max hammers a hole','How many times the value can double on one hole',_gsSeg([['0','No limit'],['1','1'],['2','2']],String(_o('hammerMax',WK.hammerMax!=null?WK.hammerMax:0)),"_gsOptSet('hammerMax',"+r+",parseInt(VAL));autoSave();s2WriteActive()"),true);
   h+=_gsRow('After a halve','The hole\u2019s value rolls on, or starts over',_gsSeg([['carry','Carry'],['reset','Reset']],_o('hammerHalve',WK.hammerHalve||'carry'),_set('hammerHalve')));
   h+=_gsSec('Money');
-  h+=_gsRow('Per hole','Before any hammers',_gsMoney('hammerVal',r,_gsStakePh('hammerVal',r,WK.hammerVal||2),1,' step="0.25"'));
+  h+=_gsRow('Per hole','Before hammers<br>\u00b1$1 or type any',_gsMoney('hammerVal',r,_gsStakePh('hammerVal',r,WK.hammerVal||2),1,' step="0.25"'));
   h+=_gsSettleRow(_o('hammerPayout',WK.hammerPayout||'perplayer'),_set('hammerPayout'));
   h+=_gsTeamsHtml('hammer',r);
   return h;
