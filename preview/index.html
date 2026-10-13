@@ -2339,7 +2339,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.83';
+const APP_VERSION='v123.84';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -2967,7 +2967,7 @@ async function s2WriteActive(){
           ...(Array.isArray(rd.fsGames)&&rd.fsGames.length&&{fsGames:rd.fsGames}),
           ...(Array.isArray(rd.fsEndHoles)&&rd.fsEndHoles.length&&{fsEndHoles:rd.fsEndHoles}),
           ...(rd.shortInStandings!=null&&{shortInStandings:rd.shortInStandings}),
-          ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),...(rd.mpUnique!=null&&{mpUnique:rd.mpUnique}),...(rd.hammerUnique!=null&&{hammerUnique:rd.hammerUnique}),...(rd.vegasUnique!=null&&{vegasUnique:rd.vegasUnique}),
+          ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),...(rd.mpUnique!=null&&{mpUnique:rd.mpUnique}),...(rd.hammerUnique!=null&&{hammerUnique:rd.hammerUnique}),...(rd.vegasUnique!=null&&{vegasUnique:rd.vegasUnique}),...(rd.skinsUnique!=null&&{skinsUnique:rd.skinsUnique}),
           ...(rd.hammerVal!=null&&{hammerVal:rd.hammerVal}),
           ...(rd.hammerSegs!=null&&{hammerSegs:rd.hammerSegs}),
           ...(rd.hammerMode!=null&&{hammerMode:rd.hammerMode}),
@@ -3364,7 +3364,7 @@ async function s2ReadTrip(tripId){
         ...(Array.isArray(rd.fsGames)&&rd.fsGames.length&&{fsGames:rd.fsGames}),
         ...(Array.isArray(rd.fsEndHoles)&&rd.fsEndHoles.length&&{fsEndHoles:rd.fsEndHoles}),
         ...(rd.shortInStandings!=null&&{shortInStandings:rd.shortInStandings}),
-        ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),...(rd.mpUnique!=null&&{mpUnique:rd.mpUnique}),...(rd.hammerUnique!=null&&{hammerUnique:rd.hammerUnique}),...(rd.vegasUnique!=null&&{vegasUnique:rd.vegasUnique}),
+        ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),...(rd.mpUnique!=null&&{mpUnique:rd.mpUnique}),...(rd.hammerUnique!=null&&{hammerUnique:rd.hammerUnique}),...(rd.vegasUnique!=null&&{vegasUnique:rd.vegasUnique}),...(rd.skinsUnique!=null&&{skinsUnique:rd.skinsUnique}),
         ...(rd.hammerVal!=null&&{hammerVal:rd.hammerVal}),
         ...(rd.hammerSegs!=null&&{hammerSegs:rd.hammerSegs}),
         ...(rd.hammerMode!=null&&{hammerMode:rd.hammerMode}),
@@ -16656,27 +16656,22 @@ function _setSkinsFmt(r,v){
   autoSave();s2WriteActive();_gsRefreshAfterEdit();
 }
 function _gsSkinsSetupBody(r){
-  const skOv=WK.skinsGamesPerRound?.[r]||0;
+  // v123.84: the Match Play pattern. Every control writes what it wrote before.
   const _lfi=_segLaneFi(r);
-  const sG=skinsGamesForRound(r,_lfi),_th_sk=roundHoleCount(r),skSegs=getSegments(sG,_th_sk);
-  let h=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Segments</span><select class="ie-sel" onchange="setSkinsGamesForRound(${r},parseInt(this.value))">${segOptionHtml(roundHoleCount(r),sG)}</select></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per skin</span>$<input class="ie-num" type="number" placeholder="${_gsStakePh('skinsVal',r,WK.skinsVal||5)}" value="${_gsStakeVal('skinsVal',r)}" style="width:80px" oninput="_gsStakeSet('skinsVal',${r},this.value);autoSave();s2WriteActive();"/></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Format</span><select class="ie-sel" onchange="_setSkinsFmt(${r},this.value)"><option value="team"${WK.skinsFmt==='team'?' selected':''}>Team 2v2</option><option value="individual"${WK.skinsFmt==='individual'?' selected':''}>Individual</option></select></div>`;
-  if(WK.skinsFmt==='team'){
+  const sG=skinsGamesForRound(r,_lfi);
+  const team=WK.skinsFmt==='team',few=WK.players.length<4;
+  let h=_gsSec('Format');
+  h+=_gsRow('Segments',roundHoleCount(r)===9?'One game over 9 holes, or three 3-hole games':'One game over 18 holes, or separate 9s or 6s',_gsSeg(_gsSegOpts(r),sG,'setSkinsGamesForRound('+r+',parseInt(VAL))',true),true);
+  h+=_gsRow('Play as','2 v 2, or solo',_gsSeg([['team','Team'],['individual','Individual']],team?'team':'individual','_setSkinsFmt('+r+',VAL)',true),false,few,'Team needs 4 players');
+  h+=_gsSec('Money');
+  h+=_gsRow('Per skin','Each skin won<br>±$1 or type any',_gsMoney('skinsVal',r,_gsStakePh('skinsVal',r,WK.skinsVal||5),1));
+  h+=_gsSettleRow(WK.skinsSettle||'perplayer','WK.skinsSettle=VAL;autoSave();s2WriteActive()',!team,'Team skins only');
+  if(team){
     if(!STATE.skinsTeams)STATE.skinsTeams=WK.rounds.map((_,ri)=>flightsForRound(ri).map((_f,fi)=>defaultSkinsTeamsForFlight(ri,fi)));
-    {let _skFl=flightsForRound(r);let _skMulti=_skFl.length>1;let _skSel=(STATE.skinsViewFlight===undefined||STATE.skinsViewFlight===null?-1:STATE.skinsViewFlight);
-    h+=_gsLaneLabelHtml(r);
-    for(let _fi=0;_fi<_skFl.length;_fi++){
-      if(_skMulti&&_skSel!==-1&&_skSel!==_fi)continue;
-      const _mem=_skFl[_fi]||[];
-      if(_skMulti){h+='<div style="display:flex;align-items:center;gap:7px;padding:6px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,_fi)+'</span></div>';}
-      if(_mem.length<4){h+='<div style="padding:8px 2px;font-size:12px;color:var(--color-text-secondary)">Needs 4 players for team Skins.</div>';continue;}
-      h+=getSegments(skinsGamesForRound(r,_fi),_th_sk).map((seg,si)=>{const sk=STATE.skinsTeams[r]?.[_fi]?.[si];if(!sk||!Array.isArray(sk[0])||!Array.isArray(sk[1])||sk[0].length<2||sk[1].length<2)return'';const[a0,a1]=sk[0],[b0,b1]=sk[1];return `<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDropSkins(${si},'a0',parseInt(this.value),${r},${_fi})">${pOpts(a0,_mem)}</select><select class="team-dropdown" onchange="setDropSkins(${si},'a1',parseInt(this.value),${r},${_fi})">${pOpts(a1,_mem)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDropSkins(${si},'b0',parseInt(this.value),${r},${_fi})">${pOpts(b0,_mem)}</select><select class="team-dropdown" onchange="setDropSkins(${si},'b1',parseInt(this.value),${r},${_fi})">${pOpts(b1,_mem)}</select></div></div></div>`;}).join('');
-    }}
-  } else {
-    h+=`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Individual - all players compete for each skin</div>`;
+    h+=_gsTeamsHtml('skins',r);
+  }else{
+    h+=_gsSec('Teams')+'<div class="gs-tnote">Individual: everyone plays for every skin. Pick Team above to set teams.</div>';
   }
-  h+=`<div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Settlement</span><select class="ie-sel" onchange="WK.skinsSettle=this.value;autoSave();s2WriteActive()"><option value="perplayer"${WK.skinsSettle==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.skinsSettle==='perteam'?' selected':''}>Per team</option></select></div>`;
   return h;
 }
 function _gsRazzleSetupBody(r){
@@ -16848,7 +16843,7 @@ window._gsMoneyStep=function(btn,key,r,d){
   inp.value=v;_gsStakeSet(key,r,String(v));autoSave();s2WriteActive();
 };
 // ---- teams as one line per game (Match Play, Hammer) ----
-function _gsTeamsArr(game,r){return game==='hammer'?STATE.hammerTeams:game==='vegas'?STATE.vegTeams:STATE.mpTeams;}
+function _gsTeamsArr(game,r){return game==='hammer'?STATE.hammerTeams:game==='vegas'?STATE.vegTeams:game==='skins'?STATE.skinsTeams:STATE.mpTeams;}
 // The three ways a foursome of four splits into two pairs. k: who partners the first member.
 // Heads up reads a split as two 1 v 1 matches instead of two teams.
 function _gsSplits(mem){var m=mem.slice(0,4).sort(function(a,b){return a-b;});
@@ -16871,7 +16866,7 @@ function _gsSplitLabel(game,r,sp){
   if(game==='mp'&&isHeadsUp(r))return f(sp[0][0])+'<i>v</i>'+f(sp[0][1])+' \u00b7 '+f(sp[1][0])+'<i>v</i>'+f(sp[1][1]);
   return f(sp[0][0])+' &amp; '+f(sp[0][1])+'<i>v</i>'+f(sp[1][0])+' &amp; '+f(sp[1][1]);
 }
-function _gsSegsFor(game,r,fi){return game==='hammer'?getSegments(hammerSegsForRound(r,fi)):game==='vegas'?getSegments(vegasSegForRound(r,fi),roundHoleCount(r)):getSegments(mpGamesForRound(r,fi),roundHoleCount(r));}
+function _gsSegsFor(game,r,fi){return game==='hammer'?getSegments(hammerSegsForRound(r,fi)):game==='vegas'?getSegments(vegasSegForRound(r,fi),roundHoleCount(r)):game==='skins'?getSegments(skinsGamesForRound(r,fi),roundHoleCount(r)):getSegments(mpGamesForRound(r,fi),roundHoleCount(r));}
 function _gsTeamsHtml(game,r){
   var fl=flightsForRound(r),multi=fl.length>1,h='';
   // v123.82: a foursome lane shows that foursome; the All lane shows one at a time behind the pill.
@@ -16936,7 +16931,7 @@ function _gsTeamsChanged(){autoSave();s2WriteActive();_gsRefreshAfterEdit();rend
 // holds it, and v123.79 locked everyone out. A finished foursome's pencil is history (_pencilMoot).
 function _gsTeamsLocked(game,r,fi){
   if(isReadOnly)return true;
-  if((game!=='mp'&&game!=='vegas')||typeof _pencilActive!=='function'||!_pencilActive())return false;
+  if((game!=='mp'&&game!=='vegas'&&game!=='skins')||typeof _pencilActive!=='function'||!_pencilActive())return false;
   var lk=_pencilLockFor(r,fi);if(!lk)return false;
   if(typeof _pencilMoot==='function'&&_pencilMoot(r,fi))return false;
   return !holdsPencil(r,fi);
@@ -16978,7 +16973,7 @@ window._gsRotate=function(game,r){
 };
 function _gsSegOpts(r){return roundHoleCount(r)===9?[[1,'1 \u00d7 9'],[3,'3 \u00d7 3']]:[[1,'1 \u00d7 18'],[2,'2 \u00d7 9'],[3,'3 \u00d7 6']];}
 function _gsSegSub(r){return roundHoleCount(r)===9?'One match over 9 holes, or three 3-hole matches':'One match over 18 holes, or separate 9s or 6s';}
-function _gsSettleRow(cur,tap,na){return _gsRow('Settlement','Each player wins the amount, or the team splits it',_gsSeg([['perplayer','Per player'],['perteam','Per team']],cur,tap),true,!!na,na===undefined?undefined:'Team matches only');}
+function _gsSettleRow(cur,tap,na,naText){return _gsRow('Settlement','Each player wins the amount, or the team splits it',_gsSeg([['perplayer','Per player'],['perteam','Per team']],cur,tap),true,!!na,na===undefined?undefined:(naText||'Team matches only'));}
 function _gsMPSetupBody(r){
   const _lfi=_segLaneFi(r);
   const mpG=mpGamesForRound(r,_lfi);
