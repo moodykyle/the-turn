@@ -1171,6 +1171,11 @@ body.force-light .sec-hd.gs-sec{color:#13795B;}
 .setup-row.gs-row.gs-na .qrw-seg,.setup-row.gs-row.gs-na .toggle{pointer-events:none;}
 .setup-row.gs-row{display:flex;align-items:center;gap:12px;padding:10px 2px;}
 .setup-row.gs-row.gs-wide{flex-direction:column;align-items:stretch;gap:8px;}
+.gs-fsrow{gap:7px!important;}
+.gs-fsrow .qrw-seg.gs-seg button{flex-direction:row;}
+.gs-fsrow button.on .gs-dot{box-shadow:0 0 0 1.5px #FFFFFF;}
+.gs-fsrow .gs-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px;}
+.gs-fsm{font-size:11.5px;color:var(--color-text-secondary);}
 .gs-lbl{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;}
 .gs-lbl b{font-size:14px;font-weight:500;color:var(--color-text-primary);}
 .gs-lbl small{font-size:11.5px;line-height:1.35;color:var(--color-text-secondary);}
@@ -2334,7 +2339,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.81';
+const APP_VERSION='v123.82';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -16883,14 +16888,26 @@ function _gsSplitLabel(game,r,sp){
 function _gsSegsFor(game,r,fi){return game==='hammer'?getSegments(hammerSegsForRound(r,fi)):getSegments(mpGamesForRound(r,fi),roundHoleCount(r));}
 function _gsTeamsHtml(game,r){
   var fl=flightsForRound(r),multi=fl.length>1,h='';
-  var sel=game==='hammer'?(STATE.hammerViewFlight==null?-1:STATE.hammerViewFlight):(STATE.mpViewFlight===undefined?-1:STATE.mpViewFlight);
+  // v123.82: a foursome lane shows that foursome; the All lane shows one at a time behind the pill.
+  var ln=_gsLane(),sel=(ln==='both'||ln==null)?-1:ln;
+  var pick=-1,pillRow='';
+  if(multi&&sel===-1){
+    if(!STATE.gsTeamsFi)STATE.gsTeamsFi={};
+    pick=parseInt(STATE.gsTeamsFi[game],10);if(!(pick>=0&&pick<fl.length))pick=0;
+    var opts=fl.map(function(_,i){return [i,'<span class="gs-dot" style="background:'+_flightsAccent0(i)+'"></span>'+(fl.length>2?'F'+(i+1):'Foursome '+(i+1))];});
+    var who=(fl[pick]||[]).filter(function(pi){return pi>=0;}).map(function(pi){return _gtEsc(displayName(pi));}).join(', ');
+    pillRow='<div class="setup-row gs-row gs-wide gs-fsrow" data-k="Teams foursome">'
+      +_gsSeg(opts,pick,'if(!STATE.gsTeamsFi)STATE.gsTeamsFi={};STATE.gsTeamsFi[\''+game+'\']=parseInt(VAL,10);_gsRefreshAfterEdit()',true)
+      +'<small class="gs-fsm">'+who+'</small></div>';
+  }
   var off=game==='hammer'?holeOffset(r):0;
   var anyRot=false,offRot=false;
   for(var fi=0;fi<fl.length;fi++){
     if(multi&&sel!==-1&&sel!==fi)continue;
+    if(pick>=0&&fi!==pick)continue;
     var mem=(fl[fi]||[]).filter(function(pi){return pi>=0;});
     var segs=_gsSegsFor(game,r,fi);
-    if(multi)h+='<div style="display:flex;align-items:center;gap:7px;padding:8px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(fi+1)+'</span></div>';
+    if(multi&&pick<0)h+='<div style="display:flex;align-items:center;gap:7px;padding:8px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(fi+1)+'</span></div>';
     if(mem.length<4){
       h+=segs.map(function(seg,si){return '<div class="gs-tline gs-off"><div class="gs-tg"><b>Game '+(si+1)+'</b><small>'+(seg.start+off+1)+' to '+(seg.end+off)+'</small></div><div class="gs-tp">'
         +mem.map(function(pi){return _gtEsc(displayName(pi));}).join('<i>v</i>')+'</div></div>';}).join('');
@@ -16924,7 +16941,7 @@ function _gsTeamsHtml(game,r){
   var usw=anyRot?_gsRow(hu2?'Unique matchups':'Unique partners','On: games trade, no repeats<br>Off: each game set alone',
     '<label class="toggle"><input type="checkbox"'+(uon?' checked':'')+(isReadOnly?' disabled':'')+' onchange="_gsOptSet(\''+uk+'\','+r+',this.checked);autoSave();s2WriteActive();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label>'):'';
   var swap='Pick anyone in any box. A player already in that game swaps places.';
-  return _gsSec('Teams')+_gsLaneLabelHtml(r)+usw+h+rot
+  return _gsSec('Teams')+_gsLaneLabelHtml(r)+usw+pillRow+h+rot
     +'<div class="gs-tnote">'+(anyRot&&uon?swap+' If two games end up with the same '+(hu2?'matches':'teams')+', the other game trades.':swap)+'</div>';
 }
 function _gsTeamsChanged(){autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderScorecard();if(typeof renderMPHoleBox==='function')renderMPHoleBox();}
