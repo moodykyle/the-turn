@@ -2339,7 +2339,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.82';
+const APP_VERSION='v123.83';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -2967,7 +2967,7 @@ async function s2WriteActive(){
           ...(Array.isArray(rd.fsGames)&&rd.fsGames.length&&{fsGames:rd.fsGames}),
           ...(Array.isArray(rd.fsEndHoles)&&rd.fsEndHoles.length&&{fsEndHoles:rd.fsEndHoles}),
           ...(rd.shortInStandings!=null&&{shortInStandings:rd.shortInStandings}),
-          ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),...(rd.mpUnique!=null&&{mpUnique:rd.mpUnique}),...(rd.hammerUnique!=null&&{hammerUnique:rd.hammerUnique}),
+          ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),...(rd.mpUnique!=null&&{mpUnique:rd.mpUnique}),...(rd.hammerUnique!=null&&{hammerUnique:rd.hammerUnique}),...(rd.vegasUnique!=null&&{vegasUnique:rd.vegasUnique}),
           ...(rd.hammerVal!=null&&{hammerVal:rd.hammerVal}),
           ...(rd.hammerSegs!=null&&{hammerSegs:rd.hammerSegs}),
           ...(rd.hammerMode!=null&&{hammerMode:rd.hammerMode}),
@@ -3364,7 +3364,7 @@ async function s2ReadTrip(tripId){
         ...(Array.isArray(rd.fsGames)&&rd.fsGames.length&&{fsGames:rd.fsGames}),
         ...(Array.isArray(rd.fsEndHoles)&&rd.fsEndHoles.length&&{fsEndHoles:rd.fsEndHoles}),
         ...(rd.shortInStandings!=null&&{shortInStandings:rd.shortInStandings}),
-        ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),...(rd.mpUnique!=null&&{mpUnique:rd.mpUnique}),...(rd.hammerUnique!=null&&{hammerUnique:rd.hammerUnique}),
+        ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),...(rd.mpUnique!=null&&{mpUnique:rd.mpUnique}),...(rd.hammerUnique!=null&&{hammerUnique:rd.hammerUnique}),...(rd.vegasUnique!=null&&{vegasUnique:rd.vegasUnique}),
         ...(rd.hammerVal!=null&&{hammerVal:rd.hammerVal}),
         ...(rd.hammerSegs!=null&&{hammerSegs:rd.hammerSegs}),
         ...(rd.hammerMode!=null&&{hammerMode:rd.hammerMode}),
@@ -16729,38 +16729,24 @@ function _gsRazzleSetupBody(r){
   return h;
 }
 function _gsVegasSetupBody(r){
-  const vegOv=WK.vegasSegsPerRound[r];
+  // v123.83: the Match Play pattern. Every control writes what it wrote before.
   const _lfi=_segLaneFi(r);
-  const vG=vegasSegForRound(r,_lfi),_th_vg=roundHoleCount(r),vegSegs=getSegments(vG,_th_vg);
-  let h=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Segments</span><select class="ie-sel" onchange="setVegaSegsForRound(${r},parseInt(this.value))">${segOptionHtml(roundHoleCount(r),vG)}</select></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per point</span>$<input class="ie-num" type="number" placeholder="${Number(_gsStakePh('vegasVal',r,WK.vegasVal)).toFixed(2)}" value="${_gsStakeVal('vegasVal',r)}" step="0.25" style="width:80px" oninput="_gsStakeSet('vegasVal',${r},this.value);autoSave();s2WriteActive();"/></div>`;
-  {let _vgFl=flightsForRound(r);let _vgMulti=_vgFl.length>1;let _vgSel=(STATE.vegasViewFlight===undefined||STATE.vegasViewFlight===null?-1:STATE.vegasViewFlight);
-  h+=_gsLaneLabelHtml(r);
-  for(let _fi=0;_fi<_vgFl.length;_fi++){
-    if(_vgMulti&&_vgSel!==-1&&_vgSel!==_fi)continue;
-    const _mem=_vgFl[_fi]||[];
-    if(_vgMulti){h+='<div style="display:flex;align-items:center;gap:7px;padding:6px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,_fi)+'</span></div>';}
-    if(_mem.length<4){h+='<div style="padding:8px 2px;font-size:12px;color:var(--color-text-secondary)">Needs 4 players for Vegas.</div>';continue;}
-    h+=getSegments(vegasSegForRound(r,_fi),_th_vg).map((seg,si)=>{const tv=STATE.vegTeams[r]?.[_fi]?.[si];if(!tv||!Array.isArray(tv[0])||!Array.isArray(tv[1])||tv[0].length<2||tv[1].length<2)return'';const[a0,a1]=tv[0],[b0,b1]=tv[1];return `<div class="team-game-row"><div class="team-game-label">${seg.label}<div style="font-size:10px;color:var(--color-text-secondary)">H${seg.start+1}–${seg.end}</div></div><div style="flex:1"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">A:</span><select class="team-dropdown" onchange="setDrop(${si},'a0',parseInt(this.value),${r},true,${_fi})">${pOpts(a0,_mem)}</select><select class="team-dropdown" onchange="setDrop(${si},'a1',parseInt(this.value),${r},true,${_fi})">${pOpts(a1,_mem)}</select></div><div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--color-text-secondary);width:14px">B:</span><select class="team-dropdown" onchange="setDrop(${si},'b0',parseInt(this.value),${r},true,${_fi})">${pOpts(b0,_mem)}</select><select class="team-dropdown" onchange="setDrop(${si},'b1',parseInt(this.value),${r},true,${_fi})">${pOpts(b1,_mem)}</select></div></div></div>`;}).join('');
-  }}
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Settlement</span><select class="ie-sel" onchange="WK.vegasSettle=this.value;autoSave();s2WriteActive()"><option value="perplayer"${(WK.vegasSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${WK.vegasSettle==='perteam'?' selected':''}>Per team</option></select></div>`;
-  const _vf=_gsOptVal('vegasFlip',r,WK.vegasFlip||'birdie');
-  const _vd=_gsOptVal('vegasDouble',r,WK.vegasDouble!==undefined?WK.vegasDouble:true);
-  const _vt=_gsOptVal('vegasTwoBird',r,WK.vegasTwoBird!==undefined?WK.vegasTwoBird:true);
-  const _flipOff=_vf==='off';
-  const _dblOff=_flipOff||!_vd;
-  const _clrAct='#ffffff',_clrInact='var(--color-text-secondary)',_clsAct='vfp-active',_clsInact='';
-  const _bClsBi=_vf==='birdie'?_clsAct:_clsInact,_bColBi=_vf==='birdie'?_clrAct:_clrInact;
-  const _bClsEa=_vf==='eagle'?_clsAct:_clsInact,_bColEa=_vf==='eagle'?_clrAct:_clrInact;
-  const _bClsOf=_vf==='off'?_clsAct:_clsInact,_bColOf=_vf==='off'?_clrAct:_clrInact;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Minimum to flip<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Birdie-or-better, eagle-only, or never</span></span><div style="display:flex;gap:3px;position:relative;background:var(--color-background-tertiary);border:0.5px solid var(--color-border-secondary);border-radius:9px;padding:3px" id="vfp-seg-${r}"><div class="vegas-flip-pill" id="vfp-pill-${r}"></div><button id="vfp-birdie-${r}" class="${_bClsBi}" style="border:none;background:transparent;color:${_bColBi};font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;border-radius:7px;position:relative;z-index:1;-webkit-tap-highlight-color:transparent;" onclick="_setVegasFlip(${r},'birdie')">Birdie</button><button id="vfp-eagle-${r}" class="${_bClsEa}" style="border:none;background:transparent;color:${_bColEa};font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;border-radius:7px;position:relative;z-index:1;-webkit-tap-highlight-color:transparent;" onclick="_setVegasFlip(${r},'eagle')">Eagle</button><button id="vfp-off-${r}" class="${_bClsOf}" style="border:none;background:transparent;color:${_bColOf};font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;border-radius:7px;position:relative;z-index:1;-webkit-tap-highlight-color:transparent;" onclick="_setVegasFlip(${r},'off')">Off</button></div></div>`;
-  const _peNone='none',_peAuto='auto',_opDim='0.32',_opFull='1';
-  const _opDbl=_flipOff?_opDim:_opFull,_peDbl=_flipOff?_peNone:_peAuto;
-  const _opTwo=_dblOff?_opDim:_opFull,_peTwo=_dblOff?_peNone:_peAuto;
-  const _chkDbl=_vd?'checked':'',_chkTwo=_vt?'checked':'';
-  h+=`<div class="setup-row" id="vfp-row-dbl-${r}" style="opacity:${_opDbl};pointer-events:${_peDbl};"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Double on eagle<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Eagle flips and doubles the hole</span></span><label class="toggle"><input type="checkbox" ${_chkDbl} onchange="_setVegasDouble(${r},this.checked)"><span class="toggle-slider"></span></label></div>`;
-  h+=`<div class="setup-row" id="vfp-row-two-${r}" style="opacity:${_opTwo};pointer-events:${_peTwo};"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Two birdies = eagle<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Two net birdies on a team count as a double</span></span><label class="toggle"><input type="checkbox" ${_chkTwo} onchange="if(!canEditTrip())return;const v=this.checked;_gsOptSet('vegasTwoBird',${r},v);autoSave();s2WriteActive()"><span class="toggle-slider"></span></label></div>`;
-  setTimeout(()=>_vegasFlipPillTo(r),0);
+  const vG=vegasSegForRound(r,_lfi);
+  const vf=_gsOptVal('vegasFlip',r,WK.vegasFlip||'birdie');
+  const vd=_gsOptVal('vegasDouble',r,WK.vegasDouble!==undefined?WK.vegasDouble:true);
+  const vt=_gsOptVal('vegasTwoBird',r,WK.vegasTwoBird!==undefined?WK.vegasTwoBird:true);
+  const flipOff=vf==='off',dblOff=flipOff||!vd;
+  const sw=function(on,dis,js){return '<label class="toggle"><input type="checkbox"'+(on?' checked':'')+(dis?' disabled':'')+' onchange="'+js+'"><span class="toggle-slider"></span></label>';};
+  let h=_gsSec('Format');
+  h+=_gsRow('Segments',roundHoleCount(r)===9?'One game over 9 holes, or three 3-hole games':'One game over 18 holes, or separate 9s or 6s',_gsSeg(_gsSegOpts(r),vG,'setVegaSegsForRound('+r+',parseInt(VAL))',true),true);
+  h+=_gsRow('Flip on','Lowest score that flips the other team’s number',_gsSeg([['birdie','Birdie'],['eagle','Eagle'],['off','Never']],vf,'_setVegasFlip('+r+',VAL);_gsRefreshAfterEdit()',true),true);
+  // Always shown; greyed with the reason when they cannot apply, so the rows never move.
+  h+=_gsRow('Double on eagle','Eagle flips and doubles the hole',sw(vd,flipOff,'_setVegasDouble('+r+',this.checked);_gsRefreshAfterEdit()'),false,flipOff,'Needs a flip');
+  h+=_gsRow('Two birdies = eagle','2 net birdies on a team count double',sw(vt,dblOff,"if(!canEditTrip())return;_gsOptSet('vegasTwoBird',"+r+",this.checked);autoSave();s2WriteActive()"),false,dblOff,'Needs Double on eagle');
+  h+=_gsSec('Money');
+  h+=_gsRow('Per point','Each point<br>±$0.25 or type any',_gsMoney('vegasVal',r,Number(_gsStakePh('vegasVal',r,WK.vegasVal)).toFixed(2),0.25,' step="0.25"'));
+  h+=_gsSettleRow(WK.vegasSettle||'perplayer','WK.vegasSettle=VAL;autoSave();s2WriteActive()');
+  h+=_gsTeamsHtml('vegas',r);
   return h;
 }
 function _gsWolfSetupBody(r){
@@ -16862,7 +16848,7 @@ window._gsMoneyStep=function(btn,key,r,d){
   inp.value=v;_gsStakeSet(key,r,String(v));autoSave();s2WriteActive();
 };
 // ---- teams as one line per game (Match Play, Hammer) ----
-function _gsTeamsArr(game,r){return game==='hammer'?STATE.hammerTeams:STATE.mpTeams;}
+function _gsTeamsArr(game,r){return game==='hammer'?STATE.hammerTeams:game==='vegas'?STATE.vegTeams:STATE.mpTeams;}
 // The three ways a foursome of four splits into two pairs. k: who partners the first member.
 // Heads up reads a split as two 1 v 1 matches instead of two teams.
 function _gsSplits(mem){var m=mem.slice(0,4).sort(function(a,b){return a-b;});
@@ -16885,7 +16871,7 @@ function _gsSplitLabel(game,r,sp){
   if(game==='mp'&&isHeadsUp(r))return f(sp[0][0])+'<i>v</i>'+f(sp[0][1])+' \u00b7 '+f(sp[1][0])+'<i>v</i>'+f(sp[1][1]);
   return f(sp[0][0])+' &amp; '+f(sp[0][1])+'<i>v</i>'+f(sp[1][0])+' &amp; '+f(sp[1][1]);
 }
-function _gsSegsFor(game,r,fi){return game==='hammer'?getSegments(hammerSegsForRound(r,fi)):getSegments(mpGamesForRound(r,fi),roundHoleCount(r));}
+function _gsSegsFor(game,r,fi){return game==='hammer'?getSegments(hammerSegsForRound(r,fi)):game==='vegas'?getSegments(vegasSegForRound(r,fi),roundHoleCount(r)):getSegments(mpGamesForRound(r,fi),roundHoleCount(r));}
 function _gsTeamsHtml(game,r){
   var fl=flightsForRound(r),multi=fl.length>1,h='';
   // v123.82: a foursome lane shows that foursome; the All lane shows one at a time behind the pill.
@@ -16937,20 +16923,20 @@ function _gsTeamsHtml(game,r){
   var rot=offRot&&canEditTrip()?'<button type="button" class="gs-rot" onclick="window._gsRotate(\''+game+'\','+r+')">Reset to rotation</button>':'';
   // v123.81: Unique partners. On (default) games trade so no one repeats; off, each game is set on
   // its own. Shown only when a game is split. Two fixed lines, so the row never changes height.
-  var uk=game==='hammer'?'hammerUnique':'mpUnique',uon=_gsOptVal(uk,r,true)!==false,hu2=game==='mp'&&isHeadsUp(r);
+  var uk=game+'Unique',uon=_gsOptVal(uk,r,true)!==false,hu2=game==='mp'&&isHeadsUp(r);
   var usw=anyRot?_gsRow(hu2?'Unique matchups':'Unique partners','On: games trade, no repeats<br>Off: each game set alone',
     '<label class="toggle"><input type="checkbox"'+(uon?' checked':'')+(isReadOnly?' disabled':'')+' onchange="_gsOptSet(\''+uk+'\','+r+',this.checked);autoSave();s2WriteActive();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label>'):'';
   var swap='Pick anyone in any box. A player already in that game swaps places.';
   return _gsSec('Teams')+_gsLaneLabelHtml(r)+usw+pillRow+h+rot
     +'<div class="gs-tnote">'+(anyRot&&uon?swap+' If two games end up with the same '+(hu2?'matches':'teams')+', the other game trades.':swap)+'</div>';
 }
-function _gsTeamsChanged(){autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderScorecard();if(typeof renderMPHoleBox==='function')renderMPHoleBox();}
+function _gsTeamsChanged(){autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderScorecard();if(typeof renderMPHoleBox==='function')renderMPHoleBox();if(typeof renderVegasBoxWrap==='function')renderVegasBoxWrap();}
 // v123.80: Match Play teams lock only while someone else holds a live pencil for the foursome.
 // Not "unless I hold it": before anyone picks up the pencil (every round being set up) nobody
 // holds it, and v123.79 locked everyone out. A finished foursome's pencil is history (_pencilMoot).
 function _gsTeamsLocked(game,r,fi){
   if(isReadOnly)return true;
-  if(game!=='mp'||typeof _pencilActive!=='function'||!_pencilActive())return false;
+  if((game!=='mp'&&game!=='vegas')||typeof _pencilActive!=='function'||!_pencilActive())return false;
   var lk=_pencilLockFor(r,fi);if(!lk)return false;
   if(typeof _pencilMoot==='function'&&_pencilMoot(r,fi))return false;
   return !holdsPencil(r,fi);
@@ -16970,7 +16956,7 @@ window._gsDrop=function(game,r,fi,si,t,p,pi){
   for(var a=0;a<2;a++)for(var b=0;b<2;b++)if(tm[a][b]===pi&&!(a===t&&b===p))tm[a][b]=old;
   tm[t][p]=pi;
   var k1=_gsSplitOf(game,r,tm,mem),moved=-1;
-  if(k0>=0&&k1>=0&&k1!==k0&&roundValFs(game==='hammer'?'hammerUnique':'mpUnique',r,fi,true)!==false){
+  if(k0>=0&&k1>=0&&k1!==k0&&roundValFs(game+'Unique',r,fi,true)!==false){
     var segs=_gsSegsFor(game,r,fi);
     for(var j=0;j<segs.length&&moved<0;j++)if(j!==si&&_gsSplitOf(game,r,arr[r][fi][j],mem)===k1){_gsWriteSplit(game,r,fi,j,k0,mem);moved=j;}
   }
