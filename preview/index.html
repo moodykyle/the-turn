@@ -1197,7 +1197,6 @@ body.force-dark .gs-rzn b{color:#EFC456;}body.force-dark .gs-rza{color:#3CC79A;}
 .gs-fsrow .qrw-seg.gs-seg button{flex-direction:row;}
 .gs-fsrow button.on .gs-dot{box-shadow:0 0 0 1.5px #FFFFFF;}
 .gs-fsrow .gs-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px;}
-.gs-fsm{font-size:11.5px;color:var(--color-text-secondary);}
 .gs-lbl{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;}
 .gs-lbl b{font-size:14px;font-weight:500;color:var(--color-text-primary);}
 .gs-lbl small{font-size:11.5px;line-height:1.35;color:var(--color-text-secondary);}
@@ -2361,7 +2360,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.85';
+const APP_VERSION='v123.86';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -16913,10 +16912,9 @@ function _gsFsPill(game,r,fl,sel){
     if(!STATE.gsTeamsFi)STATE.gsTeamsFi={};
     pick=parseInt(STATE.gsTeamsFi[game],10);if(!(pick>=0&&pick<fl.length))pick=0;
     var opts=fl.map(function(_,i){return [i,'<span class="gs-dot" style="background:'+_flightsAccent0(i)+'"></span>'+(fl.length>2?'F'+(i+1):'Foursome '+(i+1))];});
-    var who=(fl[pick]||[]).filter(function(pi){return pi>=0;}).map(function(pi){return _gtEsc(displayName(pi));}).join(', ');
     pillRow='<div class="setup-row gs-row gs-wide gs-fsrow" data-k="Teams foursome">'
       +_gsSeg(opts,pick,'if(!STATE.gsTeamsFi)STATE.gsTeamsFi={};STATE.gsTeamsFi[\''+game+'\']=parseInt(VAL,10);_gsRefreshAfterEdit()',true)
-      +'<small class="gs-fsm">'+who+'</small></div>';
+      +'</div>';
   }
   return {pick:pick,html:pillRow};
 }
