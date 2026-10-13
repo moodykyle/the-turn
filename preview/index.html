@@ -1182,7 +1182,9 @@ body.force-light .sec-hd.gs-sec{color:#13795B;}
 .qrw-seg.gs-seg button{min-height:32px;padding:0 12px;font-size:13px;white-space:nowrap;border-radius:8px;}
 .gs-wide .qrw-seg.gs-seg button{padding:0 6px;}
 .gs-money{display:flex;align-items:center;flex-shrink:0;border:0.5px solid var(--color-border-secondary);border-radius:10px;overflow:hidden;}
-.gs-money button{all:unset;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--color-text-secondary);background:var(--color-background-tertiary);cursor:pointer;}
+.gs-money button{all:unset;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:600;background:rgba(29,158,117,0.16);color:#13795B;cursor:pointer;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .gs-money button{color:#3CC79A;}}
+body.force-dark .gs-money button{color:#3CC79A;}
 .gs-money span{font-size:14px;color:var(--color-text-secondary);padding-left:8px;}
 .gs-money input.ie-num{width:58px;border:none;background:transparent;text-align:center;font-size:15px;font-weight:600;padding:0 4px 0 2px;}
 .gs-tline{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 2px;border-top:0.5px solid var(--color-border-tertiary);cursor:pointer;}
@@ -2332,7 +2334,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.79';
+const APP_VERSION='v123.80';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7113,7 +7115,7 @@ function renderPressCfgRows(r){
   const pv=pressValForRound(r);
   let h='<div class="setup-row gs-row"><div class="gs-lbl"><b>Presses</b><small>A new bet when a team falls behind</small></div><label class="toggle"><input type="checkbox" '+(pOn?'checked':'')+' onchange="setPressesOnForRound('+r+',this.checked);_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>';
   if(pOn){
-    h+='<div class="setup-row gs-row"><div class="gs-lbl"><b>Press value</b><small>Blank means the same as the game</small></div><div class="gs-money"><span>$</span><input class="ie-num" type="number" inputmode="decimal" placeholder="same" value="'+pv+'" style="width:70px" oninput="const v=this.value.trim();if(v===\'\'){delete WK.rounds['+r+'].pressVal;}else{WK.rounds['+r+'].pressVal=parseFloat(v);}autoSave();"/></div></div>';
+    h+='<div class="setup-row gs-row"><div class="gs-lbl"><b>Press value</b><small>Blank means the same as the game</small></div><div class="gs-money"><button type="button" aria-label="Less" onclick="_gsPressStep(this,'+r+',-5)">\u2212</button><span>$</span><input class="ie-num" type="number" inputmode="decimal" placeholder="'+roundVal('gameVal',r,WK.gameVal)+'" value="'+pv+'" oninput="const v=this.value.trim();if(v===\'\'){delete WK.rounds['+r+'].pressVal;}else{WK.rounds['+r+'].pressVal=parseFloat(v);}autoSave();"/><button type="button" aria-label="More" onclick="_gsPressStep(this,'+r+',5)">+</button></div></div>';
     h+='<div class="setup-row gs-row"><div class="gs-lbl"><b>Auto-press</b><small>Starts the press without asking</small></div><label class="toggle"><input type="checkbox" '+(apOn?'checked':'')+' onchange="setAutoPressOnForRound('+r+',this.checked);_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>';
     if(apOn){
       h+=_gsRow('Press when','How far behind a team is before it presses',_gsSeg([['2','2 down'],['3','3 down'],['4','4 down']],String(apThr),'setAutoPressThresholdForRound('+r+',parseInt(VAL))'),true);
@@ -16839,6 +16841,14 @@ function _gsMoney(key,r,ph,stepAmt,attrs){
     +' oninput="_gsStakeSet(\''+key+'\','+r+',this.value);autoSave();s2WriteActive();"/>'
     +'<button type="button" aria-label="More" onclick="_gsMoneyStep(this,\''+key+'\','+r+','+stepAmt+')">+</button></div>';
 }
+// v123.80: Press value's stepper. Writes the round's pressVal exactly as typing in the box does.
+window._gsPressStep=function(btn,r,d){
+  if(!canEditTrip())return;
+  var inp=btn.parentNode.querySelector('input');if(!inp)return;
+  var cur=parseFloat(inp.value!==''?inp.value:inp.placeholder)||0;
+  var v=Math.max(0,Math.round((cur+d)*100)/100);
+  inp.value=v;WK.rounds[r].pressVal=v;autoSave();s2WriteActive();
+};
 window._gsMoneyStep=function(btn,key,r,d){
   if(!canEditTrip())return;
   var inp=btn.parentNode.querySelector('input');if(!inp)return;
@@ -16892,7 +16902,7 @@ function _gsTeamsHtml(game,r){
     // v123.79: the old dropdowns, restyled. A missing game shows the rotation until it is set.
     var hu=game==='mp'&&isHeadsUp(r),chg=window._gsChg||null;
     // Locked exactly where _gsDrop refuses: a read-only view, or Match Play for someone else's scorecard.
-    var dis=(isReadOnly||(game==='mp'&&typeof _pencilViewerLocked==='function'&&_pencilViewerLocked(r,fi)))?' disabled':'';
+    var dis=_gsTeamsLocked(game,r,fi)?' disabled':'';
     h+=segs.map(function(seg,si){
       var tm=arr&&arr[r]&&arr[r][fi]?arr[r][fi][si]:null;
       if(!tm||!Array.isArray(tm[0])||!Array.isArray(tm[1])){var sp=_gsSplits(mem)[si%3];tm=hu?[[sp[0][0],sp[1][0]],[sp[0][1],sp[1][1]]]:sp;}
@@ -16912,13 +16922,22 @@ function _gsTeamsHtml(game,r){
     +'<div class="gs-tnote">'+(anyRot?(game==='mp'&&isHeadsUp(r)?'Pick anyone in any box. A player already in that game swaps places. If two games end up with the same matches, the other game trades so matchups don\u2019t repeat.':'Pick anyone in any box. A player already in that game swaps places. If two games end up with the same teams, the other game trades so partners don\u2019t repeat.'):'Pick anyone in any box. A player already in the match swaps places.')+'</div>';
 }
 function _gsTeamsChanged(){autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderScorecard();if(typeof renderMPHoleBox==='function')renderMPHoleBox();}
+// v123.80: Match Play teams lock only while someone else holds a live pencil for the foursome.
+// Not "unless I hold it": before anyone picks up the pencil (every round being set up) nobody
+// holds it, and v123.79 locked everyone out. A finished foursome's pencil is history (_pencilMoot).
+function _gsTeamsLocked(game,r,fi){
+  if(isReadOnly)return true;
+  if(game!=='mp'||typeof _pencilActive!=='function'||!_pencilActive())return false;
+  var lk=_pencilLockFor(r,fi);if(!lk)return false;
+  if(typeof _pencilMoot==='function'&&_pencilMoot(r,fi))return false;
+  return !holdsPencil(r,fi);
+}
 // v123.79: one box of one game set to player pi. As the old dropdowns: whoever already sits in
 // that game takes the box pi left. Then, if this game's teams are now another game's, that game
 // takes this game's old teams, so partners stay unique whichever game was edited. Allowed
 // without edit access, as before; never in a read-only view.
 window._gsDrop=function(game,r,fi,si,t,p,pi){
-  if(isReadOnly)return;
-  if(game==='mp'&&typeof _pencilViewerLocked==='function'&&_pencilViewerLocked(r,fi))return;
+  if(_gsTeamsLocked(game,r,fi))return;
   var mem=(flightsForRound(r)[fi]||[]).filter(function(x){return x>=0;});if(mem.length<4||mem.indexOf(pi)<0)return;
   var arr=_gsTeamsArr(game,r);if(!arr||!arr[r]||!arr[r][fi])return;
   var tm=arr[r][fi][si];
