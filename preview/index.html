@@ -1171,6 +1171,9 @@ body.force-light .sec-hd.gs-sec{color:#13795B;}
 .gs-lbl{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;}
 .gs-lbl b{font-size:14px;font-weight:500;color:var(--color-text-primary);}
 .gs-lbl small{font-size:11.5px;line-height:1.35;color:var(--color-text-secondary);}
+.gs-lbl small.gs-alt{display:grid;}
+.gs-lbl small.gs-alt>span{grid-area:1/1;}
+.gs-lbl small.gs-alt>span.off{visibility:hidden;}
 .qrw-seg.gs-seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;flex-shrink:0;padding:3px;border-radius:10px;background:var(--color-background-tertiary);border:0.5px solid var(--color-border-secondary);}
 .qrw-seg.gs-seg .qrw-pill{top:3px;bottom:3px;left:3px;width:calc((100% - 6px) / var(--n));border-radius:8px;}
 .qrw-seg.gs-seg button{min-height:32px;padding:0 12px;font-size:13px;white-space:nowrap;border-radius:8px;}
@@ -2313,7 +2316,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.77';
+const APP_VERSION='v123.78';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -16772,8 +16775,13 @@ function _gsTwosSetupBody(r){
 }
 // v123.75: the shared pieces of a game's settings.
 function _gsSec(t,extra){return '<div class="sec-hd gs-sec">'+t+(extra||'')+'</div>';}
-function _gsRow(label,sub,ctl,wide,na){
-  return '<div class="setup-row gs-row'+(wide?' gs-wide':'')+(na?' gs-na':'')+'" data-k="'+_gtEsc(label)+'"'+(na?' aria-disabled="true"':'')+'><div class="gs-lbl"><b>'+label+'</b>'+((na||sub)?'<small>'+(na||sub)+'</small>':'')+'</div>'+ctl+'</div>';
+function _gsRow(label,sub,ctl,wide,na,alt){
+  // v123.78: alt given means the row can be greyed, na then is a flag and alt the reason. Both
+  // texts sit in one place, the unused one invisible, so greying never changes the row's height.
+  var sm=alt!==undefined
+    ?'<small class="gs-alt"><span'+(na?' class="off" aria-hidden="true"':'')+'>'+sub+'</span><span'+(na?'':' class="off" aria-hidden="true"')+'>'+alt+'</span></small>'
+    :((na||sub)?'<small>'+(na||sub)+'</small>':'');
+  return '<div class="setup-row gs-row'+(wide?' gs-wide':'')+(na?' gs-na':'')+'" data-k="'+_gtEsc(label)+'"'+(na?' aria-disabled="true"':'')+'><div class="gs-lbl"><b>'+label+'</b>'+sm+'</div>'+ctl+'</div>';
 }
 // v123.76: run a settings change, then put the tapped row back where it was on screen. A redraw
 // can change what sits above it (Team and Heads up show a different number of match cards).
@@ -16930,7 +16938,7 @@ window._gsPairOpen=function(game,r,fi,si){
 };
 function _gsSegOpts(r){return roundHoleCount(r)===9?[[1,'1 \u00d7 9'],[3,'3 \u00d7 3']]:[[1,'1 \u00d7 18'],[2,'2 \u00d7 9'],[3,'3 \u00d7 6']];}
 function _gsSegSub(r){return roundHoleCount(r)===9?'One match over 9 holes, or three 3-hole matches':'One match over 18 holes, or separate 9s or 6s';}
-function _gsSettleRow(cur,tap,na){return _gsRow('Settlement','Each player wins the amount, or the team splits it',_gsSeg([['perplayer','Per player'],['perteam','Per team']],cur,tap),true,na);}
+function _gsSettleRow(cur,tap,na){return _gsRow('Settlement','Each player wins the amount, or the team splits it',_gsSeg([['perplayer','Per player'],['perteam','Per team']],cur,tap),true,!!na,na===undefined?undefined:'Team matches only');}
 function _gsMPSetupBody(r){
   const _lfi=_segLaneFi(r);
   const mpG=mpGamesForRound(r,_lfi);
@@ -16938,6 +16946,9 @@ function _gsMPSetupBody(r){
   let h=_gsSec('Format');
   h+=_gsRow('Segments',_gsSegSub(r),_gsSeg(_gsSegOpts(r),mpG,'setMPGamesForRound('+r+',parseInt(VAL))',true),true);
   if(_np>=4)h+=_gsRow('Match type','Two against two on best ball, or one against one',_gsSeg([['team','Team'],['headsup','Heads up']],_hu?'headsup':'team','_setMPFormat('+r+',VAL)',true));
+  // v123.76: always shown, greyed for Team, so changing Match type never reshuffles the rows.
+  // v123.78: right under Match type, the choice it depends on.
+  h+=_gsRow('Net off match low','On: strokes off the lower player<br>Off: full handicaps',`<label class="toggle"><input type="checkbox" ${huNetOffMatchLow(r,_gsLane()==='both'?null:_gsLane())?'checked':''}${_hu?'':' disabled'} onchange="_gsOptSet('mpHUNetOffMatchLow',${r},this.checked);autoSave();s2WriteActive();renderScorecard();renderBanner();renderMPHoleBox();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label>`,false,!_hu,'Heads up only');
   // Unfinished match. The key has been read, defaulted and persisted since v119.30 with
   // no writer anywhere, so an undecided segment always went to the leader and nobody
   // could choose otherwise. Same two options and the same words as Razzle's control, one
@@ -16947,11 +16958,9 @@ function _gsMPSetupBody(r){
   // Outside the !_hu branch on purpose: _mpSegDisposition governs both lanes.
   const _mpFin=_gsOptVal('mpFinalSeg',r,'leader');
   h+=_gsRow('Unfinished match','When play ends before a match is decided',_gsSeg([['leader','Leader wins'],['void','No winner']],_mpFin!=='void'?'leader':'void',"_gsOptSet('mpFinalSeg',"+r+",VAL);autoSave();s2WriteActive()"),true);
-  // v123.76: always shown, greyed for Team, so changing Match type never reshuffles the rows.
-  h+=_gsRow('Net off match low',_hu?'On: strokes off the lower player<br>Off: full handicaps':'',`<label class="toggle"><input type="checkbox" ${huNetOffMatchLow(r,_gsLane()==='both'?null:_gsLane())?'checked':''}${_hu?'':' disabled'} onchange="_gsOptSet('mpHUNetOffMatchLow',${r},this.checked);autoSave();s2WriteActive();renderScorecard();renderBanner();renderMPHoleBox();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label>`,false,_hu?'':'Heads up only');
   h+=_gsSec('Money');
   h+=_gsRow('Per game','Each match',_gsMoney('gameVal',r,_gsStakePh('gameVal',r,WK.gameVal),5));
-  h+=_gsSettleRow(WK.mpSettle||'perplayer','WK.mpSettle=VAL;autoSave();s2WriteActive()',_hu?'Team matches only':'');
+  h+=_gsSettleRow(WK.mpSettle||'perplayer','WK.mpSettle=VAL;autoSave();s2WriteActive()',_hu);
   h+=_gsSec('Presses');
   h+=renderPressCfgRows(r);
   h+=_gsTeamsHtml('mp',r);
