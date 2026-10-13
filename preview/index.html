@@ -2313,7 +2313,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.76';
+const APP_VERSION='v123.77';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -11643,7 +11643,7 @@ function _setMPFormat(r,fmt){
   if(cur===fmt)return; // re-selecting the format already showing is not a change
   var pc=_gsPressCount(r),sc=_gsRoundHasScores(r);
   var body='Switching to '+(fmt==='headsup'?'Heads up':'Team')+' rebuilds the matches in every foursome, not just the one you are viewing.'+_gsRiskTail(pc,sc,'matches');
-  _gsConfirmDestructive({risk:(pc>0||sc),title:'Change match format?',body:body,okLabel:'Change format'},function(){
+  _gsConfirmDestructive({risk:(pc>0||sc),title:'Change match format?',body:body,okLabel:'Change format',onCancel:function(){_gsRefreshAfterEdit();}},function(){
     WK.rounds[r].mpFormat=fmt;
     STATE.mpTeams[r]=flightsForRound(r).map((_,_ffi)=>fmt==='headsup'?defaultHUTeamsForFlight(r,_ffi):defaultTeamsForFlight(r,_ffi));
     if(STATE.pressState)STATE.pressState[r]=flightsForRound(r).map(()=>[]);
@@ -16346,6 +16346,8 @@ window._gsRemoveGame=function(gameId){
   renderGamesTab();
 };
 function _gsRefreshAfterEdit(){
+  // v123.77: inside _gsKeep the redraw waits for the change to finish, so one change draws once.
+  if(window._gsHold){window._gsHold.dirty=true;return;}
   // Safe refresh for any per-round game-config edit. Only re-renders the
   // Games tab content if it is the currently visible view; otherwise a
   // harmless no-op. Replaces the old renderTeamsPanel() refresh call used
@@ -16778,12 +16780,18 @@ function _gsRow(label,sub,ctl,wide,na){
 function _gsScroller(n){for(var p=n&&n.parentElement;p;p=p.parentElement){var cs=window.getComputedStyle?getComputedStyle(p):null;if(cs&&(cs.overflowY==='auto'||cs.overflowY==='scroll')&&p.scrollHeight>p.clientHeight)return p;}return null;}
 window._gsKeep=function(el,fn){
   var row=el&&el.closest?el.closest('.gs-row'):null,k=row?row.getAttribute('data-k'):null,t=row&&row.getBoundingClientRect?row.getBoundingClientRect().top:null;
-  fn();
+  // v123.77: hold redraws while the change runs, then draw once and put the row back in the
+  // same task. Done with timers (v123.76) the browser painted the moved row first: a flicker.
+  var outer=window._gsHold,hold=outer||{dirty:false};
+  window._gsHold=hold;
+  try{fn();}finally{if(!outer)window._gsHold=null;}
+  if(outer||!hold.dirty)return;
+  _gsRefreshAfterEdit();
   if(k==null||t==null)return;
-  var fix=function(){var all=document.querySelectorAll?document.querySelectorAll('.gs-row'):[],n=null;
-    for(var i=0;i<all.length;i++)if(all[i].getAttribute('data-k')===k){n=all[i];break;}
-    if(!n)return;var d=n.getBoundingClientRect().top-t;if(Math.abs(d)<1)return;var sc=_gsScroller(n);if(sc)sc.scrollTop+=d;else window.scrollBy(0,d);};
-  setTimeout(fix,0);setTimeout(fix,320);
+  var all=document.querySelectorAll?document.querySelectorAll('.gs-row'):[],n=null;
+  for(var i=0;i<all.length;i++)if(all[i].getAttribute('data-k')===k){n=all[i];break;}
+  if(!n)return;var d=n.getBoundingClientRect().top-t;if(Math.abs(d)<1)return;
+  var sc=_gsScroller(n);if(sc)sc.scrollTop+=d;else window.scrollBy(0,d);
 };
 // A sliding choice. opts: [[value,label],...]; tap(value) is the JS run after the pill moves,
 // as a string with VAL in place of the quoted value.
@@ -16794,7 +16802,7 @@ function _gsSeg(opts,cur,tap,delay){
   opts.forEach(function(o,i){
     var v=String(o[0]),js=tap.split('VAL').join("'"+v+"'");
     h+='<button type="button" role="radio" aria-checked="'+(i===idx)+'" class="'+(i===idx?'on':'')+'" data-val="'+v+'"'
-      +' onclick="if(this.className===\'on\')return;_wizSegTo(this.parentNode,this.dataset.val);_gsKeep(this,function(){'+(delay?'setTimeout(function(){'+js+'},260)':js)+'})">'+o[1]+'</button>';
+      +' onclick="if(this.className===\'on\')return;_wizSegTo(this.parentNode,this.dataset.val);'+(delay?'var b=this;setTimeout(function(){_gsKeep(b,function(){'+js+'})},260)':'_gsKeep(this,function(){'+js+'})')+'">'+o[1]+'</button>';
   });
   return h+'</div>';
 }
@@ -16928,8 +16936,8 @@ function _gsMPSetupBody(r){
   const mpG=mpGamesForRound(r,_lfi);
   const _hu=isHeadsUp(r),_np=WK.players.length;
   let h=_gsSec('Format');
-  h+=_gsRow('Segments',_gsSegSub(r),_gsSeg(_gsSegOpts(r),mpG,'setMPGamesForRound('+r+',parseInt(VAL));_gsRefreshAfterEdit()',true),true);
-  if(_np>=4)h+=_gsRow('Match type','Two against two on best ball, or one against one',_gsSeg([['team','Team'],['headsup','Heads up']],_hu?'headsup':'team','_setMPFormat('+r+',VAL);_gsRefreshAfterEdit()',true));
+  h+=_gsRow('Segments',_gsSegSub(r),_gsSeg(_gsSegOpts(r),mpG,'setMPGamesForRound('+r+',parseInt(VAL))',true),true);
+  if(_np>=4)h+=_gsRow('Match type','Two against two on best ball, or one against one',_gsSeg([['team','Team'],['headsup','Heads up']],_hu?'headsup':'team','_setMPFormat('+r+',VAL)',true));
   // Unfinished match. The key has been read, defaulted and persisted since v119.30 with
   // no writer anywhere, so an undecided segment always went to the leader and nobody
   // could choose otherwise. Same two options and the same words as Razzle's control, one
@@ -16969,7 +16977,7 @@ function _gsHammerSetupBody(r){
   const _o=(k,d)=>_gsOptVal(k,r,d);
   const _set=k=>"_gsOptSet('"+k+"',"+r+",VAL);autoSave();s2WriteActive()";
   let h=_gsSec('Format');
-  h+=_gsRow('Segments',_gsSegSub(r),_gsSeg(_gsSegOpts(r),hSegs,'setHammerSegsForRound('+r+',parseInt(VAL));_gsRefreshAfterEdit()',true),true);
+  h+=_gsRow('Segments',_gsSegSub(r),_gsSeg(_gsSegOpts(r),hSegs,'setHammerSegsForRound('+r+',parseInt(VAL))',true),true);
   h+=_gsRow('Scoring','The team\u2019s best net, or both nets added',_gsSeg([['bestball','Better ball'],['combined','Combined']],_o('hammerScoring',WK.hammerScoring||'bestball'),_set('hammerScoring')));
   h+=_gsRow('Hammer mode','Either team any time, or the teams take turns',_gsSeg([['any','Anyone'],['alt','Alternating']],_o('hammerMode',WK.hammerMode||'any'),_set('hammerMode')+';_gsRefreshAfterEdit()',true),true);
   h+=_gsRow('Max hammers a hole','How many times the value can double on one hole',_gsSeg([['0','No limit'],['1','1'],['2','2']],String(_o('hammerMax',WK.hammerMax!=null?WK.hammerMax:0)),"_gsOptSet('hammerMax',"+r+",parseInt(VAL));autoSave();s2WriteActive()"),true);
