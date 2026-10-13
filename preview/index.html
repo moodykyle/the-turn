@@ -2360,7 +2360,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.86';
+const APP_VERSION='v123.87';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -17034,7 +17034,8 @@ function _gsMPSetupBody(r){
   // _gsOptVal/_gsOptSet carry the lane, so this is per foursome wherever the sheet is.
   // Outside the !_hu branch on purpose: _mpSegDisposition governs both lanes.
   const _mpFin=_gsOptVal('mpFinalSeg',r,'leader');
-  h+=_gsRow('Unfinished match','When play ends before a match is decided',_gsSeg([['leader','Leader wins'],['void','No winner']],_mpFin!=='void'?'leader':'void',"_gsOptSet('mpFinalSeg',"+r+",VAL);autoSave();s2WriteActive()"),true);
+  // v123.87: beside its pill, like Scoring; "Unfinished match" wrapped beside a 200px pill.
+  h+=_gsRow('Unfinished','If play ends undecided',_gsSeg([['leader','Leader wins'],['void','No winner']],_mpFin!=='void'?'leader':'void',"_gsOptSet('mpFinalSeg',"+r+",VAL);autoSave();s2WriteActive()"));
   h+=_gsSec('Money');
   h+=_gsRow('Per game','Each match<br>\u00b1$5 or type any',_gsMoney('gameVal',r,_gsStakePh('gameVal',r,WK.gameVal),5));
   h+=_gsSettleRow(WK.mpSettle||'perplayer','WK.mpSettle=VAL;autoSave();s2WriteActive()',_hu);
@@ -17064,9 +17065,11 @@ function _gsHammerSetupBody(r){
   const _set=k=>"_gsOptSet('"+k+"',"+r+",VAL);autoSave();s2WriteActive()";
   let h=_gsSec('Format');
   h+=_gsRow('Segments',_gsSegSub(r),_gsSeg(_gsSegOpts(r),hSegs,'setHammerSegsForRound('+r+',parseInt(VAL))',true),true);
-  h+=_gsRow('Scoring','Best net, or both added',_gsSeg([['bestball','Better ball'],['combined','Combined']],_o('hammerScoring',WK.hammerScoring||'bestball'),_set('hammerScoring')));
-  h+=_gsRow('Hammer mode','Either team any time, or the teams take turns',_gsSeg([['any','Anyone'],['alt','Alternating']],_o('hammerMode',WK.hammerMode||'any'),_set('hammerMode')+';_gsRefreshAfterEdit()',true),true);
+  // v123.87: Max hammers under Segments; Hammer mode beside its pill, above Scoring,
+  // named Hammering: Hammer mode wraps beside a 200px pill at 360px.
   h+=_gsRow('Max hammers a hole','How many times the value can double on one hole',_gsSeg([['0','No limit'],['1','1'],['2','2']],String(_o('hammerMax',WK.hammerMax!=null?WK.hammerMax:0)),"_gsOptSet('hammerMax',"+r+",parseInt(VAL));autoSave();s2WriteActive()"),true);
+  h+=_gsRow('Hammering','Any team, or take turns',_gsSeg([['any','Anyone'],['alt','Alternating']],_o('hammerMode',WK.hammerMode||'any'),_set('hammerMode')+';_gsRefreshAfterEdit()',true));
+  h+=_gsRow('Scoring','Best net, or both added',_gsSeg([['bestball','Better ball'],['combined','Combined']],_o('hammerScoring',WK.hammerScoring||'bestball'),_set('hammerScoring')));
   h+=_gsRow('After a halve','Value rolls on, or resets',_gsSeg([['carry','Carry'],['reset','Reset']],_o('hammerHalve',WK.hammerHalve||'carry'),_set('hammerHalve')));
   h+=_gsSec('Money');
   h+=_gsRow('Per hole','Before hammers<br>\u00b1$1 or type any',_gsMoney('hammerVal',r,_gsStakePh('hammerVal',r,WK.hammerVal||2),1,' step="0.25"'));
