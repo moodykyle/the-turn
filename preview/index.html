@@ -2374,7 +2374,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.92';
+const APP_VERSION='v123.93';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -15896,11 +15896,10 @@ function _gsFourBallSetupBody(r){
   h+=_gsRow('Split','1st / 2nd',_gsSeg([['70','70/30'],['60','60/40']],String(d.split),pays===2?_t('fbSplit'):'void(VAL)',true),false,pays!==2,'Top 2 only');
   h+=_gsRow('Ties',d.tie==='countback'?'Back 9, last 6,<br>last 3, 18':'Tied teams<br>split the money',_gsSeg([['split','Split'],['countback','Countback']],d.tie,_t('fbTie'),true));
   if(blocked){
-    const why=(d.scope==='fs'&&d.size===4)
-      ? '4-man teams inside one foursome is a single team with nobody to play. Use Field scope, or 2-man.'
-      : 'Not enough players for '+d.size+' teams of '+d.size+'. Four-Ball needs at least two full teams in a pot.';
-    h+=_gsRow('Total pot','Blocked','<span class="gs-fbval">-</span>');
-    h+='<div class="fb-warn">'+why+'</div>';
+    // v123.93 (Kyle: the line under the toast "appears and remains"): the reason sits in the row,
+    // two short lines, nothing below it. The toast already said it in full when the choice was made.
+    const why=(d.scope==='fs'&&d.size===4)?'No one to play:<br>4-man fills a foursome':'Not enough players<br>for two teams';
+    h+=_gsRow('Total pot',why,'<span class="gs-fbval">-</span>');
     return h;
   }
   const many=pools.length>1;
