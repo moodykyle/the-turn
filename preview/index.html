@@ -1172,6 +1172,28 @@ body.force-light .sec-hd.gs-sec{color:#13795B;}
 .setup-row.gs-row{display:flex;align-items:center;gap:12px;padding:10px 2px;}
 .setup-row.gs-row.gs-wide{flex-direction:column;align-items:stretch;gap:8px;}
 .gs-fsrow{gap:7px!important;}
+.setup-row.gs-row:not(.gs-wide)>.qrw-seg.gs-seg{width:200px;box-sizing:border-box;}
+.setup-row.gs-row:not(.gs-wide)>.qrw-seg.gs-seg button{padding:0 6px;}
+.setup-row.gs-row.gs-bonus{align-items:flex-start;}
+.gs-bonus .gs-lbl{padding-top:3px;}
+.gs-bstack{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;}
+.gs-amt-off{opacity:0.45;pointer-events:none;}
+.gs-dd.gs-ddw{flex:none;width:100%;}
+.gs-desc{display:grid;font-size:11.5px;line-height:1.35;color:var(--color-text-secondary);}
+.gs-desc>span{grid-area:1/1;}
+.gs-desc>span.off{visibility:hidden;}
+.gs-rzpos{display:flex;align-items:center;gap:10px;}
+.gs-rzpos>span{width:36px;flex-shrink:0;font-size:12px;font-weight:700;color:var(--color-text-secondary);}
+.gs-rzm{display:flex;align-items:center;gap:12px;padding:9px 2px;border-top:0.5px solid var(--color-border-tertiary);}
+.gs-rzn{width:58px;flex-shrink:0;display:flex;flex-direction:column;}
+.gs-rzn b{font-size:12px;font-weight:700;color:#13795B;}
+.gs-rzn small{font-size:12px;color:var(--color-text-secondary);}
+.gs-rzt{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px;font-size:13.5px;font-weight:600;}
+.gs-rza{color:#13795B;}
+.gs-rzb{color:#2F6FD6;display:flex;align-items:center;gap:7px;}
+.gs-rzb i{font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:0.06em;color:var(--color-background-primary);background:var(--color-text-secondary);border-radius:6px;padding:1px 5px;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .gs-rzn b{color:#EFC456;}body:not(.force-light) .gs-rza{color:#3CC79A;}body:not(.force-light) .gs-rzb{color:#6EA8FE;}}
+body.force-dark .gs-rzn b{color:#EFC456;}body.force-dark .gs-rza{color:#3CC79A;}body.force-dark .gs-rzb{color:#6EA8FE;}
 .gs-fsrow .qrw-seg.gs-seg button{flex-direction:row;}
 .gs-fsrow button.on .gs-dot{box-shadow:0 0 0 1.5px #FFFFFF;}
 .gs-fsrow .gs-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px;}
@@ -2339,7 +2361,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.84';
+const APP_VERSION='v123.85';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -16674,54 +16696,70 @@ function _gsSkinsSetupBody(r){
   }
   return h;
 }
+// v123.85: one bonus. Description and how-to on the left; the switch over its amount on the right.
+// The amount is greyed and locked while the bonus is off, or while the bonus cannot use it (amtNa).
+function _gsRzBonus(label,sub,onKey,on,amtKey,ph,amtNa,r){
+  var off=!on||!!amtNa;
+  var tog='<label class="toggle"><input type="checkbox"'+(on?' checked':'')+' onchange="_gsOptSet(\''+onKey+'\','+r+',this.checked);autoSave();s2WriteActive();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label>';
+  return '<div class="setup-row gs-row gs-bonus" data-k="'+_gtEsc(label)+'"><div class="gs-lbl"><b>'+label+'</b><small>'+sub+'<br>'+(!on?'Off':(amtNa||'±$1 or type any'))+'</small></div>'
+    +'<div class="gs-bstack">'+tog+'<span class="gs-amt'+(off?' gs-amt-off':'')+'">'+_gsMoney(amtKey,r,ph,1,off?' disabled':'')+'</span></div></div>';
+}
 function _gsRazzleSetupBody(r){
+  // v123.85: the Match Play pattern. Every control writes what it wrote before.
   if(!STATE.razzleOrder)STATE.razzleOrder=WK.rounds.map(()=>[]);
   if(!STATE.razzleMatchTeams)STATE.razzleMatchTeams=WK.rounds.map(()=>[]);
-  const _rzFl=flightsForRound(r);const _rzMulti=_rzFl.length>1;
-  let _rzSel=(STATE.razzleViewFlight===undefined||STATE.razzleViewFlight===null?-1:STATE.razzleViewFlight);
-  let h='';
-  h+=_gsLaneLabelHtml(r);
-  for(let _fi=0;_fi<_rzFl.length;_fi++){
-    if(_rzMulti&&_rzSel!==-1&&_rzSel!==_fi)continue;
-    const _mem=_rzFl[_fi]||[];
-    if(_rzMulti){h+='<div style="display:flex;align-items:center;gap:7px;padding:6px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,_fi)+'</span></div>';}
-    if(_mem.length<4){h+='<div style="padding:8px 2px;font-size:12px;color:var(--color-text-secondary)">Needs 4 players for Razzle.</div>';continue;}
-    const ord=(STATE.razzleOrder[r]&&STATE.razzleOrder[r][_fi]&&STATE.razzleOrder[r][_fi].length>=4)?STATE.razzleOrder[r][_fi]:_mem.slice();
-    const rots=[[[ord[0],ord[1]],[ord[2],ord[3]]],[[ord[0],ord[2]],[ord[1],ord[3]]],[[ord[0],ord[3]],[ord[1],ord[2]]]];
-    h+=`<div class="setup-row" style="display:block;padding-bottom:8px"><div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:6px">Rotation order</div>`;
-    for(let pos=0;pos<4;pos++){h+=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:11px;color:var(--color-text-tertiary);width:40px">Pos ${pos+1}</span><select class="team-dropdown" onchange="setRazzleOrder(${r},${pos},parseInt(this.value),${_fi})">${pOpts(ord[pos],_mem)}</select></div>`;}
-    h+=`</div>`;
-    h+=`<div class="setup-row" style="display:block;padding-bottom:8px"><div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:6px">Team rotation</div>`;
-    rots.forEach((rot,ri)=>{const nA=rot[0].map(i=>displayName(i)).join(' & '),nB=rot[1].map(i=>displayName(i)).join(' & ');h+=`<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:3px"><span style="color:var(--color-text-tertiary)">Match ${ri+1},${ri+4},${ri+7}:</span> ${nA} vs ${nB}</div>`;});
-    h+=`</div>`;
-  }
-  const _rzBdOn=_gsOptVal('razzleBirdieOn',r,true)!==false;
-  const _rzSwOn=_gsOptVal('razzleSweepOn',r,true)!==false;
-  const _rz5On=_gsOptVal('razzle5HoleOn',r,true)!==false;
-  const _rz5Mode=_gsOptVal('razzle5HoleMode',r,'add');
-  // In a doubling mode the dollar amount is never read, so the input goes away and
-  // the label drops its dollar sign rather than sitting there meaning nothing.
-  const _rz5Amt=_rz5On&&_rz5Mode!=='dbl'&&_rz5Mode!=='dblcarry';
-  const _rz5Hint=(_RZ5MODES.find(o=>o[0]===_rz5Mode)||_RZ5MODES[0])[2];
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per match</span>$<input class="ie-num" type="number" placeholder="${_gsStakePh('razzleVal',r,WK.razzleVal||5)}" value="${_gsStakeVal('razzleVal',r)}" style="width:80px" oninput="_gsStakeSet('razzleVal',${r},this.value);autoSave();s2WriteActive();"/></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">${_rzBdOn?'$ ':''}birdie bonus</span>${_rzBdOn?'$<input class="ie-num" type="number" placeholder="'+_gsStakePh('razzleBirdieBonus',r,WK.razzleBirdieBonus||5)+'" value="'+_gsStakeVal('razzleBirdieBonus',r)+'" style="width:80px" oninput="_gsStakeSet(\'razzleBirdieBonus\','+r+',this.value);autoSave();s2WriteActive();"/>':''}<label class="toggle"><input type="checkbox"${_rzBdOn?' checked':''} onchange="_gsOptSet('razzleBirdieOn',${r},this.checked);autoSave();s2WriteActive();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">${_rzSwOn?'$ ':''}sweep bonus</span>${_rzSwOn?'$<input class="ie-num" type="number" placeholder="'+_gsStakePh('razzleSweepBonus',r,WK.razzleSweepBonus||5)+'" value="'+_gsStakeVal('razzleSweepBonus',r)+'" style="width:80px" oninput="_gsStakeSet(\'razzleSweepBonus\','+r+',this.value);autoSave();s2WriteActive();"/>':''}<label class="toggle"><input type="checkbox"${_rzSwOn?' checked':''} onchange="_gsOptSet('razzleSweepOn',${r},this.checked);autoSave();s2WriteActive();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>`;
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">${_rz5Amt?'$ ':''}5-hole bonus</span>${_rz5Amt?'$<input class="ie-num" type="number" placeholder="'+_gsStakePh('razzle5HoleBonus',r,WK.razzle5HoleBonus||5)+'" value="'+_gsStakeVal('razzle5HoleBonus',r)+'" style="width:80px" oninput="_gsStakeSet(\'razzle5HoleBonus\','+r+',this.value);autoSave();s2WriteActive();"/>':''}<label class="toggle"><input type="checkbox"${_rz5On?' checked':''} onchange="_gsOptSet('razzle5HoleOn',${r},this.checked);autoSave();s2WriteActive();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>`;
-  if(_rz5On){
-    h+=`<div class="setup-row" style="padding-left:14px"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">When a match hits 5 holes</span><select class="ie-sel" onchange="_gsOptSet('razzle5HoleMode',${r},this.value);autoSave();s2WriteActive();_gsRefreshAfterEdit()">${_RZ5MODES.map(o=>`<option value="${o[0]}"${_rz5Mode===o[0]?' selected':''}>${o[1]}</option>`).join('')}</select></div>`;
-    h+=`<div style="font-size:11px;color:var(--color-text-tertiary);padding:0 12px 9px 26px;line-height:1.45">${_rz5Hint}</div>`;
-  }
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Birdie bonus scored on</span><select class="ie-sel" onchange="_gsOptSet('razzleBirdieGross',${r},this.value==='gross');autoSave();s2WriteActive()"><option value="net"${!_gsOptVal('razzleBirdieGross',r,WK.razzleBirdieGross)?' selected':''}>Net score</option><option value="gross"${_gsOptVal('razzleBirdieGross',r,WK.razzleBirdieGross)?' selected':''}>Gross score</option></select></div>`;
-  const _rzFin=_gsOptVal('razzleFinalMatch',r,'void');
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Unfinished final match</span><select class="ie-sel" onchange="_gsOptSet('razzleFinalMatch',${r},this.value);autoSave();s2WriteActive();_gsRefreshAfterEdit()"><option value="void"${_rzFin!=='leader'?' selected':''}>No winner</option><option value="leader"${_rzFin==='leader'?' selected':''}>Leader wins</option></select></div>`;
-  if(_rzFin==='leader'){
-    const _rzCB=_gsOptVal('razzleFinalCloseBonus',r,false)===true;
-    const _rzBB=_gsOptVal('razzleFinalBirdieBonus',r,false)===true;
-    h+=`<div class="setup-row" style="padding-left:14px"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Leader also takes the 5-hole bonus</span><label class="toggle"><input type="checkbox"${_rzCB?' checked':''} onchange="_gsOptSet('razzleFinalCloseBonus',${r},this.checked);autoSave();s2WriteActive()"><span class="toggle-slider"></span></label></div>`;
-    h+=`<div class="setup-row" style="padding-left:14px"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Leader also takes the birdie bonus</span><label class="toggle"><input type="checkbox"${_rzBB?' checked':''} onchange="_gsOptSet('razzleFinalBirdieBonus',${r},this.checked);autoSave();s2WriteActive()"><span class="toggle-slider"></span></label></div>`;
-  }
-  h+=`<div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Settlement</span><select class="ie-sel" onchange="_gsOptSet('razzleSettle',${r},this.value);autoSave();s2WriteActive()"><option value="perplayer"${roundVal('razzleSettle',r,WK.razzleSettle||'perplayer')==='perplayer'?' selected':''}>Per player</option><option value="perteam"${roundVal('razzleSettle',r,WK.razzleSettle||'perplayer')==='perteam'?' selected':''}>Per team</option></select></div>`;
+  const bdOn=_gsOptVal('razzleBirdieOn',r,true)!==false,swOn=_gsOptVal('razzleSweepOn',r,true)!==false,fvOn=_gsOptVal('razzle5HoleOn',r,true)!==false;
+  const mode=_gsOptVal('razzle5HoleMode',r,'add'),dbl=mode==='dbl'||mode==='dblcarry';
+  const gross=!!_gsOptVal('razzleBirdieGross',r,WK.razzleBirdieGross);
+  const lead=_gsOptVal('razzleFinalMatch',r,'void')==='leader';
+  const cb=_gsOptVal('razzleFinalCloseBonus',r,false)===true,bb=_gsOptVal('razzleFinalBirdieBonus',r,false)===true;
+  const sw=function(on,dis,js){return '<label class="toggle"><input type="checkbox"'+(on?' checked':'')+(dis?' disabled':'')+' onchange="'+js+'"><span class="toggle-slider"></span></label>';};
+  let h=_gsSec('Format');
+  h+=_gsRow('Birdie bonus on','Which score earns it',_gsSeg([['net','Net score'],['gross','Gross score']],gross?'gross':'net',"_gsOptSet('razzleBirdieGross',"+r+",VAL==='gross');autoSave();s2WriteActive()"));
+  h+=_gsRow('Final match','If undecided at day\u2019s end',_gsSeg([['void','No winner'],['leader','Leader wins']],lead?'leader':'void',"_gsOptSet('razzleFinalMatch',"+r+",VAL);autoSave();s2WriteActive();_gsRefreshAfterEdit()",true));
+  h+=_gsRow('Leader takes 5-hole bonus','If the last match reached 5 holes',sw(cb,!lead,"_gsOptSet('razzleFinalCloseBonus',"+r+",this.checked);autoSave();s2WriteActive()"),false,!lead,'Leader wins only');
+  h+=_gsRow('Leader takes birdie bonus','If they had a birdie in it',sw(bb,!lead,"_gsOptSet('razzleFinalBirdieBonus',"+r+",this.checked);autoSave();s2WriteActive()"),false,!lead,'Leader wins only');
+  h+=_gsSec('Money');
+  h+=_gsRow('Per match','Each match won<br>±$1 or type any',_gsMoney('razzleVal',r,_gsStakePh('razzleVal',r,WK.razzleVal||5),1));
+  h+=_gsRzBonus('Birdie bonus','Each birdie','razzleBirdieOn',bdOn,'razzleBirdieBonus',_gsStakePh('razzleBirdieBonus',r,WK.razzleBirdieBonus||5),'',r);
+  h+=_gsRzBonus('Sweep bonus','Win all 3 in a set','razzleSweepOn',swOn,'razzleSweepBonus',_gsStakePh('razzleSweepBonus',r,WK.razzleSweepBonus||5),'',r);
+  h+=_gsRzBonus('5-hole bonus','Match reaches 5 holes','razzle5HoleOn',fvOn,'razzle5HoleBonus',_gsStakePh('razzle5HoleBonus',r,WK.razzle5HoleBonus||5),dbl?'Doubling: no amount':'',r);
+  // One dropdown, the four modes as today. All four write-ups sit in one place, the picked one shown,
+  // so the row is always as tall as the longest and nothing below it moves.
+  const cur=(_RZ5MODES.find(o=>o[0]===mode)||_RZ5MODES[0])[0];
+  const dd='<select class="gs-dd gs-ddw"'+(fvOn?'':' disabled')+' onchange="_gsOptSet(\'razzle5HoleMode\','+r+',this.value);autoSave();s2WriteActive();_gsRefreshAfterEdit()">'
+    +_RZ5MODES.map(o=>'<option value="'+o[0]+'"'+(o[0]===cur?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'
+    +'<div class="gs-desc">'+_RZ5MODES.map(o=>'<span'+(o[0]===cur?'':' class="off" aria-hidden="true"')+'>'+o[2]+'</span>').join('')+'</div>';
+  h+=_gsRow('When a match hits 5 holes','What a long match pays',dd,true,!fvOn,'Needs the 5-hole bonus');
+  h+=_gsSettleRow(_gsOptVal('razzleSettle',r,WK.razzleSettle||'perplayer'),"_gsOptSet('razzleSettle',"+r+",VAL);autoSave();s2WriteActive()");
+  h+=_gsRzTeamsHtml(r);
   return h;
+}
+// v123.85: Razzle's teams are a rotation order, not a split per game. Same lane rules and foursome pill.
+function _gsRzTeamsHtml(r){
+  var fl=flightsForRound(r),multi=fl.length>1,h='';
+  var ln=_gsLane(),sel=(ln==='both'||ln==null)?-1:ln;
+  var fp=_gsFsPill('razzle',r,fl,sel),pick=fp.pick,pillRow=fp.html;
+  var nm=function(pi){return _gtEsc(displayName(pi));};
+  for(var fi=0;fi<fl.length;fi++){
+    if(multi&&sel!==-1&&sel!==fi)continue;
+    if(pick>=0&&fi!==pick)continue;
+    var mem=(fl[fi]||[]).filter(function(pi){return pi>=0;});
+    if(mem.length<4){h+='<div class="gs-tnote">Needs 4 players for Razzle.</div>';continue;}
+    var ord=(STATE.razzleOrder[r]&&STATE.razzleOrder[r][fi]&&STATE.razzleOrder[r][fi].length>=4)?STATE.razzleOrder[r][fi]:mem.slice();
+    var dis=isReadOnly?' disabled':'';
+    h+='<div class="gs-tblk"><div class="gs-th"><b>Rotation order</b><small>Partners change every match</small></div>';
+    for(var pos=0;pos<4;pos++){
+      h+='<div class="gs-rzpos"><span>Pos '+(pos+1)+'</span><select class="gs-dd"'+dis+' onchange="setRazzleOrder('+r+','+pos+',parseInt(this.value),'+fi+')">'
+        +mem.map(function(pi){return '<option value="'+pi+'"'+(pi===ord[pos]?' selected':'')+'>'+nm(pi)+'</option>';}).join('')+'</select></div>';
+    }
+    h+='</div>';
+    [[[0,1],[2,3],'1, 4, 7'],[[0,2],[1,3],'2, 5, 8'],[[0,3],[1,2],'3, 6, 9']].forEach(function(x){
+      h+='<div class="gs-rzm"><span class="gs-rzn"><b>Matches</b><small>'+x[2]+'</small></span><span class="gs-rzt"><span class="gs-rza">'+nm(ord[x[0][0]])+' &amp; '+nm(ord[x[0][1]])+'</span>'
+        +'<span class="gs-rzb"><i>VS</i>'+nm(ord[x[1][0]])+' &amp; '+nm(ord[x[1][1]])+'</span></span></div>';
+    });
+  }
+  return _gsSec('Teams')+_gsLaneLabelHtml(r)+pillRow+h+'<div class="gs-tnote">Pick anyone in any box. A player already in the order swaps places.</div>';
 }
 function _gsVegasSetupBody(r){
   // v123.83: the Match Play pattern. Every control writes what it wrote before.
@@ -16867,12 +16905,11 @@ function _gsSplitLabel(game,r,sp){
   return f(sp[0][0])+' &amp; '+f(sp[0][1])+'<i>v</i>'+f(sp[1][0])+' &amp; '+f(sp[1][1]);
 }
 function _gsSegsFor(game,r,fi){return game==='hammer'?getSegments(hammerSegsForRound(r,fi)):game==='vegas'?getSegments(vegasSegForRound(r,fi),roundHoleCount(r)):game==='skins'?getSegments(skinsGamesForRound(r,fi),roundHoleCount(r)):getSegments(mpGamesForRound(r,fi),roundHoleCount(r));}
-function _gsTeamsHtml(game,r){
-  var fl=flightsForRound(r),multi=fl.length>1,h='';
-  // v123.82: a foursome lane shows that foursome; the All lane shows one at a time behind the pill.
-  var ln=_gsLane(),sel=(ln==='both'||ln==null)?-1:ln;
+// v123.85: the foursome pill (v123.82) for any Teams section. Its own key per game; the All lane only.
+function _gsFsPill(game,r,fl,sel){
+  if(!(fl.length>1&&sel===-1))return {pick:-1,html:''};
   var pick=-1,pillRow='';
-  if(multi&&sel===-1){
+  {
     if(!STATE.gsTeamsFi)STATE.gsTeamsFi={};
     pick=parseInt(STATE.gsTeamsFi[game],10);if(!(pick>=0&&pick<fl.length))pick=0;
     var opts=fl.map(function(_,i){return [i,'<span class="gs-dot" style="background:'+_flightsAccent0(i)+'"></span>'+(fl.length>2?'F'+(i+1):'Foursome '+(i+1))];});
@@ -16881,6 +16918,13 @@ function _gsTeamsHtml(game,r){
       +_gsSeg(opts,pick,'if(!STATE.gsTeamsFi)STATE.gsTeamsFi={};STATE.gsTeamsFi[\''+game+'\']=parseInt(VAL,10);_gsRefreshAfterEdit()',true)
       +'<small class="gs-fsm">'+who+'</small></div>';
   }
+  return {pick:pick,html:pillRow};
+}
+function _gsTeamsHtml(game,r){
+  var fl=flightsForRound(r),multi=fl.length>1,h='';
+  // v123.82: a foursome lane shows that foursome; the All lane shows one at a time behind the pill.
+  var ln=_gsLane(),sel=(ln==='both'||ln==null)?-1:ln;
+  var fp=_gsFsPill(game,r,fl,sel),pick=fp.pick,pillRow=fp.html;
   var off=game==='hammer'?holeOffset(r):0;
   var anyRot=false,offRot=false;
   for(var fi=0;fi<fl.length;fi++){
@@ -16973,7 +17017,7 @@ window._gsRotate=function(game,r){
 };
 function _gsSegOpts(r){return roundHoleCount(r)===9?[[1,'1 \u00d7 9'],[3,'3 \u00d7 3']]:[[1,'1 \u00d7 18'],[2,'2 \u00d7 9'],[3,'3 \u00d7 6']];}
 function _gsSegSub(r){return roundHoleCount(r)===9?'One match over 9 holes, or three 3-hole matches':'One match over 18 holes, or separate 9s or 6s';}
-function _gsSettleRow(cur,tap,na,naText){return _gsRow('Settlement','Each player wins the amount, or the team splits it',_gsSeg([['perplayer','Per player'],['perteam','Per team']],cur,tap),true,!!na,na===undefined?undefined:(naText||'Team matches only'));}
+function _gsSettleRow(cur,tap,na,naText){return _gsRow('Settlement','Each wins it, or team splits',_gsSeg([['perplayer','Per player'],['perteam','Per team']],cur,tap),false,!!na,na===undefined?undefined:(naText||'Team matches only'));}
 function _gsMPSetupBody(r){
   const _lfi=_segLaneFi(r);
   const mpG=mpGamesForRound(r,_lfi);
@@ -17022,10 +17066,10 @@ function _gsHammerSetupBody(r){
   const _set=k=>"_gsOptSet('"+k+"',"+r+",VAL);autoSave();s2WriteActive()";
   let h=_gsSec('Format');
   h+=_gsRow('Segments',_gsSegSub(r),_gsSeg(_gsSegOpts(r),hSegs,'setHammerSegsForRound('+r+',parseInt(VAL))',true),true);
-  h+=_gsRow('Scoring','Best net, or both nets added',_gsSeg([['bestball','Better ball'],['combined','Combined']],_o('hammerScoring',WK.hammerScoring||'bestball'),_set('hammerScoring')));
+  h+=_gsRow('Scoring','Best net, or both added',_gsSeg([['bestball','Better ball'],['combined','Combined']],_o('hammerScoring',WK.hammerScoring||'bestball'),_set('hammerScoring')));
   h+=_gsRow('Hammer mode','Either team any time, or the teams take turns',_gsSeg([['any','Anyone'],['alt','Alternating']],_o('hammerMode',WK.hammerMode||'any'),_set('hammerMode')+';_gsRefreshAfterEdit()',true),true);
   h+=_gsRow('Max hammers a hole','How many times the value can double on one hole',_gsSeg([['0','No limit'],['1','1'],['2','2']],String(_o('hammerMax',WK.hammerMax!=null?WK.hammerMax:0)),"_gsOptSet('hammerMax',"+r+",parseInt(VAL));autoSave();s2WriteActive()"),true);
-  h+=_gsRow('After a halve','The hole\u2019s value rolls on, or starts over',_gsSeg([['carry','Carry'],['reset','Reset']],_o('hammerHalve',WK.hammerHalve||'carry'),_set('hammerHalve')));
+  h+=_gsRow('After a halve','Value rolls on, or resets',_gsSeg([['carry','Carry'],['reset','Reset']],_o('hammerHalve',WK.hammerHalve||'carry'),_set('hammerHalve')));
   h+=_gsSec('Money');
   h+=_gsRow('Per hole','Before hammers<br>\u00b1$1 or type any',_gsMoney('hammerVal',r,_gsStakePh('hammerVal',r,WK.hammerVal||2),1,' step="0.25"'));
   h+=_gsSettleRow(_o('hammerPayout',WK.hammerPayout||'perplayer'),_set('hammerPayout'));
