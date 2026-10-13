@@ -1168,7 +1168,7 @@ body.force-dark .sec-hd.gs-sec{color:#EFC456;}
 @media(prefers-color-scheme:light){body:not(.force-dark) .sec-hd.gs-sec{color:#13795B;}}
 body.force-light .sec-hd.gs-sec{color:#13795B;}
 .setup-row.gs-row.gs-na{opacity:0.45;}
-.setup-row.gs-row.gs-na .qrw-seg,.setup-row.gs-row.gs-na .toggle{pointer-events:none;}
+.setup-row.gs-row.gs-na .qrw-seg,.setup-row.gs-row.gs-na .toggle,.setup-row.gs-row.gs-na .gs-money{pointer-events:none;}
 .setup-row.gs-row{display:flex;align-items:center;gap:12px;padding:10px 2px;}
 .setup-row.gs-row.gs-wide{flex-direction:column;align-items:stretch;gap:8px;}
 .gs-fsrow{gap:7px!important;}
@@ -2366,7 +2366,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.88';
+const APP_VERSION='v123.89';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -17110,15 +17110,35 @@ function _gsSetupPlaceholder(def,r){
     (isOpen?`<div class="${_bodyCls}">${_note}${_gsSetupBody(def,r)}${_removeBtn}</div>`:'');
 }
 function _gsSnakeSetupBody(r){
-  const growth=WK.snakeGrowth||'double';
-  const payout=WK.snakePayout||'split';
-  const overrideVal=WK.rounds[r].snakeBase!=null?WK.rounds[r].snakeBase:'';
-  return `<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Starting pot $</span><input class="ie-num" type="number" placeholder="${_gsStakePh('snakeBase',r,WK.snakeBase||1)}" value="${_gsStakeVal('snakeBase',r)}" min="0.25" step="0.25" style="width:80px" oninput="_gsStakeSet('snakeBase',${r},this.value,1);autoSave();s2WriteActive();"/></div>`+
-    `<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Pot growth</span><select class="ie-sel" onchange="WK.snakeGrowth=this.value;autoSave();s2WriteActive();_gsAfterSetupChange('snake')"><option value="double"${growth==='double'?' selected':''}>Doubles each transfer</option><option value="flat"${growth==='flat'?' selected':''}>Flat increment</option></select></div>`+
-    (growth==='flat'?`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Increment $</span><input class="ie-num" type="number" value="${WK.snakeIncrement||1}" min="0.25" step="0.25" style="width:80px" onchange="WK.snakeIncrement=parseFloat(this.value)||1;autoSave();s2WriteActive();"/></div>`:'')+
-    `<div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Payout</span><select class="ie-sel" onchange="WK.snakePayout=this.value;autoSave();s2WriteActive();renderGamesContent()"><option value="split"${payout==='split'?' selected':''}>Holder pays each other player</option><option value="pot"${payout==='pot'?' selected':''}>Pot splits among others</option></select></div>`+
-    `<div class="gs-trip-note">Starting pot can be set per round (blank uses the trip default of $${WK.snakeBase||1}). Pot growth and payout apply to the whole trip.</div>`;
+  // v123.89, Kyle 13 Oct: one section, in the order the game plays. Growth and payout stay trip-wide
+  // (WK), the starting pot per round. snakePayout 'split' = each player gets the pot, 'pot' = split.
+  const flat=(WK.snakeGrowth||'double')==='flat';
+  const each=(WK.snakePayout||'split')!=='pot';
+  const OFF=' class="off" aria-hidden="true"';
+  let h=_gsSec('The pot');
+  h+=_gsRow('Starting pot','What the snake is worth<br>±$1 or type any',_gsMoney('snakeBase',r,_gsStakePh('snakeBase',r,WK.snakeBase||1),1,' min="0.25" step="0.25"'));
+  h+=_gsRow('Pot growth','Each time the snake moves',_gsSeg([['double','Doubles'],['flat','Flat']],flat?'flat':'double',"WK.snakeGrowth=VAL;autoSave();s2WriteActive();_gsRefreshAfterEdit()",true));
+  // Always shown, greyed unless Flat, so changing Pot growth never moves the rows below.
+  h+=_gsRow('Flat increment','Added each move<br>±$1 or type any',
+    '<div class="gs-money"><button type="button" aria-label="Less"'+(flat?'':' disabled')+' onclick="_gsSnakeIncStep(this,-1)">−</button><span>$</span>'
+    +'<input class="ie-num" type="number" inputmode="decimal" min="0.25" step="0.25" value="'+(WK.snakeIncrement||1)+'"'+(flat?'':' disabled')
+    +' oninput="var v=parseFloat(this.value);if(v>0){WK.snakeIncrement=v;autoSave();s2WriteActive();}"/>'
+    +'<button type="button" aria-label="More"'+(flat?'':' disabled')+' onclick="_gsSnakeIncStep(this,1)">+</button></div>',
+    false,!flat,'Flat only<br>±$1 or type any');
+  h+='<div class="setup-row gs-row" data-k="Holder pays"><div class="gs-lbl"><b>Holder pays</b><small class="gs-alt">'
+    +'<span'+(each?'':OFF)+'>Pot of $8:<br>$8 to each</span><span'+(each?OFF:'')+'>Pot of $8:<br>$8 split up</span></small></div>'
+    +_gsSeg([['split','Each player'],['pot','Split']],each?'split':'pot',"WK.snakePayout=VAL;autoSave();s2WriteActive();_gsRefreshAfterEdit()",true)+'</div>';
+  h+='<div class="gs-tnote">Pot growth and payout apply to the whole trip.</div>';
+  return h;
 }
+// v123.89: Snake's flat increment is trip-wide (WK.snakeIncrement), so it gets its own stepper.
+window._gsSnakeIncStep=function(btn,d){
+  if(!canEditTrip())return;
+  var inp=btn.parentNode.querySelector('input');if(!inp)return;
+  var cur=parseFloat(inp.value)||WK.snakeIncrement||1;
+  var v=Math.max(0.25,Math.round((cur+d)*100)/100);
+  inp.value=v;WK.snakeIncrement=v;autoSave();s2WriteActive();
+};
 
 function renderGamesTab(){
   if(!WK)return;
