@@ -1654,6 +1654,13 @@ body.force-light .gp-row .gp-tile.live{border-color:#13795B;}
 .fb-tm{border-bottom:0.5px solid var(--color-border-tertiary);}
 .fb-tm-hd{display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:var(--color-background-secondary);}
 .fb-tm-nm{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-text-secondary);}
+.gs-fbval{font-size:13px;color:var(--color-text-primary);text-align:right;}
+.gs-fbpot{font-size:20px;font-weight:700;color:var(--color-text-primary);flex-shrink:0;}
+.gs-fbwarn{color:#E8A87C;}
+.gs-fbbtns{margin-left:auto;display:flex;gap:6px;}
+.gs-fbbtns .btn-sm{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12px;letter-spacing:0;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .fb-tm-nm{color:#EFC456;}}
+body.force-dark .fb-tm-nm{color:#EFC456;}
 .fb-tm-mt{font-size:11px;color:var(--color-text-tertiary);}
 .fb-tag{font-size:9px;color:var(--color-text-tertiary);border:0.5px solid var(--color-border-tertiary);border-radius:999px;padding:1px 5px;margin-left:5px;}
 .fb-prow{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;}
@@ -2366,7 +2373,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.90';
+const APP_VERSION='v123.91';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -15604,6 +15611,15 @@ window._fbResetTeams=function(r){
 };
 // Swap sheet. Every pick is a TRADE, so the teams stay full and legal by construction:
 // there is no half-assigned state to validate and nobody can be stranded.
+// v123.91: Four-Ball's pot per player. fbAnte is a round key read straight from the round (not
+// lane-aware), so it steps through _setFBOpt like typing in the box does.
+window._gsFbAnteStep=function(btn,r,d){
+  if(!canEditTrip())return;
+  var inp=btn.parentNode.querySelector('input');if(!inp)return;
+  var cur=parseFloat(inp.value!==''?inp.value:inp.placeholder)||0;
+  var v=Math.max(0,Math.round((cur+d)*100)/100);
+  inp.value=v;window._setFBOpt(r,'fbAnte',String(v));
+};
 window._fbOpenSwap=function(r,ti,si){
   if(!canEditTrip()||isAnyFlightLocked(r))return;
   const teams=fbTeamsForRound(r),cur=teams[ti]&&teams[ti][si];
@@ -15815,119 +15831,83 @@ function renderFBBox(){
   wrap.innerHTML=h;
 }
 function _gsFourBallSetupBody(r){
+  // v123.91, Kyle 13 Oct, canvas "Game settings, part 2: Four-Ball": the Match Play pattern. Format,
+  // Money, Teams. Every rule the old panel carried is kept: 5-4-3 is only writable where fbFive43
+  // honours it, scope is a choice only when every group plays, netting copy never appears under gross.
   const d=fbDefaults(r);
   const teams=fbTeamsForRound(r);
   const n=_fbEligibleN(r);
   const pools=fbPools(r);
   const nTeams=teams.length;
   const blocked=(pools.length===0);
-  const seg=function(key,opts){
-    let s='<div class="fb-seg">';
-    opts.forEach(function(o){
-      const on=(''+o.v)===(''+o.cur)?' fb-active':'';
-      const dis=o.dis?' disabled':'';
-      s+='<button class="'+on.trim()+'"'+dis+' onclick="window._setFBOpt('+r+',\''+key+'\',\''+o.v+'\')">'+o.t+'</button>';
-    });
-    return s+'</div>';
-  };
-  let h='';
-  // The subtitle is a claim about how the game scores, so it has to follow the format.
-  // Leaving it at "best ball" while 5-4-3 is on is the same fault class as the Both
-  // rename: copy that was accurate before the feature and contradicts it afterwards.
-  const f43=fbFive43(r);
-  h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Team size'
-    +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">'
-    +(f43?'Best two, three or four balls by par':'Best ball of the team, every hole')+'</span></span>'
-    +seg('fbTeamSize',[{v:2,t:'2-man',cur:d.size},{v:4,t:'4-man',cur:d.size}])+'</div>';
-  // 5-4-3 is offered ONLY where it is legal, so the control cannot write a flag into a
-  // config that fbFive43 would then refuse to honour.
-  if(d.size===4&&d.scope==='field'){
-    h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Format'
-      +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">How many balls count on each hole</span></span>'
-      +seg('fbFive43',[{v:'0',t:'Best ball',cur:f43?'1':'0'},{v:'1',t:'5-4-3',cur:f43?'1':'0'}])+'</div>';
-    if(f43){
-      h+='<div class="fb-note">Par 5 counts the best <b>two</b> balls, par 4 the best <b>three</b>, par 3 <b>all four</b>. A player with no score counts as net triple bogey, so enter a number for anyone who picks up.</div>';
-    }
-  }
-  // Scope is a choice only when every group is playing. Otherwise the pot IS the
-  // foursome, and a pill that cannot change anything is worse than no pill.
+  const _t=k=>"window._setFBOpt("+r+",'"+k+"',VAL)";
+  const $=v=>'$'+(Math.round(v*100)%100?(+v).toFixed(2):String(Math.round(v)));
+  let h=_gsSec('Format');
+  h+=_gsRow('Team size','Players on a team',_gsSeg([['2','2-man'],['4','4-man']],String(d.size),_t('fbTeamSize'),true));
+  // 5-4-3: always shown so nothing jumps, but only WRITABLE where it is legal. Greyed, the pill
+  // carries no fbFive43 write at all, so it cannot store a flag fbFive43 would then refuse.
+  const f43=fbFive43(r),legal=(d.size===4&&d.scope==='field');
+  h+=_gsRow('Format',f43?'Par 5s: 2, 4s: 3,<br>3s: all four':'One ball counts<br>every hole',
+    _gsSeg([['0','Best ball'],['1','5-4-3']],f43?'1':'0',legal?_t('fbFive43'):'void(VAL)',true),false,!legal,'4-man, Field only');
+  if(legal)h+='<div class="gs-tnote">In 5-4-3 a player with no score counts as net triple bogey, so enter a number for anyone who picks up.</div>';
+  // Scope is a choice only when every group is playing. Otherwise the pot IS the foursome.
   const _play=fbFlights(r),_nfl=flightsForRound(r).length;
   const _allPlay=(_nfl>0&&_play.length===_nfl);
   if(_nfl<=1||_allPlay){
-    h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Scope'
-      +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Who is in the pot</span></span>'
-      +seg('fbScope',[{v:'fs',t:'Foursome',cur:d.scope},{v:'field',t:'Field',cur:d.scope}])+'</div>';
+    h+=_gsRow('Scope','Who is in the pot',_gsSeg([['fs','Foursome'],['field','Field']],d.scope,_t('fbScope'),true));
   }else{
-    h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Scope'
-      +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Who is in the pot</span></span>'
-      +'<span style="font-size:13px;color:var(--color-text-primary)">'+_play.map(function(fi){return 'Foursome '+(fi+1);}).join(', ')+'</span></div>';
-    h+='<div class="fb-note">Four-Ball is on for '+(_play.length===1?('<b>Foursome '+(_play[0]+1)+'</b> only'):('<b>'+_play.length+' foursomes</b>'))+', so the pot is that group. Add Four-Ball in the <b>All</b> lane to open a Field pot across the whole trip.</div>';
+    h+=_gsRow('Scope','Who is in the pot','<span class="gs-fbval">'+_play.map(function(fi){return 'Foursome '+(fi+1);}).join(', ')+'</span>');
+    h+='<div class="gs-tnote">Four-Ball is on for '+(_play.length===1?('<b>Foursome '+(_play[0]+1)+'</b> only'):('<b>'+_play.length+' foursomes</b>'))+', so the pot is that group. Add Four-Ball in the <b>All</b> lane to open a Field pot across the whole trip.</div>';
   }
-  // 4-man teams inside a foursome leaves one team per group with nobody to play, and
-  // fbPools drops it. Silent no-op otherwise.
+  // 4-man teams inside a foursome leaves one team per group with nobody to play.
   if(d.size===4&&d.scope==='fs'&&flightsForRound(r).length>1){
-    h+='<div style="padding:8px 12px;margin:0 12px 10px;border-radius:6px;background:rgba(216,90,48,0.10);font-size:11px;color:#E8A87C;line-height:1.45">'
-      +'A 4-man team fills a whole foursome, so there is nobody to play. Use Field scope, or 2-man teams.</div>';
+    h+='<div class="gs-tnote gs-fbwarn">A 4-man team fills a whole foursome, so there is nobody to play. Use Field scope, or 2-man teams.</div>';
   }
-  // The baseline is the single thing most likely to be misunderstood, so it is
-  // stated in the UI with the actual low man named, not left implied.
-  h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Scoring'
-    +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Handicap strokes, or raw scores</span></span>'
-    +seg('fbGross',[{v:'0',t:'Net',cur:d.gross?'1':'0'},{v:'1',t:'Gross',cur:d.gross?'1':'0'}])+'</div>';
+  // Scoring's line says how this round nets. EVERY NETTING LINE IS FALSE UNDER GROSS, so under
+  // gross none of them is in the markup at all, hidden or not.
   const netOff=!!(STATE.netOffFlightLow||STATE.netOffLow);
-  // EVERY NETTING SENTENCE BELOW IS FALSE UNDER GROSS. They are not merely unhelpful:
-  // naming a low man on a round that gives no strokes tells a player something untrue
-  // about how his money is being decided.
-  if(d.gross){
-    h+='<div class="fb-note">Scored on <b>gross</b> scores. No handicap strokes, no low man, everyone plays the card as written.</div>';
-  }else if(!netOff){
-    h+='<div class="fb-note">Everyone plays their <b>full course handicap</b>. Turn on net-off-low in Preferences to score off the low man instead.</div>';
-  }else if(pools.length===1&&pools[0].players.length){
+  let scSub;
+  if(d.gross)scSub='Raw scores,<br>no strokes';
+  else if(!netOff)scSub='Full course<br>handicaps';
+  else if(pools.length===1&&pools[0].players.length){
     const low=pools[0].players.reduce(function(a,pi){return courseHdcp(pi,r)<courseHdcp(a,r)?pi:a;},pools[0].players[0]);
-    h+='<div class="fb-note">All '+pools[0].players.length+' net off <b>'+displayName(low)+'</b>, the low index in the pot.</div>';
-  }else if(pools.length>1){
-    h+='<div class="fb-note">Each foursome nets off <b>its own low man</b> and plays for its own pot. Teams cannot cross groups.</div>';
-  }
-  h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Ante'
-    +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Per player</span></span>'
-    +'$<input class="ie-num" type="number" step="0.25" min="0" placeholder="5.00" style="width:80px" value="'+(WK.rounds[r].fbAnte!=null?+WK.rounds[r].fbAnte:'')+'" onchange="window._setFBOpt('+r+',\'fbAnte\',this.value)"></div>';
-  // Teams IN A POT, not in the round. With one pot per foursome, four teams on the page
-  // is still only two in any pot, and Top 2 in a two-team pot pays the losers back.
+    scSub='Off the low man,<br>'+displayName(low);
+  }else scSub='Each foursome off<br>its own low man';
+  h+=_gsRow('Scoring',scSub,_gsSeg([['0','Net'],['1','Gross']],d.gross?'1':'0',_t('fbGross'),true));
+  h+=_gsSec('Money');
+  const _ante=WK.rounds[r].fbAnte!=null?+WK.rounds[r].fbAnte:'';
+  h+=_gsRow('Pot','Per player<br>±$5 or type any',
+    '<div class="gs-money"><button type="button" aria-label="Less" onclick="_gsFbAnteStep(this,'+r+',-5)">−</button><span>$</span>'
+    +'<input class="ie-num" type="number" inputmode="decimal" step="0.25" min="0" placeholder="5" value="'+_ante+'" onchange="window._setFBOpt('+r+',\'fbAnte\',this.value)"/>'
+    +'<button type="button" aria-label="More" onclick="_gsFbAnteStep(this,'+r+',5)">+</button></div>');
+  // Teams IN A POT, not in the round. Top 2 needs three, as calcRoundFourBall does; the pill shows
+  // what will actually pay, never a greyed Top 2 standing as the pick.
   const potTeams=pools.length?Math.min.apply(null,pools.map(function(p){return p.teams.length;})):nTeams;
-  const paysSub=blocked?'no valid teams':(potTeams+' team'+(potTeams===1?'':'s')+(pools.length>1?' in each pot':' in the pot'));
-  h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Pays'
-    +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">'+paysSub+'</span></span>'
-    +seg('fbPays',[{v:1,t:'Winner',cur:d.pays},{v:2,t:'Top 2',cur:d.pays,dis:potTeams<3}])+'</div>';
-  if(d.pays===2){
-    h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Split'
-      +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">1st / 2nd</span></span>'
-      +seg('fbSplit',[{v:70,t:'70/30',cur:d.split},{v:60,t:'60/40',cur:d.split}])+'</div>';
-  }
-  h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Ties'
-    +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Countback: back 9, last 6, last 3, 18</span></span>'
-    +seg('fbTie',[{v:'split',t:'Split',cur:d.tie},{v:'countback',t:'Countback',cur:d.tie}])+'</div>';
+  const pays=(d.pays===2&&potTeams>=3)?2:1;
+  const paysSub=blocked?'No valid teams':(potTeams+' team'+(potTeams===1?'':'s')+(pools.length>1?' in each pot':' in the pot'));
+  let pseg=_gsSeg([['1','Winner'],['2','Top 2']],String(pays),_t('fbPays'),true);
+  if(potTeams<3)pseg=pseg.replace('data-val="2"','data-val="2" disabled');
+  h+=_gsRow('Pays',paysSub,pseg);
+  h+=_gsRow('Split','1st / 2nd',_gsSeg([['70','70/30'],['60','60/40']],String(d.split),pays===2?_t('fbSplit'):'void(VAL)',true),false,pays!==2,'Top 2 only');
+  h+=_gsRow('Ties',d.tie==='countback'?'Back 9, last 6,<br>last 3, 18':'Tied teams<br>split the money',_gsSeg([['split','Split'],['countback','Countback']],d.tie,_t('fbTie'),true));
   if(blocked){
     const why=(d.scope==='fs'&&d.size===4)
       ? '4-man teams inside one foursome is a single team with nobody to play. Use Field scope, or 2-man.'
       : 'Not enough players for '+d.size+' teams of '+d.size+'. Four-Ball needs at least two full teams in a pot.';
-    h+='<div class="fb-pot"><span class="l">Pot</span><span class="v" style="color:#F5B7A3">blocked</span></div>';
+    h+=_gsRow('Total pot','Blocked','<span class="gs-fbval">-</span>');
     h+='<div class="fb-warn">'+why+'</div>';
     return h;
   }
-  const potPlayers=pools.reduce(function(s,p){return s+p.players.length;},0);
-  const potTotal=d.ante*potPlayers;
-  const perPool=pools[0]?d.ante*pools[0].players.length:0;
-  h+='<div class="fb-pot"><span class="l">'+(pools.length>1?('Pot each &middot; '+pools[0].players.length+' &times; $'+d.ante):('Pot &middot; '+potPlayers+' &times; $'+d.ante))+'</span>'
-    +'<span class="v">'+_fbMoney(pools.length>1?perPool:potTotal)+'</span></div>';
-  const pot=(pools.length>1?perPool:potTotal);
-  if(d.pays===2){
+  const many=pools.length>1;
+  const potN=many?pools[0].players.length:pools.reduce(function(s,p){return s+p.players.length;},0);
+  const pot=d.ante*potN;
+  let cap;
+  if(pays===2){
     const first=Math.round(pot*(d.split/100)*100)/100, second=Math.round((pot-first)*100)/100;
-    h+='<div class="fb-cap">1st takes '+_fbMoney(first)+' ('+_fbMoney(first/d.size)+' each) &middot; 2nd takes '+_fbMoney(second)+' ('+_fbMoney(second/d.size)+' each)</div>';
-  }else{
-    h+='<div class="fb-cap">Winner takes '+_fbMoney(pot)+' ('+_fbMoney(pot/d.size)+' each).</div>';
-  }
+    cap='1st '+$(first)+' ('+$(first/d.size)+' each), 2nd '+$(second)+' ('+$(second/d.size)+' each)';
+  }else cap='Winner takes it ('+$(pot/d.size)+' each)';
+  h+=_gsRow(many?'Each pot':'Total pot',potN+' players × '+$(d.ante)+'<br>'+cap,'<span class="gs-fbpot">'+$(pot)+'</span>');
   // ---- teams ----
-  h+='<div class="section-card" style="margin:12px 0 0">';
   const canEdit=canEditTrip()&&!isAnyFlightLocked(r);
   const _fbMan=!!WK.rounds[r].fbTeamsManual&&d.scope!=='fs';
   let _hdBtns='';
@@ -15935,15 +15915,14 @@ function _gsFourBallSetupBody(r){
     if(_fbMan)_hdBtns+='<button class="btn-sm" onclick="window._fbResetTeams('+r+')">Reset to foursomes</button>';
     _hdBtns+='<button class="btn-sm" onclick="window._fbAutoPair('+r+')">Auto-pair</button>';
   }
-  h+='<div class="section-hd"><span>Teams</span><span style="display:flex;gap:6px">'+_hdBtns+'</span></div>';
+  h+=_gsSec('Teams','<span class="gs-fbbtns">'+_hdBtns+'</span>');
   const fl=flightsForRound(r);
   const fsOf=function(pi){for(let i=0;i<fl.length;i++){if((fl[i]||[]).indexOf(pi)>=0)return i;}return -1;};
   teams.forEach(function(t,ti){
     const fss={};t.forEach(function(pi){const f=fsOf(pi);if(f>=0)fss[f]=1;});
     const split=Object.keys(fss).length>1;
-    const hcs=t.map(function(pi){return sbHcpDisplay(idxForRound(pi,r));}).join(' + ');
     h+='<div class="fb-tm"><div class="fb-tm-hd"><span class="fb-tm-nm">Team '+(ti+1)+'</span>'
-      +'<span class="fb-tm-mt">'+hcs+(split?'<span class="fb-tag">split F'+(Object.keys(fss).map(function(x){return +x+1;}).join('/F'))+'</span>':'')+'</span></div>';
+      +'<span class="fb-tm-mt">'+(split?'<span class="fb-tag">split F'+(Object.keys(fss).map(function(x){return +x+1;}).join('/F'))+'</span>':'')+'</span></div>';
     t.forEach(function(pi,si){
       const p=WK.players[pi];
       const f=fsOf(pi);
@@ -15963,7 +15942,6 @@ function _gsFourBallSetupBody(r){
     +(d.scope!=='fs'?('<br>'+(_fbMan
         ? 'Teams were set by hand. Foursome changes will not move them.'
         : 'Teams follow your foursomes.')):'')+'</div>';
-  h+='</div>';
   return h;
 }
 // A Four-Ball team line is four names in one div, and left to itself the break lands
