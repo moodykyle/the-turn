@@ -902,6 +902,9 @@ body.force-dark .fsp{--fsp-sheet:#1C2C4B;--fsp-opt:#14213B;--fsp-bd:#34476B;--fs
 body.force-dark .text-input.geo-bad{border-color:#F28B82!important;}
 #appToast .ti{color:#E0A45C;font-size:14px;line-height:1.35;flex-shrink:0}
 #appToast .tt{font-size:12.5px;line-height:1.45;color:#F0DFC6}
+#appToast.ok{background:#12382B;border-color:#1D9E75}
+#appToast.ok .ti{color:#3CC79A;font-weight:700}
+#appToast.ok .tt{color:#E1F5EE}
 
 /* ── Stage 2: Scores tab action row + card fold-in ── */
 
@@ -1190,6 +1193,19 @@ body.force-light .sec-hd.gs-sec{color:#13795B;}
 .gs-tline .gs-tp i{font-style:normal;font-size:11px;color:var(--color-text-secondary);padding:0 3px;}
 .gs-tline .gs-tc{color:var(--color-text-secondary);font-size:14px;}
 .gs-tline.gs-off{cursor:default;}
+.gs-tblk{padding:10px 2px 12px;border-top:0.5px solid var(--color-border-tertiary);display:flex;flex-direction:column;gap:8px;}
+.gs-tblk .gs-th{display:flex;align-items:baseline;gap:8px;}
+.gs-tblk .gs-th b{font-size:12.5px;font-weight:700;color:#13795B;}
+.gs-tblk .gs-th small{font-size:11px;color:var(--color-text-secondary);}
+.gs-trow{display:flex;align-items:center;gap:8px;}
+.gs-trow>span{width:24px;flex-shrink:0;font-size:12px;font-weight:700;color:var(--color-text-secondary);}
+.gs-trow>i{font-style:normal;font-size:11px;color:var(--color-text-secondary);}
+.gs-dd{flex:1 1 0;min-width:0;box-sizing:border-box;height:40px;padding:0 26px 0 11px;border-radius:9px;border:0.5px solid var(--color-border-secondary);background-color:var(--color-background-tertiary);color:var(--color-text-primary);font-family:inherit;font-size:14px;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%231D9E75' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;text-overflow:ellipsis;}
+.gs-dd:disabled{opacity:0.6;}
+.gs-tblk.gs-chg{animation:gsChg 2.4s ease-out;}
+@keyframes gsChg{0%,40%{background:rgba(239,196,86,0.16);}100%{background:transparent;}}
+@media(prefers-color-scheme:dark){body:not(.force-light) .gs-tblk .gs-th b{color:#EFC456;}}
+body.force-dark .gs-tblk .gs-th b{color:#EFC456;}
 .gs-tnote{font-size:11.5px;color:var(--color-text-secondary);padding:6px 2px 4px;line-height:1.4;}
 .gs-rot{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:100%;margin:8px 0 2px;padding:11px;border-radius:10px;font-family:inherit;font-size:13.5px;font-weight:600;color:#13795B;border:1px solid var(--color-border-secondary);background:var(--color-background-secondary);cursor:pointer;}
 .gs-pair{display:flex;align-items:center;gap:12px;margin:6px 14px;padding:11px 12px;border-radius:11px;border:0.5px solid var(--color-border-secondary);cursor:pointer;}
@@ -2316,7 +2332,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.78';
+const APP_VERSION='v123.79';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -4821,10 +4837,12 @@ function _toastTop(){
   }catch(_){}
   return false;
 }
-function showMsg(m){
+function showMsg(m,ok){
   const el=document.getElementById('appToast'),tx=document.getElementById('appToastMsg');
   if(!el||!tx){alert(m);return;}
   el.classList.remove('show');
+  // v123.79: ok = a confirmation (green, check) rather than the default warning.
+  el.classList[ok?'add':'remove']('ok');var _ti=el.querySelector('.ti');if(_ti)_ti.textContent=ok?'\u2713':'\u26a0';
   el.classList[_toastTop()?'add':'remove']('top');
   tx.textContent=m;el.classList.add('show');
   if(_appToastT)clearTimeout(_appToastT);
@@ -16871,35 +16889,53 @@ function _gsTeamsHtml(game,r){
     if(segs.length>1)anyRot=true;
     var arr=_gsTeamsArr(game,r);
     if(segs.length>1)segs.forEach(function(_,si){var tm=arr&&arr[r]&&arr[r][fi]?arr[r][fi][si]:null;if(_gsSplitOf(game,r,tm,mem)!==si%3)offRot=true;});
+    // v123.79: the old dropdowns, restyled. A missing game shows the rotation until it is set.
+    var hu=game==='mp'&&isHeadsUp(r),chg=window._gsChg||null;
+    // Locked exactly where _gsDrop refuses: a read-only view, or Match Play for someone else's scorecard.
+    var dis=(isReadOnly||(game==='mp'&&typeof _pencilViewerLocked==='function'&&_pencilViewerLocked(r,fi)))?' disabled':'';
     h+=segs.map(function(seg,si){
-      var tm=arr&&arr[r]&&arr[r][fi]?arr[r][fi][si]:null,k=_gsSplitOf(game,r,tm,mem);
-      var lbl=k>=0?_gsSplitLabel(game,r,_gsSplits(mem)[k]):'Pick the teams';
-      return '<div class="gs-tline" onclick="window._gsPairOpen(\''+game+'\','+r+','+fi+','+si+')"><div class="gs-tg"><b>Game '+(si+1)+'</b><small>'+(seg.start+off+1)+' to '+(seg.end+off)+'</small></div>'
-        +'<div class="gs-tp">'+lbl+'</div><span class="gs-tc">\u203a</span></div>';
+      var tm=arr&&arr[r]&&arr[r][fi]?arr[r][fi][si]:null;
+      if(!tm||!Array.isArray(tm[0])||!Array.isArray(tm[1])){var sp=_gsSplits(mem)[si%3];tm=hu?[[sp[0][0],sp[1][0]],[sp[0][1],sp[1][1]]]:sp;}
+      var dd=function(t,p){var cur=tm[t][p];
+        return '<select class="gs-dd"'+dis+' onchange="window._gsDrop(\''+game+'\','+r+','+fi+','+si+','+t+','+p+',parseInt(this.value))">'
+          +mem.map(function(pi){return '<option value="'+pi+'"'+(pi===cur?' selected':'')+'>'+_gtEsc(displayName(pi))+'</option>';}).join('')+'</select>';};
+      var rows=hu?'<div class="gs-trow"><span>M1</span>'+dd(0,0)+'<i>v</i>'+dd(1,0)+'</div><div class="gs-trow"><span>M2</span>'+dd(0,1)+'<i>v</i>'+dd(1,1)+'</div>'
+                 :'<div class="gs-trow"><span>A</span>'+dd(0,0)+dd(0,1)+'</div><div class="gs-trow"><span>B</span>'+dd(1,0)+dd(1,1)+'</div>';
+      var holes='Holes '+(seg.start+off+1)+' to '+(seg.end+off);
+      var mark=chg&&chg.game===game&&chg.r===r&&chg.fi===fi&&chg.si===si;
+      return '<div class="gs-tblk'+(mark?' gs-chg':'')+'"><div class="gs-th">'+(segs.length>1?'<b>Game '+(si+1)+'</b><small>'+holes+'</small>':'<small>'+holes+'</small>')+'</div>'+rows+'</div>';
     }).join('');
   }
   // v123.76: the default teams already rotate, so the button only appears once a game is off it.
   var rot=offRot&&canEditTrip()?'<button type="button" class="gs-rot" onclick="window._gsRotate(\''+game+'\','+r+')">Reset to rotation</button>':'';
   return _gsSec('Teams')+_gsLaneLabelHtml(r)+h+rot
-    +'<div class="gs-tnote">'+(anyRot?'Partners rotate, so everyone partners everyone once. Tap a game to change its teams.':'Tap the game to change the teams.')+'</div>';
+    +'<div class="gs-tnote">'+(anyRot?(game==='mp'&&isHeadsUp(r)?'Pick anyone in any box. A player already in that game swaps places. If two games end up with the same matches, the other game trades so matchups don\u2019t repeat.':'Pick anyone in any box. A player already in that game swaps places. If two games end up with the same teams, the other game trades so partners don\u2019t repeat.'):'Pick anyone in any box. A player already in the match swaps places.')+'</div>';
 }
 function _gsTeamsChanged(){autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderScorecard();if(typeof renderMPHoleBox==='function')renderMPHoleBox();}
-// Pick game si's split. Earlier games never change. Each later game keeps its split if no
-// earlier game has it, else takes the first one left, so partners stay unique by default.
-window._gsPickSplit=function(game,r,fi,si,k){
-  if(!canEditTrip())return;
-  var mem=(flightsForRound(r)[fi]||[]).filter(function(pi){return pi>=0;});if(mem.length<4)return;
+// v123.79: one box of one game set to player pi. As the old dropdowns: whoever already sits in
+// that game takes the box pi left. Then, if this game's teams are now another game's, that game
+// takes this game's old teams, so partners stay unique whichever game was edited. Allowed
+// without edit access, as before; never in a read-only view.
+window._gsDrop=function(game,r,fi,si,t,p,pi){
+  if(isReadOnly)return;
+  if(game==='mp'&&typeof _pencilViewerLocked==='function'&&_pencilViewerLocked(r,fi))return;
+  var mem=(flightsForRound(r)[fi]||[]).filter(function(x){return x>=0;});if(mem.length<4||mem.indexOf(pi)<0)return;
   var arr=_gsTeamsArr(game,r);if(!arr||!arr[r]||!arr[r][fi])return;
-  _gsWriteSplit(game,r,fi,si,k,mem);
-  var segs=_gsSegsFor(game,r,fi),used={};
-  for(var j=0;j<=si;j++){var kj=_gsSplitOf(game,r,arr[r][fi][j],mem);if(kj>=0)used[kj]=1;}
-  for(var j2=si+1;j2<segs.length;j2++){
-    var cur=_gsSplitOf(game,r,arr[r][fi][j2],mem);
-    if(cur<0||used[cur]){var nk=[0,1,2].filter(function(x){return !used[x];})[0];if(nk!==undefined){_gsWriteSplit(game,r,fi,j2,nk,mem);cur=nk;}}
-    if(cur>=0)used[cur]=1;
+  var tm=arr[r][fi][si];
+  if(!tm||!Array.isArray(tm[0])||!Array.isArray(tm[1])){_gsWriteSplit(game,r,fi,si,si%3,mem);tm=arr[r][fi][si];}
+  var old=tm[t][p];if(old===pi)return;
+  var k0=_gsSplitOf(game,r,tm,mem);
+  for(var a=0;a<2;a++)for(var b=0;b<2;b++)if(tm[a][b]===pi&&!(a===t&&b===p))tm[a][b]=old;
+  tm[t][p]=pi;
+  var k1=_gsSplitOf(game,r,tm,mem),moved=-1;
+  if(k0>=0&&k1>=0&&k1!==k0){
+    var segs=_gsSegsFor(game,r,fi);
+    for(var j=0;j<segs.length&&moved<0;j++)if(j!==si&&_gsSplitOf(game,r,arr[r][fi][j],mem)===k1){_gsWriteSplit(game,r,fi,j,k0,mem);moved=j;}
   }
-  var sh=document.getElementById('gsPairSheet');if(sh)sh.remove();
+  window._gsChg=moved>=0?{game:game,r:r,fi:fi,si:moved}:null;
   _gsTeamsChanged();
+  window._gsChg=null;
+  if(moved>=0&&typeof showMsg==='function')showMsg('Game '+(moved+1)+' changed so '+(game==='mp'&&isHeadsUp(r)?'matchups':'partners')+' don\u2019t repeat.',true);
 };
 window._gsRotate=function(game,r){
   if(!canEditTrip())return;
@@ -16910,31 +16946,7 @@ window._gsRotate=function(game,r){
     _gsSegsFor(game,r,fi).forEach(function(_,si){_gsWriteSplit(game,r,fi,si,si%3,mem);});
   });
   _gsTeamsChanged();
-  if(typeof showMsg==='function')showMsg('Teams reset: everyone partners everyone once.');
-};
-window._gsPairOpen=function(game,r,fi,si){
-  var mem=(flightsForRound(r)[fi]||[]).filter(function(pi){return pi>=0;});if(mem.length<4)return;
-  var arr=_gsTeamsArr(game,r);if(!arr||!arr[r]||!arr[r][fi])return;
-  var segs=_gsSegsFor(game,r,fi),seg=segs[si];if(!seg)return;
-  var off=game==='hammer'?holeOffset(r):0,cur=_gsSplitOf(game,r,arr[r][fi][si],mem),sp=_gsSplits(mem);
-  var ed=canEditTrip(),hu=game==='mp'&&isHeadsUp(r);
-  var others=function(k){var g=[];segs.forEach(function(_,j){if(j!==si&&_gsSplitOf(game,r,arr[r][fi][j],mem)===k)g.push(j+1);});return g;};
-  var h='<div style="background:#0F6E56;padding:13px 14px"><div style="font-size:10px;color:#9FE1CB;letter-spacing:0.06em;text-transform:uppercase">'+(game==='hammer'?'Hammer':'Match Play')+' \u00b7 Game '+(si+1)+'</div>'
-    +'<div style="font-size:17px;font-weight:600;color:#E1F5EE;margin-top:2px">Holes '+(seg.start+off+1)+' to '+(seg.end+off)+'</div></div>'
-    +'<div class="fs-sh-sec">'+(hu?'Pick the matches':'Pick the teams')+'</div>';
-  sp.forEach(function(x,k){
-    var o=others(k),also=o.length?'Game'+(o.length>1?'s ':' ')+o.join(' and ')+(o.length>1?' have':' has')+' this':'';
-    var note=k===cur?('Selected'+(also?' · '+also+' too':'')):also;
-    h+='<div class="gs-pair'+(k===cur?' on':'')+'"'+(ed?' onclick="window._gsPickSplit(\''+game+'\','+r+','+fi+','+si+','+k+')"':'')+'><span class="gs-dot"></span><span><b>'+_gsSplitLabel(game,r,x)+'</b>'+(note?'<small>'+note+'</small>':'')+'</span></div>';
-  });
-  if(segs.length>1)h+='<div class="gs-tnote" style="padding:8px 14px 0">Later games change to keep partners new. Earlier games keep theirs.</div>';
-  h+='<div style="padding:12px 14px calc(16px + env(safe-area-inset-bottom))"><button type="button" style="width:100%;padding:12px;font-size:14px;font-weight:600;border-radius:10px;background:var(--color-background-secondary);color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary);font-family:inherit" onclick="document.getElementById(\'gsPairSheet\').remove()">Done</button></div>';
-  var ex=document.getElementById('gsPairSheet');if(ex)ex.remove();
-  var ov=document.createElement('div');ov.id='gsPairSheet';
-  ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center';
-  ov.innerHTML='<div style="width:100%;max-width:480px;background:var(--color-background-primary);border-radius:16px 16px 0 0;overflow:hidden">'+h+'</div>';
-  ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
-  document.body.appendChild(ov);
+  if(typeof showMsg==='function')showMsg('Teams reset: everyone partners everyone once.',true);
 };
 function _gsSegOpts(r){return roundHoleCount(r)===9?[[1,'1 \u00d7 9'],[3,'3 \u00d7 3']]:[[1,'1 \u00d7 18'],[2,'2 \u00d7 9'],[3,'3 \u00d7 6']];}
 function _gsSegSub(r){return roundHoleCount(r)===9?'One match over 9 holes, or three 3-hole matches':'One match over 18 holes, or separate 9s or 6s';}
