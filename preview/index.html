@@ -2366,7 +2366,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.89';
+const APP_VERSION='v123.90';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -17126,7 +17126,7 @@ function _gsSnakeSetupBody(r){
     +'<button type="button" aria-label="More"'+(flat?'':' disabled')+' onclick="_gsSnakeIncStep(this,1)">+</button></div>',
     false,!flat,'Flat only<br>±$1 or type any');
   h+='<div class="setup-row gs-row" data-k="Holder pays"><div class="gs-lbl"><b>Holder pays</b><small class="gs-alt">'
-    +'<span'+(each?'':OFF)+'>Pot of $8:<br>$8 to each</span><span'+(each?OFF:'')+'>Pot of $8:<br>$8 split up</span></small></div>'
+    +'<span'+(each?'':OFF)+'>The full pot<br>to each player</span><span'+(each?OFF:'')+'>One pot, split<br>among players</span></small></div>'
     +_gsSeg([['split','Each player'],['pot','Split']],each?'split':'pot',"WK.snakePayout=VAL;autoSave();s2WriteActive();_gsRefreshAfterEdit()",true)+'</div>';
   h+='<div class="gs-tnote">Pot growth and payout apply to the whole trip.</div>';
   return h;
