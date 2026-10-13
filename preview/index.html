@@ -1656,7 +1656,8 @@ body.force-light .gp-row .gp-tile.live{border-color:#13795B;}
 .fb-tm-nm{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-text-secondary);}
 .gs-fbval{font-size:13px;color:var(--color-text-primary);text-align:right;}
 .gs-fbpot{font-size:20px;font-weight:700;color:var(--color-text-primary);flex-shrink:0;}
-.gs-fbwarn{color:#E8A87C;}
+.gs-info{all:unset;display:inline-flex;margin-left:6px;vertical-align:-2px;font-size:16px;color:var(--color-text-tertiary);cursor:pointer;pointer-events:auto;}
+.qrw-seg button[disabled]{opacity:0.35;cursor:default;pointer-events:none;}
 .gs-fbbtns{margin-left:auto;display:flex;gap:6px;}
 .gs-fbbtns .btn-sm{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12px;letter-spacing:0;}
 @media(prefers-color-scheme:dark){body:not(.force-light) .fb-tm-nm{color:#EFC456;}}
@@ -2373,7 +2374,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.91';
+const APP_VERSION='v123.92';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -15577,6 +15578,14 @@ window._setFBOpt=function(r,key,val){
   const _pt=_pl.length?Math.min.apply(null,_pl.map(function(p){return p.teams.length;})):0;
   if(rd.fbPays===2&&_pt<3)rd.fbPays=1;
   autoSave();s2WriteActive();_gsRefreshAfterEdit();
+  // v123.92 (Kyle: a line appearing out of nowhere moves the page): said once, as a toast, at the
+  // moment the choice makes the game unplayable. The Total pot row still says Blocked.
+  if((key==='fbTeamSize'||key==='fbScope')&&rd.fbTeamSize===4&&fbScopeEff(r)==='fs'&&flightsForRound(r).length>1)
+    showMsg('A 4-man team fills a whole foursome, so there is nobody to play. Use Field scope, or 2-man teams.');
+};
+// v123.92: the 5-4-3 rules, behind the (i) beside Format (the copy the old panel showed inline).
+window._gsFb543Info=function(){
+  _infoSheet({icon:'ti-info-circle',title:'5-4-3',body:'Par 5 counts the best <b>two</b> balls, par 4 the best <b>three</b>, par 3 <b>all four</b>. A player with no score counts as net triple bogey, so enter a number for anyone who picks up.<br><br>Played with 4-man teams in a Field pot.'});
 };
 window._fbAutoPair=function(r){
   if(!canEditTrip())return;
@@ -15848,8 +15857,8 @@ function _gsFourBallSetupBody(r){
   // carries no fbFive43 write at all, so it cannot store a flag fbFive43 would then refuse.
   const f43=fbFive43(r),legal=(d.size===4&&d.scope==='field');
   h+=_gsRow('Format',f43?'Par 5s: 2, 4s: 3,<br>3s: all four':'One ball counts<br>every hole',
-    _gsSeg([['0','Best ball'],['1','5-4-3']],f43?'1':'0',legal?_t('fbFive43'):'void(VAL)',true),false,!legal,'4-man, Field only');
-  if(legal)h+='<div class="gs-tnote">In 5-4-3 a player with no score counts as net triple bogey, so enter a number for anyone who picks up.</div>';
+    _gsSeg([['0','Best ball'],['1','5-4-3']],f43?'1':'0',legal?_t('fbFive43'):'void(VAL)',true),false,!legal,'4-man, Field only')
+    .replace('<b>Format</b>','<b>Format<button type="button" class="gs-info" aria-label="About 5-4-3" onclick="_gsFb543Info()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></b>');
   // Scope is a choice only when every group is playing. Otherwise the pot IS the foursome.
   const _play=fbFlights(r),_nfl=flightsForRound(r).length;
   const _allPlay=(_nfl>0&&_play.length===_nfl);
@@ -15858,10 +15867,6 @@ function _gsFourBallSetupBody(r){
   }else{
     h+=_gsRow('Scope','Who is in the pot','<span class="gs-fbval">'+_play.map(function(fi){return 'Foursome '+(fi+1);}).join(', ')+'</span>');
     h+='<div class="gs-tnote">Four-Ball is on for '+(_play.length===1?('<b>Foursome '+(_play[0]+1)+'</b> only'):('<b>'+_play.length+' foursomes</b>'))+', so the pot is that group. Add Four-Ball in the <b>All</b> lane to open a Field pot across the whole trip.</div>';
-  }
-  // 4-man teams inside a foursome leaves one team per group with nobody to play.
-  if(d.size===4&&d.scope==='fs'&&flightsForRound(r).length>1){
-    h+='<div class="gs-tnote gs-fbwarn">A 4-man team fills a whole foursome, so there is nobody to play. Use Field scope, or 2-man teams.</div>';
   }
   // Scoring's line says how this round nets. EVERY NETTING LINE IS FALSE UNDER GROSS, so under
   // gross none of them is in the markup at all, hidden or not.
