@@ -2374,7 +2374,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.0';
+const APP_VERSION='v124.2';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -2868,6 +2868,9 @@ async function s2Upsert(table,rows,onConflict,returnSelect){
     if(!res.ok){
       const errText=await res.text().catch(()=>'');
       console.warn('[s2Upsert] '+table+' failed '+res.status+': '+errText);
+      // v124.1: the Postgres error code, so a caller can tell a refusal (23505) from a failure.
+      let _code=null;try{_code=JSON.parse(errText).code||null;}catch(_pe){}
+      _s2LastFail={table:table,status:res.status,code:_code};
       return false;
     }
     if(returnSelect){
@@ -2882,6 +2885,8 @@ async function s2Upsert(table,rows,onConflict,returnSelect){
   }
 }
 
+let _s2LastFail=null;       // v124.1: {table,status,code} of the last refused upsert
+let _s2PlayersRefused=false; // v124.1: this write's players save was refused by the unique index
 let _s2WriteInFlight=false; // sync poll must never rebuild over a write that hasn't landed yet
 let _s2WritePending=false;  // a write arrived while one was in flight; flush once the current one lands
 async function s2WriteActive(){
@@ -3115,8 +3120,12 @@ async function s2WriteActive(){
         // sets it yet; this build only proves it survives a round trip.
         idx_set_here:!!p.idxSetHere
       }));
+      _s2LastFail=null;
       const _playersOk=await s2Upsert('players',rows,'player_id');
-      if(!_playersOk)_s2Dirty.players=true;
+      // v124.1: 23505 is the unique (trip_id, player_index) index refusing a roster another phone has
+      // already changed. Retrying the same rows can never succeed and keeps sync frozen; take the
+      // server's roster instead (after the write, below).
+      if(!_playersOk){if(_s2LastFail&&_s2LastFail.table==='players'&&_s2LastFail.code==='23505')_s2PlayersRefused=true;else _s2Dirty.players=true;}
     }
 
     // 3. Scores upsert — only dirty holes
@@ -3192,6 +3201,14 @@ async function s2WriteActive(){
   }catch(e){
   }finally{
     _s2WriteInFlight=false;
+    if(_s2PlayersRefused){
+      _s2PlayersRefused=false;
+      showMsg('Players changed on another phone. Updating to match.');
+      // Rebuild now if nothing else is pending; the cleared watermark makes the next tick rebuild
+      // regardless, so a rebuild skipped here for a pending edit still happens.
+      _syncTripUpdatedAt=null;
+      _syncApplyTripRebuild(tripId).catch(function(){});
+    }
     if(_s2WritePending){_s2WritePending=false;s2WriteActive();}
   }
 }
@@ -13643,6 +13660,14 @@ function _syncDirtyPending(){
   return !!(_s2Dirty.trip||_s2Dirty.players||_s2Dirty.expenses||_s2Dirty.scores.size>0||_s2Cleared.size>0||_s2WriteInFlight||_pencilSaveInFlight);
 }
 
+// v124.2: work this phone has not saved yet (not counting a write already on its way).
+function _s2HasUnsaved(){return !!(_s2Dirty.trip||_s2Dirty.players||_s2Dirty.expenses||_s2Dirty.scores.size>0||_s2Cleared.size>0);}
+// v124.2: retry unsaved work (a save that failed offline), then look for other phones' changes.
+function _syncResume(){
+  return sbEnsureFresh().then(function(){
+    if(navigator.onLine&&_s2HasUnsaved()&&!_s2WriteInFlight)return s2WriteActive();
+  }).then(_syncTick,_syncTick);
+}
 function _syncLifecycleOk(){
   if(!navigator.onLine)return false;
   if(document.visibilityState!=='visible')return false;
@@ -13694,7 +13719,9 @@ function _syncStop(){
 async function _syncTick(){
   if(_syncInFlight)return;
   if(!_syncLifecycleOk())return;
-  if(_syncDirtyPending())return; // never apply remote over an unflushed local edit
+  // never apply remote over an unflushed local edit. v124.2: but do send it, or a save that failed
+  // offline would wait for the next edit and keep this phone deaf to everyone else until then.
+  if(_syncDirtyPending()){if(_s2HasUnsaved()&&!_s2WriteInFlight)s2WriteActive();return;}
   _syncInFlight=_syncTickInner();
   try{await _syncInFlight;}
   finally{_syncInFlight=null;}
@@ -13883,9 +13910,11 @@ function _syncRerenderAfterApply(){
 // first, then poll) — separate listeners from sbStartSessionKeepalive's so the
 // auth-hardening code (verified, do not touch) and the sync code stay decoupled.
 document.addEventListener('visibilitychange',function(){
-  if(document.visibilityState==='visible')sbEnsureFresh().then(_syncTick);
+  if(document.visibilityState==='visible')_syncResume();
 });
-window.addEventListener('focus',function(){sbEnsureFresh().then(_syncTick);});
+window.addEventListener('focus',function(){_syncResume();});
+// v124.2: back from airplane mode or a dead zone. Solo rounds have no sync tick, so this is their retry.
+window.addEventListener('online',function(){_syncResume();});
 
 function renderWeekendPanel(){
   // For quick rounds, keep WK.name in sync with the course display name
