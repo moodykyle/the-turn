@@ -2374,7 +2374,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.1';
+const APP_VERSION='v124.2';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -13660,6 +13660,14 @@ function _syncDirtyPending(){
   return !!(_s2Dirty.trip||_s2Dirty.players||_s2Dirty.expenses||_s2Dirty.scores.size>0||_s2Cleared.size>0||_s2WriteInFlight||_pencilSaveInFlight);
 }
 
+// v124.2: work this phone has not saved yet (not counting a write already on its way).
+function _s2HasUnsaved(){return !!(_s2Dirty.trip||_s2Dirty.players||_s2Dirty.expenses||_s2Dirty.scores.size>0||_s2Cleared.size>0);}
+// v124.2: retry unsaved work (a save that failed offline), then look for other phones' changes.
+function _syncResume(){
+  return sbEnsureFresh().then(function(){
+    if(navigator.onLine&&_s2HasUnsaved()&&!_s2WriteInFlight)return s2WriteActive();
+  }).then(_syncTick,_syncTick);
+}
 function _syncLifecycleOk(){
   if(!navigator.onLine)return false;
   if(document.visibilityState!=='visible')return false;
@@ -13711,7 +13719,9 @@ function _syncStop(){
 async function _syncTick(){
   if(_syncInFlight)return;
   if(!_syncLifecycleOk())return;
-  if(_syncDirtyPending())return; // never apply remote over an unflushed local edit
+  // never apply remote over an unflushed local edit. v124.2: but do send it, or a save that failed
+  // offline would wait for the next edit and keep this phone deaf to everyone else until then.
+  if(_syncDirtyPending()){if(_s2HasUnsaved()&&!_s2WriteInFlight)s2WriteActive();return;}
   _syncInFlight=_syncTickInner();
   try{await _syncInFlight;}
   finally{_syncInFlight=null;}
@@ -13900,9 +13910,11 @@ function _syncRerenderAfterApply(){
 // first, then poll) — separate listeners from sbStartSessionKeepalive's so the
 // auth-hardening code (verified, do not touch) and the sync code stay decoupled.
 document.addEventListener('visibilitychange',function(){
-  if(document.visibilityState==='visible')sbEnsureFresh().then(_syncTick);
+  if(document.visibilityState==='visible')_syncResume();
 });
-window.addEventListener('focus',function(){sbEnsureFresh().then(_syncTick);});
+window.addEventListener('focus',function(){_syncResume();});
+// v124.2: back from airplane mode or a dead zone. Solo rounds have no sync tick, so this is their retry.
+window.addEventListener('online',function(){_syncResume();});
 
 function renderWeekendPanel(){
   // For quick rounds, keep WK.name in sync with the course display name
