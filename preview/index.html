@@ -2374,7 +2374,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.96';
+const APP_VERSION='v123.97';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -15527,32 +15527,37 @@ window._setGROpt=function(r,key,val){
   autoSave();s2WriteActive();_gsRefreshAfterEdit();
 };
 function _gsGrindersSetupBody(r){
+  // v123.97, Kyle 13 Oct, canvas "Game settings, part 2: Grinders": "Looks good". Format with the rules
+  // behind an (i), Scoring; Money with the pot per player and a Total pot row that carries the running
+  // grinder count, so nothing appears on the page mid-round.
   const d=grDefaults(r),det=calcGrindersDetail(r);
-  const seg=function(key,opts){
-    let s='<div class="fb-seg">';
-    opts.forEach(function(o){
-      const on=(''+o.v)===(''+o.cur)?' fb-active':'';
-      s+='<button class="'+on.trim()+'" onclick="window._setGROpt('+r+',\''+key+'\','+(o.v==='1'?'true':'false')+')">'+o.t+'</button>';
-    });
-    return s+'</div>';
-  };
-  let h='';
-  h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Ante'
-    +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Each player, into one pot for the whole field</span></span>'
-    +'<input type="number" inputmode="decimal" value="'+(WK.rounds[r]&&WK.rounds[r].grindersAnte!=null?WK.rounds[r].grindersAnte:'')+'" placeholder="'+d.ante+'" '
-    +'onchange="window._setGROpt('+r+',\'grindersAnte\',this.value)" '
-    +'style="width:74px;text-align:right;font-size:13px;padding:5px 7px;border-radius:6px;border:0.5px solid var(--color-border-tertiary);background:transparent;color:var(--color-text-primary)"></div>';
-  h+='<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Scoring'
-    +'<span style="display:block;font-size:11px;color:var(--color-text-tertiary);margin-top:1px">Par or better, net or gross</span></span>'
-    +seg('grindersNet',[{v:'1',t:'Net',cur:d.net?'1':'0'},{v:'0',t:'Gross',cur:d.net?'1':'0'}])+'</div>';
-  h+='<div class="fb-note">Your foursome grinds a hole when <b>every</b> player in the group makes par or better. '
-    +'The pot is divided by the total grinders every foursome earns, so a grinder is worth more on a hard day and less on an easy one. '
-    +'If nobody in the field grinds a single hole, the pot is returned and nobody wins or loses.</div>';
-  if(det.total>0){
-    h+='<div class="fb-note">So far: <b>'+det.total+'</b> across the field, worth '+_fbMoney(det.unit)+' each.</div>';
-  }
+  const $=v=>'$'+(Math.round(v*100)%100?(+v).toFixed(2):String(Math.round(v)));
+  const I='<button type="button" class="gs-info" aria-label="How Grinders works" onclick="_gsGrInfo()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>';
+  let h=_gsSec('Format',I);
+  h+=_gsRow('Scoring',(d.net?'Net':'Gross')+' par or better,<br>every player',_gsSeg([['1','Net'],['0','Gross']],d.net?'1':'0',"window._setGROpt("+r+",'grindersNet',VAL==='1')",true));
+  h+=_gsSec('Money');
+  const _ante=WK.rounds[r]&&WK.rounds[r].grindersAnte!=null?WK.rounds[r].grindersAnte:'';
+  h+=_gsRow('Pot','Per player<br>±$5 or type any',
+    '<div class="gs-money"><button type="button" aria-label="Less" onclick="_gsGrAnteStep(this,'+r+',-5)">−</button><span>$</span>'
+    +'<input class="ie-num" type="number" inputmode="decimal" step="0.25" min="0" placeholder="'+d.ante+'" value="'+_ante+'" onchange="window._setGROpt('+r+',\'grindersAnte\',this.value)"/>'
+    +'<button type="button" aria-label="More" onclick="_gsGrAnteStep(this,'+r+',5)">+</button></div>');
+  h+=_gsRow('Total pot',det.players+' players × '+$(d.ante)+'<br>'
+    +(det.total>0?(det.total+' grinder'+(det.total===1?'':'s')+' so far, '+$(det.unit)+' each'):'No grinders yet'),
+    '<span class="gs-fbpot">'+$(det.pot)+'</span>');
   return h;
 }
+// v123.97: the Grinders rules (the copy the old panel showed inline), behind the (i) beside Format.
+window._gsGrInfo=function(){
+  _infoSheet({icon:'ti-info-circle',title:'Grinders',body:'Your foursome grinds a hole when <b>every</b> player in the group makes par or better. The pot is divided by the total grinders every foursome earns, so a grinder is worth more on a hard day and less on an easy one. If nobody in the field grinds a single hole, the pot is returned and nobody wins or loses.'});
+};
+// v123.97: Grinders' pot per player steps through _setGROpt, like typing in the box does.
+window._gsGrAnteStep=function(btn,r,d){
+  if(!canEditTrip())return;
+  var inp=btn.parentNode.querySelector('input');if(!inp)return;
+  var cur=parseFloat(inp.value!==''?inp.value:inp.placeholder)||0;
+  var v=Math.max(0,Math.round((cur+d)*100)/100);
+  inp.value=v;window._setGROpt(r,'grindersAnte',String(v));
+};
 window._setFBOpt=function(r,key,val){
   if(!canEditTrip())return;
   const rd=WK.rounds[r];if(!rd)return;
