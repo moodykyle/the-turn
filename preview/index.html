@@ -2426,7 +2426,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.9';
+const APP_VERSION='v124.10';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5002,8 +5002,15 @@ function showMsg(m,ok){
 // v124.9: the settings row's second line. The note's first sentence, tags off.
 function _gsNetSubText(html){
   const t=String(html||'').replace(/<[^>]*>/g,'').trim();
-  const m=t.match(/^.*?[.](?=\s|$)/);
-  return m?m[0]:t;
+  // v124.10: a period inside brackets is an initial, "(K. Moody)", not the end of the sentence.
+  let d=0;
+  for(let i=0;i<t.length;i++){
+    const c=t[i];
+    if(c==='(')d++;
+    else if(c===')')d=Math.max(0,d-1);
+    else if(c==='.'&&d===0&&(i+1===t.length||/\s/.test(t[i+1])))return t.slice(0,i+1);
+  }
+  return t;
 }
 function gameNetNote(gid,r,fi){
   if(!WK||!WK.rounds||!WK.rounds[r])return null;
@@ -5103,6 +5110,12 @@ function gameNetNote(gid,r,fi){
     // Warning there is crying wolf, and a warning that fires when nothing is wrong is how
     // people learn to ignore warnings. Name both men when they really do differ; "Foursome 2's
     // low man" is an abstraction you have to resolve, "(A. Sporck)" is a fact you can check.
+    // v124.10, Kyle 14 Oct: "All should show it". All is the view most people sit on; warn there when any
+    // foursome is stroking off a man who is not in it. No name for the foursomes: there may be several.
+    if(multi&&fi==null){
+      const _off=flightsForRound(r).some(function(f){const m=(f||[]).filter(_vpi);return m.length&&m.indexOf(low)<0;});
+      if(_off)return{html:'Strokes off <b>the whole field\'s low man</b> ('+displayName(low)+'), not each foursome\'s own.',warn:true,change:true};
+    }
     const mem=(multi&&fi!=null)?(flightsForRound(r)[fi]||[]).filter(_vpi):[];
     if(multi&&mem.length&&mem.indexOf(low)<0){
       const fLow=mem.reduce(function(a,pi){return effHdcp(pi,r)<effHdcp(a,r)?pi:a;},mem[0]);
@@ -16558,6 +16571,11 @@ function _gsResetGame(def,r,lane){
     if(!gameOnAny(def.id)){
       if(z.trip)Object.keys(z.trip).forEach(function(k){WK[k]=z.trip[k];});
       if(z.tripFn)z.tripFn(r);
+    }
+    // v124.10: presses are Match Play results. A foursome no longer playing it loses this round's presses,
+    // so adding the game back starts clean. The remove sheet already says the results go.
+    if(def.id==='mp'&&STATE.pressState&&Array.isArray(STATE.pressState[r])){
+      STATE.pressState[r].forEach(function(_,fi){if(!gameOnFs('mp',r,fi))STATE.pressState[r][fi]=[];});
     }
   }finally{STATE.gamesLane=keepLane;_gsConfirmDestructive=keepAsk;}
 }
