@@ -2374,7 +2374,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.99';
+const APP_VERSION='v123.100';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -16411,6 +16411,13 @@ const _GS_RESET={
   nines:{keys:['ninesBlitz','ninesVal']},
   twos:{trip:{twosAmt:25}}
 };
+function _gsGameHasScores(r,def,lane){
+  if(def.tripLevel)return WK.rounds.some(function(_,ri){return _gsRoundHasScores(ri);});
+  if(lane==='both'||!isMultiFlight(r))return _gsRoundHasScores(r);
+  var who=flightsForRound(r)[lane]||[],rows=(STATE.scores||[])[r];
+  if(!Array.isArray(rows))return false;
+  return rows.some(function(row){return Array.isArray(row)&&who.some(function(pi){return row[pi]!=null;});});
+}
 function _gsResetGame(def,r,lane){
   const z=_GS_RESET[def.id];if(!z)return;
   const keepLane=STATE.gamesLane,keepAsk=_gsConfirmDestructive;
@@ -16454,9 +16461,10 @@ window._gsRemoveGame=function(gameId){
     updateTabDimming();
     renderGamesTab();
   };
-  // With scores in the round the settings it clears change the money, so it asks first.
-  if(!_gsRoundHasScores(r)){go();return;}
-  _confirmSheet({icon:'ti-trash',title:'Remove '+def.label+'?',danger:true,body:'Its settings go back to the defaults if you add it again. Scores stay.',okLabel:'Remove',onOk:go});
+  // v123.100: asks only when the game has results, i.e. its players have scores (on a foursome tab,
+  // that foursome's). The reset is not mentioned; it just happens (Kyle, 14 Oct).
+  if(!_gsGameHasScores(r,def,lane)){go();return;}
+  _confirmSheet({icon:'ti-trash',title:'Remove '+def.label+'?',danger:true,body:def.label+' results will be lost. Scores stay.',okLabel:'Remove',onOk:go});
 };
 function _gsRefreshAfterEdit(){
   // v123.77: inside _gsKeep the redraw waits for the change to finish, so one change draws once.
