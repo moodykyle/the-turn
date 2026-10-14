@@ -842,6 +842,8 @@ body.force-light .gs-setup-toggle,body.force-light .gs-setup-body{box-shadow:0 2
 .gs-add-fsnote{font-size:12px;color:var(--color-text-secondary);text-align:center;line-height:1.5;padding:0 8px 10px;}
 .gs-add-fsnote button{all:unset;display:inline-block;padding:6px 2px;font-size:13px;font-weight:600;color:#1D9E75;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 /* v123.58: foursome prompt, above the tab bar */
+/* v124.4: behind the iPhone clock; see the patch note. */
+#sbStrip{position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--color-background-page);z-index:940;pointer-events:none}
 .fsp{position:fixed;left:10px;right:10px;bottom:calc(var(--tab-bar-h) + 12px + env(safe-area-inset-bottom,0px));z-index:950;max-width:460px;margin:0 auto;box-sizing:border-box;background:var(--fsp-sheet);border:1px solid var(--fsp-bd);border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,0.28);padding:14px 14px 12px;display:flex;flex-direction:column;gap:10px;color:var(--color-text-primary);}
 @media(prefers-color-scheme:light){body:not(.force-dark) .fsp{--fsp-sheet:#FFFFFF;--fsp-opt:#FFFFFF;--fsp-bd:#E3DED0;--fsp-field:#F4F1E8;--fsp-acc:#13795B;--fsp-link:#13795B;--fsp-title:#13795B;--fsp-sel:rgba(19,121,91,0.08);--fsp-offink:#8A8F98;}}
 body.force-light .fsp{--fsp-sheet:#FFFFFF;--fsp-opt:#FFFFFF;--fsp-bd:#E3DED0;--fsp-field:#F4F1E8;--fsp-acc:#13795B;--fsp-link:#13795B;--fsp-title:#13795B;--fsp-sel:rgba(19,121,91,0.08);--fsp-offink:#8A8F98;}
@@ -1739,6 +1741,7 @@ body.force-light .lp-view,body.force-light .lp-you{color:#13795B;}body.force-lig
 </style>
 </head>
 <body>
+<div id="sbStrip" aria-hidden="true"></div>
 <div class="save-indicator" id="saveIndicator">✓ Saved</div>
 <div id="appToast"><span class="ti">&#9888;</span><span class="tt" id="appToastMsg"></span></div>
 <div id="syncStatus" style="display:none;position:fixed;top:12px;left:50%;transform:translateX(-50%);background:var(--color-text-primary);color:var(--color-background-primary);font-size:11px;padding:4px 12px;border-radius:20px;z-index:9999;opacity:0.85">Syncing…</div>
@@ -2374,7 +2377,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.3';
+const APP_VERSION='v124.4';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
