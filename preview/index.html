@@ -2374,7 +2374,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.97';
+const APP_VERSION='v123.98';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -16830,12 +16830,28 @@ function _gsWolfOrderHtml(r){
   return _gsSec('Tee order')+_gsLaneLabelHtml(r)+pillRow+h+'<div class="gs-tnote">Pick anyone in any box. A player already in the order swaps places.</div>';
 }
 function _gsTwosSetupBody(r){
-  const pot=(WK.twosAmt*WK.players.length).toFixed(0);
-  let h=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per player</span>$<input class="ie-num" type="number" value="${WK.twosAmt}" style="width:80px" onchange="WK.twosAmt=parseFloat(this.value);autoSave();s2WriteActive();_gsRefreshAfterEdit();"/></div>`;
-  h+=`<div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Pot total</span><span style="font-size:13px;color:var(--color-text-primary)">$${pot}</span></div>`;
-  h+=`<div class="gs-trip-note">Applies to the whole trip, not just this round.</div>`;
+  // v123.98: Money with the rules behind an (i), the pot per player (trip-wide, WK.twosAmt) and a Total
+  // pot row carrying the running count of twos, in place of "Pot total" and the trip note.
+  const n=WK.players.length,amt=WK.twosAmt,pot=amt*n;
+  const tw=calcTwos().reduce(function(a,b){return a+b;},0);
+  const $=v=>'$'+(Math.round(v*100)%100?(+v).toFixed(2):String(Math.round(v)));
+  let h=_gsSec('Money',_gsInfoBtn('_gsTwosInfo','How Twos works'));
+  h+=_gsRow('Pot','Per player, whole trip<br>±$5 or type any',
+    '<div class="gs-money"><button type="button" aria-label="Less" onclick="_gsTwosStep(this,-5)">−</button><span>$</span>'
+    +'<input class="ie-num" type="number" inputmode="decimal" min="0" value="'+amt+'" onchange="WK.twosAmt=parseFloat(this.value)||0;autoSave();s2WriteActive();_gsRefreshAfterEdit();"/>'
+    +'<button type="button" aria-label="More" onclick="_gsTwosStep(this,5)">+</button></div>');
+  h+=_gsRow('Total pot',n+' players × '+$(amt)+'<br>'+(tw>0?(tw+' two'+(tw===1?'':'s')+' so far, '+$(pot/tw)+' each'):'No twos yet'),'<span class="gs-fbpot">'+$(pot)+'</span>');
   return h;
 }
+window._gsTwosStep=function(btn,d){
+  if(!canEditTrip())return;
+  var inp=btn.parentNode.querySelector('input');if(!inp)return;
+  var v=Math.max(0,Math.round(((parseFloat(inp.value)||0)+d)*100)/100);
+  inp.value=v;WK.twosAmt=v;autoSave();s2WriteActive();_gsRefreshAfterEdit();
+};
+window._gsTwosInfo=function(){
+  _infoSheet({icon:'ti-info-circle',title:'Twos',body:'Everyone puts the same amount in one pot for the whole trip. Every gross <b>2</b>, on any hole in any round, earns an equal share of it.<br><br>If nobody makes a 2, nobody wins or loses.'});
+};
 // v123.75: the shared pieces of a game's settings.
 function _gsSec(t,extra){return '<div class="sec-hd gs-sec">'+t+(extra||'')+'</div>';}
 function _gsRow(label,sub,ctl,wide,na,alt){
@@ -19393,12 +19409,23 @@ function renderHammerBox(){
   wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hammerHdr}${acceptedBanner}${hammerGrid}${resultRow}</div>`;
 }
 function _gsNinesSetupBody(r){
+  // v123.98, Kyle 13 Oct, canvas "Game settings, part 2: Nines and Twos": "Both look fine. Blitz should
+  // be off by default" (it is: ninesBlitzOnFs falls back to WK.ninesBlitz, unset, so off). Format with
+  // the rules behind an (i) and the Blitz switch; Money with the per point stepper.
   const _bOn=ninesBlitzOnFs(r,(_gsLane()==='both'?null:_gsLane()));
-  let h='';
-  h+=`<div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">$ per point</span>$<input class="ie-num" type="number" placeholder="${_gsStakePh('ninesVal',r,WK.ninesVal||1)}" value="${_gsStakeVal('ninesVal',r)}" step="0.25" style="width:80px" oninput="_gsStakeSet('ninesVal',${r},this.value);autoSave();s2WriteActive();"/></div>`;
-  h+=`<div class="setup-row" style="gap:10px"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Blitz<br><span style="font-size:11px;color:var(--color-text-tertiary)">Win a hole by 2 or more and take all nine</span></span><label class="toggle"><input type="checkbox" ${_bOn ? 'checked' : ''} onchange="_gsNinesBlitzSet(${r},this.checked)"><span class="toggle-slider"></span></label></div>`;
+  let h=_gsSec('Format',_gsInfoBtn('_gsNinesInfo','How Nines works'));
+  h+=_gsRow('Blitz','Win a hole by 2 or more,<br>take all nine','<label class="toggle"><input type="checkbox" '+(_bOn?'checked':'')+' onchange="_gsNinesBlitzSet('+r+',this.checked)"><span class="toggle-slider"></span></label>');
+  h+=_gsSec('Money');
+  h+=_gsRow('Per point','Each point<br>±$1 or type any',_gsMoney('ninesVal',r,_gsStakePh('ninesVal',r,WK.ninesVal||1),1,' step="0.25"'));
   return h;
 }
+// v123.98: the (i) beside a section title, opening that game's rules in the info sheet.
+function _gsInfoBtn(fn,label){
+  return '<button type="button" class="gs-info" aria-label="'+label+'" onclick="'+fn+'()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>';
+}
+window._gsNinesInfo=function(){
+  _infoSheet({icon:'ti-info-circle',title:'Nines',body:'Played in threesomes. Each hole is worth nine points on net scores: <b>5</b> for the low score, <b>3</b> for the middle, <b>1</b> for the high. Ties split them 4-4-1, 5-2-2 or 3-3-3.<br><br>With <b>Blitz</b> on, win a hole by 2 or more and take all nine.<br><br>At the end each player settles the point difference with each of the other two, at the per point amount.'});
+};
 window._gsNinesBlitzSet=function(r,on){
   const lane=_gsLane();
   if(lane==='both'){WK.rounds[r].ninesBlitz=!!on;}
