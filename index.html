@@ -2374,7 +2374,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.7';
+const APP_VERSION='v124.8';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -2886,7 +2886,19 @@ async function s2Upsert(table,rows,onConflict,returnSelect){
 }
 
 let _s2LastFail=null;       // v124.1: {table,status,code} of the last refused upsert
-let _s2PlayersRefused=false; // v124.1: this write's players save was refused by the unique index
+let _s2PlayersRefused=false;
+// v124.8: every player_id this phone has seen on the server (loaded, or saved by it). Only grows; ids carry
+// the trip id, so trips never mix. A seen id missing from the server was removed on another phone.
+const _s2SeenPids=new Set();
+// The ids the server holds for this trip, or null if the read failed.
+async function _s2ServerPids(tripId){
+  try{
+    const r=await sbApiFetch(SB_URL+'/rest/v1/players?trip_id=eq.'+encodeURIComponent(tripId)+'&select=player_id',{headers:{'apikey':SB_KEY}});
+    if(!r.ok)return null;
+    const rows=await r.json();
+    return Array.isArray(rows)?new Set(rows.map(function(x){return x.player_id;})):null;
+  }catch(e){return null;}
+} // v124.1: this write's players save was refused by the unique index
 let _s2WriteInFlight=false; // sync poll must never rebuild over a write that hasn't landed yet
 let _s2WritePending=false;  // a write arrived while one was in flight; flush once the current one lands
 async function s2WriteActive(){
@@ -3121,11 +3133,17 @@ async function s2WriteActive(){
         idx_set_here:!!p.idxSetHere
       }));
       _s2LastFail=null;
-      const _playersOk=await s2Upsert('players',rows,'player_id');
+      // v124.8: never send back a player another phone removed. Read first; a failed read waits.
+      const _srvPids=await _s2ServerPids(tripId);
+      const _goneElsewhere=_srvPids?rows.some(function(x){return _s2SeenPids.has(x.player_id)&&!_srvPids.has(x.player_id);}):false;
+      const _playersOk=!_srvPids?false:(_goneElsewhere?false:await s2Upsert('players',rows,'player_id'));
+      if(_playersOk)rows.forEach(function(x){_s2SeenPids.add(x.player_id);});
+      if(_goneElsewhere)_s2PlayersRefused=true;
+      else if(!_srvPids)_s2Dirty.players=true;
+      else if(!_playersOk){if(_s2LastFail&&_s2LastFail.table==='players'&&_s2LastFail.code==='23505')_s2PlayersRefused=true;else _s2Dirty.players=true;}
       // v124.1: 23505 is the unique (trip_id, player_index) index refusing a roster another phone has
       // already changed. Retrying the same rows can never succeed and keeps sync frozen; take the
-      // server's roster instead (after the write, below).
-      if(!_playersOk){if(_s2LastFail&&_s2LastFail.table==='players'&&_s2LastFail.code==='23505')_s2PlayersRefused=true;else _s2Dirty.players=true;}
+      // server's roster instead (after the write, below). v124.8: the same for a player removed elsewhere.
     }
 
     // 3. Scores upsert — only dirty holes
@@ -3302,6 +3320,7 @@ async function s2ReadTrip(tripId){
     });
     if(!pr.ok)return null;
     const playerRows=await pr.json();
+    if(Array.isArray(playerRows))playerRows.forEach(function(_r){_s2SeenPids.add(_r.player_id);});
     if(!playerRows){console.warn('[s2ReadTrip] players fetch failed');return null;}
     console.log('[s2ReadTrip] players:',playerRows.length);
     // Allow empty players (shouldn't happen but don't abort)
