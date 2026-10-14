@@ -2374,7 +2374,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.94';
+const APP_VERSION='v123.95';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -15867,7 +15867,7 @@ function _gsFourBallSetupBody(r){
   // carries no fbFive43 write at all, so it cannot store a flag fbFive43 would then refuse.
   const f43=fbFive43(r),legal=(d.size===4&&d.scope==='field');
   h+=_gsRow('Format',f43?'Par 5s: 2, 4s: 3,<br>3s: all four':'One ball counts<br>every hole',
-    _gsSeg([['0','Best ball'],['1','5-4-3']],f43?'1':'0',legal?_t('fbFive43'):'void(VAL)',true),false,!legal,'Needs 4-man<br>and a Field pot')
+    _gsSeg([['0','Best ball'],['1','5-4-3']],f43?'1':'0',legal?_t('fbFive43'):'void(VAL)',true),false,!legal,'Needs Field<br>and 4-man')
     .replace('<b>Format</b>','<b>Format<button type="button" class="gs-info" aria-label="About 5-4-3" onclick="_gsFb543Info()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></b>');
   // Scoring's line says how this round nets. EVERY NETTING LINE IS FALSE UNDER GROSS, so under
   // gross none of them is in the markup at all, hidden or not.
@@ -15911,7 +15911,7 @@ function _gsFourBallSetupBody(r){
     const first=Math.round(pot*(d.split/100)*100)/100, second=Math.round((pot-first)*100)/100;
     cap='1st '+$(first)+' ('+$(first/d.size)+' each), 2nd '+$(second)+' ('+$(second/d.size)+' each)';
   }else cap='Winner takes it ('+$(pot/d.size)+' each)';
-  h+=_gsRow(many?'Each pot':'Total pot',potN+' players × '+$(d.ante)+'<br>'+cap,'<span class="gs-fbpot">'+$(pot)+'</span>');
+  h+=_gsRow(many?'Pot per foursome':'Total pot',potN+' players × '+$(d.ante)+'<br>'+cap,'<span class="gs-fbpot">'+$(pot)+'</span>');
   // ---- teams ----
   const canEdit=canEditTrip()&&!isAnyFlightLocked(r);
   const _fbMan=!!WK.rounds[r].fbTeamsManual&&d.scope!=='fs';
