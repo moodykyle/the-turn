@@ -2374,7 +2374,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.95';
+const APP_VERSION='v123.96';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -15923,8 +15923,15 @@ function _gsFourBallSetupBody(r){
   h+=_gsSec('Teams','<span class="gs-fbbtns">'+_hdBtns+'</span>');
   const fl=flightsForRound(r);
   const fsOf=function(pi){for(let i=0;i<fl.length;i++){if((fl[i]||[]).indexOf(pi)>=0)return i;}return -1;};
+  // v123.96 (Kyle: "If I switch from All to Foursome 2 tab in games, I still see the players from
+  // Foursome 1"): a foursome tab shows the teams with someone in that foursome. A team picked across
+  // foursomes shows on each of its foursomes' tabs, tagged. All shows every team.
+  const _ln=_gsLane(),_lf=(typeof _ln==='number'&&fl.length>1)?_ln:-1;
+  let _shown=0;
   teams.forEach(function(t,ti){
     const fss={};t.forEach(function(pi){const f=fsOf(pi);if(f>=0)fss[f]=1;});
+    if(_lf>=0&&!fss[_lf])return;
+    _shown++;
     const split=Object.keys(fss).length>1;
     h+='<div class="fb-tm"><div class="fb-tm-hd"><span class="fb-tm-nm">Team '+(ti+1)+'</span>'
       +'<span class="fb-tm-mt">'+(split?'<span class="fb-tag">split F'+(Object.keys(fss).map(function(x){return +x+1;}).join('/F'))+'</span>':'')+'</span></div>';
@@ -15941,8 +15948,10 @@ function _gsFourBallSetupBody(r){
     h+='</div>';
   });
   const assigned=teams.reduce(function(s,t){return s+t.length;},0);
-  h+='<div class="fb-cap">'+assigned+' of '+n+' assigned, '+nTeams+' team'+(nTeams===1?'':'s')+' of '+d.size
-    +(pools.length>1?(' across '+pools.length+' pots'):'')+'.'
+  h+='<div class="fb-cap">'+(_lf>=0
+      ? ('Foursome '+(_lf+1)+': '+_shown+' team'+(_shown===1?'':'s')+' of '+d.size+'. All shows every team.')
+      : (assigned+' of '+n+' assigned, '+nTeams+' team'+(nTeams===1?'':'s')+' of '+d.size
+    +(pools.length>1?(' across '+pools.length+' pots'):'')+'.'))
     +(canEdit?' Tap a player to swap.':'')
     +(d.scope!=='fs'?('<br>'+(_fbMan
         ? 'Teams were set by hand. Foursome changes will not move them.'
