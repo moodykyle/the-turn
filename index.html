@@ -2374,7 +2374,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v123.98';
+const APP_VERSION='v124.0';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7153,14 +7153,12 @@ function renderPressCfgRows(r){
   const apOn=autoPressOnForRound(r);
   const apThr=autoPressThresholdForRound(r);
   const pv=pressValForRound(r);
-  let h='<div class="setup-row gs-row"><div class="gs-lbl"><b>Presses</b><small>A new bet when a team falls behind</small></div><label class="toggle"><input type="checkbox" '+(pOn?'checked':'')+' onchange="setPressesOnForRound('+r+',this.checked);_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>';
-  if(pOn){
-    h+='<div class="setup-row gs-row"><div class="gs-lbl"><b>Press value</b><small>Blank = game amt<br>\u00b1$5 or type any</small></div><div class="gs-money"><button type="button" aria-label="Less" onclick="_gsPressStep(this,'+r+',-5)">\u2212</button><span>$</span><input class="ie-num" type="number" inputmode="decimal" placeholder="'+roundVal('gameVal',r,WK.gameVal)+'" value="'+pv+'" oninput="const v=this.value.trim();if(v===\'\'){delete WK.rounds['+r+'].pressVal;}else{WK.rounds['+r+'].pressVal=parseFloat(v);}autoSave();"/><button type="button" aria-label="More" onclick="_gsPressStep(this,'+r+',5)">+</button></div></div>';
-    h+='<div class="setup-row gs-row"><div class="gs-lbl"><b>Auto-press</b><small>Starts the press without asking</small></div><label class="toggle"><input type="checkbox" '+(apOn?'checked':'')+' onchange="setAutoPressOnForRound('+r+',this.checked);_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div>';
-    if(apOn){
-      h+=_gsRow('Press when','How far behind a team is before it presses',_gsSeg([['2','2 down'],['3','3 down'],['4','4 down']],String(apThr),'setAutoPressThresholdForRound('+r+',parseInt(VAL))'),true);
-    }
-  }
+  // v123.99, Kyle 14 Oct: "the auto press toggle enables a configuration to appear which causes the screen
+  // to reorder". The four rows are always drawn; a row that does not apply is greyed with its reason.
+  let h=_gsRow('Presses','A new bet when a team falls behind','<label class="toggle"><input type="checkbox" '+(pOn?'checked':'')+' onchange="setPressesOnForRound('+r+',this.checked);_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label>');
+  h+=_gsRow('Press value','Blank = game amt<br>\u00b1$5 or type any','<div class="gs-money"><button type="button" aria-label="Less" onclick="_gsPressStep(this,'+r+',-5)">\u2212</button><span>$</span><input class="ie-num" type="number" inputmode="decimal" placeholder="'+roundVal('gameVal',r,WK.gameVal)+'" value="'+pv+'"'+(pOn?'':' disabled')+' oninput="const v=this.value.trim();if(v===\'\'){delete WK.rounds['+r+'].pressVal;}else{WK.rounds['+r+'].pressVal=parseFloat(v);}autoSave();"/><button type="button" aria-label="More" onclick="_gsPressStep(this,'+r+',5)">+</button></div>',false,!pOn,'Needs Presses');
+  h+=_gsRow('Auto-press','Starts the press without asking','<label class="toggle"><input type="checkbox" '+(apOn?'checked':'')+(pOn?'':' disabled')+' onchange="setAutoPressOnForRound('+r+',this.checked);_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label>',false,!pOn,'Needs Presses');
+  h+=_gsRow('Press when','How far behind a team is before it presses',_gsSeg([['2','2 down'],['3','3 down'],['4','4 down']],String(apThr),'setAutoPressThresholdForRound('+r+',parseInt(VAL))'),true,!(pOn&&apOn),pOn?'Needs Auto-press':'Needs Presses');
   return h;
 }
 function setPressesOnForRound(r,v){if(!canEditTrip())return;WK.rounds[r].pressesOn=v;if(!v){if(STATE.pressState&&STATE.pressState[r])STATE.pressState[r]=[];}autoSave();s2WriteActive();}
@@ -16386,16 +16384,87 @@ window._resumeRound=function(r,fis){
   autoSave();s2WriteActive();
   return null;
 };
+// v123.99, Kyle 14 Oct: a re-added Match Play still pressed at the $11 set before it was removed. Removing a
+// game puts its settings back to the defaults, so adding it again starts fresh. Settings only: team picks,
+// the Wolf tee order and scores stay. keys: the game's round settings (also foursome overrides). seg: its
+// segment count, through the game's own setter so the teams are rebuilt to fit. trip: trip-wide settings,
+// reset (to a new trip's values) only once the game is off in every round.
+const _GS_RESET={
+  mp:{keys:['mpFinalSeg','gameVal','pressesOn','pressVal','autoPressOn','autoPressThreshold','mpUnique','mpHUNetOffMatchLow'],
+      fmt:function(r){if(WK.rounds[r].mpFormat==='headsup')_setMPFormat(r,'team');delete WK.rounds[r].mpFormat;},
+      seg:{k:'mpGames',get:function(r){return mpGamesForRound(r,null);},set:function(r,v){setMPGamesForRound(r,v);},d:function(r){return WK.mpGamesDefault>0?WK.mpGamesDefault:3;}},
+      trip:{mpSettle:'perplayer'}},
+  hammer:{keys:['hammerMax','hammerMode','hammerScoring','hammerHalve','hammerVal','hammerPayout','hammerUnique'],
+      seg:{k:'hammerSegs',get:function(r){return hammerSegsForRound(r,null);},set:function(r,v){setHammerSegsForRound(r,v);},d:function(r){return WK.hammerSegsDefault>0?WK.hammerSegsDefault:1;}}},
+  vegas:{keys:['vegasFlip','vegasDouble','vegasTwoBird','vegasVal','vegasUnique'],
+      seg:{k:'vegasSegs',get:function(r){return vegasSegForRound(r,null);},set:function(r,v){setVegaSegsForRound(r,v);},d:function(r){return WK.vegasSegsDefault>0?WK.vegasSegsDefault:3;}},
+      trip:{vegasSettle:'perplayer'}},
+  skins:{keys:['skinsVal','skinsUnique'],
+      seg:{k:'skinsGames',get:function(r){return skinsGamesForRound(r,null);},set:function(r,v){setSkinsGamesForRound(r,v);},d:function(r){return WK.skinsFmt==='individual'?1:(WK.skinsGamesDefault>0?WK.skinsGamesDefault:3);}},
+      trip:{skinsSettle:'perplayer'},
+      tripFn:function(r){var f=WK.players.length<4?'individual':'team';if(WK.skinsFmt!==f)_setSkinsFmt(r,f);delete WK._skinsFmtManual;}},
+  razzle:{keys:['razzleBirdieGross','razzleFinalMatch','razzleVal','razzleBirdieOn','razzleBirdieBonus','razzleSweepOn','razzleSweepBonus','razzle5HoleOn','razzle5HoleBonus','razzle5HoleMode','razzleSettle','razzleFinalCloseBonus','razzleFinalBirdieBonus']},
+  wolf:{keys:['wolfPlacement','wolfBlindMult','wolfLoneMode','wolfPartnerMode','wolfVal']},
+  snake:{keys:['snakeBase'],trip:{snakeGrowth:'double',snakePayout:'split',snakeIncrement:1}},
+  fourball:{keys:['fbScope','fbTeamSize','fbTeams','fbTeamsManual','fbAnte','fbPays','fbTie','fbFive43','fbGross']},
+  grinders:{keys:['grindersAnte','grindersNet']},
+  nines:{keys:['ninesBlitz','ninesVal']},
+  twos:{trip:{twosAmt:25}}
+};
+function _gsGameHasScores(r,def,lane){
+  if(def.tripLevel)return WK.rounds.some(function(_,ri){return _gsRoundHasScores(ri);});
+  if(lane==='both'||!isMultiFlight(r))return _gsRoundHasScores(r);
+  var who=flightsForRound(r)[lane]||[],rows=(STATE.scores||[])[r];
+  if(!Array.isArray(rows))return false;
+  return rows.some(function(row){return Array.isArray(row)&&who.some(function(pi){return row[pi]!=null;});});
+}
+function _gsResetGame(def,r,lane){
+  const z=_GS_RESET[def.id];if(!z)return;
+  const keepLane=STATE.gamesLane,keepAsk=_gsConfirmDestructive;
+  // The game is off, so there is nothing for a segment or format change to warn about.
+  _gsConfirmDestructive=function(o,go){go();};
+  try{
+    if(!def.tripLevel){
+      const rd=WK.rounds[r],fsl=Array.isArray(rd.fsGames)?rd.fsGames:[];
+      if(!gameOn(def.id,r)){
+        STATE.gamesLane="both";
+        if(z.fmt)z.fmt(r);
+        if(z.seg){
+          let had=false;fsl.forEach(function(f){if(f&&f[z.seg.k]!=null){delete f[z.seg.k];had=true;}});
+          const d=roundHoleCount(r)<=9?1:z.seg.d(r);
+          if(had||z.seg.get(r)!==d)z.seg.set(r,d);
+        }
+        (z.keys||[]).forEach(function(k){delete rd[k];fsl.forEach(function(f){if(f)delete f[k];});});
+      }else if(lane!=='both'&&fsl[lane]){
+        STATE.gamesLane=lane;
+        if(z.seg&&fsl[lane][z.seg.k]!=null)z.seg.set(r,0);
+        (z.keys||[]).forEach(function(k){delete fsl[lane][k];});
+      }
+    }
+    if(!gameOnAny(def.id)){
+      if(z.trip)Object.keys(z.trip).forEach(function(k){WK[k]=z.trip[k];});
+      if(z.tripFn)z.tripFn(r);
+    }
+  }finally{STATE.gamesLane=keepLane;_gsConfirmDestructive=keepAsk;}
+}
 window._gsRemoveGame=function(gameId){
   if(!canEditTrip())return;
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
   const def=GAME_DEFS.find(d=>d.id===gameId);
   if(!def)return;
-  _gsSetOn(def,r,false);
-  STATE.gamesViewGame=null;
-  autoSave();s2WriteActive();
-  updateTabDimming();
-  renderGamesTab();
+  const lane=_gsLane();
+  const go=function(){
+    _gsSetOn(def,r,false,lane);
+    _gsResetGame(def,r,lane);
+    STATE.gamesViewGame=null;
+    autoSave();s2WriteActive();
+    updateTabDimming();
+    renderGamesTab();
+  };
+  // v123.100: asks only when the game has results, i.e. its players have scores (on a foursome tab,
+  // that foursome's). The reset is not mentioned; it just happens (Kyle, 14 Oct).
+  if(!_gsGameHasScores(r,def,lane)){go();return;}
+  _confirmSheet({icon:'ti-trash',title:'Remove '+def.label+'?',danger:true,body:def.label+' results will be lost. Scores stay.',okLabel:'Remove',onOk:go});
 };
 function _gsRefreshAfterEdit(){
   // v123.77: inside _gsKeep the redraw waits for the change to finish, so one change draws once.
