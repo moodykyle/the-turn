@@ -752,6 +752,10 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
 .gs-setup-locked-note{display:flex;align-items:center;gap:8px;padding:9px 12px;margin:-12px -12px 10px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);}
 @media(prefers-color-scheme:light){body:not(.force-dark) .gs-setup-toggle,body:not(.force-dark) .gs-setup-body{box-shadow:0 2px 8px rgba(0,0,0,0.09),0 1px 3px rgba(0,0,0,0.06);}}
 body.force-light .gs-setup-toggle,body.force-light .gs-setup-body{box-shadow:0 2px 8px rgba(0,0,0,0.09),0 1px 3px rgba(0,0,0,0.06);}
+.gs-remove-note{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;font-size:13px;line-height:1.4;
+  color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md)}
+.gs-remove-note button{margin-left:auto;flex:0 0 auto;font:inherit;font-weight:600;color:var(--brand);background:transparent;
+  border:1px solid var(--tint-bd);border-radius:999px;padding:5px 12px;cursor:pointer;white-space:nowrap}
 .gs-remove-btn{
   display:block;width:100%;text-align:center;
   margin-top:10px;padding:10px;
@@ -2426,7 +2430,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.10';
+const APP_VERSION='v124.11';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -17318,7 +17322,12 @@ function _gsSetupPlaceholder(def,r){
   const isOpen=!!(STATE.gamesSetupOpen&&STATE.gamesSetupOpen[def.id]);
   const _locked=!canEditTrip();
   const _note=_locked?`<div class="gs-setup-locked-note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-secondary);flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span style="font-size:12px;color:var(--color-text-secondary);line-height:1.4">You don't have edit access for this trip. You can still adjust teams.</span></div>`:'';
-  const _removeBtn=_locked?'':`<button class="gs-remove-btn" onclick="window._gsRemoveGame('${def.id}')">Remove ${def.label} from ${def.tripLevel?'trip':'this round'}</button>`;
+  // v124.11: a game added on All cannot come off one foursome. Say so and offer All, rather than a Remove
+  // that closes its sheet and leaves the game where it was.
+  const _sharedHere=!def.tripLevel&&_gsLane()!=='both'&&_gsIsShared(def,r);
+  const _removeBtn=_locked?'':_sharedHere
+    ?`<div class="gs-remove-note">${def.label} was added for all foursomes. Remove it on All.<button type="button" onclick="switchGamesLane('both')">Go to All</button></div>`
+    :`<button class="gs-remove-btn" onclick="window._gsRemoveGame('${def.id}')">Remove ${def.label} from ${def.tripLevel?'trip':'this round'}</button>`;
   const _bodyCls=_locked?'gs-setup-body gs-setup-locked':'gs-setup-body';
   // v124.9: "<Game> settings", with the strokes rule under it when there is one and it is not a warning.
   const _sub=window._gsNetSub||'';
