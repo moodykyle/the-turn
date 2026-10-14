@@ -2374,7 +2374,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.2';
+const APP_VERSION='v124.7';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7906,6 +7906,10 @@ window._twToggleCourseForm=function(){
 };
 
 
+// v124.3: a request that never reached the server. fetch throws a TypeError for that ("Load failed" in
+// Safari, "Failed to fetch" in Chrome); offline is the other sure sign. Server errors are Errors with a body.
+function _isNoSignal(e){return !navigator.onLine||(e instanceof TypeError);}
+const _GUEST_NOSIG="No signal. Add guests when you're back online.";
 // Add guest sheet
 window._twShowAddGuest=function(){
   const gid=window._pendingGroupId;
@@ -7975,7 +7979,7 @@ window._confirmAddGuest=async function(gid){
     renderGroupPage(gid);
   }catch(e){
     if(btn){btn.disabled=false;btn.textContent='Add to group';}
-    window._grpShowErr('Could not add guest. Please try again.');
+    window._grpShowErr(_isNoSignal(e)?_GUEST_NOSIG:'Could not add guest. Please try again.');
   }
 };
 // Shared managed player creation - callable from group settings too
@@ -8014,7 +8018,7 @@ window._twAddGuestSubmit=async function(gid){
     }
     document.getElementById('twAddGuestOverlay').style.display='none';
     _twRender();
-  }catch(e){showMsg('Could not add guest: '+(e.message||'Unknown error'));}
+  }catch(e){showMsg(_isNoSignal(e)?_GUEST_NOSIG:'Could not add guest: '+(e.message||'Unknown error'));}
 };
 
 // ── _twLaunch: build WK/STATE from _twS and start the trip ──────────────────
@@ -13221,7 +13225,7 @@ window._apGuestSubmit=async function(){
       _groupCache[gid]._members.push(nm);_sortMembers(_groupCache[gid]._members);
     }catch(e){
       if(btn){btn.disabled=false;btn.textContent='Save';}
-      showErr('Could not add guest: '+(e.message||'Unknown error'));
+      showErr(_isNoSignal(e)?_GUEST_NOSIG:'Could not add guest: '+(e.message||'Unknown error'));
       return;
     }
   }
