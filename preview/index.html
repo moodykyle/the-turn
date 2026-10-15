@@ -917,9 +917,9 @@ body.force-light{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpA
 .mpk-tm .lt{font-size:20px;font-weight:700;text-align:center}
 .mpk-tm .nm{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mpk-tm .nm.r{text-align:right}
-.mpk-tm .nm.lead{font-weight:700}
 .mpk .ca{color:var(--mpA)}.mpk .cb{color:var(--mpB)}
-.mpk-ft{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:0.5px solid var(--color-border-tertiary);font-size:14px;color:var(--color-text-primary)}
+.mpk-ft{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:0.5px solid var(--color-border-tertiary);font-size:14px;color:var(--color-text-primary);background:var(--color-background-secondary)}
+.mpk-bl{padding:12px 2px 0;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-tertiary)}
 .mpk-ft .mpc{margin-left:auto}
 .mpk-en{padding:0 14px 10px;font-size:11px;color:var(--color-text-tertiary)}
 .mpc{display:inline-block;font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap;line-height:1.3}
@@ -2432,7 +2432,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.13';
+const APP_VERSION='v124.14';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -17800,8 +17800,8 @@ function renderMPRound(){
     // Teams as on the Hammer card: a big letter, one name per line, never split mid-name.
     const _rows=Math.max(tA.length,tB.length,1);
     html+=`<div class="mpk-tm" onclick="toggleMPGame('${key}')"><span class="lt ca" style="grid-column:1;grid-row:1/${_rows+1}">A</span>`;
-    tA.forEach((pi,ni)=>{html+=`<span class="nm ca${_lead==='A'?' lead':''}" style="grid-column:2;grid-row:${ni+1}">${displayName(pi)}</span>`;});
-    tB.forEach((pi,ni)=>{html+=`<span class="nm r cb${_lead==='B'?' lead':''}" style="grid-column:3;grid-row:${ni+1}">${displayName(pi)}</span>`;});
+    tA.forEach((pi,ni)=>{html+=`<span class="nm ca" style="grid-column:2;grid-row:${ni+1}">${displayName(pi)}</span>`;});
+    tB.forEach((pi,ni)=>{html+=`<span class="nm r cb" style="grid-column:3;grid-row:${ni+1}">${displayName(pi)}</span>`;});
     html+=`<span class="lt cb" style="grid-column:4;grid-row:1/${_rows+1}">B</span></div>`;
     html+=`<div class="mpk-ft"><span>${_ftL}</span>${_mpChip?`<span class="end-chip">${_mpChip}</span>`:''}${_ftC}</div>`;
     // The end note: a match that was never played says why on its face; any other ended match keeps the
@@ -17826,8 +17826,8 @@ function renderMPRound(){
           else if(ms.closed&&h>ms.closedAtHole)st='<span class="q">closed out</span>';
           else{const _s=_sc(ms.scoreStr);st=_s?`<span class="${_s.l==='A'?'ca':'cb'}">${ms.closed?_s.l+' won '+_s.t:_s.l+' '+_s.t}</span>`:'<span style="color:var(--color-text-secondary)">All square</span>';}
           const isClosed=ms&&ms.closed&&h>ms.closedAtHole;
-          const w=res.halved?'<span class="q">Halved</span>':res.aWins?'<span class="ca">A</span>':'<span class="cb">B</span>';
-          rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span>${res.bestA} vs ${res.bestB}</span><span>${st}</span><span class="w"${isClosed?' style="opacity:.55"':''}>${w}</span></div>`;
+          const w=res.halved?'<span class="q">Halved</span>':isClosed?`<span class="q">${res.aWins?'A':'B'}</span>`:res.aWins?'<span class="ca">A</span>':'<span class="cb">B</span>';
+          rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span>${res.bestA} vs ${res.bestB}</span><span>${st}</span><span class="w">${w}</span></div>`;
         }
         return rows;
       }
@@ -17840,7 +17840,7 @@ function renderMPRound(){
         let pscoreStr;if(pclosedAt>=0){const cpd=pclosedAt-pSeg.start+1;const cpl=holesInPress-cpd;pscoreStr=(pleader==='A'?'Team A':'Team B')+' '+pleadAtClose+'&'+cpl;}else if(!pleader){pscoreStr='A/S';}else if(plead===phl){pscoreStr=(pleader==='A'?'Team A':'Team B')+': Dormie '+plead;}else{pscoreStr=(pleader==='A'?'Team A':'Team B')+': '+plead+' up';}
         return{diff:pdiff,lead:plead,leader:pleader,holesPlayed:php,holesLeft:phl,closed:pclosedAt>=0,closedAtHole:pclosedAt,scoreStr:pscoreStr};
       }
-      html+=`<div class="mpk-bets">`;
+      html+=`<div class="mpk-bets"><div class="mpk-bl">Bets</div>`;
       // The match itself.
       const betKey=key+'b0';
       const betExp=STATE.mpExpanded[betKey]===true;
