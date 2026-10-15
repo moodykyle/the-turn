@@ -919,7 +919,6 @@ body.force-light{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpA
 .mpk-tm .nm.r{text-align:right}
 .mpk .ca{color:var(--mpA)}.mpk .cb{color:var(--mpB)}
 .mpk-ft{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:0.5px solid var(--color-border-tertiary);font-size:14px;color:var(--color-text-primary);background:var(--color-background-secondary)}
-.mpk-bl{padding:12px 2px 0;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-tertiary)}
 .mpk-ft .mpc{margin-left:auto}
 .mpk-en{padding:0 14px 10px;font-size:11px;color:var(--color-text-tertiary)}
 .mpc{display:inline-block;font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap;line-height:1.3}
@@ -2432,7 +2431,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.14';
+const APP_VERSION='v124.15';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -17840,7 +17839,7 @@ function renderMPRound(){
         let pscoreStr;if(pclosedAt>=0){const cpd=pclosedAt-pSeg.start+1;const cpl=holesInPress-cpd;pscoreStr=(pleader==='A'?'Team A':'Team B')+' '+pleadAtClose+'&'+cpl;}else if(!pleader){pscoreStr='A/S';}else if(plead===phl){pscoreStr=(pleader==='A'?'Team A':'Team B')+': Dormie '+plead;}else{pscoreStr=(pleader==='A'?'Team A':'Team B')+': '+plead+' up';}
         return{diff:pdiff,lead:plead,leader:pleader,holesPlayed:php,holesLeft:phl,closed:pclosedAt>=0,closedAtHole:pclosedAt,scoreStr:pscoreStr};
       }
-      html+=`<div class="mpk-bets"><div class="mpk-bl">Bets</div>`;
+      html+=`<div class="mpk-bets">`;
       // The match itself.
       const betKey=key+'b0';
       const betExp=STATE.mpExpanded[betKey]===true;
