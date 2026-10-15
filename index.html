@@ -888,6 +888,57 @@ body.force-dark .fsp{--fsp-sheet:#1C2C4B;--fsp-opt:#14213B;--fsp-bd:#34476B;--fs
 .gs-net .c{font-size:11px;color:var(--brand);font-weight:600;white-space:nowrap;border:1px solid var(--tint-bd);
   background:var(--tint);border-radius:999px;padding:4px 10px;cursor:pointer}
 .gs-net.warn{border-left-color:#D8862F}
+/* v124.9: the strokes rule shows at the top only as a warning. Dark text is the warn amber, not the gold
+   (gold is kept to the darkpass list of names and titles). */
+.gs-net.warn{background:#FBF1DA;border:0.5px solid #E8D29A;border-left:0.5px solid #E8D29A}
+.gs-net.warn .t{color:#7A5608}.gs-net.warn .t b{color:#7A5608}
+.gs-net.warn .c{color:#7A5608;border-color:#E8D29A;background:transparent}
+@media(prefers-color-scheme:dark){body:not(.force-light) .gs-net.warn{background:#3A2E10;border-color:#6B5418}body:not(.force-light) .gs-net.warn .t,body:not(.force-light) .gs-net.warn .t b,body:not(.force-light) .gs-net.warn .c{color:#E0A45C}body:not(.force-light) .gs-net.warn .c{border-color:#6B5418}}
+body.force-dark .gs-net.warn{background:#3A2E10;border-color:#6B5418}body.force-dark .gs-net.warn .t,body.force-dark .gs-net.warn .t b,body.force-dark .gs-net.warn .c{color:#E0A45C}body.force-dark .gs-net.warn .c{border-color:#6B5418}
+/* v124.9: the settings row, title and the strokes rule under it. */
+.gs-setup-toggle{text-align:left;gap:10px;padding:11px 12px}
+.gs-setup-toggle .gs-st{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.gs-setup-toggle .gs-st b{font-size:14px;font-weight:600;color:var(--color-text-primary)}
+.gs-setup-toggle .gs-st small{font-size:12px;font-weight:400;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gs-setup-toggle .gs-setup-chevron{font-size:18px;line-height:1;color:var(--color-text-tertiary)}
+.gs-setup-toggle.open .gs-setup-chevron{transform:rotate(90deg)}
+/* v124.9: Match Play team card. Team colours: green A, blue B; dark uses a readable blue. */
+:root{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpAt:#FFFFFF;--mpBt:#FFFFFF;--mpPb:#FBF1DA;--mpPt:#8A6410}
+@media(prefers-color-scheme:dark){:root{--mpA:#3CC79A;--mpB:#7DB3F0;--mpAf:#1D9E75;--mpBf:#7DB3F0;--mpAt:#06120D;--mpBt:#08162A;--mpPb:#2A2410;--mpPt:#EFC456}}
+body.force-dark{--mpA:#3CC79A;--mpB:#7DB3F0;--mpAf:#1D9E75;--mpBf:#7DB3F0;--mpAt:#06120D;--mpBt:#08162A;--mpPb:#2A2410;--mpPt:#EFC456}
+body.force-light{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpAt:#FFFFFF;--mpBt:#FFFFFF;--mpPb:#FBF1DA;--mpPt:#8A6410}
+.mpk{margin-bottom:10px;padding:0;overflow:hidden}
+.mpk-hd{display:flex;align-items:baseline;gap:8px;padding:12px 14px 6px;cursor:pointer}
+.mpk-hd b{font-size:15px;font-weight:600;color:var(--color-text-primary)}
+.mpk-hd span{font-size:12px;color:var(--color-text-secondary);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mpk-hd i{font-style:normal;font-size:18px;line-height:1;color:var(--color-text-tertiary);transition:transform .15s}
+.mpk-hd i.open{transform:rotate(90deg)}
+.mpk-tm{display:grid;grid-template-columns:18px minmax(0,1fr) minmax(0,1fr) 18px;column-gap:10px;row-gap:2px;align-items:center;padding:2px 14px 10px;cursor:pointer}
+.mpk-tm .lt{font-size:20px;font-weight:700;text-align:center}
+.mpk-tm .nm{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mpk-tm .nm.r{text-align:right}
+.mpk .ca{color:var(--mpA)}.mpk .cb{color:var(--mpB)}
+.mpk-ft{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:0.5px solid var(--color-border-tertiary);font-size:14px;color:var(--color-text-primary);background:var(--color-background-secondary)}
+.mpk-ft .mpc{margin-left:auto}
+.mpk-en{padding:0 14px 10px;font-size:11px;color:var(--color-text-tertiary)}
+.mpc{display:inline-block;font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap;line-height:1.3}
+.mpc.a{background:var(--mpAf);color:var(--mpAt)}.mpc.b{background:var(--mpBf);color:var(--mpBt)}
+.mpc.al{border:1.5px solid var(--mpA);color:var(--mpA);padding:2px 7px}.mpc.bl{border:1.5px solid var(--mpB);color:var(--mpB);padding:2px 7px}
+.mpc.ns{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.mpk-bets{padding:0 10px 10px;border-top:0.5px solid var(--color-border-tertiary)}
+.mpk-bet{margin-top:10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden}
+.mpk-bh{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;font-size:14px;color:var(--color-text-primary)}
+.mpk-bh b{font-weight:600;white-space:nowrap}
+.mpk-bh .st{color:var(--color-text-secondary);font-size:13px;white-space:nowrap}
+.mpk-bh .mpc{margin-left:auto}
+.mpk-bh i{font-style:normal;font-size:16px;line-height:1;color:var(--color-text-tertiary);transition:transform .15s}
+.mpk-bh i.open{transform:rotate(90deg)}
+.mpk-pt{font-size:10px;font-weight:700;letter-spacing:0.05em;padding:2px 6px;border-radius:5px;background:var(--mpPb);color:var(--mpPt);white-space:nowrap}
+.mpk-hr{display:grid;grid-template-columns:30px 62px minmax(0,1fr) 46px;align-items:center;padding:7px 12px;font-size:13px;border-top:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
+.mpk-hr .hn{font-weight:600;color:var(--color-text-secondary)}
+.mpk-hr .hp{display:inline-block;margin-left:-6px;padding:1px 6px;border-radius:5px;background:var(--mpPb);color:var(--mpPt);font-weight:700}
+.mpk-hr .w{text-align:right;font-weight:700}
+.mpk-hr .q{color:var(--color-text-tertiary);font-style:italic;font-size:12px}
 .gs-net.warn .t b{color:#E0A45C}
 #appToast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab-bar-h) + 62px);z-index:10003;
   background:#2A1F14;border:1px solid #5C4423;border-radius:10px;padding:11px 13px;
@@ -1161,6 +1212,12 @@ body.force-light .home-dash-sec-label,body.force-light .sec-hd{color:#0F4D36;}
 body.force-light .home-dash-sec-label::before,body.force-light .me-seclbl.brand-lbl::before,body.force-light .sec-hd::before{background:#C99A2E;}
 /* v123.75 game settings: Home's section heading, one row shape, the sliding pill. */
 .gs-sec{margin:16px 2px 6px;font-size:19px;}
+/* v124.13: a foursome heading on the Games tab is a settings section heading with a rule to the edge. */
+.gs-fsh{margin:6px 2px 10px}
+.gs-fsh.next{margin-top:28px}
+.gs-fsh i{flex:1;height:1px;display:block;background:var(--color-border-secondary)}
+.gs-fsh.go{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.gs-fsh .ch{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:18px;line-height:1;color:var(--color-text-tertiary)}
 .gs-sec:first-child{margin-top:4px;}
 .gs-sec::before{height:17px;}
 @media(prefers-color-scheme:dark){body:not(.force-light) .sec-hd.gs-sec{color:#EFC456;}}
@@ -2096,7 +2153,7 @@ body.force-light .lp-view,body.force-light .lp-you{color:#13795B;}body.force-lig
     </div>
     <div id="gsAddPicker" class="gs-add-picker" onclick="if(event.target===this)window._gsCloseAddPicker()">
       <div class="gs-add-picker-inner gs-add-picker-v2">
-        <div class="gs-add-picker-hd">Add Game</div>
+        <div class="gs-add-picker-hd" id="gsAddPickerHd">Add Game</div>
         <div class="gs-add-scroll" id="gsAddScroll">
           <div id="gsAddPickerList" class="gs-add-list" onscroll="window._gsAddMore()"></div>
           <div class="gs-add-more" aria-hidden="true"><span class="gs-add-more-pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></span></div>
@@ -2374,7 +2431,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.8';
+const APP_VERSION='v124.15';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -4947,6 +5004,19 @@ function showMsg(m,ok){
 // the one combination nobody picks on purpose.
 //
 // This does NOT change any calculation. It states what the calculation already does.
+// v124.9: the settings row's second line. The note's first sentence, tags off.
+function _gsNetSubText(html){
+  const t=String(html||'').replace(/<[^>]*>/g,'').trim();
+  // v124.10: a period inside brackets is an initial, "(K. Moody)", not the end of the sentence.
+  let d=0;
+  for(let i=0;i<t.length;i++){
+    const c=t[i];
+    if(c==='(')d++;
+    else if(c===')')d=Math.max(0,d-1);
+    else if(c==='.'&&d===0&&(i+1===t.length||/\s/.test(t[i+1])))return t.slice(0,i+1);
+  }
+  return t;
+}
 function gameNetNote(gid,r,fi){
   if(!WK||!WK.rounds||!WK.rounds[r])return null;
   if(gid==='snake'||gid==='twos'||gid==='grinders')return null;
@@ -5045,6 +5115,12 @@ function gameNetNote(gid,r,fi){
     // Warning there is crying wolf, and a warning that fires when nothing is wrong is how
     // people learn to ignore warnings. Name both men when they really do differ; "Foursome 2's
     // low man" is an abstraction you have to resolve, "(A. Sporck)" is a fact you can check.
+    // v124.10, Kyle 14 Oct: "All should show it". All is the view most people sit on; warn there when any
+    // foursome is stroking off a man who is not in it. No name for the foursomes: there may be several.
+    if(multi&&fi==null){
+      const _off=flightsForRound(r).some(function(f){const m=(f||[]).filter(_vpi);return m.length&&m.indexOf(low)<0;});
+      if(_off)return{html:'Strokes off <b>the whole field\'s low man</b> ('+displayName(low)+'), not each foursome\'s own.',warn:true,change:true};
+    }
     const mem=(multi&&fi!=null)?(flightsForRound(r)[fi]||[]).filter(_vpi):[];
     if(multi&&mem.length&&mem.indexOf(low)<0){
       const fLow=mem.reduce(function(a,pi){return effHdcp(pi,r)<effHdcp(a,r)?pi:a;},mem[0]);
@@ -16282,7 +16358,11 @@ window._gsCancelIndep=function(){const m=document.getElementById('gsIndepConfirm
 window._gsOpenAddPicker=function(){
   if(!canEditTrip())return;
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
-  const _laneAP=_gsLane();const inactive=GAME_DEFS.filter(def=>{if(_laneAP!=='both'&&def.tripLevel)return false;return !_gsLaneOn(def,r,_laneAP);});
+  const _laneAP=_gsLane();
+  // v124.9: the lane caption went; the sheet says where the game will go, the one moment it matters.
+  const _apHd=document.getElementById('gsAddPickerHd');
+  if(_apHd)_apHd.textContent=isMultiFlight(r)?(_laneAP==='both'?'Add to all foursomes':'Add to Foursome '+(_laneAP+1)):'Add Game';
+  const inactive=GAME_DEFS.filter(def=>{if(_laneAP!=='both'&&def.tripLevel)return false;return !_gsLaneOn(def,r,_laneAP);});
   const list=document.getElementById('gsAddPickerList');
   if(inactive.length===0){
     list.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:1rem 0;font-size:13px">All games are already active for this round.</div>';
@@ -16497,14 +16577,23 @@ function _gsResetGame(def,r,lane){
       if(z.trip)Object.keys(z.trip).forEach(function(k){WK[k]=z.trip[k];});
       if(z.tripFn)z.tripFn(r);
     }
+    // v124.10: presses are Match Play results. A foursome no longer playing it loses this round's presses,
+    // so adding the game back starts clean. The remove sheet already says the results go.
+    if(def.id==='mp'&&STATE.pressState&&Array.isArray(STATE.pressState[r])){
+      STATE.pressState[r].forEach(function(_,fi){if(!gameOnFs('mp',r,fi))STATE.pressState[r][fi]=[];});
+    }
   }finally{STATE.gamesLane=keepLane;_gsConfirmDestructive=keepAsk;}
 }
+// v124.12: true on a foursome tab showing a game that was added for all foursomes.
+function _gsSharedHere(def,r){return !def.tripLevel&&_gsLane()!=='both'&&_gsIsShared(def,r);}
 window._gsRemoveGame=function(gameId){
   if(!canEditTrip())return;
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
   const def=GAME_DEFS.find(d=>d.id===gameId);
   if(!def)return;
-  const lane=_gsLane();
+  // A shared game seen from a foursome tab comes off All, the only place it can come off.
+  const _shared=_gsSharedHere(def,r);
+  const lane=_shared?'both':_gsLane();
   const go=function(){
     _gsSetOn(def,r,false,lane);
     _gsResetGame(def,r,lane);
@@ -16515,7 +16604,14 @@ window._gsRemoveGame=function(gameId){
   };
   // v123.100: asks only when the game has results, i.e. its players have scores (on a foursome tab,
   // that foursome's). The reset is not mentioned; it just happens (Kyle, 14 Oct).
-  if(!_gsGameHasScores(r,def,lane)){go();return;}
+  const _res=_gsGameHasScores(r,def,lane);
+  if(_shared){
+    _confirmSheet({icon:'ti-trash',title:'Remove '+def.label+' from all foursomes?',danger:true,
+      body:'It was added for all foursomes, so it comes off all of them.'+(_res?' '+def.label+' results will be lost. Scores stay.':''),
+      okLabel:'Remove',onOk:go});
+    return;
+  }
+  if(!_res){go();return;}
   _confirmSheet({icon:'ti-trash',title:'Remove '+def.label+'?',danger:true,body:def.label+' results will be lost. Scores stay.',okLabel:'Remove',onOk:go});
 };
 function _gsRefreshAfterEdit(){
@@ -17238,9 +17334,14 @@ function _gsSetupPlaceholder(def,r){
   const isOpen=!!(STATE.gamesSetupOpen&&STATE.gamesSetupOpen[def.id]);
   const _locked=!canEditTrip();
   const _note=_locked?`<div class="gs-setup-locked-note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-text-secondary);flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span style="font-size:12px;color:var(--color-text-secondary);line-height:1.4">You don't have edit access for this trip. You can still adjust teams.</span></div>`:'';
-  const _removeBtn=_locked?'':`<button class="gs-remove-btn" onclick="window._gsRemoveGame('${def.id}')">Remove ${def.label} from ${def.tripLevel?'trip':'this round'}</button>`;
+  // v124.12: a game added on All cannot come off one foursome. On a foursome tab its Remove says what it will
+  // do, "from all foursomes", and asks first (_gsRemoveGame).
+  const _sharedHere=_gsSharedHere(def,r);
+  const _removeBtn=_locked?'':`<button class="gs-remove-btn" onclick="window._gsRemoveGame('${def.id}')">Remove ${def.label} from ${def.tripLevel?'trip':_sharedHere?'all foursomes':'this round'}</button>`;
   const _bodyCls=_locked?'gs-setup-body gs-setup-locked':'gs-setup-body';
-  return `<button class="gs-setup-toggle${isOpen?' open':''}" onclick="window._gsToggleSetup('${def.id}')"><span>Setup</span><span class="gs-setup-chevron">&#9660;</span></button>`+
+  // v124.9: "<Game> settings", with the strokes rule under it when there is one and it is not a warning.
+  const _sub=window._gsNetSub||'';
+  return `<button class="gs-setup-toggle${isOpen?' open':''}" onclick="window._gsToggleSetup('${def.id}')"><span class="gs-st"><b>${def.label} settings</b>${_sub?`<small>${_sub}</small>`:''}</span><span class="gs-setup-chevron">›</span></button>`+
     (isOpen?`<div class="${_bodyCls}">${_note}${_gsSetupBody(def,r)}${_removeBtn}</div>`:'');
 }
 function _gsSnakeSetupBody(r){
@@ -17281,7 +17382,7 @@ function renderGamesTab(){
   renderRdPicker('ctxRdSel',r,'switchGamesRound',false);
   const _mf=isMultiFlight(r);
   const _laneBar=document.getElementById('gamesLaneBar');
-  if(_laneBar){if(_mf){const _fl=flightsForRound(r);let _lh='<div class="gf-filter">';_fl.forEach((_,fi)=>{_lh+='<button class="'+(_gsLane()===fi?'on':'')+'" onclick="switchGamesLane('+fi+')">Foursome '+(fi+1)+'</button>';});_lh+='<button class="'+(_gsLane()==='both'?'on':'')+'" onclick="switchGamesLane(\'both\')">All</button></div>';var _cap=(_gsLane()==='both')?'Games added here apply to all foursomes.':('Foursome '+(_gsLane()+1)+' plays these plus any shared (All) games.');_lh+='<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:6px;line-height:1.4">'+_cap+'</div>';_laneBar.innerHTML=_lh;}else{_laneBar.innerHTML='';if(_gsLane()!=='both')STATE.gamesLane='both';}}
+  if(_laneBar){if(_mf){const _fl=flightsForRound(r);let _lh='<div class="gf-filter">';_fl.forEach((_,fi)=>{_lh+='<button class="'+(_gsLane()===fi?'on':'')+'" onclick="switchGamesLane('+fi+')">Foursome '+(fi+1)+'</button>';});_lh+='<button class="'+(_gsLane()==='both'?'on':'')+'" onclick="switchGamesLane(\'both\')">All</button></div>';_laneBar.innerHTML=_lh;}else{_laneBar.innerHTML='';if(_gsLane()!=='both')STATE.gamesLane='both';}}
   const _curLane=_mf?_gsLane():'both';
   const activeGames=GAME_DEFS.filter(def=>_gsLaneOn(def,r,_curLane));
   const gameSel=document.getElementById('gamesGameSel');
@@ -17314,7 +17415,7 @@ function renderGamesTab(){
   if(!STATE.gamesViewGame||!activeGames.find(g=>g.id===STATE.gamesViewGame)){
     STATE.gamesViewGame=activeGames[0].id;
   }
-  gameSel.innerHTML=activeGames.map(def=>`<button class="game-pill${def.id===STATE.gamesViewGame?' active':''}" onclick="switchGamesGame('${def.id}')">${def.label}${(_curLane!=='both'&&_gsIsShared(def,r))?' <span class=\"gp-all\">ALL</span>':''}</button>`).join('')+(canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+</button>':'');
+  gameSel.innerHTML=activeGames.map(def=>`<button class="game-pill${def.id===STATE.gamesViewGame?' active':''}" onclick="switchGamesGame('${def.id}')">${def.label}${(_curLane!=='both'&&_gsIsShared(def,r))?' <span class=\"gp-all\">ALL</span>':''}</button>`).join('')+(canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+ Add</button>':'');
   renderGamesContent();
 }
 // Four-Ball was the eighth game and the only one with no view key, so its round render
@@ -17348,8 +17449,11 @@ function renderGamesContent(){
   if(_nn){
     const _fiN=isMultiFlight(r)?_gsLane():null;
     const _nt=gameNetNote(g,r,(typeof _fiN==='number'?_fiN:null));
-    _nn.innerHTML=_nt?('<div class="gs-net'+(_nt.warn?' warn':'')+'"><div class="t">'+_nt.html+'</div>'
-      +(_nt.change&&canEditTrip()?'<div class="c" onclick="_gsNetJump()">Change</div>':'')+'</div>'):'';
+    // v124.9, Kyle 14 Oct: quiet, the rule is the settings row's second line (_gsNetSub). A warning
+    // still sits up here, amber, where it cannot be missed.
+    _nn.innerHTML=(_nt&&_nt.warn)?('<div class="gs-net warn"><div class="t">'+_nt.html+'</div>'
+      +(_nt.change&&canEditTrip()?'<div class="c" onclick="_gsNetJump()">Fix</div>':'')+'</div>'):'';
+    window._gsNetSub=(_nt&&!_nt.warn)?_gsNetSubText(_nt.html):'';
   }
   if(g==='hammer')renderHammerRound();
   else if(g==='mp')renderMPRound();
@@ -17452,7 +17556,7 @@ function renderMPRound(){
   const _huRnd=isHeadsUp(r);
   if(!STATE.mpExpanded)STATE.mpExpanded={};
   let html=``;
-  const _mpFl=flightsForRound(r);const _mpMulti=_mpFl.length>1;let _mpSel=(STATE.mpViewFlight===undefined?-1:STATE.mpViewFlight);for(let _fi=0;_fi<_mpFl.length;_fi++){if(_mpMulti&&_mpSel!==-1&&_mpSel!==_fi)continue;const mpG=mpGamesForRound(r,_fi),segs=getSegments(mpG,roundHoleCount(r));if(_mpMulti){html+='<div style="display:flex;align-items:center;gap:7px;padding:8px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,_fi)+'</span></div>';}
+  const _mpFl=flightsForRound(r);const _mpMulti=_mpFl.length>1;let _mpSel=(STATE.mpViewFlight===undefined?-1:STATE.mpViewFlight);for(let _fi=0;_fi<_mpFl.length;_fi++){if(_mpMulti&&_mpSel!==-1&&_mpSel!==_fi)continue;const mpG=mpGamesForRound(r,_fi),segs=getSegments(mpG,roundHoleCount(r));if(_mpMulti){const _fsAll=_mpSel===-1;html+='<div class="sec-hd gs-sec gs-fsh'+(_fsAll?' go':'')+(html?' next':'')+'"'+(_fsAll?' onclick="switchGamesLane('+_fi+')"':'')+'><span>Foursome '+(_fi+1)+'</span><i></i>'+(_fsAll?'<span class="ch">\u203a</span>':'')+'</div>';}
   if(_mpTooSmall(r,_fi)){html+='<div class="section-card" style="margin-bottom:10px;padding:10px 14px;font-size:12px;color:var(--color-text-secondary)">'+_mpTooSmallNote(r,_fi)+'</div>';continue;}
   segs.forEach((seg,si)=>{
     const tm=STATE.mpTeams[r][_fi][si];if(!tm)return;
@@ -17480,27 +17584,12 @@ function renderMPRound(){
     // the match was thrown out with a leader standing.
     const _mpVoided=!!(finalMs&&finalMs.leader&&!_mpLeadS);
 
-    // Build original bet result summary
-    let origSummaryHtml;
-    const _osPh=_phase(finalMs);
-    if(_osPh==='ns'){origSummaryHtml=`<span style="color:var(--color-text-tertiary);font-size:12px">Not started</span>`;}
-    else if(_osPh==='ip'){origSummaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
-    else if(_mpVoided){origSummaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">No winner</span>`;}
-    else if(!_mpLeadS){origSummaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">Tied - A/S</span>`;}
-    else{const winLtr=_mpLeadS==='A'?(_huRnd?nameA:'A'):(_huRnd?nameB:'B');const winClr=_mpLeadS==='A'?'#1D9E75':'#185FA5';let resultScore=finalMs.scoreStr.replace('Team A',_huRnd?nameA:'A').replace('Team B',_huRnd?nameB:'B');resultScore=resultScore.replace(winLtr+' ','').replace(winLtr+': ','').trim();origSummaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winLtr} wins · ${resultScore}</span>`;}
-
     // Compute press net for top-level header
     const origVal=roundValFs('gameVal',r,_fi,WK.gameVal);
     const origSv=settleVal(origVal,tA.length,WK.mpSettle||'perplayer');
     const origNet=finalMs?(_mpLeadS==='A'?origSv:_mpLeadS==='B'?-origSv:0):null;
     let pressNetA=origNet||0;
     presses.forEach(p=>{const pr=calcPressResult(r,_fi,si,p);if(!pr||pr.winner==='tie')return;const sign=pr.winner==='a'?1:-1;pressNetA+=sign*pr.sv;});
-    const netStr=origNet===null?'':(pressNetA>0?`A +$${Math.abs(pressNetA).toFixed(2)}`:pressNetA<0?`B +$${Math.abs(pressNetA).toFixed(2)}`:'Even');
-    const netClr=pressNetA>0?'#1D9E75':pressNetA<0?'#185FA5':'var(--color-text-secondary)';
-
-    // Header summary: with presses show net, without show original result
-    const headerSummary=presses.length>0&&origNet!==null?`<span style="color:${netClr};font-weight:500;font-size:12px">Net: ${netStr}</span>`:origSummaryHtml;
-
     if(_huRnd){
       // One outer card per game, both matches inside
       html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
@@ -17674,75 +17763,73 @@ function renderMPRound(){
       });
       html+=`</div>`;
     } else {
-    html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
-    const _winLblA=_huRnd?nameA:'A',_winLblB=_huRnd?nameB:'B';
-    // playableLeft, not holesLeft: a press owed three holes that will never be played is
-    // over, whatever its contract says.
+    // v124.9, Kyle 14 Oct, canvas "Games tab": the team card. Same data as before, read the same way:
+    // anyPressLive, pressNetA, _phase, _mpVoided, the end tag. What changed is how it is drawn.
     const anyPressLive=presses.some(p=>{const pr=calcPressResult(r,_fi,si,p);return pr&&!pr.closed&&pr.playableLeft>0;});
-    const netResultLabel2=(()=>{if(_segNotPlayed(r,_fi,seg))return'—';if(!finalMs)return'Not started';if(_phase(finalMs)==='ip')return'In progress';if(anyPressLive)return'In progress';if(_mpVoided&&pressNetA===0)return'No winner';if(!finalMs.closed){if(pressNetA>0)return`${_winLblA} wins · $${Math.abs(pressNetA).toFixed(2)}`;if(pressNetA<0)return`${_winLblB} wins · $${Math.abs(pressNetA).toFixed(2)}`;return finalMs.scoreStr.replace('Team A',_winLblA).replace('Team B',_winLblB);}if(pressNetA===0)return'No Blood';return pressNetA>0?`${_winLblA} wins · $${Math.abs(pressNetA).toFixed(2)}`:`${_winLblB} wins · $${Math.abs(pressNetA).toFixed(2)}`;})();
-    const netResultClr2=(_phase(finalMs)==='ip'||anyPressLive)?'var(--color-text-secondary)':(pressNetA>0?'#1D9E75':pressNetA<0?'#185FA5':'var(--color-text-secondary)');
-    html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleMPGame('${key}')">`;
-    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">Match ${si+1} · H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
-    html+=`<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px">`;
-    if(_huRnd){
-      html+=`<div style="flex:1"><div style="font-size:11px;font-weight:500;color:#1D9E75">${nameA}</div></div>`;
-      html+=`<div style="flex:1;text-align:right"><div style="font-size:11px;font-weight:500;color:#185FA5">${nameB}</div></div>`;
-    }else{
-      html+=`<div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#1D9E75;margin-bottom:2px">TEAM A</div><div style="font-size:11px;font-weight:500;color:#1D9E75">${nameA}</div></div>`;
-      html+=`<div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">${nameB}</div></div>`;
-    }
-    html+=`</div>`;
-    // diff against 0 is the same magnitude as pA-pB: halves add to both sides and cancel.
     const _mpDead=_segNotPlayed(r,_fi,seg);
     const _mpTag=_mpDead?'unplayed':(finalMs?_mpSegOutcome(r,_fi,seg.end,finalMs.diff,0):'');
     const _mpChip=_mpEndChip(_mpTag);
-    html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Match Result: <span style="font-weight:500;color:${netResultClr2}">${netResultLabel2}</span>${_mpChip?`<span class="end-chip">${_mpChip}</span>`:''}</div>`;
-    // _mpEn is declared further down, beside the expanded footer, so referencing it here
-    // hits the temporal dead zone. Compute the note inline from the tag we already have.
-    if(_mpDead){const _mpEnDead=_mpEndNote(r,_fi,_mpTag);
-      if(_mpEnDead)html+=`<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:4px">${_mpEnDead}</div>`;}
-    // One tag, two surfaces: a chip in the header and the full sentence at the foot,
-    // which is where Razzle puts its own. Deriving them separately would let the chip
-    // and the sentence disagree about the same match.
     const _mpEn=_mpEndNote(r,_fi,_mpTag);
-    html+=`</div>`;
+    const _ofs=holeOffset(r);
+    const _m=v=>{v=Math.abs(v);return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
+    const _chip=(k,t)=>`<span class="mpc ${k}">${t}</span>`;
+    // "Team B: 2 up" / "Team B 4&2" / "A: Dormie 2" / "A/S" -> {l:'B',t:'2 up'} or null for all square.
+    const _sc=str=>{const x=String(str||'').replace(/^Team /,'');const mm=x.match(/^([AB])[: ]\s*(.*)$/);return mm?{l:mm[1],t:mm[2].replace(/^Dormie/,'dormie')}:null;};
+    const _live=_phase(finalMs)==='ip'||anyPressLive;
+    const _lead=pressNetA>0?'A':pressNetA<0?'B':null;
+    // Bottom line: what the card is worth right now.
+    let _ftL,_ftC='';
+    if(_mpDead){_ftL='\u2014';}   // the no-value glyph, as before (segdead MP-2); the chip and note say why
+    else if(!finalMs){_ftL='Not started';_ftC=_chip('ns',_m(origVal));}
+    else if(_live){
+      const _s=_sc(finalMs.scoreStr);
+      _ftL=!_s?'All square':(finalMs.closed?_s.l+' won '+_s.t:_s.l+' '+_s.t)+(finalMs.closed?'':' thru '+(seg.start+finalMs.holesPlayed+_ofs));
+      if(!_s&&!finalMs.closed)_ftL+=' thru '+(seg.start+finalMs.holesPlayed+_ofs);
+      _ftC=_lead?_chip(_lead==='A'?'al':'bl',_lead+' +'+_m(pressNetA)+' so far'):_chip('ns','Even');
+    }
+    else{
+      _ftL=presses.length?'Net result':'Result';
+      if(_mpVoided&&pressNetA===0)_ftC=_chip('ns','No winner');
+      else if(pressNetA===0)_ftC=_chip('ns','No blood');
+      else _ftC=_chip(_lead==='A'?'a':'b',_lead+' +'+_m(pressNetA));
+    }
+    const _np=presses.length;
+    html+=`<div class="section-card mpk">`;
+    html+=`<div class="mpk-hd" onclick="toggleMPGame('${key}')"><b>Match ${si+1}</b><span>Holes ${seg.start+_ofs+1} to ${seg.end+_ofs}${_np?' · '+_np+(_np===1?' press':' presses'):''}</span><i class="${expanded?'open':''}">\u203a</i></div>`;
+    // Teams as on the Hammer card: a big letter, one name per line, never split mid-name.
+    const _rows=Math.max(tA.length,tB.length,1);
+    html+=`<div class="mpk-tm" onclick="toggleMPGame('${key}')"><span class="lt ca" style="grid-column:1;grid-row:1/${_rows+1}">A</span>`;
+    tA.forEach((pi,ni)=>{html+=`<span class="nm ca" style="grid-column:2;grid-row:${ni+1}">${displayName(pi)}</span>`;});
+    tB.forEach((pi,ni)=>{html+=`<span class="nm r cb" style="grid-column:3;grid-row:${ni+1}">${displayName(pi)}</span>`;});
+    html+=`<span class="lt cb" style="grid-column:4;grid-row:1/${_rows+1}">B</span></div>`;
+    html+=`<div class="mpk-ft"><span>${_ftL}</span>${_mpChip?`<span class="end-chip">${_mpChip}</span>`:''}${_ftC}</div>`;
+    // The end note: a match that was never played says why on its face; any other ended match keeps the
+    // chip on its face and the sentence at the foot of its bets, beside what it explains (as before).
+    if(_mpEn&&_mpDead)html+=`<div class="mpk-en">${_mpEn}</div>`;
 
     if(expanded&&!_mpDead){
-      // Shared hole row builder
-      function buildHoleRows(startH,endH,msFunc,closedWinnerName,isPress){
+      // Hole rows. The hole number column is fixed, and a press hole's badge pulls its padding back, so
+      // a marked number sits exactly where an unmarked one does.
+      function buildHoleRows(startH,endH,msFunc,isPress){
         let rows='';
         for(let h=startH;h<endH;h++){
           const _deadRow=_mpHoleDead(r,_fi,h);
           const res=_deadRow?null:calcMP(h,r,_fi);
           const pressOnHole=!isPress&&presses.find(p=>p.startHole===h);
-          const holeLabel=pressOnHole
-            ?`<span style="display:inline-block;background:#1e3d52;color:#5bb8e8;border-radius:5px;font-size:10px;font-weight:700;padding:2px 5px;letter-spacing:0.03em">H${h+1}</span>`
-            :`<span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span>`;
+          const hn=pressOnHole?`<span class="hp">${h+1}</span>`:`${h+1}`;
           if(!res){
-            // h is a GLOBAL hole index in this builder.
-            const _dead=_mpHoleDead(r,_fi,h);
-            rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div><div style="width:52px;flex-shrink:0;font-size:12px;color:var(--color-text-tertiary)">${_dead?'':'-'}</div><div style="flex:1;padding-left:16px">${_dead?'<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic">not played</span>':''}</div><div style="width:40px;flex-shrink:0"></div></div>`;continue;}
+            rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span>${_deadRow?'':'-'}</span><span>${_deadRow?'<span class="q">not played</span>':''}</span><span></span></div>`;continue;}
           const ms=msFunc(h);
-          const scoresPair=`<div style="width:52px;flex-shrink:0;font-size:12px;font-weight:500"><span style="color:#1D9E75">${res.bestA}</span><span style="color:var(--color-text-tertiary);margin:0 3px;font-weight:400">vs</span><span style="color:#185FA5">${res.bestB}</span></div>`;
-          let matchStateHtml;
-          if(!ms){matchStateHtml=`<div style="flex:1;padding-left:16px"><span style="color:var(--color-text-tertiary);font-size:12px">-</span></div>`;}
-          else if(ms.closed&&h>ms.closedAtHole){matchStateHtml=`<div style="flex:1;padding-left:16px"><span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic">closed out</span></div>`;}
-          else{const msColor=!ms.leader?'var(--color-text-secondary)':ms.leader==='A'?'#1D9E75':'#185FA5';const msWeight=!ms.leader?'400':'600';const msStr=ms.scoreStr.replace('Team A','A').replace('Team B','B');matchStateHtml=`<div style="flex:1;padding-left:16px"><span style="color:${msColor};font-weight:${msWeight};font-size:12px">${msStr}</span></div>`;}
+          let st;
+          if(!ms)st='<span class="q">-</span>';
+          else if(ms.closed&&h>ms.closedAtHole)st='<span class="q">closed out</span>';
+          else{const _s=_sc(ms.scoreStr);st=_s?`<span class="${_s.l==='A'?'ca':'cb'}">${ms.closed?_s.l+' won '+_s.t:_s.l+' '+_s.t}</span>`:'<span style="color:var(--color-text-secondary)">All square</span>';}
           const isClosed=ms&&ms.closed&&h>ms.closedAtHole;
-          const closedLeader=closedWinnerName?(ms&&ms.leader==='A'?'A':'B'):(ms&&ms.leader==='A'?'A':ms&&ms.leader==='B'?'B':'');
-          const winnerHtml=isClosed
-            ?`<div style="width:40px;flex-shrink:0;text-align:right"><span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic">${res.halved?'Halved':(closedLeader==='A'?'A':'B')}</span></div>`
-            :res.halved
-              ?`<div style="width:40px;flex-shrink:0;text-align:right"><span style="color:#BA7517;font-size:12px;font-weight:500">Halved</span></div>`
-              :res.aWins
-                ?`<div style="width:40px;flex-shrink:0;text-align:right"><span style="color:#1D9E75;font-weight:700;font-size:12px">A</span></div>`
-                :`<div style="width:40px;flex-shrink:0;text-align:right"><span style="color:#185FA5;font-weight:700;font-size:12px">B</span></div>`;
-          rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div>${scoresPair}${matchStateHtml}${winnerHtml}</div>`;
+          const w=res.halved?'<span class="q">Halved</span>':isClosed?`<span class="q">${res.aWins?'A':'B'}</span>`:res.aWins?'<span class="ca">A</span>':'<span class="cb">B</span>';
+          rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span>${res.bestA} vs ${res.bestB}</span><span>${st}</span><span class="w">${w}</span></div>`;
         }
         return rows;
       }
-
-      // Helper: press-specific match score for a hole
       function calcPressMsForHole(p,h){
         const pSeg={start:p.startHole,end:seg.end};
         const holesInPress=pSeg.end-pSeg.start;let pdiff=0,plastPlayed=-1,pclosedAt=-1,pleadAtClose=-1;
@@ -17752,64 +17839,38 @@ function renderMPRound(){
         let pscoreStr;if(pclosedAt>=0){const cpd=pclosedAt-pSeg.start+1;const cpl=holesInPress-cpd;pscoreStr=(pleader==='A'?'Team A':'Team B')+' '+pleadAtClose+'&'+cpl;}else if(!pleader){pscoreStr='A/S';}else if(plead===phl){pscoreStr=(pleader==='A'?'Team A':'Team B')+': Dormie '+plead;}else{pscoreStr=(pleader==='A'?'Team A':'Team B')+': '+plead+' up';}
         return{diff:pdiff,lead:plead,leader:pleader,holesPlayed:php,holesLeft:phl,closed:pclosedAt>=0,closedAtHole:pclosedAt,scoreStr:pscoreStr};
       }
-
-      // Original bet card - collapsed by default
+      html+=`<div class="mpk-bets">`;
+      // The match itself.
       const betKey=key+'b0';
       const betExp=STATE.mpExpanded[betKey]===true;
-      const origNetStr=(finalMs&&_phase(finalMs)==='done'&&origNet)?`$${Math.abs(origNet).toFixed(2)}`:'';
-      const origNetClr=origNet>0?'#1D9E75':origNet<0?'#185FA5':'var(--color-text-secondary)';
-      html+=`<div style="margin:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden">`;
-      html+=`<div style="background:var(--color-background-secondary);padding:7px 12px;display:flex;align-items:center;cursor:pointer;gap:0" onclick="STATE.mpExpanded['${betKey}']=!STATE.mpExpanded['${betKey}'];_gsRefreshAfterEdit()">`;
-      html+=`<div style="width:36px;flex-shrink:0"><span style="font-size:11px;font-weight:600;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap">MATCH PLAY</span></div>`;
-      html+=`<div style="width:52px;flex-shrink:0"></div>`;
-      html+=`<div style="flex:1;padding-left:16px;display:flex;align-items:center;gap:5px;min-width:0">${origSummaryHtml}${origNetStr?`<span style="color:var(--color-text-tertiary);font-size:11px">·</span><span style="font-size:12px;font-weight:700;color:${origNetClr}">${origNetStr}</span>`:''}</div>`;
-      html+=`<div style="width:40px;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end"><span style="font-size:11px;color:#1D9E75;transition:transform 0.2s;display:inline-block;transform:${betExp?'rotate(180deg)':'rotate(0deg)'}">▼</span></div>`;
+      let _mc;
+      const _osPh=_phase(finalMs);
+      if(_osPh==='ns')_mc=_chip('ns','Not started');
+      else if(_osPh==='ip'){const _s=_sc(finalMs.scoreStr);_mc=_s?_chip(_s.l==='A'?'al':'bl',_s.l+' '+_s.t):_chip('ns','All square');}
+      else if(_mpVoided)_mc=_chip('ns','No winner');
+      else if(!_mpLeadS)_mc=_chip('ns','Halved');
+      else{const _s=_sc(finalMs.scoreStr);_mc=_chip(_mpLeadS==='A'?'a':'b',_mpLeadS+(_s?' '+_s.t:' won'));}
+      html+=`<div class="mpk-bet"><div class="mpk-bh" onclick="STATE.mpExpanded['${betKey}']=!STATE.mpExpanded['${betKey}'];_gsRefreshAfterEdit()"><b>Match</b><span class="st">${_m(origVal)}</span>${_mc}<i class="${betExp?'open':''}">\u203a</i></div>`;
+      if(betExp)html+=buildHoleRows(seg.start,seg.end,h=>calcMPMatchScore(r,_fi,si,h),false);
       html+=`</div>`;
-      if(betExp){
-        html+=buildHoleRows(seg.start,seg.end,h=>calcMPMatchScore(r,_fi,si,h),null,false);
-        html+=`<div style="background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);padding:7px 12px;display:flex;align-items:center;gap:0"><div style="width:36px;flex-shrink:0"><span style="font-size:11px;color:var(--color-text-tertiary);white-space:nowrap">Result</span></div><div style="width:52px;flex-shrink:0"></div><div style="flex:1;padding-left:16px">${origSummaryHtml}</div><div style="width:40px;flex-shrink:0"></div></div>`;
-      }
-      html+=`</div>`;
-
-      // Press cards - collapsed by default, green left border
+      // Each press: its own row, its own chip.
       presses.forEach((p,pi)=>{
         const pr=calcPressResult(r,_fi,si,p);
         const pressKey=key+'p'+pi;
         const pressExp=STATE.mpExpanded[pressKey]===true;
-        const pressLabel=(p.auto?'Auto-press':'Press '+(pi+1))+' · '+(p.startHole+1===seg.end?'H'+(p.startHole+1):'H'+(p.startHole+1)+'-'+seg.end)+' · $'+p.val.toFixed(2);
-        let pressSummary,pressNetStr='',pressNetClr='var(--color-text-secondary)';
-        if(!pr){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px">Not started</span>`;}
-        // playableLeft, not holesLeft. v120.08 taught the segment header this and left the
-        // press card behind, so a press owed three holes nobody will ever play still read
-        // as live on the very card that shows its holes marked not played.
-        else if(!pr.closed&&pr.playableLeft>0){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
-        // A voided press is not a halved one. Somebody was ahead; the rule threw it out.
-        else if(pr.winner==='tie'&&pr.cutShort&&pr.lead>0){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">No winner</span>`;}
-        else if(pr.winner==='tie'){pressSummary=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">A/S</span>`;}
-        else{const wLtr=pr.winner==='a'?'A':'B';const wclr=pr.winner==='a'?'#1D9E75':'#185FA5';const _prSc=(pr.scoreStr||'').replace(/^[AB][ :]/,'').trim();pressSummary=`<span style="color:${wclr};font-weight:500;font-size:12px">${wLtr} wins${_prSc?' · '+_prSc:''}</span>`;const pnetv=pr.winner==='a'?pr.sv:-pr.sv;pressNetStr='$'+Math.abs(pnetv).toFixed(2);pressNetClr=pnetv>0?'#1D9E75':pnetv<0?'#185FA5':'var(--color-text-secondary)';}
-        const pressWinName=pr?(pr.winner==='a'?nameA:pr.winner==='b'?nameB:''):'';
-        html+=`<div style="margin:0 10px 8px;border:0.5px solid var(--color-border-tertiary);border-left:2px solid #1D9E75;border-radius:var(--border-radius-md);overflow:hidden">`;
-        const pressShortLabel=`PRESS · ${p.startHole+1===seg.end?'H'+(p.startHole+1):'H'+(p.startHole+1)+'-'+seg.end}`;
-        html+=`<div style="background:var(--color-background-secondary);padding:7px 12px;display:flex;align-items:center;cursor:pointer;gap:0" onclick="STATE.mpExpanded['${pressKey}']=!STATE.mpExpanded['${pressKey}'];_gsRefreshAfterEdit()">`;
-        html+=`<div style="width:36px;flex-shrink:0"><span style="font-size:11px;font-weight:600;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap">${pressShortLabel}</span></div>`;
-        html+=`<div style="width:52px;flex-shrink:0"></div>`;
-        html+=`<div style="flex:1;padding-left:16px;display:flex;align-items:center;gap:5px;min-width:0">${pressSummary}${pressNetStr?`<span style="color:var(--color-text-tertiary);font-size:11px">·</span><span style="font-size:12px;font-weight:700;color:${pressNetClr}">${pressNetStr}</span>`:''}</div>`;
-        html+=`<div style="width:40px;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end"><span style="font-size:11px;color:#1D9E75;transition:transform 0.2s;display:inline-block;transform:${pressExp?'rotate(180deg)':'rotate(0deg)'}">▼</span></div>`;
-        html+=`</div>`;
-        if(pressExp){
-          html+=buildHoleRows(p.startHole,seg.end,h=>calcPressMsForHole(p,h),pressWinName,true);
-          html+=`<div style="background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);padding:7px 12px;display:flex;align-items:center;gap:0"><div style="width:36px;flex-shrink:0"><span style="font-size:11px;color:var(--color-text-tertiary);white-space:nowrap">Result</span></div><div style="width:52px;flex-shrink:0"></div><div style="flex:1;padding-left:16px">${pressSummary}</div><div style="width:40px;flex-shrink:0"></div></div>`;
-        }
+        let _pc;
+        if(!pr)_pc=_chip('ns','Not started');
+        else if(!pr.closed&&pr.playableLeft>0){const _s=_sc(pr.scoreStr);_pc=_s?_chip(_s.l==='A'?'al':'bl',_s.l+' '+_s.t):_chip('ns','All square');}
+        else if(pr.winner==='tie'&&pr.cutShort&&pr.lead>0)_pc=_chip('ns','No winner');
+        else if(pr.winner==='tie')_pc=_chip('ns','Halved');
+        else{const _w=pr.winner==='a'?'A':'B';const _s=_sc(pr.scoreStr);_pc=_chip(pr.winner==='a'?'a':'b',_w+(_s?' '+_s.t:' won'));}
+        const _ph1=p.startHole+1,_phN=seg.end;
+        html+=`<div class="mpk-bet"><div class="mpk-bh" onclick="STATE.mpExpanded['${pressKey}']=!STATE.mpExpanded['${pressKey}'];_gsRefreshAfterEdit()"><span class="mpk-pt">${p.auto?'AUTO':'PRESS'}</span><b>${_ph1===_phN?'Hole '+_ph1:'Holes '+_ph1+' to '+_phN}</b><span class="st">${_m(p.val)}</span>${_pc}<i class="${pressExp?'open':''}">\u203a</i></div>`;
+        if(pressExp)html+=buildHoleRows(p.startHole,seg.end,h=>calcPressMsForHole(p,h),true);
         html+=`</div>`;
       });
-
-      // Summary card once the match has started, pressed or not
-      if(presses.length>0||_phase(finalMs)!=='ns'){
-        const _aggDone=_phase(finalMs)==='done'&&!anyPressLive;
-        const gameNetDisplay=!_aggDone?'In progress':pressNetA===0?'No Blood':pressNetA>0?`${_winLblA} wins · $${Math.abs(pressNetA).toFixed(2)}`:`${_winLblB} wins · $${Math.abs(pressNetA).toFixed(2)}`;
-        const _aggClr=_aggDone?netClr:'var(--color-text-secondary)';
-        html+=`<div style="margin:0 10px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;background:var(--color-background-secondary)"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Match Result</span><span style="font-weight:600;font-size:12px;color:${_aggClr}">${gameNetDisplay}</span></div>${_mpEn?`<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:4px">${_mpEn}</div>`:''}</div>`;
-      }
+      if(_mpEn)html+=`<div class="mpk-en" style="padding:10px 2px 0">${_mpEn}</div>`;
+      html+=`</div>`;
     }
     html+=`</div>`;
 
