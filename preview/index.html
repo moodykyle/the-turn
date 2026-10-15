@@ -1766,7 +1766,7 @@ body.force-dark .fb-tm-nm{color:#EFC456;}
 .mpk .fb-lbrow.fb-sel{background:var(--color-background-secondary)}
 .mpk .fb-pl{width:26px;height:26px;font-size:11px}
 .mpk .fb-lbn{font-size:14px;font-weight:400;line-height:1.35;min-width:0}
-.fbk-tm{white-space:nowrap}
+.fbk-tm{font-size:12px;line-height:1.3;color:var(--color-text-tertiary)}
 .mpk .fb-lbr{flex-direction:column;align-items:flex-end;gap:3px}
 .mpk .fb-lbt{font-size:17px;font-weight:700}
 .mpk .fb-lbs{font-size:12px;color:var(--color-text-tertiary);margin:0}
@@ -2449,7 +2449,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.22';
+const APP_VERSION='v124.23';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -16238,9 +16238,9 @@ function renderFourBallRound(){
       const _mc=per>0.0001?'<span class="mpc a">+'+_fbM(per)+'</span>':per<-0.0001?'<span class="mpc ns">-'+_fbM(per)+'</span>':'<span class="mpc ns">$0</span>';
       h+='<div class="fb-lbrow'+(sel?' fb-sel':'')+'" onclick="window._fbShowCard('+tno+')" style="cursor:pointer">'
         +'<div class="fb-lbl"><span class="fb-pl'+(sel?' sel':'')+(anyPlayed?'':' q')+'">'+(anyPlayed?((row.tied?'T':'')+pos):'&ndash;')+'</span>'
-        +'<div class="fb-lbn">'+names+'</div></div>'
+        +'<div class="fb-lbn"><div class="fbk-tm">Team '+_fbLtr(tno)+'</div>'+names+'</div></div>'
         +'<div class="fb-lbr"><span class="fb-lbt" style="color:'+(played?_fbParCol(row.card.toPar):'var(--color-text-tertiary)')+'">'+(played?_fbToPar(row.card.toPar):'-')+'</span>'
-        +'<span class="fb-lbs fbk-tm">Team '+_fbLtr(tno)+'</span>'+(done&&played?_mc:(thru?'<span class="fb-lbs">'+thru+'</span>':''))+'</div></div>';
+        +(done&&played?_mc:(thru?'<span class="fb-lbs">'+thru+'</span>':''))+'</div></div>';
     });
     // Two teams on the same number with different money is a result that reads like a
     // mistake. The card was correct and silent; this is the sentence it was missing.
