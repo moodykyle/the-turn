@@ -951,6 +951,9 @@ body.force-light{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpA
 .mpk-hr .cy{color:var(--mpPt);font-size:12px}
 .mpk-hr .it{font-style:italic}
 .mpk-hr.vg{grid-template-columns:30px 70px minmax(0,1fr) 56px}
+/* v124.25: individual Skins, the heading row over the players. */
+.sk-lbh{display:flex;align-items:center;gap:12px;padding:6px 14px 4px;font-size:11px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary)}
+.sk-lbh span:first-child{width:26px;text-align:center}.sk-lbh span:last-child{margin-left:auto}
 .gs-net.warn .t b{color:#E0A45C}
 #appToast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab-bar-h) + 62px);z-index:10003;
   background:#2A1F14;border:1px solid #5C4423;border-radius:10px;padding:11px 13px;
@@ -2449,7 +2452,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.24';
+const APP_VERSION='v124.25';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7261,11 +7264,19 @@ function _gtCard(o){
   const chip=_mpEndChip(o.tag),note=_mpEndNote(o.r,o.fi,o.tag),dead=o.tag==='unplayed';
   const ftL=dead?'\u2014':o.ftL,ftC=dead?'':o.ftC;
   let h=`<div class="section-card mpk"><div class="mpk-hd" onclick="${o.toggle}"><b>Match ${o.si+1}</b><span>Holes ${o.from} to ${o.to}${o.sub}</span><i class="${o.expanded?'open':''}">\u203a</i></div>`;
-  h+=_gtTeamsHtml(o.tA,o.tB,o.toggle);
+  if(o.body!==undefined)h+=o.body;else h+=_gtTeamsHtml(o.tA,o.tB,o.toggle);
   h+=`<div class="mpk-ft"><span>${ftL}</span>${chip?`<span class="end-chip">${chip}</span>`:''}${ftC}</div>`;
   if(note)h+=`<div class="mpk-en" style="padding-top:8px">${note}</div>`;
   if(o.expanded&&!dead)h+=o.rows;
   return h+'</div>';
+}
+// v124.25: a points or skins team game's bottom line (Vegas, team Skins): not started and the rate; live, who is up
+// and thru with the money so far outlined; settled, who won with the money filled, or All square and No blood.
+function _gtFt(played,live,lead,amt,money,thru,rateTxt){
+  const c=(k,t)=>`<span class="mpc ${k}">${t}</span>`;
+  if(!played)return{ftL:'Not started',ftC:c('ns',rateTxt)};
+  if(live)return{ftL:(lead?lead+' up '+amt:'All square')+' thru '+thru,ftC:lead?c(lead==='A'?'al':'bl',lead+' +'+money+' so far'):c('ns','Even')};
+  return{ftL:lead?lead+' won by '+amt:'All square',ftC:lead?c(lead==='A'?'a':'b',lead+' +'+money):c('ns','No blood')};
 }
 function _mpEndChip(tag){
   if(tag==='stopped')return'cut short';
@@ -17914,7 +17925,6 @@ function _renderVegasFlightBlock(r,fi,labelHd){
   if(_vmem.length<4)return (labelHd||'')+'<div class="section-card" style="margin-bottom:10px;padding:14px;text-align:center;color:var(--color-text-secondary);font-size:13px">This foursome needs 4 players for Vegas.</div>';
   const rate=roundValFs('vegasVal',r,fi,WK.vegasVal);
   const _m=v=>{v=Math.abs(v);return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
-  const _chip=(k,t)=>`<span class="mpc ${k}">${t}</span>`;
   const _pts=n=>n+(n===1?' pt':' pts');
   let html=labelHd||'';
   segs.forEach((seg,si)=>{
@@ -17945,15 +17955,7 @@ function _renderVegasFlightBlock(r,fi,labelHd){
       rows+=`<div class="mpk-hr vg"><span class="hn">${hnH}</span><span>${res.numA} vs ${res.numB}</span><span>${res.tied?'<span class="q">Tied</span>':tags}</span>${win}</div>`;
     }
     const done=played>0&&played===open;
-    let ftL,ftC='';
-    if(!played){ftL='Not started';ftC=_chip('ns',_m(rate)+' a pt');}
-    else if(!done&&_tag!=='stopped'){
-      ftL=(lead?lead+' up '+_pts(pts):'All square')+' thru '+lastH;
-      ftC=lead?_chip(lead==='A'?'al':'bl',lead+' +'+_m(money)+' so far'):_chip('ns','Even');
-    }else{
-      ftL=lead?lead+' won by '+_pts(pts):'All square';
-      ftC=lead?_chip(lead==='A'?'a':'b',lead+' +'+_m(money)):_chip('ns','No blood');
-    }
+    const {ftL,ftC}=_gtFt(played>0,!done&&_tag!=='stopped',lead,_pts(pts),_m(money),lastH,_m(rate)+' a pt');
     html+=_gtCard({r,fi,si,tA,tB,tag:_tag,toggle:"toggleVegasGame('"+key+"')",expanded,rows,ftL,ftC,
       from:seg.start+_off_vr+1,to:seg.end+_off_vr,sub:flips?' \u00b7 '+flips+(flips===1?' flip':' flips'):''});
   });
@@ -18964,99 +18966,79 @@ function renderSkinsRound(){
   let fh='';
   const toRender=sel===-1?fl.map((_,i)=>i):[sel];
   let html=fh;
-  toRender.forEach(fi=>{const labelHd=(sel===-1)?'<div class="gf-blk-lbl"><span class="bd" style="background:'+_flightsAccent0(fi)+'"></span>Foursome '+(fi+1)+'</div>':null;html+=_renderSkinsFlightBlock(r,fi,labelHd);});
+  toRender.forEach((fi,k)=>{html+=_renderSkinsFlightBlock(r,fi,_gtFsHead(fi,sel===-1,k>0));});
   el.innerHTML=html;
 }
 function _renderSkinsFlightBlock(r,fi,labelHd){
-  const sG=skinsGamesForRound(r,fi),games=calcSkinsRound(r,fi);
-  const isIndiv=WK.skinsFmt==='individual';
-  const _srfp=flightsForRound(r)[fi]||[];
+  // v124.25, Kyle 15 Oct, canvas "Games tab: Skins": the Match Play card's face. Skins on the bottom line, dollars
+  // in the chip. Individual Skins lists the foursome by skins won under a heading row.
+  const games=calcSkinsRound(r,fi),isIndiv=WK.skinsFmt==='individual';
+  const _srfp=flightsForRound(r)[fi]||[],_off=holeOffset(r);
   if(!STATE.skinsExpanded)STATE.skinsExpanded={};
+  const rate=roundValFs('skinsVal',r,fi,WK.skinsVal||5);
+  const _m=v=>{v=Math.abs(v);return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
+  const _chip=(k,t)=>`<span class="mpc ${k}">${t}</span>`;
+  const _sk=n=>n+(n===1?' skin':' skins');
   let html=labelHd||'';
-  const PLAYER_COLORS=['#1D9E75','#185FA5','#D85A30','#9333EA','#CA8A04'];
-  const colorA='#1D9E75', colorB='#185FA5';
-  games.forEach(({seg,holes,teams},gi)=>{
-    const key='r'+r+'f'+fi+'g'+gi;
+  games.forEach(({seg,holes,teams},si)=>{
+    if(!isIndiv&&(!teams||!Array.isArray(teams[0])||!Array.isArray(teams[1])||!teams[0].length||!teams[1].length))return;
+    const key='r'+r+'f'+fi+'g'+si;
     const expanded=STATE.skinsExpanded[key]===true;
-    // v118.22: totals now come from skinsStandingFromHoles, which the hole box
-    // reads too. Output here is byte-identical; insertion order into tally is
-    // unchanged because the helper walks holes in the same order, and the sort
-    // below is stable.
-    const _skStd=skinsStandingFromHoles(holes,null);
-    const skinsA=_skStd.a,skinsB=_skStd.b;
-    const playerTallyPre=_skStd.tally;
-    let summaryHtml;
-    const totalSkins=isIndiv?Object.values(playerTallyPre).reduce((a,b)=>a+b,0):skinsA+skinsB;
-    // A hole past the foursome's end hole is not outstanding, it is finished business.
-    // Without this, two carried-over holes leave zero skins and the card reads In
-    // progress forever, while the bar directly beneath it already says No Blood.
-    // holes[].h carries the offset, so these are GLOBAL indices.
-    const _skAwait=holes.some(x=>x.pending&&!_mpHoleDead(r,fi,x.h));
-    if(totalSkins===0&&_skAwait){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
-    else if(totalSkins===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">No Blood</span>`;}
-    else if(isIndiv){
-      const _skSorted=Object.entries(playerTallyPre).sort((a,b)=>b[1]-a[1]);
-      const _skDone=isRoundComplete(r);
-      const _skVerb=_skDone?'wins':'leads';
-      if(_skSorted.length>=2&&_skSorted[0][1]===_skSorted[1][1]){
-        const _topN=_skSorted[0][1];
-        const _tiedNames=_skSorted.filter(e=>e[1]===_topN).map(e=>displayName(parseInt(e[0]))).join(' & ');
-        summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">${_tiedNames} ${_skDone?'tie':'tied'} &middot; ${_topN} skin${_topN!==1?'s':''} each</span>`;
-      } else {
-        const topName=displayName(parseInt(_skSorted[0][0]));
-        const netSkins=_skSorted.length>=2?_skSorted[0][1]-_skSorted[1][1]:_skSorted[0][1];
-        summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">${topName} ${_skVerb} - net ${netSkins} skin${netSkins!==1?'s':''}</span>`;
-      }
-    } else {
-      const net=skinsA-skinsB;
-      if(net===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">No Blood</span>`;}
-      else{const winLtr=net>0?'A':'B';const winClr=net>0?colorA:colorB;const absDiff=Math.abs(net);summaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winLtr} wins · +${absDiff} skin${absDiff!==1?'s':''}</span>`;}
+    const toggle="toggleSkinsGame('"+key+"')";
+    const _tag=_segStopTag(r,fi,seg);
+    // holes[] stops at the foursome's end hole and carries the round offset (h is global).
+    const byH={};holes.forEach(x=>{byH[x.h]=x;});
+    // The standing is the one the hole box reads (skinsStandingFromHoles, v118.22), so the two cannot disagree.
+    const _std=skinsStandingFromHoles(holes,null),sA=_std.a,sB=_std.b;
+    const tally={};_srfp.forEach(pi=>{tally[pi]=_std.tally[pi]||0;});
+    let carries=0,played=0,open=0,lastH=-1,carryAt=0,rows='';
+    for(let h=seg.start;h<seg.end;h++){
+      const gh=h+_off,hn=gh+1,x=byH[gh];
+      if(_mpHoleDead(r,fi,gh)){rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span></span><span><span class="q">not played</span></span><span></span></div>`;continue;}
+      open++;
+      if(!x||x.pending){rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span></span><span></span><span class="w"><span class="q">-</span></span></div>`;continue;}
+      played++;lastH=hn;
+      let nets;
+      if(isIndiv)nets=String(Math.min(..._srfp.map(pi=>skinNet(pi,gh,r,_srfp)).filter(v=>v!==null)));
+      else{const bA=teams[0].map(pi=>skinNet(pi,gh,r,_srfp)).filter(v=>v!==null),bB=teams[1].map(pi=>skinNet(pi,gh,r,_srfp)).filter(v=>v!==null);
+        nets=bA.length&&bB.length?Math.min(...bA)+' vs '+Math.min(...bB):'';}
+      if(x.tied){carries++;carryAt=x.carry;
+        rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span>${nets}</span><span><span class="cy">Halved, carries</span></span><span class="w"><span class="q">-</span></span></div>`;continue;}
+      carryAt=0;
+      let win;
+      if(isIndiv)win=`<span class="w">${playerIni(x.winner)}</span>`;
+      else{win=`<span class="w ${x.winner==='a'?'ca':'cb'}">${x.winner==='a'?'A':'B'}</span>`;}
+      rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span>${nets}</span><span>${_sk(x.skinsWon)}</span>${win}</div>`;
     }
-    html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
-    html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleSkinsGame('${key}')")>`;
-    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">Match ${gi+1} &middot; H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
-    if(!isIndiv&&teams){
-      const nA=teams[0].map(i=>displayName(i)).join(' & ');
-      const nB=teams[1].map(i=>displayName(i)).join(' & ');
-      html+=`<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#1D9E75;margin-bottom:2px">TEAM A</div><div style="font-size:11px;font-weight:500;color:#1D9E75">${nA}</div></div><div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">${nB}</div></div></div>`;
-    }
-    const _skTag=_segStopTag(r,fi,seg),_skChip=_mpEndChip(_skTag),_skNote=_mpEndNote(r,fi,_skTag);
-    const _skDead=(_skTag==='unplayed');
-    if(_skTag==='unplayed')summaryHtml=`<span style="color:var(--color-text-tertiary);font-size:12px">—</span>`;
-    html+=`<div style="font-size:12px;padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Match Result: ${summaryHtml}${_skChip?`<span class="end-chip">${_skChip}</span>`:''}</div>`;
-    if(_skNote)html+=`<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:4px">${_skNote}</div>`;
-    html+=`</div>`;
-    if(expanded&&!_skDead){
-      let rows='',skinsA2=0,skinsB2=0;
-      const playerTally={};
-      holes.forEach(({h,pending,tied,winner,type,skinsWon,carry})=>{
-        let winTxt='', winColor='var(--color-text-primary)', midTxt='';
-        // holes[].h already carries the offset, so this one is a GLOBAL index.
-        if(pending&&_mpHoleDead(r,fi,h)){winTxt='';midTxt='<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic">not played</span>';}
-        else if(pending){winTxt=`<span style="color:var(--color-text-secondary)">-</span>`;midTxt='-';}
-        else if(tied){midTxt=`<span style="color:#BA7517;font-size:12px;font-weight:500">${carry} skin${carry!==1?'s':''}</span>`;winTxt=`<span style="color:#BA7517;font-size:12px;font-weight:500;white-space:nowrap">Carried Over</span>`;}
-        else if(skinsWon){
-          if(isIndiv){const pi=winner;playerTally[pi]=(playerTally[pi]||0)+skinsWon;winColor=PLAYER_COLORS[pi%PLAYER_COLORS.length];midTxt=`<span style="color:${winColor};font-weight:500;font-size:12px">${skinsWon} skin${skinsWon!==1?'s':''}</span>`;winTxt=`<span style="font-size:12px;font-weight:700;color:${winColor}">${displayName(pi)}</span>`;}
-          else{const teamColor=winner==='a'?colorA:colorB;if(winner==='a')skinsA2+=skinsWon;else skinsB2+=skinsWon;midTxt=`<span style="color:${teamColor};font-weight:500;font-size:12px">${skinsWon} skin${skinsWon!==1?'s':''}</span>`;winColor=teamColor;winTxt=`<span style="font-size:12px;font-weight:700;color:${teamColor}">${winner==='a'?'A':'B'}</span>`;}
-        } else {midTxt='-';}
-        const bA2=!isIndiv&&teams?teams[0].map(pi=>skinNet(pi,h,r,_srfp)).filter(x=>x!==null):[];
-        const bB2=!isIndiv&&teams?teams[1].map(pi=>skinNet(pi,h,r,_srfp)).filter(x=>x!==null):[];
-        const scoresPair=(!isIndiv&&bA2.length&&bB2.length)?`<span style="font-size:12px;font-weight:500"><span style="color:#1D9E75">${Math.min(...bA2)}</span><span style="color:var(--color-text-tertiary);margin:0 3px;font-weight:400">vs</span><span style="color:#185FA5">${Math.min(...bB2)}</span></span>`:`<span></span>`;
-        rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-top:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0"><span style="color:var(--color-text-tertiary);font-size:12px">H${h+1}</span></div><div style="width:52px;flex-shrink:0">${scoresPair}</div><div style="flex:1;padding-left:16px">${midTxt}</div><div style="flex-shrink:0;text-align:right">${winTxt}</div></div>`;
+    const done=played>0&&played===open,settled=played>0&&(done||_tag==='stopped');
+    const _cy=(!settled&&carryAt>0)?' · '+_sk(carryAt)+' carry':'';
+    let ftL,ftC='',body;
+    if(isIndiv){
+      const n=_srfp.length,all=_srfp.reduce((t,pi)=>t+tally[pi],0);
+      const order=_srfp.slice().sort((p,q)=>tally[q]-tally[p]);
+      const top=order.length?tally[order[0]]:0,lead=order.filter(pi=>tally[pi]===top);
+      body=`<div onclick="${toggle}"><div class="sk-lbh"><span>Skins</span><span>${settled?'Money':''}</span></div>`;
+      order.forEach(pi=>{
+        const v=rate*(tally[pi]*n-all);
+        const right=settled?(v>0.0001?_chip('a','+'+_m(v)):v<-0.0001?_chip('ns','-'+_m(v)):_chip('ns','$0')):(played?`<span class="fb-lbs">thru ${lastH}</span>`:'');
+        body+=`<div class="fb-lbrow"><div class="fb-lbl"><span class="fb-pl">${tally[pi]}</span><div class="fb-lbn">${displayName(pi)}</div></div><div class="fb-lbr">${right}</div></div>`;
       });
-      let footer='';
-      if(isIndiv){
-        const parts=_srfp.map(pi=>{const s=playerTally[pi]||0;const c=PLAYER_COLORS[pi%PLAYER_COLORS.length];return`<span style="color:${s>0?c:'var(--color-text-secondary)'}">${displayName(pi)}: ${s}</span>`;}).join('<span style="margin:0 4px;color:var(--color-text-tertiary)">\xb7</span>');
-        footer=`<div class="seg-total" style="flex-wrap:wrap;gap:4px">${parts}</div>`;
-      } else {
-        const skNet=skinsA2-skinsB2;
-        const skNetLabel=skNet===0?'No Blood':skNet>0?`A wins · +${Math.abs(skNet)} skin${Math.abs(skNet)!==1?'s':''}`: `B wins · +${Math.abs(skNet)} skin${Math.abs(skNet)!==1?'s':''}`;
-        const skNetClr=skNet>0?'#1D9E75':skNet<0?'#185FA5':'var(--color-text-secondary)';
-        footer=`<div style="display:flex;justify-content:center;align-items:center;gap:32px;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)"><span style="font-size:12px;font-weight:600;color:#1D9E75">A: ${skinsA2} skin${skinsA2!==1?'s':''}</span><span style="font-size:12px;font-weight:600;color:#185FA5">B: ${skinsB2} skin${skinsB2!==1?'s':''}</span></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Match Result</span><span style="font-size:12px;font-weight:600;color:${skNetClr}">${skNetLabel}</span></div>`;
-      }
-      html+=rows+footer;
+      body+='</div>';
+      if(!played){ftL='Not started';ftC=_chip('ns',_m(rate)+' a skin');}
+      else if(!settled){
+        ftL=(!top?'No skins yet':lead.length>1?'Tied at '+top:displayName(lead[0])+' leads with '+top)+' thru '+lastH+_cy;
+        ftC=_chip('ns',_m(rate)+' a skin');
+      }else if(!top){ftL='No skins won';ftC=_chip('ns','No blood');}
+      else if(lead.length>1){ftL=lead.map(pi=>displayName(pi)).join(' & ')+' tied with '+top;}
+      else{ftL=displayName(lead[0])+' won with '+_sk(top);ftC=_chip('a',playerIni(lead[0])+' +'+_m(rate*(top*n-all)));}
+    }else{
+      const net=sA-sB,lead=net>0?'A':net<0?'B':null,pts=Math.abs(net);
+      const money=settleVal(pts*rate,teams[0].length,WK.skinsSettle||'perplayer');
+      ({ftL,ftC}=_gtFt(played>0,!settled,lead,_sk(pts),_m(money),lastH,_m(rate)+' a skin'));
+      ftL+=_cy;
     }
-    html+=`</div>`;
+    html+=_gtCard({r,fi,si,tA:teams&&teams[0],tB:teams&&teams[1],body,tag:_tag,toggle,expanded,rows,ftL,ftC,
+      from:seg.start+_off+1,to:seg.end+_off,sub:carries?' · '+carries+(carries===1?' carry':' carries'):''});
   });
   return html;
 }
