@@ -2449,7 +2449,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.23';
+const APP_VERSION='v124.24';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -16222,7 +16222,7 @@ function renderFourBallRound(){
     const _hasCard=!!(_shownRow&&_shownRow.card.played>0);
     const _shownNo=_hasCard?fbTeamNo(r,_shownRow.team):0;
     if(pool.fi!=null&&flightsForRound(r).length>1)h+=_gtFsHead(pool.fi,_fbSel===-1,_pk>0);
-    h+='<div class="section-card mpk game-on"><div class="mpk-hd"><b>Four-Ball</b><span>'+(pool.fi!=null?'Foursome':'Field')+' \u00b7 '+rows.length+' teams \u00b7 '+(d.pays===2?'Top 2 paid':'Winner takes the pot')+'</span></div>';
+    h+='<div class="section-card mpk"><div class="mpk-hd"><b>'+(pool.fi!=null?'Foursome':'Field')+' pot</b><span>'+rows.length+' teams \u00b7 '+(d.pays===2?'Top 2 paid':'Winner takes the pot')+'</span></div>';
     rows.forEach(function(row){
       const pos=row.pos;
       // v124.20: one name per line; a four-man team keeps the helper's two per line.
