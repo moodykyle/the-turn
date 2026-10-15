@@ -957,6 +957,19 @@ body.force-light{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpA
 /* v124.26: Snake. */
 .mpk .fb-pl.sn{background:var(--mpPb);color:var(--mpPt);border-color:transparent;font-size:13px}
 .mpk-hr.sn{grid-template-columns:30px minmax(0,1fr) 56px}
+/* v124.27: Grinders, one block per foursome: the name line, then the count, the holes as numbered dots, the money. */
+.grk{padding:10px 14px;border-top:0.5px solid var(--color-border-tertiary)}
+.grk .t{display:flex;align-items:baseline;gap:8px;font-size:14px;min-width:0}
+.grk .t b{font-weight:600;color:var(--color-text-primary);flex:none}
+.grk .t .nm{font-size:12px;color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.grk .b{display:flex;align-items:center;gap:8px;margin-top:7px;padding-left:8px}
+.grk .c{width:68px;flex:none;font-size:12px;color:var(--color-text-tertiary)}
+.grk .c b{font-size:15px;font-weight:700;color:var(--color-text-secondary)}.grk .c b.z{color:var(--color-text-tertiary)}
+.grk .dl{display:flex;flex-direction:column;gap:3px}
+.grk .dr{display:flex;gap:2px}
+.grk .dn{display:flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;font-size:8px;font-weight:600;background:var(--color-background-secondary);color:var(--color-text-tertiary)}
+.grk .dn.on{background:var(--mpA);color:#fff}
+.grk .m{margin-left:auto}
 .gs-net.warn .t b{color:#E0A45C}
 #appToast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab-bar-h) + 62px);z-index:10003;
   background:#2A1F14;border:1px solid #5C4423;border-radius:10px;padding:11px 13px;
@@ -1759,7 +1772,7 @@ body.force-dark .fb-tm-nm{color:#EFC456;}
 .fb-pl.q{color:var(--color-text-tertiary);font-weight:600;}
 .fb-lbrow{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary);}
 .fb-lbrow:last-child{border-bottom:none;}
-.gs-lanerow{background:rgba(29,158,117,0.13);}
+.gs-lanerow{background:var(--color-background-secondary);}
 .fb-lbrow:active{opacity:0.7;}
 .fb-lbl{display:flex;align-items:center;gap:9px;flex:1;}
 .fb-lbn{font-size:13.5px;font-weight:500;}
@@ -2455,7 +2468,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.26';
+const APP_VERSION='v124.27';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -15603,6 +15616,8 @@ function calcRoundGrinders(r){
 // floats, and a player who cannot see the divisor cannot see why his grinder is worth
 // what it is worth.
 function renderGrindersRound(){
+  // v124.27, Kyle 15 Oct, canvas "Games tab: Grinders" (Dots, B): one card for the field pot. Foursomes ranked by
+  // grinders, their holes as numbered dots, each player's money once settled, and what a grinder is worth.
   const el=document.getElementById('gamesContent');
   if(!el)return;
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
@@ -15612,78 +15627,46 @@ function renderGrindersRound(){
   const det=calcGrindersDetail(r),fl=flightsForRound(r),d=grDefaults(r);
   const net=calcRoundGrinders(r);
   const done=isRoundComplete(r);
-  // ONE column spec, built once and used by the header and every row, so they cannot
-  // drift apart. Money only exists as a column when there is money to put in it.
-  const _cols=done?4:3;
-  const _GRID='display:grid;grid-template-columns:repeat('+_cols+',minmax(0,1fr));column-gap:'
-    +(done?8:10)+'px;align-items:center;padding:11px;';
-  const _HD='font-size:10px;color:var(--color-text-tertiary);letter-spacing:0.04em;text-align:center;';
-  let h='<div class="section-card"><div class="section-hd" style="display:flex;justify-content:space-between;align-items:center">'
-    +'<span>Grinders - '+roundLabel(r)+'</span>'
-    +'<span style="font-weight:400;color:var(--color-text-tertiary);text-transform:none;font-size:11px">Pot '+_fbMoney(det.pot)+'</span></div>';
-  h+='<div style="padding:9px 13px;font-size:11px;color:var(--color-text-tertiary);border-bottom:0.5px solid var(--color-border-tertiary)">';
-  if(det.total===0){
-    h+='No grinders in the field yet. Nobody wins or loses if that holds.';
-  }else{
-    // COUNT FIRST. It is the divisor, so it is the thing that moves the figure beside it.
-    h+=det.total+' in the field &middot; <span style="color:var(--color-text-primary)">'
-      +_fbMoney(det.unit)+'</span> a grinder &middot; '+_fbMoney(d.ante)+' ante'
-      +(done?'':' &middot; so far');
-  }
-  h+='</div>';
-  h+='<div style="'+_GRID+'padding:7px 11px;border-bottom:0.5px solid var(--color-border-tertiary)">'
-    +'<span style="'+_HD+'">FOURSOME</span>'
-    +'<span style="'+_HD+'">GRINDERS</span>'
-    +'<span style="'+_HD+'">HOLES</span>'
-    // "EACH", not "MONEY": the figure below is per player, and a bare MONEY label is
-    // what let this column be read as the group's total.
-    +(done?('<span style="'+_HD+'">NET EACH</span>'):'')+'</div>';
+  const _m=v=>{v=Math.abs(v);return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
+  const _chip=(k,t)=>`<span class="mpc ${k}">${t}</span>`;
+  let h='<div class="section-card mpk"><div class="mpk-hd"><b>Pot '+_m(det.pot)+'</b><span>Field · '+_m(d.ante)+' ante · '
+    +det.players+(det.players===1?' player':' players')+'</span></div>';
   // Ranked by count. Ties keep foursome order, which is the only stable answer.
   const rows=fl.map(function(mem,fi){
     return{fi:fi,mem:(mem||[]).filter(_vpi),n:det.counts[fi]||0};
   }).filter(function(x){return x.mem.length;});
   rows.sort(function(a,b){return b.n-a.n||a.fi-b.fi;});
-  // -1 on the All tab, which highlights nothing: with no lane picked there is no row
-  // the tab refers to, and that absence is what makes the tabs read as having an off
-  // state rather than a default.
+  // -1 on the All tab, which highlights nothing.
   const _grSel=(_gsLane()==='both')?-1:_gsLane();
-  rows.forEach(function(row,i){
-    // PER PLAYER, and specifically net[mem[0]] - the same figure the Bets tab quotes,
-    // so the two tabs agree to the cent by construction rather than by coincidence.
-    // The group total is a number nobody pays: four people pay a quarter of it each.
-    const grp=row.mem.length?net[row.mem[0]]:0;
-    const col=grp>0?'#1D9E75':(grp<0?'var(--color-text-secondary)':'var(--color-text-tertiary)');
-    // Coloured by whether it is zero, NEVER by rank. Two groups on the same count must
-    // look the same; anything else is the sort order pretending to be a result.
-    const nCol=row.n>0?'var(--color-text-primary)':'var(--color-text-tertiary)';
-    const holes=(det.holes[row.fi]||[]).filter(function(x){return x!==null;})
-      .map(function(hi){return hi+1;});
-    h+='<div class="'+(row.fi===_grSel?'gs-lanerow':'')+'" style="'+_GRID+(i?'border-top:0.5px solid var(--color-border-tertiary);':'')+'">'
-      // Label centred over the initials, which are clipped rather than allowed to push
-      // the grid. A five-man foursome truncates its initials before it truncates holes.
-      +'<span style="min-width:0;text-align:center">'
-        +'<span style="font-size:13px;color:var(--color-text-primary);display:block">F'+(row.fi+1)+'</span>'
-        +'<span style="font-size:10px;color:var(--color-text-tertiary);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
-        +row.mem.map(function(pi){return WK.players[pi].ini;}).join('&middot;')+'</span></span>'
-      // Big number, then what it is worth. The same shape as the money cell beside it.
-      +'<span style="text-align:center"><span style="font-size:17px;font-weight:600;color:'+nCol+';display:block">'+row.n+'</span>'
-      // No take line on a group that ground nothing: "$0.00" reads as a settled figure
-      // when it is just an absence, and the holes cell already says "none".
-      +((det.total>0&&row.n>0)?('<span style="font-size:10px;color:var(--color-text-tertiary);display:block">'+_fbMoney(row.n*det.unit)+'</span>'):'')
-      +'</span>'
-      // WRAPS, does not ellipsis: a group on a run is the row people argue about.
-      +'<span style="font-size:11px;color:'+(holes.length?'var(--color-text-secondary)':'var(--color-text-tertiary)')
-        +';text-align:center;line-height:1.35">'+(holes.length?holes.join(', '):'none')+'</span>'
-      // NET on top, coloured, because it is the only figure with a real sign. The share
-      // BEFORE the ante sits underneath in grey: it is what makes -$5.55 legible without
-      // anyone doing the subtraction in their head.
-      +(done?('<span style="text-align:center">'
-        +'<span style="font-size:12px;font-weight:600;color:'+col+';display:block">'+_fbMoney(grp)+'</span>'
-        +'<span style="font-size:10px;color:var(--color-text-tertiary);display:block">'
-        +_fbMoney(grp+d.ante)+' back</span></span>'):'')
-      +'</div>';
+  const off=holeOffset(r);
+  rows.forEach(function(row){
+    // The pot's holes, nine to a line, each dot its hole number; green where this foursome ground.
+    const hs=det.holes[row.fi]||[];
+    let dots='';
+    for(let k=0;k<hs.length;k+=9){
+      dots+='<div class="dr">';
+      for(let j=k;j<Math.min(k+9,hs.length);j++)dots+='<span class="dn'+(hs[j]!==null?' on':'')+'">'+(off+j+1)+'</span>';
+      dots+='</div>';
+    }
+    // PER PLAYER, net[mem[0]]: the same figure the Bets tab quotes.
+    const grp=net[row.mem[0]]||0;
+    const chip=!done?'':grp>0.0001?_chip('a','+'+_m(grp)):grp<-0.0001?_chip('ns','-'+_m(grp)):_chip('ns','$0');
+    // Last names; a last name two members share falls back to "K. Moody" so the two can be told apart.
+    const _ln=row.mem.map(function(pi){const p=WK.players[pi];return (p&&p.last)?p.last:displayName(pi);});
+    const names=row.mem.map(function(pi,k){return _ln.indexOf(_ln[k])!==_ln.lastIndexOf(_ln[k])?displayName(pi):_ln[k];}).join(', ');
+    h+='<div class="grk'+(row.fi===_grSel?' gs-lanerow':'')+'"><div class="t"><b>F'+(row.fi+1)+'</b><span class="nm">'+names+'</span></div>'
+      +'<div class="b"><span class="c"><b'+(row.n?'':' class="z"')+'>'+row.n+'</b>'+(row.n===1?' grinder':' grinders')+'</span>'
+      +'<span class="dl">'+dots+'</span><span class="m">'+chip+'</span></div></div>';
   });
-  h+='</div>';
+  let ftL,ftC='';
+  if(det.total===0){
+    if(done){ftL='No grinders';ftC=_chip('ns','No blood');}
+    else{ftL='No grinders yet';ftC=_chip('ns',_m(d.ante)+' ante');}
+  }else{
+    // The whole game: the pot is fixed, the divisor floats, so say what a grinder is worth.
+    ftL=det.total+(det.total===1?' grinder':' grinders')+' · '+_m(det.unit)+' each'+(done?'':' so far');
+  }
+  h+='<div class="mpk-ft"><span>'+ftL+'</span>'+ftC+'</div></div>';
   el.innerHTML=h;
 }
 // Has this foursome finished every hole the pot covers? Used only for the "still to
