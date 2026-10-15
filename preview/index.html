@@ -2450,7 +2450,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.20';
+const APP_VERSION='v124.21';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -15854,7 +15854,8 @@ window._fbOpenSwap=function(r,ti,si){
 // Tap a leaderboard row to pull up that team's card. Tap it again to go back to the leader.
 window._fbShowCard=function(no){
   STATE.fbCard=(STATE.fbCard===no)?null:no;
-  renderFourBallRound();
+  // v124.21: the whole Games tab, not just the cards, or the settings row below them is wiped.
+  _gsRefreshAfterEdit();
 };
 window._fbCloseSwap=function(){const el=document.getElementById('fbSwapOverlay');if(el)el.remove();};
 window._fbSwap=function(r,ti,si,other){
@@ -16290,7 +16291,7 @@ function renderFourBallRound(){
       h+=prow;
       lead.team.forEach(function(pi,_ti){
         const p=WK.players[pi];
-        let row='<tr><td style="'+_s+';background:var(--color-background-primary);color:'+p.bg+'">'+p.ini+'</td>';
+        let row='<tr><td style="'+_s+';background:var(--color-background-primary);color:var(--color-text-primary)">'+p.ini+'</td>';
         let tot=0;
         for(let k=0;k<nh;k++){
           const hi=off+k;
