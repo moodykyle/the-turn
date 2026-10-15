@@ -1213,6 +1213,12 @@ body.force-light .home-dash-sec-label,body.force-light .sec-hd{color:#0F4D36;}
 body.force-light .home-dash-sec-label::before,body.force-light .me-seclbl.brand-lbl::before,body.force-light .sec-hd::before{background:#C99A2E;}
 /* v123.75 game settings: Home's section heading, one row shape, the sliding pill. */
 .gs-sec{margin:16px 2px 6px;font-size:19px;}
+/* v124.13: a foursome heading on the Games tab is a settings section heading with a rule to the edge. */
+.gs-fsh{margin:6px 2px 10px}
+.gs-fsh.next{margin-top:28px}
+.gs-fsh i{flex:1;height:1px;display:block;background:var(--color-border-secondary)}
+.gs-fsh.go{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.gs-fsh .ch{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:18px;line-height:1;color:var(--color-text-tertiary)}
 .gs-sec:first-child{margin-top:4px;}
 .gs-sec::before{height:17px;}
 @media(prefers-color-scheme:dark){body:not(.force-light) .sec-hd.gs-sec{color:#EFC456;}}
@@ -2426,7 +2432,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.12';
+const APP_VERSION='v124.13';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -17551,7 +17557,7 @@ function renderMPRound(){
   const _huRnd=isHeadsUp(r);
   if(!STATE.mpExpanded)STATE.mpExpanded={};
   let html=``;
-  const _mpFl=flightsForRound(r);const _mpMulti=_mpFl.length>1;let _mpSel=(STATE.mpViewFlight===undefined?-1:STATE.mpViewFlight);for(let _fi=0;_fi<_mpFl.length;_fi++){if(_mpMulti&&_mpSel!==-1&&_mpSel!==_fi)continue;const mpG=mpGamesForRound(r,_fi),segs=getSegments(mpG,roundHoleCount(r));if(_mpMulti){html+='<div style="display:flex;align-items:center;gap:7px;padding:8px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(_fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(_fi+1)+'</span></div>';}
+  const _mpFl=flightsForRound(r);const _mpMulti=_mpFl.length>1;let _mpSel=(STATE.mpViewFlight===undefined?-1:STATE.mpViewFlight);for(let _fi=0;_fi<_mpFl.length;_fi++){if(_mpMulti&&_mpSel!==-1&&_mpSel!==_fi)continue;const mpG=mpGamesForRound(r,_fi),segs=getSegments(mpG,roundHoleCount(r));if(_mpMulti){const _fsAll=_mpSel===-1;html+='<div class="sec-hd gs-sec gs-fsh'+(_fsAll?' go':'')+(html?' next':'')+'"'+(_fsAll?' onclick="switchGamesLane('+_fi+')"':'')+'><span>Foursome '+(_fi+1)+'</span><i></i>'+(_fsAll?'<span class="ch">\u203a</span>':'')+'</div>';}
   if(_mpTooSmall(r,_fi)){html+='<div class="section-card" style="margin-bottom:10px;padding:10px 14px;font-size:12px;color:var(--color-text-secondary)">'+_mpTooSmallNote(r,_fi)+'</div>';continue;}
   segs.forEach((seg,si)=>{
     const tm=STATE.mpTeams[r][_fi][si];if(!tm)return;
