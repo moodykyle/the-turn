@@ -1753,19 +1753,26 @@ body.force-dark .fb-tm-nm{color:#EFC456;}
 .fb-pl.q{color:var(--color-text-tertiary);font-weight:600;}
 .fb-lbrow{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary);}
 .fb-lbrow:last-child{border-bottom:none;}
-.fb-lbrow.fb-sel,.gs-lanerow{background:rgba(29,158,117,0.13);}
-.fb-lbhint{flex:1;text-align:center;font-size:10px;font-weight:400;color:var(--color-text-tertiary);}
-.fb-cardhd{display:flex;align-items:center;gap:9px;min-width:0;}
-.fb-cardhd .fb-cardt{flex:none;display:flex;flex-direction:column;align-items:center;line-height:1.05;}
-.fb-cardhd .fb-cardk{font-size:8.5px;letter-spacing:0.09em;text-transform:uppercase;color:var(--color-text-tertiary);}
-.fb-cardhd .fb-cardv{font-size:18px;font-weight:700;color:var(--color-text-primary);}
-.fb-cardhd .fb-cardn{min-width:0;}
+.gs-lanerow{background:rgba(29,158,117,0.13);}
 .fb-lbrow:active{opacity:0.7;}
 .fb-lbl{display:flex;align-items:center;gap:9px;flex:1;}
 .fb-lbn{font-size:13.5px;font-weight:500;}
 .fb-lbs{font-size:11px;color:var(--color-text-secondary);margin-top:1px;}
 .fb-lbr{display:flex;align-items:baseline;gap:10px;}
 .fb-lbt{font-size:15px;font-weight:600;}
+/* v124.20: Four-Ball in the card look. */
+.mpk .fb-lbrow{border-bottom:none;border-top:0.5px solid var(--color-border-tertiary);padding:10px 14px;gap:12px}
+.mpk .fb-lbl{gap:12px;min-width:0}
+.mpk .fb-lbrow.fb-sel{background:var(--color-background-secondary)}
+.mpk .fb-pl{width:26px;height:26px;font-size:11px}
+.mpk .fb-lbn{font-size:14px;font-weight:400;line-height:1.35;min-width:0}
+.fbk-tn{font-size:12px;color:var(--color-text-tertiary)}
+.mpk .fb-lbr{flex-direction:column;align-items:flex-end;gap:3px}
+.mpk .fb-lbt{font-size:17px;font-weight:700}
+.mpk .fb-lbs{font-size:12px;color:var(--color-text-tertiary);margin:0}
+.mpk-hd .fbk-nm{white-space:normal;line-height:1.35}
+.mpk .fb-tie{padding:8px 14px}
+.mpk .fb-cap{padding:8px 14px 10px;font-size:11px}
 .fb-sh-sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-text-tertiary);padding:11px 14px 6px;}
 .fb-sh-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:0.5px solid var(--color-border-tertiary);cursor:pointer;}
 .fb-sh-row.sel{background:#085041;}
@@ -2443,7 +2450,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.19';
+const APP_VERSION='v124.20';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -9390,7 +9397,7 @@ function renderScorecard(){
   let _huPairNet=null;if(gameOnFs('mp',r,_fp)&&isHeadsUp(r)&&huNetOffMatchLow(r,_fp)){const _siHU=segForHole(hi-holeOffset(r),mpGamesForRound(r,_fp),roundHoleCount(r));const _tmHU=STATE.mpTeams[r]?.[_fp]?.[_siHU];if(_tmHU&&_tmHU[0]&&_tmHU[1]){_huPairNet={};for(let _mi=0;_mi<_tmHU[0].length;_mi++){const _pa=_tmHU[0][_mi],_pb=_tmHU[1][_mi];if(_pa!==undefined&&_pb!==undefined){_huPairNet[_pa]=[_pa,_pb];_huPairNet[_pb]=[_pa,_pb];}}}}
   // Snake holder for the ACTIVE foursome at this hole (the card only shows that foursome).
   const _snkHolder=gameOnFs('snake',r,_fp)?currentSnakeHolderForFlight(r,hi,_fp):null;
-  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const grTick=gameOn('grinders',r)&&grPlayerOk(r,i,hi)?`<span class="gr-tick" title="Par or better">&#10003;</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const _flk=isFlightLocked(r,_fp==null?_curFi(r):_fp);const roStyle=_pvLock?'pointer-events:none':(isReadOnly?'opacity:0.5;pointer-events:none':((_flk||_deadH)?'pointer-events:none':''));const _rowDim=((_pvLock&&!_flk)||_deadH)?'opacity:0.42;':'';const _minusBtn=(_pvLock||_deadH||_flk)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':((_pvLock||_flk)?'':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}${grTick}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('')+_grHoleChip(r,_fp,hi);
+  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const grTick=gameOn('grinders',r)&&grPlayerOk(r,i,hi)?`<span class="gr-tick" title="Par or better">&#10003;</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const _flk=isFlightLocked(r,_fp==null?_curFi(r):_fp);const roStyle=_pvLock?'pointer-events:none':(isReadOnly?'opacity:0.5;pointer-events:none':((_flk||_deadH)?'pointer-events:none':''));const _rowDim=((_pvLock&&!_flk)||_deadH)?'opacity:0.42;':'';const _minusBtn=(_pvLock||_deadH||_flk)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':((_pvLock||_flk)?'':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbLtr(_fbRowDiv[i])}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}${grTick}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('')+_grHoleChip(r,_fp,hi);
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
   try{renderNinesBox();}catch(ne){console.error('renderNinesBox error:',ne);const nw=document.getElementById('ninesBoxWrap');if(nw)nw.innerHTML='';}
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
@@ -9650,6 +9657,8 @@ function reconcileFBTeams(r){
 // The team's number as everyone else in the app sees it: its position in the round's
 // team list. Never the position within a foursome or a pool.
 function _fbSig(t){return t.slice().sort(function(a,b){return a-b;}).join(',');}
+// The letter a Four-Ball team is shown by. Plain text: Four-Ball teams are not opposed sides.
+function _fbLtr(n){return n>0&&n<=26?String.fromCharCode(64+n):String(n);}
 function fbTeamNo(r,team){
   const all=fbTeamsForRound(r),s=_fbSig(team);
   for(let i=0;i<all.length;i++){if(_fbSig(all[i])===s)return i+1;}
@@ -15809,7 +15818,7 @@ window._fbOpenSwap=function(r,ti,si){
   let h='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center" id="fbSwapOverlay" onclick="if(event.target===this)window._fbCloseSwap()">';
   h+='<div style="background:var(--color-background-primary);border-radius:var(--border-radius-lg) var(--border-radius-lg) 0 0;width:100%;max-width:480px;overflow-y:auto;max-height:88vh">';
   h+='<div style="background:#0F6E56;padding:13px 14px;display:flex;align-items:center;justify-content:space-between">'
-    +'<div><div style="font-size:10px;color:#9FE1CB;letter-spacing:0.06em;text-transform:uppercase">Team '+(ti+1)+'</div>'
+    +'<div><div style="font-size:10px;color:#9FE1CB;letter-spacing:0.06em;text-transform:uppercase">Team '+_fbLtr(ti+1)+'</div>'
     +'<div style="font-size:17px;font-weight:500;color:#E1F5EE;margin-top:2px">Swap player</div></div>'
     +'<div style="background:#085041;border-radius:999px;padding:5px 12px;text-align:center">'
     +'<div style="font-size:10px;color:#9FE1CB">Now</div>'
@@ -15960,7 +15969,7 @@ function renderFBBox(){
       return '<span style="color:'+col+';font-weight:'+wt+'">'+(n===null?'-':n)+'</span>';
     }).join('<span style="color:var(--color-text-tertiary);margin:0 3px">/</span>');
     h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0">'
-      +'<span style="font-size:13px;color:var(--color-text-primary)">Team '+(ti+1)+'<span style="color:var(--color-text-tertiary);font-size:11px;margin-left:6px">'+names+'</span>'
+      +'<span style="font-size:13px;color:var(--color-text-primary)">Team '+_fbLtr(ti+1)+'<span style="color:var(--color-text-tertiary);font-size:11px;margin-left:6px">'+names+'</span>'
       // The number that answers "why are only two of these green". It changes with the
       // par, which is exactly what a static 5-4-3 in the title cannot tell anyone.
       +(_f43box?('<span style="color:var(--color-text-tertiary);font-size:10px;margin-left:6px">'+_ballTag+'</span>'):'')
@@ -15986,7 +15995,7 @@ function renderFBBox(){
     const fk=_fsTags[_ri];
     const tag=(_fl.length>1&&fk.length&&!_tagsAddNothing)?('F'+fk.join('/F')):'';
     h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:12px">'
-      +'<span style="color:var(--color-text-secondary)">'+pos+'. Team '+(ti+1)
+      +'<span style="color:var(--color-text-secondary)">'+pos+'. Team '+_fbLtr(ti+1)
       +'<span style="color:var(--color-text-tertiary);font-size:10px;margin-left:5px">'+nm+(tag?(' &middot; '+tag):'')+'</span></span>'
       +'<span>'+(played
         ?('<span style="color:'+_fbParCol(row.card.toPar)+';font-weight:600">'+_fbToPar(row.card.toPar)+'</span>'
@@ -16105,7 +16114,7 @@ function _gsFourBallSetupBody(r){
     if(_lf>=0&&!fss[_lf])return;
     _shown++;
     const split=Object.keys(fss).length>1;
-    h+='<div class="fb-tm"><div class="fb-tm-hd"><span class="fb-tm-nm">Team '+(ti+1)+'</span>'
+    h+='<div class="fb-tm"><div class="fb-tm-hd"><span class="fb-tm-nm">Team '+_fbLtr(ti+1)+'</span>'
       +'<span class="fb-tm-mt">'+(split?'<span class="fb-tag">split F'+(Object.keys(fss).map(function(x){return +x+1;}).join('/F'))+'</span>':'')+'</span></div>';
     t.forEach(function(pi,si){
       const p=WK.players[pi];
@@ -16179,10 +16188,10 @@ function renderFourBallRound(){
     return;
   }
   let h='';
-  _shown.forEach(function(pool){
+  _shown.forEach(function(pool,_pk){
     const rows=fbStandings(pool,r);
     const pot=d.ante*pool.players.length;
-    const title='Four-Ball'+(pool.fi!=null?(' &middot; Foursome '+(pool.fi+1)):'')+' &middot; '+roundLabel(r);
+    const _fbM=v=>{v=Math.abs(v);return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
     const done=fbPoolComplete(pool,r);
     // Before the first score every team ties at zero, so fbStandings returns position 1
     // for all of them and the card renders four pills reading 1 - four winners. The
@@ -16211,11 +16220,12 @@ function renderFourBallRound(){
     }
     const _hasCard=!!(_shownRow&&_shownRow.card.played>0);
     const _shownNo=_hasCard?fbTeamNo(r,_shownRow.team):0;
-    h+='<div class="section-card game-on"><div class="section-hd"><span>'+title+'</span>'+(rows.length>1?'<span class="fb-lbhint">tap a team</span>':'')+'<span>Pot '+_fbMoney(pot)+'</span></div>';
-    if(!anyPlayed)h+='<div class="fb-note">No scores yet. Positions appear once the first hole is posted.</div>';
+    if(pool.fi!=null&&flightsForRound(r).length>1)h+=_gtFsHead(pool.fi,_fbSel===-1,_pk>0);
+    h+='<div class="section-card mpk game-on"><div class="mpk-hd"><b>Four-Ball</b><span>'+(pool.fi!=null?'Foursome':'Field')+' \u00b7 '+rows.length+' teams \u00b7 '+(d.pays===2?'Top 2 paid':'Winner takes the pot')+'</span></div>';
     rows.forEach(function(row){
       const pos=row.pos;
-      const names=_fbTeamLine(row.team);
+      // v124.20: one name per line; a four-man team keeps the helper's two per line.
+      const names=row.team.length>2?_fbTeamLine(row.team):row.team.map(function(p){return displayName(p);}).join('<br>');
       const per=net[row.team[0]];
       const cls=per>0.0001?'money-pos':(per<-0.0001?'money-neg':'money-nil');
       const played=row.card.played>0;
@@ -16223,28 +16233,40 @@ function renderFourBallRound(){
       // The foursome's own round. Saying 'thru 15 of 18' about a round that ended at 15
       // reads as three holes still owed on a card whose pot has already been awarded.
       const sel=(_hasCard&&tno===_shownNo);
-      const need=(pool.fi!=null)?fsHoleCount(r,pool.fi):roundHoleCount(r);
-      const thru='Team '+tno+' &middot; '+(played?('net '+row.card.total+' &middot; thru '+row.card.played+(row.card.played<need?' of '+need:'')):'no scores yet');
+      const thru=played?'thru '+row.card.played:'';
+      const _mc=per>0.0001?'<span class="mpc a">+'+_fbM(per)+'</span>':per<-0.0001?'<span class="mpc ns">-'+_fbM(per)+'</span>':'<span class="mpc ns">$0</span>';
       h+='<div class="fb-lbrow'+(sel?' fb-sel':'')+'" onclick="window._fbShowCard('+tno+')" style="cursor:pointer">'
-        +'<div class="fb-lbl"><span class="fb-pl'+(sel?' sel':'')+(anyPlayed?'':' q')+'">'+(anyPlayed?pos:'&ndash;')+'</span>'
-        +'<div><div class="fb-lbn">'+names+'</div>'
-        +(anyPlayed?('<div class="fb-lbs">'+thru+'</div>'):'')+'</div></div>'
+        +'<div class="fb-lbl"><span class="fb-pl'+(sel?' sel':'')+(anyPlayed?'':' q')+'">'+(anyPlayed?((row.tied?'T':'')+pos):'&ndash;')+'</span>'
+        +'<div class="fb-lbn">'+names+' <span class="fbk-tn">\u00b7 Team '+_fbLtr(tno)+'</span></div></div>'
         +'<div class="fb-lbr"><span class="fb-lbt" style="color:'+(played?_fbParCol(row.card.toPar):'var(--color-text-tertiary)')+'">'+(played?_fbToPar(row.card.toPar):'-')+'</span>'
-        +'<span class="'+cls+'" style="font-size:12px;font-weight:500">'+(done&&played?(_fbMoney(per)+' ea'):'')+'</span></div></div>';
+        +(done&&played?_mc:'<span class="fb-lbs">'+thru+'</span>')+'</div></div>';
     });
     // Two teams on the same number with different money is a result that reads like a
     // mistake. The card was correct and silent; this is the sentence it was missing.
     // One row per line so two ties read as two statements rather than one run-on.
     fbTieLines(rows,r,done).forEach(function(_ln){h+='<div class="fb-tie">'+_ln+'</div>';});
+    // v124.20: the bottom line. Who leads (live) or who won (settled), and the pot.
+    {let ftL,ftC='<span class="mpc ns">Pot '+_fbM(pot)+'</span>';
+      const _ld=rows[0],_tie=rows.length>1&&rows[1].pos===_ld.pos;
+      if(!anyPlayed)ftL='Not started';
+      else if(!done){
+        const _nx=rows.find(function(x){return x.pos!==_ld.pos&&x.card.played>0;});
+        ftL=_tie?'Tied for the lead':('Team '+_fbLtr(fbTeamNo(r,_ld.team))+' leads'+(_nx?' by '+(_nx.card.toPar-_ld.card.toPar):''));
+        ftL+=' thru '+_ld.card.played;
+      }else{
+        ftL='Result';
+        const _won=rows.filter(function(x){return net[x.team[0]]>0.0001;});
+        if(_won.length===1)ftC='<span class="mpc a">Team '+_fbLtr(fbTeamNo(r,_won[0].team))+' +'+_fbM(net[_won[0].team[0]])+'</span>';
+      }
+      h+='<div class="mpk-ft"><span>'+ftL+'</span>'+ftC+'</div>';}
     h+='</div>';
     // Hole by hole for the SELECTED team, or the leader when nothing is picked. A team
     // with an empty card has nothing to show, so it falls back rather than render blank.
     const lead=_shownRow;
     if(lead&&lead.card.played>0){
       const off=holeOffset(r),nh=fbPoolHoleCount(r,pool);
-      const _hdr='<span class="fb-cardhd"><span class="fb-cardt"><span class="fb-cardk">Team</span><span class="fb-cardv">'+fbTeamNo(r,lead.team)+'</span></span><span class="fb-cardn">'+_fbTeamLine(lead.team)+'</span></span>';
-      h+='<div class="section-card"><div class="section-hd"><span>'+_hdr+'</span>'
-        +'</div>';
+      // v124.20: the tapped team's card. No position badge here (Kyle: it has no place sitting by itself).
+      h+='<div class="section-card mpk"><div class="mpk-hd"><b>Team '+_fbLtr(fbTeamNo(r,lead.team))+'</b><span class="fbk-nm">'+_fbTeamLine(lead.team)+'</span></div>';
       // Initials only in the sticky column. Full names are already in the bar above, and a
       // wrapping "M. Richardson" was taking the width the holes needed.
       const _c='padding:4px 3px;border-right:0.5px solid var(--color-border-tertiary)';
@@ -18667,7 +18689,7 @@ function renderMoney(){
           const mcol=per>0.0001?'#1D9E75':(per<-0.0001?'#D85A30':'var(--color-text-tertiary)');
           html+=`<div style="display:grid;grid-template-columns:18px 1fr 44px 78px;align-items:center;gap:6px;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
             <span style="font-size:11px;font-weight:700;color:${win?'#1D9E75':'var(--color-text-tertiary)'}">${played?pos:'-'}</span>
-            <span style="font-size:12px;font-weight:${win?'600':'400'};color:var(--color-text-primary)">${names}<span style="color:var(--color-text-tertiary);font-size:10px;margin-left:5px">T${fbTeamNo(r,row.team)}</span></span>
+            <span style="font-size:12px;font-weight:${win?'600':'400'};color:var(--color-text-primary)">${names}<span style="color:var(--color-text-tertiary);font-size:10px;margin-left:5px">Team ${_fbLtr(fbTeamNo(r,row.team))}</span></span>
             <span style="font-size:12px;font-weight:600;text-align:right;color:${played?_fbParCol(row.card.toPar):'var(--color-text-tertiary)'}">${played?_fbToPar(row.card.toPar):'-'}</span>
             <span style="font-size:11px;font-weight:500;text-align:right;color:${mcol}">${money}</span>
           </div>`;
@@ -19940,7 +19962,7 @@ function renderSettle(){
         const _tm=_pool&&_pool.teams.find(function(t){return t.indexOf(pi)>=0;});
         const _row=_pool&&_tm?fbStandings(_pool,r).find(function(x){return _fbSig(x.team)===_fbSig(_tm);}):null;
         const _place=_row?((_row.tied?'T':'')+_row.pos+(_row.tied?'':_ordSuffix(_row.pos))):'';
-        const _desc=_tm?('Team '+fbTeamNo(r,_tm)+(_place?(' \u00b7 '+_place):'')):'Four-Ball';
+        const _desc=_tm?('Team '+_fbLtr(fbTeamNo(r,_tm))+(_place?(' \u00b7 '+_place):'')):'Four-Ball';
         auditGolf[pi].fourball.push({label:roundLabel(r),val:_fbN[pi],desc:_desc});
       });
     }
