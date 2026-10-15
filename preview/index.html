@@ -2438,7 +2438,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.16';
+const APP_VERSION='v124.17';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -8630,8 +8630,15 @@ function _updateTabBar(v){
     else{actRow.className='';}
   }
 }
+// v124.17: the Games tab opens collapsed. Every game's opened cards and the settings row.
+function _gsCollapseAll(){
+  STATE.mpExpanded={};STATE.vegasExpanded={};STATE.skinsExpanded={};STATE.hammerExpanded={};
+  STATE.razzleExpanded={};STATE.ninesExpanded={};STATE.gamesSetupOpen={};STATE.fbCard=null;
+}
 function setView(v){
   if(_fsP)window._fsPromptClose();
+  // v124.17: arriving on Games from anywhere else starts collapsed.
+  if(v==='games'){const _gv=document.getElementById('view-games');if(!_gv||_gv.style.display!=='block')_gsCollapseAll();}
   // Normalize: 'scores' is the new name for entry; both route to view-entry content
   const contentView=(v==='scores')?'entry':v;
   ALL_VIEWS.forEach(n=>{
@@ -8848,8 +8855,8 @@ function closeRoundSheet(){const s=document.getElementById('roundSheet');if(s)s.
 function renderRdSel(cid,cur,fn){const el=document.getElementById(cid);if(!el)return;const isEntry=cid==='entryRdSel'||cid==='ctxRdSel';el.innerHTML=WK.rounds.map((rd,i)=>{const done=isRoundComplete(i);const detailsLink=isEntry&&i===cur?`<div onclick="event.stopPropagation();showRoundDetails()" style="position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,0.5);color:rgba(255,255,255,0.8);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1">i</div>`:'';return`<div class="rd-btn${i===cur?' active':''}${done?' done':''}" onclick="${fn}(${i})">${roundLabel(i)}<br><span style="font-size:9px;opacity:0.75">${rdLabel(i)}</span>${detailsLink}</div>`;}).join('');}
 function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=_flightResumeHole(r,(getFlightPick(r)||0));STATE.razzleToastOk=false;if(!STATE.razzleHWM)STATE.razzleHWM={};const _seRfi=getFlightPick(r)||0;if(!STATE.razzleHWM[r]||typeof STATE.razzleHWM[r]!=='object')STATE.razzleHWM[r]={};const _roundComplete=isRoundComplete(r);const _maxH=holeOffset(r)+fsHoleCount(r,_seRfi)-1;if(STATE.razzleHWM[r][_seRfi]===undefined)STATE.razzleHWM[r][_seRfi]=_roundComplete?_maxH:-1;renderRdSel('entryRdSel',r,'switchEntryRound');_renderCtxRdSel('scores');STATE.scRound=r;updateHoleUI();if(_scViewMode==='card')renderSCGrid();}
 function switchCardRound(r){STATE.scRound=r;renderRdSel('cardRdSel',r,'switchCardRound');STATE.scGridFlightSel=-1;renderSCGrid();}
-function switchGamesRound(r){STATE.gamesViewRound=r;renderGamesTab();}
-function switchGamesGame(g){STATE.gamesViewGame=g;renderGamesTab();}
+function switchGamesRound(r){if(STATE.gamesViewRound!==r)_gsCollapseAll();STATE.gamesViewRound=r;renderGamesTab();}
+function switchGamesGame(g){if(STATE.gamesViewGame!==g)_gsCollapseAll();STATE.gamesViewGame=g;renderGamesTab();}
 function switchTeamsRound(r){STATE.teamsRound=r;renderTeamsPanel();}
 function _vpi(pi){return Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];}
 function courseHdcp(pi,r){if(!_vpi(pi))return 0;const course=WK.rounds[r].course;const slope=course.slope||113;const rating=course.rating!=null?course.rating:(WK.rounds[r].coursePinned===true?null:(CATALOG[WK.rounds[r].courseName]?.rating??null));const par=course.holes?course.holes.reduce((a,h)=>a+h.par,0):72;const base=idxForRound(pi,r)*WK.hdcpPct*(slope/113);const adj=(rating!==null)?rating-par:0;return Math.round(base+adj);}
