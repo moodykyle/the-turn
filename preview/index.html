@@ -950,6 +950,7 @@ body.force-light{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpA
 .mpk-hm svg{width:11px;height:11px}
 .mpk-hr .cy{color:var(--mpPt);font-size:12px}
 .mpk-hr .it{font-style:italic}
+.mpk-hr.vg{grid-template-columns:30px 70px minmax(0,1fr) 56px}
 .gs-net.warn .t b{color:#E0A45C}
 #appToast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab-bar-h) + 62px);z-index:10003;
   background:#2A1F14;border:1px solid #5C4423;border-radius:10px;padding:11px 13px;
@@ -2442,7 +2443,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.18';
+const APP_VERSION='v124.19';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7247,6 +7248,18 @@ function _gtTeamsHtml(tA,tB,click){
   tA.forEach((pi,ni)=>{html+=`<span class="nm ca" style="grid-column:2;grid-row:${ni+1}">${displayName(pi)}</span>`;});
   tB.forEach((pi,ni)=>{html+=`<span class="nm r cb" style="grid-column:3;grid-row:${ni+1}">${displayName(pi)}</span>`;});
   return html+`<span class="lt cb" style="grid-column:4;grid-row:1/${_rows+1}">B</span></div>`;
+}
+// v124.19: a team game's card (Hammer, Vegas): title and holes, the A / B rows, the bottom line with the end chip,
+// the end note, and (open) the game's hole rows. An unplayed segment shows the no-value glyph and never opens.
+function _gtCard(o){
+  const chip=_mpEndChip(o.tag),note=_mpEndNote(o.r,o.fi,o.tag),dead=o.tag==='unplayed';
+  const ftL=dead?'\u2014':o.ftL,ftC=dead?'':o.ftC;
+  let h=`<div class="section-card mpk"><div class="mpk-hd" onclick="${o.toggle}"><b>Match ${o.si+1}</b><span>Holes ${o.from} to ${o.to}${o.sub}</span><i class="${o.expanded?'open':''}">\u203a</i></div>`;
+  h+=_gtTeamsHtml(o.tA,o.tB,o.toggle);
+  h+=`<div class="mpk-ft"><span>${ftL}</span>${chip?`<span class="end-chip">${chip}</span>`:''}${ftC}</div>`;
+  if(note)h+=`<div class="mpk-en" style="padding-top:8px">${note}</div>`;
+  if(o.expanded&&!dead)h+=o.rows;
+  return h+'</div>';
 }
 function _mpEndChip(tag){
   if(tag==='stopped')return'cut short';
@@ -17865,75 +17878,61 @@ function renderVegasRound(){
   let fh='';
   const toRender=sel===-1?fl.map((_,i)=>i):[sel];
   let html=fh;
-  toRender.forEach(fi=>{const labelHd=(sel===-1)?'<div class="gf-blk-lbl"><span class="bd" style="background:'+_flightsAccent0(fi)+'"></span>Foursome '+(fi+1)+'</div>':null;html+=_renderVegasFlightBlock(r,fi,labelHd);});
+  toRender.forEach((fi,k)=>{html+=_renderVegasFlightBlock(r,fi,_gtFsHead(fi,sel===-1,k>0));});
   el.innerHTML=html;
 }
 function _renderVegasFlightBlock(r,fi,labelHd){
+  // v124.19, Kyle 15 Oct, canvas "Games tab: Vegas": the Match Play card's face, points on the bottom line and
+  // dollars in the chip.
   const vG=vegasSegForRound(r,fi),_th_vr=roundHoleCount(r),_off_vr=holeOffset(r),segs=getSegments(vG,_th_vr);
   if(!STATE.vegasExpanded)STATE.vegasExpanded={};
   const _vf=(STATE.vegTeams[r]&&STATE.vegTeams[r][fi])||[];
   const _vmem=(flightsForRound(r)[fi]||[]);
   if(_vmem.length<4)return (labelHd||'')+'<div class="section-card" style="margin-bottom:10px;padding:14px;text-align:center;color:var(--color-text-secondary);font-size:13px">This foursome needs 4 players for Vegas.</div>';
+  const rate=roundValFs('vegasVal',r,fi,WK.vegasVal);
+  const _m=v=>{v=Math.abs(v);return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
+  const _chip=(k,t)=>`<span class="mpc ${k}">${t}</span>`;
+  const _pts=n=>n+(n===1?' pt':' pts');
   let html=labelHd||'';
   segs.forEach((seg,si)=>{
     const tv=_vf[si];if(!tv||!Array.isArray(tv[0])||!Array.isArray(tv[1])||!tv[0].length||!tv[1].length)return;
     const tA=tv[0],tB=tv[1];
-    const nameA=tA.map(i=>displayName(i)).join(' & ');
-    const nameB=tB.map(i=>displayName(i)).join(' & ');
     const key='r'+r+'f'+fi+'g'+si;
     const expanded=STATE.vegasExpanded[key]===true;
+    // Points exactly as calcRoundVegas counts them: up to the foursome's end hole.
     let totA=0,totB=0;
-    const _vgDeadCap=Math.max(seg.start,Math.min(seg.end,fsHoleCount(r,fi)));
-    for(let h=seg.start;h<_vgDeadCap;h++){const res=calcVegas(h+_off_vr,r,fi);if(!res||res.tied)continue;if(res.aWins)totA+=res.diff;else totB+=res.diff;}
-    const net=totA-totB;
-    let summaryHtml;
-    if(_segNotPlayed(r,fi,seg)){summaryHtml=`<span style="color:var(--color-text-tertiary);font-size:12px">—</span>`;}
-    else if(totA===0&&totB===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
-    else if(net===0){summaryHtml=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">No Blood</span>`;}
-    else{const winLtr2=net>0?'A':'B';const winClr=net>0?'#1D9E75':'#185FA5';const absDiff=Math.abs(net);summaryHtml=`<span style="color:${winClr};font-weight:500;font-size:12px">${winLtr2} wins · +${absDiff} pts</span>`;}
-    html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
-    html+=`<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleVegasGame('${key}')">`;
-    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">Match ${si+1} &middot; H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</span><span style="color:#1D9E75;font-size:12px">${expanded?'▲':'▼'}</span></div>`;
-    html+=`<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#1D9E75;margin-bottom:2px">TEAM A</div><div style="font-size:11px;font-weight:500;color:#1D9E75">${nameA}</div></div><div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">${nameB}</div></div></div>`;
-    // h is SEGMENT RELATIVE here; calcVegas takes a global index.
-    const _vgAwait=(()=>{for(let h=seg.start;h<seg.end;h++){const _gh=h+_off_vr;
-      if(_mpHoleDead(r,fi,_gh))continue;
-      if(!calcVegas(_gh,r,fi))return true;}
-      return false;})();
-    const vegNetLabel=(()=>{if(_segNotPlayed(r,fi,seg))return'—';if(totA===0&&totB===0)return _vgAwait?'In progress':'No Blood';const n2=totA-totB;if(n2===0)return'No Blood';return n2>0?`A wins · +${Math.abs(n2)} pts`:`B wins · +${Math.abs(n2)} pts`;})();
-    const vegNetClr=(totA-totB)>0?'#1D9E75':(totA-totB)<0?'#185FA5':'var(--color-text-secondary)';
-    const _vgTag=_segStopTag(r,fi,seg),_vgChip=_mpEndChip(_vgTag),_vgNote=_mpEndNote(r,fi,_vgTag);
-    const _vgDead=(_vgTag==='unplayed');
-    html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Match Result: <span style="font-weight:500;color:${vegNetClr}">${vegNetLabel}</span>${_vgChip?`<span class="end-chip">${_vgChip}</span>`:''}</div>`;
-    if(_vgNote)html+=`<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:4px">${_vgNote}</div>`;
-    html+=`</div>`;
-    if(expanded&&!_vgDead){
-      let rows='';
-      for(let h=seg.start;h<seg.end;h++){
-        const res=calcVegas(h+_off_vr,r,fi);
-        const isFlip=res&&(res.aFlip||res.bFlip);
-        const holeLabel=isFlip
-          ?`<span style="display:inline-block;background:#1e3d52;color:#5bb8e8;border-radius:5px;font-size:10px;font-weight:700;padding:2px 5px;letter-spacing:0.03em">H${h+_off_vr+1}</span>`
-          :`<span style="color:var(--color-text-tertiary);font-size:12px">H${h+_off_vr+1}</span>`;
-        // h is SEGMENT RELATIVE in this loop; calcVegas above adds the offset.
-        const _vgDead=_mpHoleDead(r,fi,h+_off_vr);
-        if(!res){rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div><div style="flex:1;font-size:12px;color:var(--color-text-tertiary)">${_vgDead?'<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic">not played</span>':'-'}</div><div style="width:60px;flex-shrink:0"></div></div>`;continue;}
-        const scoresHtml=`<div style="flex:1;font-size:12px;font-weight:500;color:var(--color-text-primary);padding-left:8px">${res.numA} vs ${res.numB}</div>`;
-        const dblBadge=res.doubled?` <span style="font-size:10px;color:var(--color-text-tertiary)">(x2)</span>`:'';
-        if(res.tied){rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div>${scoresHtml}<div style="width:60px;flex-shrink:0;text-align:right"><span style="color:#BA7517;font-size:12px;font-weight:500">Tied</span></div></div>`;continue;}
-        const winLtr=res.aWins?'A':'B';
-        const winClr=res.aWins?'#1D9E75':'#185FA5';
-        const resultHtml=`<div style="width:60px;flex-shrink:0;text-align:right"><span style="color:${winClr};font-size:12px;font-weight:600">${winLtr} +${res.diff}${dblBadge}</span></div>`;
-        rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div>${scoresHtml}${resultHtml}</div>`;
-      }
-      let totA2=0,totB2=0;for(let h=seg.start;h<seg.end;h++){const res=calcVegas(h+_off_vr,r,fi);if(!res||res.tied)continue;if(res.aWins)totA2+=res.diff;else totB2+=res.diff;}
-      const net2=totA2-totB2;
-      const netLabel2=net2===0?'No Blood':net2>0?`A wins · +${Math.abs(net2)} pts`:`B wins · +${Math.abs(net2)} pts`;
-      const netClr2=net2>0?'#1D9E75':net2<0?'#185FA5':'var(--color-text-secondary)';
-      html+=rows;
-      html+=`<div style="display:flex;justify-content:center;align-items:center;gap:32px;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)"><span style="font-size:12px;font-weight:600;color:#1D9E75">A: ${totA2} pts</span><span style="font-size:12px;font-weight:600;color:#185FA5">B: ${totB2} pts</span></div>`;
-      html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Match Result</span><span style="font-size:12px;font-weight:600;color:${netClr2}">${netLabel2}</span></div>`;
-    }html+=`</div>`;
+    const _cap=Math.max(seg.start,Math.min(seg.end,fsHoleCount(r,fi)));
+    for(let h=seg.start;h<_cap;h++){const res=calcVegas(h+_off_vr,r,fi);if(!res||res.tied)continue;if(res.aWins)totA+=res.diff;else totB+=res.diff;}
+    const net=totA-totB,lead=net>0?'A':net<0?'B':null,pts=Math.abs(net);
+    const money=settleVal(pts*rate,tA.length,WK.vegasSettle||'perplayer');
+    const _tag=_segStopTag(r,fi,seg);
+    // One pass for the rows, the flip count and thru. h is round relative; calcVegas takes a global index.
+    let flips=0,played=0,open=0,lastH=-1,rows='';
+    for(let h=seg.start;h<seg.end;h++){
+      const gh=h+_off_vr,hn=gh+1;
+      if(_mpHoleDead(r,fi,gh)){rows+=`<div class="mpk-hr vg"><span class="hn">${hn}</span><span></span><span><span class="q">not played</span></span><span></span></div>`;continue;}
+      open++;
+      const res=calcVegas(gh,r,fi);
+      if(!res){rows+=`<div class="mpk-hr vg"><span class="hn">${hn}</span><span></span><span></span><span class="w"><span class="q">-</span></span></div>`;continue;}
+      played++;lastH=hn;
+      const flip=!!(res.aFlip||res.bFlip);if(flip)flips++;
+      const tags=(flip?'<span class="mpk-hm">FLIP</span>':'')+(res.doubled?'<span class="mpk-hm">\u00d72</span>':'');
+      const hnH=flip?`<span class="hp">${hn}</span>`:`${hn}`;
+      const win=res.tied?'<span class="w"><span class="q">-</span></span>':`<span class="w ${res.aWins?'ca':'cb'}">${res.aWins?'A':'B'} +${res.diff}</span>`;
+      rows+=`<div class="mpk-hr vg"><span class="hn">${hnH}</span><span>${res.numA} vs ${res.numB}</span><span>${res.tied?'<span class="q">Tied</span>':tags}</span>${win}</div>`;
+    }
+    const done=played>0&&played===open;
+    let ftL,ftC='';
+    if(!played){ftL='Not started';ftC=_chip('ns',_m(rate)+' a pt');}
+    else if(!done&&_tag!=='stopped'){
+      ftL=(lead?lead+' up '+_pts(pts):'All square')+' thru '+lastH;
+      ftC=lead?_chip(lead==='A'?'al':'bl',lead+' +'+_m(money)+' so far'):_chip('ns','Even');
+    }else{
+      ftL=lead?lead+' won by '+_pts(pts):'All square';
+      ftC=lead?_chip(lead==='A'?'a':'b',lead+' +'+_m(money)):_chip('ns','No blood');
+    }
+    html+=_gtCard({r,fi,si,tA,tB,tag:_tag,toggle:"toggleVegasGame('"+key+"')",expanded,rows,ftL,ftC,
+      from:seg.start+_off_vr+1,to:seg.end+_off_vr,sub:flips?' \u00b7 '+flips+(flips===1?' flip':' flips'):''});
   });
   return html;
 }
@@ -19749,8 +19748,7 @@ function _renderHammerFlightBlock(r,fi,labelHd){
     const net=res?(res.netA-res.netB)*_sv:0;
     const key='r'+r+'f'+fi+'g'+si;
     const expanded=STATE.hammerExpanded[key]===true;
-    const _tag=_segStopTag(r,fi,seg),_endChip=_mpEndChip(_tag),_endNote=_mpEndNote(r,fi,_tag);
-    const _dead=(_tag==='unplayed');
+    const _tag=_segStopTag(r,fi,seg);
     // carryAt is what the last PLAYED hole carries into the next; an unscored hole's pot is not a carry yet.
     // One pass over the holes. h is round relative (seg.start is), and hammerState is keyed the same way.
     let carry=0,carryAt=0,throwsN=0,played=0,lastH=-1,open=0,rows='';
@@ -19792,8 +19790,7 @@ function _renderHammerFlightBlock(r,fi,labelHd){
     const done=open>0&&played===open;
     const lead=net>0?'A':net<0?'B':null;
     let ftL,ftC='';
-    if(_dead){ftL='\u2014';}
-    else if(!played){ftL='Not started';ftC=_chip('ns',_m(baseVal));}
+    if(!played){ftL='Not started';ftC=_chip('ns',_m(baseVal));}
     else if(!done&&_tag!=='stopped'){
       ftL='Thru '+lastH+(carryAt>0?' \u00b7 '+_m(carryAt)+' carries':'');
       ftC=lead?_chip(lead==='A'?'al':'bl',lead+' +'+_m(net)+' so far'):_chip('ns','Even');
@@ -19801,13 +19798,8 @@ function _renderHammerFlightBlock(r,fi,labelHd){
       ftL='Result';
       ftC=lead?_chip(lead==='A'?'a':'b',lead+' +'+_m(net)):_chip('ns','No blood');
     }
-    html+=`<div class="section-card mpk">`;
-    html+=`<div class="mpk-hd" onclick="toggleHammerGame('${key}')"><b>Match ${si+1}</b><span>Holes ${seg.start+_ofs+1} to ${seg.end+_ofs}${throwsN?' \u00b7 '+throwsN+(throwsN===1?' hammer':' hammers'):''}</span><i class="${expanded?'open':''}">\u203a</i></div>`;
-    html+=_gtTeamsHtml(tA,tB,"toggleHammerGame('"+key+"')");
-    html+=`<div class="mpk-ft"><span>${ftL}</span>${_endChip?`<span class="end-chip">${_endChip}</span>`:''}${ftC}</div>`;
-    if(_endNote)html+=`<div class="mpk-en" style="padding-top:8px">${_endNote}</div>`;
-    if(expanded&&!_dead)html+=rows;
-    html+=`</div>`;
+    html+=_gtCard({r,fi,si,tA,tB,tag:_tag,toggle:"toggleHammerGame('"+key+"')",expanded,rows,ftL,ftC,
+      from:seg.start+_ofs+1,to:seg.end+_ofs,sub:throwsN?' \u00b7 '+throwsN+(throwsN===1?' hammer':' hammers'):''});
   });
   return html;
 }
