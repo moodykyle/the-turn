@@ -903,10 +903,10 @@ body.force-dark .gs-net.warn{background:#3A2E10;border-color:#6B5418}body.force-
 .gs-setup-toggle .gs-setup-chevron{font-size:18px;line-height:1;color:var(--color-text-tertiary)}
 .gs-setup-toggle.open .gs-setup-chevron{transform:rotate(90deg)}
 /* v124.9: Match Play team card. Team colours: green A, blue B; dark uses a readable blue. */
-:root{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpAt:#FFFFFF;--mpBt:#FFFFFF;--mpPb:#FBF1DA;--mpPt:#8A6410}
-@media(prefers-color-scheme:dark){:root{--mpA:#3CC79A;--mpB:#7DB3F0;--mpAf:#1D9E75;--mpBf:#7DB3F0;--mpAt:#06120D;--mpBt:#08162A;--mpPb:#2A2410;--mpPt:#EFC456}}
-body.force-dark{--mpA:#3CC79A;--mpB:#7DB3F0;--mpAf:#1D9E75;--mpBf:#7DB3F0;--mpAt:#06120D;--mpBt:#08162A;--mpPb:#2A2410;--mpPt:#EFC456}
-body.force-light{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpAt:#FFFFFF;--mpBt:#FFFFFF;--mpPb:#FBF1DA;--mpPt:#8A6410}
+:root{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpAt:#FFFFFF;--mpBt:#FFFFFF;--mpPb:#FBF1DA;--mpPt:#8A6410;--mpFt:#E3DCC9;--mpFtB:#D6CEB8}
+@media(prefers-color-scheme:dark){:root{--mpA:#3CC79A;--mpB:#7DB3F0;--mpAf:#1D9E75;--mpBf:#7DB3F0;--mpAt:#06120D;--mpBt:#08162A;--mpPb:#2A2410;--mpPt:#EFC456;--mpFt:var(--color-background-secondary);--mpFtB:var(--color-border-tertiary)}}
+body.force-dark{--mpA:#3CC79A;--mpB:#7DB3F0;--mpAf:#1D9E75;--mpBf:#7DB3F0;--mpAt:#06120D;--mpBt:#08162A;--mpPb:#2A2410;--mpPt:#EFC456;--mpFt:var(--color-background-secondary);--mpFtB:var(--color-border-tertiary)}
+body.force-light{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpAt:#FFFFFF;--mpBt:#FFFFFF;--mpPb:#FBF1DA;--mpPt:#8A6410;--mpFt:#E3DCC9;--mpFtB:#D6CEB8}
 .mpk{margin-bottom:10px;padding:0;overflow:hidden}
 .mpk-hd{display:flex;align-items:baseline;gap:8px;padding:12px 14px 6px;cursor:pointer}
 .mpk-hd b{font-size:15px;font-weight:600;color:var(--color-text-primary)}
@@ -918,7 +918,7 @@ body.force-light{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpA
 .mpk-tm .nm{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mpk-tm .nm.r{text-align:right}
 .mpk .ca{color:var(--mpA)}.mpk .cb{color:var(--mpB)}
-.mpk-ft{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:0.5px solid var(--color-border-tertiary);font-size:14px;color:var(--color-text-primary);background:var(--color-background-secondary)}
+.mpk-ft{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:0.5px solid var(--mpFtB);font-size:14px;color:var(--color-text-primary);background:var(--mpFt)}
 .mpk-ft .mpc{margin-left:auto}
 .mpk-ghd{display:flex;align-items:baseline;gap:8px;margin:14px 2px 8px;font-size:14px;font-weight:700;color:var(--color-text-primary)}
 .mpk-ghd span{font-size:12px;font-weight:400;color:var(--color-text-secondary)}
@@ -946,6 +946,10 @@ body.force-light{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpA
 .mpk-hr .hp{display:inline-block;margin-left:-6px;padding:1px 6px;border-radius:5px;background:var(--mpPb);color:var(--mpPt);font-weight:700}
 .mpk-hr .w{text-align:right;font-weight:700}
 .mpk-hr .q{color:var(--color-text-tertiary);font-style:italic;font-size:12px}
+.mpk-hm{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:2px 6px;margin-right:4px;border-radius:5px;background:var(--mpPb);color:var(--mpPt);white-space:nowrap}
+.mpk-hm svg{width:11px;height:11px}
+.mpk-hr .cy{color:var(--mpPt);font-size:12px}
+.mpk-hr .it{font-style:italic}
 .gs-net.warn .t b{color:#E0A45C}
 #appToast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab-bar-h) + 62px);z-index:10003;
   background:#2A1F14;border:1px solid #5C4423;border-radius:10px;padding:11px 13px;
@@ -2438,7 +2442,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.17';
+const APP_VERSION='v124.18';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7234,6 +7238,16 @@ function _mpPhaseFs(r,fi,seg,ms){
 // result, which means it is invisible until the card is opened, and a rained out match
 // that looks ordinary from the outside is the whole defect this arc set out to fix.
 // Razzle already had this shape: an 'awarded' chip in the header, the sentence below.
+// v124.18: the Games tab's foursome heading (v124.13) and a team card's A / B rows (v124.9), shared by Match Play
+// and Hammer. all: the All tab, where the heading is a shortcut to that foursome. next: not the first heading.
+function _gtFsHead(fi,all,next){return '<div class="sec-hd gs-sec gs-fsh'+(all?' go':'')+(next?' next':'')+'"'+(all?' onclick="switchGamesLane('+fi+')"':'')+'><span>Foursome '+(fi+1)+'</span><i></i>'+(all?'<span class="ch">\u203a</span>':'')+'</div>';}
+function _gtTeamsHtml(tA,tB,click){
+  const _rows=Math.max(tA.length,tB.length,1);
+  let html=`<div class="mpk-tm" onclick="${click}"><span class="lt ca" style="grid-column:1;grid-row:1/${_rows+1}">A</span>`;
+  tA.forEach((pi,ni)=>{html+=`<span class="nm ca" style="grid-column:2;grid-row:${ni+1}">${displayName(pi)}</span>`;});
+  tB.forEach((pi,ni)=>{html+=`<span class="nm r cb" style="grid-column:3;grid-row:${ni+1}">${displayName(pi)}</span>`;});
+  return html+`<span class="lt cb" style="grid-column:4;grid-row:1/${_rows+1}">B</span></div>`;
+}
 function _mpEndChip(tag){
   if(tag==='stopped')return'cut short';
   if(tag==='unplayed')return'not played';
@@ -17570,7 +17584,7 @@ function renderMPRound(){
   const _huRnd=isHeadsUp(r);
   if(!STATE.mpExpanded)STATE.mpExpanded={};
   let html=``;
-  const _mpFl=flightsForRound(r);const _mpMulti=_mpFl.length>1;let _mpSel=(STATE.mpViewFlight===undefined?-1:STATE.mpViewFlight);for(let _fi=0;_fi<_mpFl.length;_fi++){if(_mpMulti&&_mpSel!==-1&&_mpSel!==_fi)continue;const mpG=mpGamesForRound(r,_fi),segs=getSegments(mpG,roundHoleCount(r));if(_mpMulti){const _fsAll=_mpSel===-1;html+='<div class="sec-hd gs-sec gs-fsh'+(_fsAll?' go':'')+(html?' next':'')+'"'+(_fsAll?' onclick="switchGamesLane('+_fi+')"':'')+'><span>Foursome '+(_fi+1)+'</span><i></i>'+(_fsAll?'<span class="ch">\u203a</span>':'')+'</div>';}
+  const _mpFl=flightsForRound(r);const _mpMulti=_mpFl.length>1;let _mpSel=(STATE.mpViewFlight===undefined?-1:STATE.mpViewFlight);for(let _fi=0;_fi<_mpFl.length;_fi++){if(_mpMulti&&_mpSel!==-1&&_mpSel!==_fi)continue;const mpG=mpGamesForRound(r,_fi),segs=getSegments(mpG,roundHoleCount(r));if(_mpMulti){const _fsAll=_mpSel===-1;html+=_gtFsHead(_fi,_fsAll,!!html);}
   if(_mpTooSmall(r,_fi)){html+='<div class="section-card" style="margin-bottom:10px;padding:10px 14px;font-size:12px;color:var(--color-text-secondary)">'+_mpTooSmallNote(r,_fi)+'</div>';continue;}
   segs.forEach((seg,si)=>{
     const tm=STATE.mpTeams[r][_fi][si];if(!tm)return;
@@ -17762,11 +17776,7 @@ function renderMPRound(){
     html+=`<div class="section-card mpk">`;
     html+=`<div class="mpk-hd" onclick="toggleMPGame('${key}')"><b>Match ${si+1}</b><span>Holes ${seg.start+_ofs+1} to ${seg.end+_ofs}${_np?' · '+_np+(_np===1?' press':' presses'):''}</span><i class="${expanded?'open':''}">\u203a</i></div>`;
     // Teams as on the Hammer card: a big letter, one name per line, never split mid-name.
-    const _rows=Math.max(tA.length,tB.length,1);
-    html+=`<div class="mpk-tm" onclick="toggleMPGame('${key}')"><span class="lt ca" style="grid-column:1;grid-row:1/${_rows+1}">A</span>`;
-    tA.forEach((pi,ni)=>{html+=`<span class="nm ca" style="grid-column:2;grid-row:${ni+1}">${displayName(pi)}</span>`;});
-    tB.forEach((pi,ni)=>{html+=`<span class="nm r cb" style="grid-column:3;grid-row:${ni+1}">${displayName(pi)}</span>`;});
-    html+=`<span class="lt cb" style="grid-column:4;grid-row:1/${_rows+1}">B</span></div>`;
+    html+=_gtTeamsHtml(tA,tB,"toggleMPGame('"+key+"')");
     html+=`<div class="mpk-ft"><span>${_ftL}</span>${_mpChip?`<span class="end-chip">${_mpChip}</span>`:''}${_ftC}</div>`;
     // The end note: a match that was never played says why on its face; any other ended match keeps the
     // chip on its face and the sentence at the foot of its bets, beside what it explains (as before).
@@ -19710,87 +19720,93 @@ function renderHammerRound(){
   let fh='';
   const toRender=sel===-1?fl.map((_,i)=>i):[sel];
   let html=fh;
-  toRender.forEach(fi=>{const labelHd=(sel===-1)?'<div class="gf-blk-lbl"><span class="bd" style="background:'+_flightsAccent0(fi)+'"></span>Foursome '+(fi+1)+'</div>':null;html+=_renderHammerFlightBlock(r,fi,labelHd);});
+  toRender.forEach((fi,k)=>{html+=_renderHammerFlightBlock(r,fi,_gtFsHead(fi,sel===-1,k>0));});
   el.innerHTML=html;
 }
 function _renderHammerFlightBlock(r,fi,labelHd){
+  // v124.18, Kyle 15 Oct, canvas "Games tab: Hammer": the Match Play card's face. Money reads the same as
+  // before: calcHammerSegResult for the totals, the per-team split for perteam. The rows below walk the holes
+  // once, for the header's hammer count, the bottom line's thru and carry, and (open) the hole rows.
   const hSeg=hammerSegsForRound(r,fi),segs=getSegments(hSeg);
   const baseVal=roundValFs('hammerVal',r,fi,WK.hammerVal||2);
   const payout=roundValFs('hammerPayout',r,fi,WK.hammerPayout||'perplayer');
+  const scoring=roundValFs('hammerScoring',r,fi,WK.hammerScoring||'bestball');
+  const halveCarry=roundValFs('hammerHalve',r,fi,WK.hammerHalve||'carry');
   const _hfp=flightsForRound(r)[fi]||[];
   {const _hfn=_gameGroupNote('hammer',_hfp.length);if(_hfn)return (labelHd||'')+'<div style="text-align:center;color:var(--color-text-secondary);padding:1.25rem 0;font-size:13px">'+_hfn+'.</div>';}
+  if(!STATE.hammerExpanded)STATE.hammerExpanded={};
+  const _ofs=holeOffset(r);
+  const _m=v=>{v=Math.abs(v);return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
+  const _chip=(k,t)=>`<span class="mpc ${k}">${t}</span>`;
+  const _HM='<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 3l4 4M7.5 4.5l4 4M8.5 7.5L3 13"/></svg>';
+  const _hm=t=>`<span class="mpk-hm">${_HM}${t===0?'A':'B'}</span>`;
   let html=labelHd||'';
   segs.forEach((seg,si)=>{
     const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;
     const tA=tm[0],tB=tm[1];
-    const nameA=tA.map(i=>displayName(i)).join(' & ');
-    const nameB=tB.map(i=>displayName(i)).join(' & ');
     const res=calcHammerSegResult(r,si,fi);
-    const _sv2=payout==='perteam'?0.5:1;const _netA=(res.netA-res.netB)*_sv2,_netB=-_netA;const lead=res?((_netA>0?nameA+' +$'+_netA.toFixed(2)+' each':_netB>0?nameB+' +$'+_netB.toFixed(2)+' each':'All square')+(res.carryPot>0?' · $'+res.carryPot.toFixed(2)+' carries':'')):'In progress';
-    html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
-    const hammerKey='r'+r+'f'+fi+'g'+si;
-    if(!STATE.hammerExpanded)STATE.hammerExpanded={};
-    const hammerExp=STATE.hammerExpanded[hammerKey]===true;
-    const hammerNetA=res?(res.netA-res.netB)*_sv2:0;
-    const hammerNetClr=hammerNetA>0?'#1D9E75':hammerNetA<0?'#185FA5':'var(--color-text-secondary)';
-    const hammerNetLabel=(()=>{if(_segNotPlayed(r,fi,seg))return'—';if(!res)return'In progress';if(hammerNetA===0&&res.carryPot===0)return'No Blood';if(hammerNetA===0)return'In progress';const wLtr=hammerNetA>0?'A':'B';const fullAmt=res?Math.abs(res.netA-res.netB):0;const perPlayerAmt=payout==='perteam'?fullAmt/2:fullAmt;return`${wLtr} wins · +$${perPlayerAmt.toFixed(2)} each`;})();
-    html+=`<div style="padding:10px 14px;background:var(--color-background-secondary);cursor:pointer" onclick="toggleHammerGame('${hammerKey}')">`;
-    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500">Match ${si+1} · H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</span><span style="color:#1D9E75;font-size:12px">${hammerExp?'▲':'▼'}</span></div>`;
-    html+=`<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#1D9E75;margin-bottom:2px">TEAM A</div><div style="font-size:11px;font-weight:500;color:#1D9E75">${nameA}</div></div><div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">${nameB}</div></div></div>`;
-    const _hmTag=_segStopTag(r,fi,seg),_hmChip=_mpEndChip(_hmTag),_hmNote=_mpEndNote(r,fi,_hmTag);
-    const _hmDead=(_hmTag==='unplayed');
-    html+=`<div style="font-size:12px;color:var(--color-text-secondary);padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">Match Result: <span style="font-weight:500;color:${hammerNetClr}">${hammerNetLabel}</span>${_hmChip?`<span class="end-chip">${_hmChip}</span>`:''}</div>`;
-    if(_hmNote)html+=`<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:4px">${_hmNote}</div>`;
-    html+=`</div>`;
-    if(hammerExp&&!_hmDead){
-    let carryPot=0;
-    for(let h=seg.start;h<seg.end;h++){
-      // h is SEGMENT RELATIVE here, and hammerState is keyed the same way.
-      // A dead hole neither shows a pot nor advances the carry: the carry froze at the
-      // end hole, and doubling it through three holes nobody will play invented money on
-      // screen that settlement will never pay.
-      if(_mpHoleDead(r,fi,h+holeOffset(r))){
-        html+=`<div style="display:grid;grid-template-columns:28px 56px 70px auto;align-items:center;padding:5px 12px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px"><span style="font-size:11px;color:var(--color-text-tertiary)">H${h+holeOffset(r)+1}</span><span></span><span style="color:var(--color-text-tertiary);font-style:italic;font-size:11px">not played</span><span></span></div>`;
-        continue;
-      }
-      const hs=STATE.hammerState?.[r]?.[fi]?.[h]||{throws:[],conceded:false,concedeVal:0};
-      let pot=baseVal+carryPot;
-      hs.throws.forEach(()=>{pot*=2;});
-      const throwIcons=hs.throws.length>0?' '+hs.throws.map(t=>'🔨'+(t===0?'A':'B')).join(' '):'';
-      let winnerHtml='',potNext=0;
-      if(hs.conceded){
-        const winTeam=hs.concededBy===0?1:0;
-        const wClrC=winTeam===0?'#1D9E75':'#185FA5';
-        winnerHtml=`<span style="font-size:12px;font-weight:700;color:${wClrC}">${winTeam===0?'A':'B'}</span>`;
-        carryPot=0;
-      } else {
-        const scoring=roundValFs('hammerScoring',r,fi,WK.hammerScoring||'bestball');
-        const nA2=tA.map(pi=>getNetForFlight(pi,h,r,_hfp)),nB2=tB.map(pi=>getNetForFlight(pi,h,r,_hfp));
-        if([...nA2,...nB2].some(v=>v===null)){
-          winnerHtml=`<span style="font-size:12px;color:var(--color-text-tertiary)">-</span>`;
-          carryPot=pot;
-        } else {
-          const sA=scoring==='bestball'?Math.min(...nA2):nA2.reduce((s,v)=>s+v,0);
-          const sB=scoring==='bestball'?Math.min(...nB2):nB2.reduce((s,v)=>s+v,0);
-          const halveCarry=roundValFs('hammerHalve',r,fi,WK.hammerHalve||'carry');
-          if(sA===sB){winnerHtml=`<span style="font-size:12px;font-weight:500;color:#BA7517;white-space:nowrap">Carried Over</span>`;carryPot=halveCarry==='carry'?pot:0;}
-          else{const wClr=sA<sB?'#1D9E75':'#185FA5';winnerHtml=`<span style="font-size:12px;font-weight:700;color:${wClr}">${sA<sB?'A':'B'}</span>`;carryPot=0;}
-        }
-      }
-      const displayPot=hs.conceded?hs.concedeVal:pot;
-      const potLabel=hs.conceded?`<em style="color:var(--color-text-tertiary)">$${displayPot.toFixed(2)}</em>`:`$${displayPot.toFixed(2)}`;
-      html+=`<div style="display:grid;grid-template-columns:28px 56px 70px auto;align-items:center;padding:5px 12px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px"><span style="font-size:11px;color:var(--color-text-tertiary)">H${h+1}</span><span style="font-size:11px;color:var(--color-text-secondary)">${potLabel}</span><span style="font-size:12px;white-space:nowrap;text-align:left">${throwIcons}</span><span style="text-align:right">${winnerHtml}</span></div>`;
-    }
-    const fmtNet=v=>v>=0?'+$'+v.toFixed(2):'-$'+Math.abs(v).toFixed(2);
     const _sv=payout==='perteam'?0.5:1;
-    const _totA=res?res.netA:0;const _totB=res?res.netB:0;
-    const _netFull=_totA-_totB;
-    const _netClrFinal=_netFull>0?'#1D9E75':_netFull<0?'#185FA5':'var(--color-text-secondary)';
-    const payoutLbl2=payout==='perteam'?'Per team':'Per player';
-    const _netLabelFinal=_netFull===0?'No Blood':_netFull>0?`A wins · +$${Math.abs(_netFull).toFixed(2)} · ${payoutLbl2}`:`B wins · +$${Math.abs(_netFull).toFixed(2)} · ${payoutLbl2}`;
-    html+=`<div style="display:flex;justify-content:center;align-items:center;gap:32px;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)"><span style="font-size:12px;font-weight:600;color:#1D9E75">A: ${fmtNet(_totA)}</span><span style="font-size:12px;font-weight:600;color:#185FA5">B: ${fmtNet(_totB)}</span></div>`;
-    html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Match Result</span><span style="font-size:12px;font-weight:600;color:${_netClrFinal}">${_netLabelFinal}</span></div>`;
-    } // end hammerExp
+    const net=res?(res.netA-res.netB)*_sv:0;
+    const key='r'+r+'f'+fi+'g'+si;
+    const expanded=STATE.hammerExpanded[key]===true;
+    const _tag=_segStopTag(r,fi,seg),_endChip=_mpEndChip(_tag),_endNote=_mpEndNote(r,fi,_tag);
+    const _dead=(_tag==='unplayed');
+    // carryAt is what the last PLAYED hole carries into the next; an unscored hole's pot is not a carry yet.
+    // One pass over the holes. h is round relative (seg.start is), and hammerState is keyed the same way.
+    let carry=0,carryAt=0,throwsN=0,played=0,lastH=-1,open=0,rows='';
+    for(let h=seg.start;h<seg.end;h++){
+      const hn=h+_ofs+1;
+      // A dead hole neither shows a pot nor advances the carry: the carry froze at the end hole.
+      if(_mpHoleDead(r,fi,h+_ofs)){rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span></span><span><span class="q">not played</span></span><span></span></div>`;continue;}
+      open++;
+      const hs=STATE.hammerState?.[r]?.[fi]?.[h]||{throws:[],conceded:false,concedeVal:0};
+      let pot=baseVal+carry;
+      hs.throws.forEach(()=>{pot*=2;});
+      throwsN+=hs.throws.length;
+      const tags=hs.throws.map(_hm).join('');
+      let mid=tags,win='';
+      if(hs.conceded){
+        const w=hs.concededBy===0?1:0;
+        mid=tags+`<span class="q">${w===0?'B':'A'} conceded</span>`;
+        win=`<span class="w ${w===0?'ca':'cb'}">${w===0?'A':'B'}</span>`;
+        rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span class="it">${_m(hs.concedeVal)}</span><span>${mid}</span>${win}</div>`;
+        carry=0;carryAt=0;played++;lastH=hn;continue;
+      }
+      const nA=tA.map(pi=>getNetForFlight(pi,h,r,_hfp)),nB=tB.map(pi=>getNetForFlight(pi,h,r,_hfp));
+      if([...nA,...nB].some(v=>v===null)){
+        rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span>${_m(pot)}</span><span>${mid}</span><span class="w"><span class="q">-</span></span></div>`;
+        carry=pot;continue;
+      }
+      played++;lastH=hn;
+      const sA=scoring==='bestball'?Math.min(...nA):nA.reduce((x,v)=>x+v,0);
+      const sB=scoring==='bestball'?Math.min(...nB):nB.reduce((x,v)=>x+v,0);
+      if(sA===sB){
+        mid=tags+`<span class="cy">${halveCarry==='carry'?'Halved, carries':'Halved'}</span>`;win='<span class="w"><span class="q">-</span></span>';
+        carry=halveCarry==='carry'?pot:0;
+      }else{
+        win=`<span class="w ${sA<sB?'ca':'cb'}">${sA<sB?'A':'B'}</span>`;carry=0;
+      }
+      carryAt=carry;
+      rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span>${_m(pot)}</span><span>${mid}</span>${win}</div>`;
+    }
+    const done=open>0&&played===open;
+    const lead=net>0?'A':net<0?'B':null;
+    let ftL,ftC='';
+    if(_dead){ftL='\u2014';}
+    else if(!played){ftL='Not started';ftC=_chip('ns',_m(baseVal));}
+    else if(!done&&_tag!=='stopped'){
+      ftL='Thru '+lastH+(carryAt>0?' \u00b7 '+_m(carryAt)+' carries':'');
+      ftC=lead?_chip(lead==='A'?'al':'bl',lead+' +'+_m(net)+' so far'):_chip('ns','Even');
+    }else{
+      ftL='Result';
+      ftC=lead?_chip(lead==='A'?'a':'b',lead+' +'+_m(net)):_chip('ns','No blood');
+    }
+    html+=`<div class="section-card mpk">`;
+    html+=`<div class="mpk-hd" onclick="toggleHammerGame('${key}')"><b>Match ${si+1}</b><span>Holes ${seg.start+_ofs+1} to ${seg.end+_ofs}${throwsN?' \u00b7 '+throwsN+(throwsN===1?' hammer':' hammers'):''}</span><i class="${expanded?'open':''}">\u203a</i></div>`;
+    html+=_gtTeamsHtml(tA,tB,"toggleHammerGame('"+key+"')");
+    html+=`<div class="mpk-ft"><span>${ftL}</span>${_endChip?`<span class="end-chip">${_endChip}</span>`:''}${ftC}</div>`;
+    if(_endNote)html+=`<div class="mpk-en" style="padding-top:8px">${_endNote}</div>`;
+    if(expanded&&!_dead)html+=rows;
     html+=`</div>`;
   });
   return html;
