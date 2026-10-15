@@ -920,6 +920,13 @@ body.force-light{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpA
 .mpk .ca{color:var(--mpA)}.mpk .cb{color:var(--mpB)}
 .mpk-ft{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:0.5px solid var(--color-border-tertiary);font-size:14px;color:var(--color-text-primary);background:var(--color-background-secondary)}
 .mpk-ft .mpc{margin-left:auto}
+.mpk-ghd{display:flex;align-items:baseline;gap:8px;margin:14px 2px 8px;font-size:14px;font-weight:700;color:var(--color-text-primary)}
+.mpk-ghd span{font-size:12px;font-weight:400;color:var(--color-text-secondary)}
+.mpk-hu{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;column-gap:10px;padding:2px 14px 12px;font-size:15px;cursor:pointer}
+.mpk-hu .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mpk-hu .r{text-align:right}
+.mpk-hu .vs{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;
+  color:var(--color-text-primary);background:var(--color-background-secondary);border:1px solid var(--color-border-secondary)}
 .mpk-en{padding:0 14px 10px;font-size:11px;color:var(--color-text-tertiary)}
 .mpc{display:inline-block;font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap;line-height:1.3}
 .mpc.a{background:var(--mpAf);color:var(--mpAt)}.mpc.b{background:var(--mpBf);color:var(--mpBt)}
@@ -2431,7 +2438,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.15';
+const APP_VERSION='v124.16';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -17591,15 +17598,22 @@ function renderMPRound(){
     let pressNetA=origNet||0;
     presses.forEach(p=>{const pr=calcPressResult(r,_fi,si,p);if(!pr||pr.winner==='tie')return;const sign=pr.winner==='a'?1:-1;pressNetA+=sign*pr.sv;});
     if(_huRnd){
-      // One outer card per game, both matches inside
-      html+=`<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">`;
-      html+=`<div style="padding:10px 14px;background:var(--color-background-secondary)"><span style="font-size:13px;font-weight:500">Game ${si+1} · H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}</span></div>`;
+      // v124.16, Kyle 14 Oct, canvas "Games tab: heads-up Match Play", option B. A game is a heading over a card
+      // per 1v1 match. Money and phase are read exactly as the old card read them (pressNetHU, _phase,
+      // _mpSegDisposition, the end tag); only the drawing changed.
+      const _ofsH=holeOffset(r);
+      const _mH=v=>{v=Math.abs(v);return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
+      const _chipH=(k,t)=>`<span class="mpc ${k}">${t}</span>`;
+      html+=`<div class="mpk-ghd">Game ${si+1}<span>Holes ${seg.start+_ofsH+1} to ${seg.end+_ofsH}</span></div>`;
       const _nHUMatches=tA.length;
       [0,1].slice(0,_nHUMatches).forEach(mi=>{
         const piA=tA[mi],piB=tB[mi];
         const mNameA=displayName(piA),mNameB=displayName(piB);
         const mIniA=WK.players[piA]?WK.players[piA].ini:mNameA.slice(0,2).toUpperCase();
         const mIniB=WK.players[piB]?WK.players[piB].ini:mNameB.slice(0,2).toUpperCase();
+        const _ini=l=>l==='A'?mIniA:mIniB;
+        // "Team A: 2 up" / "Team B 4&2" / "A/S" -> {l,t}, or null when all square.
+        const _scH=str=>{const x=String(str||'').replace(/^Team /,'');const mm=x.match(/^([AB])[: ]\s*(.*)$/);return mm?{l:mm[1],t:mm[2].replace(/^Dormie/,'dormie')}:null;};
         const mKey='r'+r+'g'+si+'m'+mi;
         const mExp=STATE.mpExpanded[mKey]===true;
         const finalMsHU=calcMPMatchScoreHU(r,_fi,si,mi,seg.end-1);
@@ -17613,155 +17627,99 @@ function renderMPRound(){
         let pressNetHU=origNetHU||0;
         pressesHU.forEach(p=>{const pr=calcPressResult(r,_fi,si,p);if(!pr||pr.winner==='tie')return;pressNetHU+=(pr.winner==='a'?1:-1)*pr.sv;});
         const anyPressLiveHU=pressesHU.some(p=>{const pr=calcPressResult(r,_fi,si,p);return pr&&!pr.closed&&pr.playableLeft>0;});
-        const mNetClr=pressNetHU>0?'#1D9E75':pressNetHU<0?'#185FA5':'var(--color-text-secondary)';
-        const _mpTagHU=_segNotPlayed(r,_fi,seg)?'unplayed':(finalMsHU?_mpSegOutcome(r,_fi,seg.end,finalMsHU.diff,0):'');
+        const _deadHU=_segNotPlayed(r,_fi,seg);
+        const _mpTagHU=_deadHU?'unplayed':(finalMsHU?_mpSegOutcome(r,_fi,seg.end,finalMsHU.diff,0):'');
         const _mpChipHU=_mpEndChip(_mpTagHU);
-        // Build clean result string: "Name wins · score" not "Name wins - Name score"
-        let mResultStr;
-        if(_segNotPlayed(r,_fi,seg)){mResultStr='—';}
-        else if(!finalMsHU){mResultStr='Not started';}
-        else if(pressesHU.length===0&&_phase(finalMsHU)==='ip'){mResultStr='In progress';}
-        else if(_phase(finalMsHU)!=='done'||anyPressLiveHU){mResultStr='In progress';}
-        else if(finalMsHU.leader){
-          // A settled match reports money, pressed or not. Score notation stays on
-          // the MATCH row inside the expansion, where it is not competing with a total.
-          if(pressNetHU>0){mResultStr=`${mNameA} wins · $${Math.abs(pressNetHU).toFixed(2)}`;}
-          else if(pressNetHU<0){mResultStr=`${mNameB} wins · $${Math.abs(pressNetHU).toFixed(2)}`;}
-          else{mResultStr='No Blood';}
+        const _mpEnHU=_mpEndNote(r,_fi,_mpTagHU);
+        const _leadH=pressNetHU>0?'A':pressNetHU<0?'B':null;
+        // Bottom line: what the match is worth right now.
+        let _ftL,_ftC='';
+        if(_deadHU){_ftL='—';}
+        else if(!finalMsHU){_ftL='Not started';_ftC=_chipH('ns',_mH(origValHU));}
+        else if(_phase(finalMsHU)!=='done'||anyPressLiveHU){
+          const _s=_scH(finalMsHU.scoreStr);
+          const _thru=' thru '+(seg.start+finalMsHU.holesPlayed+_ofsH);
+          _ftL=!_s?'All square'+(finalMsHU.closed?'':_thru):finalMsHU.closed?_ini(_s.l)+' won '+_s.t:_ini(_s.l)+' '+_s.t+_thru;
+          _ftC=_leadH?_chipH(_leadH==='A'?'al':'bl',_ini(_leadH)+' +'+_mH(pressNetHU)+' so far'):_chipH('ns','Even');
         }
         else{
-          // Base match A/S — check press net before falling back to A/S
-          if(pressNetHU>0){mResultStr=`${mNameA} wins · $${Math.abs(pressNetHU).toFixed(2)}`;}
-          else if(pressNetHU<0){mResultStr=`${mNameB} wins · $${Math.abs(pressNetHU).toFixed(2)}`;}
-          else if(finalMsHU.closed||isRoundComplete(r)){mResultStr='No Blood';}
-          else{mResultStr='A/S';}
+          _ftL=pressesHU.length?'Net result':'Result';
+          if(_mpVoidedHU&&pressNetHU===0)_ftC=_chipH('ns','No winner');
+          // As before: a halved match reads all square until it is closed or the round is complete (hures R-G2, R-N).
+          else if(pressNetHU===0)_ftC=_chipH('ns',(finalMsHU.closed||isRoundComplete(r))?'No blood':'All square');
+          else _ftC=_chipH(_leadH==='A'?'a':'b',_ini(_leadH)+' +'+_mH(pressNetHU));
         }
-        const mResultClr=finalMsHU&&finalMsHU.leader==='A'?'#1D9E75':finalMsHU&&finalMsHU.leader==='B'?'#185FA5':'var(--color-text-secondary)';
-        const mResultFinalClr=mResultStr==='No Blood'||mResultStr==='A/S'?'var(--color-text-secondary)':pressNetHU>0?'#1D9E75':pressNetHU<0?'#185FA5':mResultClr;
-        // Match header row
-        html+=`<div style="border-top:0.5px solid var(--color-border-tertiary);padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start" onclick="STATE.mpExpanded['${mKey}']=!STATE.mpExpanded['${mKey}'];_gsRefreshAfterEdit()">`;
-        html+=`<div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:5px">Match ${mi+1} · ${mNameA} vs ${mNameB}</div>`;
-        html+=`<div style="font-size:12px;color:var(--color-text-secondary)">Match Result: <span style="font-weight:500;color:${mResultFinalClr}">${mResultStr}${_mpChipHU?`<span class="end-chip">${_mpChipHU}</span>`:''}</span></div></div>`;
-        html+=`<span style="color:#1D9E75;font-size:12px;margin-top:2px;flex-shrink:0">${mExp?'▲':'▼'}</span>`;
-        html+=`</div>`;
-        if(mExp){
-          function buildHUGameRows(startH,endH,msFn,pressStartHoles,isPress){
+        const _np=pressesHU.length;
+        const _tog=`STATE.mpExpanded['${mKey}']=!STATE.mpExpanded['${mKey}'];_gsRefreshAfterEdit()`;
+        html+=`<div class="section-card mpk">`;
+        html+=`<div class="mpk-hd" onclick="${_tog}"><b>Match ${mi+1}</b><span>${_np?_np+(_np===1?' press':' presses'):''}</span><i class="${mExp?'open':''}">›</i></div>`;
+        html+=`<div class="mpk-hu" onclick="${_tog}"><span class="nm ca">${mNameA}</span><span class="vs">vs</span><span class="nm r cb">${mNameB}</span></div>`;
+        html+=`<div class="mpk-ft"><span>${_ftL}</span>${_mpChipHU?`<span class="end-chip">${_mpChipHU}</span>`:''}${_ftC}</div>`;
+        if(_mpEnHU&&_deadHU)html+=`<div class="mpk-en">${_mpEnHU}</div>`;
+        if(mExp&&!_deadHU){
+          // h is ROUND RELATIVE here; calcMPHU and _mpHoleDead take the global index. Press start holes are global.
+          const pressStartHoles=pressesHU.map(p=>p.startHole);
+          function buildHUGameRows(startH,endH,msFn,isPress){
             let rows='';
             for(let h=startH;h<endH;h++){
-              const _deadRowHU=_mpHoleDead(r,_fi,h+holeOffset(r));
-              const res=_deadRowHU?null:calcMPHU(h+holeOffset(r),r,_fi,mi);
-              const ms2=msFn(h);
-              const pressOnHole=!isPress&&pressStartHoles.includes(h+holeOffset(r));
-              const holeLabel=pressOnHole
-                ?`<span style="display:inline-block;background:#1e3d52;color:#5bb8e8;border-radius:5px;font-size:10px;font-weight:700;padding:2px 5px;letter-spacing:0.03em">H${h+holeOffset(r)+1}</span>`
-                :`<span style="color:var(--color-text-tertiary);font-size:12px">H${h+holeOffset(r)+1}</span>`;
+              const _dr=_mpHoleDead(r,_fi,h+holeOffset(r));   // the global index (mpaward S6 reads this form)
+              const res=_dr?null:calcMPHU(h+_ofsH,r,_fi,mi);
+              const pOn=!isPress&&pressStartHoles.includes(h+_ofsH);
+              const hn=pOn?`<span class="hp">${h+_ofsH+1}</span>`:`${h+_ofsH+1}`;
               if(!res){
-                // h is ROUND RELATIVE in this builder; calcMPHU above adds the offset.
-                const _deadHU=_mpHoleDead(r,_fi,h+holeOffset(r));
-                rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div><div style="width:52px;flex-shrink:0;font-size:12px;color:var(--color-text-tertiary)">${_deadHU?'':'-'}</div><div style="flex:1;padding-left:16px">${_deadHU?'<span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic">not played</span>':''}</div><div style="width:28px;flex-shrink:0"></div></div>`;continue;}
-              const scoresPair=`<div style="width:52px;flex-shrink:0;font-size:12px;font-weight:500"><span style="color:#1D9E75">${res.bestA}</span><span style="color:var(--color-text-tertiary);margin:0 3px;font-weight:400">vs</span><span style="color:#185FA5">${res.bestB}</span></div>`;
-              let msHtml;
-              if(!ms2)msHtml=`<div style="flex:1;padding-left:16px"><span style="color:var(--color-text-tertiary);font-size:12px">-</span></div>`;
-              else if(ms2.closed&&h>ms2.closedAtHole)msHtml=`<div style="flex:1;padding-left:16px"><span style="color:var(--color-text-tertiary);font-size:11px;font-style:italic">closed out</span></div>`;
-              else{const mc=!ms2.leader?'var(--color-text-secondary)':ms2.leader==='A'?'#1D9E75':'#185FA5';const msStr=ms2.scoreStr.replace('Team A',mNameA).replace('Team B',mNameB);msHtml=`<div style="flex:1;padding-left:16px"><span style="color:${mc};font-weight:600;font-size:12px">${msStr}</span></div>`;}
+                rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span>${_dr?'':'-'}</span><span>${_dr?'<span class="q">not played</span>':''}</span><span></span></div>`;continue;}
+              const ms2=msFn(h);
+              let st;
+              if(!ms2)st='<span class="q">-</span>';
+              else if(ms2.closed&&h>ms2.closedAtHole)st='<span class="q">closed out</span>';
+              else{const _s=_scH(ms2.scoreStr);st=_s?`<span class="${_s.l==='A'?'ca':'cb'}">${ms2.closed?_ini(_s.l)+' won '+_s.t:_ini(_s.l)+' '+_s.t}</span>`:'<span style="color:var(--color-text-secondary)">All square</span>';}
               const isClosed=ms2&&ms2.closed&&h>ms2.closedAtHole;
-              const wHtml=isClosed
-                ?`<div style="width:28px;flex-shrink:0;text-align:right"><span style="color:var(--color-text-tertiary);font-size:10px">-</span></div>`
-                :res.halved
-                  ?`<div style="width:28px;flex-shrink:0;text-align:right"><span style="color:#BA7517;font-size:11px;font-weight:500">H</span></div>`
-                  :res.aWins
-                    ?`<div style="width:28px;flex-shrink:0;text-align:right"><span style="color:#1D9E75;font-weight:700;font-size:12px">${mIniA}</span></div>`
-                    :`<div style="width:28px;flex-shrink:0;text-align:right"><span style="color:#185FA5;font-weight:700;font-size:12px">${mIniB}</span></div>`;
-              rows+=`<div style="display:flex;align-items:center;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="width:36px;flex-shrink:0">${holeLabel}</div>${scoresPair}${msHtml}${wHtml}</div>`;
+              const w=res.halved?'<span class="q">Halved</span>':isClosed?`<span class="q">${res.aWins?mIniA:mIniB}</span>`:res.aWins?`<span class="ca">${mIniA}</span>`:`<span class="cb">${mIniB}</span>`;
+              rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span>${res.bestA} vs ${res.bestB}</span><span>${st}</span><span class="w">${w}</span></div>`;
             }
             return rows;
           }
-          const pressStartHoles=pressesHU.map(p=>p.startHole);
+          function calcPressMsHU(p2,h){
+            const pSeg={start:p2.startHole-_ofsH,end:seg.end};
+            const holesInPress=pSeg.end-pSeg.start;let pdiff=0,plastPlayed=-1,pclosedAt=-1,pleadAtClose=-1;
+            for(let ph=pSeg.start;ph<=h&&ph<pSeg.end;ph++){const pres=calcMPHU(ph+_ofsH,r,_fi,mi);if(!pres)break;plastPlayed=ph;if(pres.halved){}else if(pres.aWins)pdiff++;else pdiff--;const pp=ph-pSeg.start+1;const pl=holesInPress-pp;if(Math.abs(pdiff)>pl&&pclosedAt<0){pclosedAt=ph;pleadAtClose=Math.abs(pdiff);}}
+            if(plastPlayed<pSeg.start)return null;
+            const php=plastPlayed-pSeg.start+1;const phl=holesInPress-php;const plead=Math.abs(pdiff);const pleader=pdiff>0?'A':pdiff<0?'B':null;
+            let pscoreStr;if(pclosedAt>=0){const cpd=pclosedAt-pSeg.start+1;const cpl=holesInPress-cpd;pscoreStr=(pleader==='A'?'Team A':'Team B')+' '+pleadAtClose+'&'+cpl;}else if(!pleader){pscoreStr='A/S';}else if(plead===phl){pscoreStr=(pleader==='A'?'Team A':'Team B')+': Dormie '+plead;}else{pscoreStr=(pleader==='A'?'Team A':'Team B')+': '+plead+' up';}
+            return{diff:pdiff,lead:plead,leader:pleader,holesPlayed:php,holesLeft:phl,closed:pclosedAt>=0,closedAtHole:pclosedAt,scoreStr:pscoreStr};
+          }
+          html+=`<div class="mpk-bets">`;
           const betKeyHU=mKey+'b0';
           const betExpHU=STATE.mpExpanded[betKeyHU]===true;
-          // MATCH row dollar = base match value only (origNetHU)
-          const origNetHUStr=(finalMsHU&&_phase(finalMsHU)==='done'&&origNetHU)?`$${Math.abs(origNetHU).toFixed(2)}`:'';
-          const origNetHUClr=origNetHU>0?'#1D9E75':origNetHU<0?'#185FA5':'var(--color-text-secondary)';
-          // Score-only summary for MATCH collapsible header (no dollar - shown separately)
-          // Build from raw finalMsHU, NOT from mResultStr (which may have dollar injected by press block)
-          let mSummary;const _smPh=_phase(finalMsHU);
-          if(_smPh==='ns')mSummary=`<span style="color:var(--color-text-tertiary);font-size:12px">Not started</span>`;
-          else if(_smPh==='ip')mSummary=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;
-          else if(!finalMsHU.leader)mSummary=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">A/S</span>`;
-          else{
-            const _smWn=finalMsHU.leader==='A'?mNameA:mNameB;
-            const _smWc=finalMsHU.leader==='A'?'#1D9E75':'#185FA5';
-            const _smRaw=finalMsHU.scoreStr.replace('Team A',mNameA).replace('Team B',mNameB);
-            const _smScore=_smRaw.replace(_smWn+' ','').replace(_smWn+': ','').trim();
-            mSummary=finalMsHU.closed
-              ?`<span style="color:${_smWc};font-weight:500;font-size:12px">${_smWn}</span><span style="color:${_smWc};font-size:11px"> · </span><span style="color:${_smWc};font-weight:500;font-size:12px">${_smScore}</span>`
-              :`<span style="color:${_smWc};font-weight:500;font-size:12px">${_smWn}: ${_smScore}</span>`;
-          }
-          html+=`<div style="margin:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden">`;
-          html+=`<div style="background:var(--color-background-secondary);padding:7px 12px;display:flex;align-items:center;cursor:pointer" onclick="STATE.mpExpanded['${betKeyHU}']=!STATE.mpExpanded['${betKeyHU}'];_gsRefreshAfterEdit()">`;
-          html+=`<div style="width:36px;flex-shrink:0"><span style="font-size:11px;font-weight:600;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap">MATCH</span></div>`;
-          html+=`<div style="width:52px;flex-shrink:0"></div>`;
-          html+=`<div style="flex:1;padding-left:16px;display:flex;align-items:center;gap:5px;min-width:0">${mSummary}${origNetHUStr?`<span style="color:${origNetHUClr};font-size:11px"> · </span><span style="font-size:12px;font-weight:700;color:${origNetHUClr}">${origNetHUStr}</span>`:''}</div>`;
-          html+=`<div style="width:40px;flex-shrink:0;text-align:right"><span style="font-size:11px;color:#1D9E75;display:inline-block;transform:${betExpHU?'rotate(180deg)':'rotate(0deg)'}">▼</span></div>`;
+          let _mc;const _smPh=_phase(finalMsHU);
+          if(_smPh==='ns')_mc=_chipH('ns','Not started');
+          else if(_smPh==='ip'){const _s=_scH(finalMsHU.scoreStr);_mc=_s?_chipH(_s.l==='A'?'al':'bl',_ini(_s.l)+' '+_s.t):_chipH('ns','All square');}
+          else if(_mpVoidedHU)_mc=_chipH('ns','No winner');
+          else if(!_mpLeadSHU)_mc=_chipH('ns','Halved');
+          else{const _s=_scH(finalMsHU.scoreStr);_mc=_chipH(_mpLeadSHU==='A'?'a':'b',_ini(_mpLeadSHU)+(_s?' '+_s.t:' won'));}
+          html+=`<div class="mpk-bet"><div class="mpk-bh" onclick="STATE.mpExpanded['${betKeyHU}']=!STATE.mpExpanded['${betKeyHU}'];_gsRefreshAfterEdit()"><b>Match</b><span class="st">${_mH(origValHU)}</span>${_mc}<i class="${betExpHU?'open':''}">›</i></div>`;
+          if(betExpHU)html+=buildHUGameRows(seg.start,seg.end,h=>calcMPMatchScoreHU(r,_fi,si,mi,h),false);
           html+=`</div>`;
-          if(betExpHU){
-            html+=buildHUGameRows(seg.start,seg.end,h=>calcMPMatchScoreHU(r,_fi,si,mi,h),pressStartHoles,false);
-            html+=`<div style="background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);padding:7px 12px;display:flex;align-items:center"><div style="width:36px;flex-shrink:0"><span style="font-size:11px;color:var(--color-text-tertiary)">Result</span></div><div style="width:52px;flex-shrink:0"></div><div style="flex:1;padding-left:16px">${mSummary}</div><div style="width:40px;flex-shrink:0"></div></div>`;
-          }
-          html+=`</div>`;
-          // Press cards
           pressesHU.forEach((p,pi)=>{
             const pr=calcPressResult(r,_fi,si,p);
             const pressKeyHU=mKey+'p'+pi;
             const pressExpHU=STATE.mpExpanded[pressKeyHU]===true;
-            const _psEndH=seg.end+holeOffset(r);
-            const pressShortLabel=`PRESS · ${p.startHole+1===_psEndH?'H'+(p.startHole+1):'H'+(p.startHole+1)+'-'+_psEndH}`;
-            let pressSummaryHU,pressNetStrHU='',pressNetClrHU='var(--color-text-secondary)';
-            if(!pr){pressSummaryHU=`<span style="color:var(--color-text-secondary);font-size:12px">Not started</span>`;}
-            else if(!pr.closed&&pr.playableLeft>0){pressSummaryHU=`<span style="color:var(--color-text-secondary);font-size:12px">In progress</span>`;}
-            else if(pr.winner==='tie'&&pr.cutShort&&pr.lead>0){pressSummaryHU=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">No winner</span>`;}
-            else if(pr.winner==='tie'){pressSummaryHU=`<span style="color:var(--color-text-secondary);font-size:12px;font-weight:500">A/S</span>`;}
-            else{const _clHU=pr.closed;const wn=pr.winner==='a'?mNameA:mNameB;const wc=_clHU?(pr.winner==='a'?'#1D9E75':'#185FA5'):'var(--color-text-secondary)';
-            const _pScoreWn=pr.winner==='a'?mNameA:mNameB;
-    const _pScoreRaw2=pr.scoreStr?pr.scoreStr.replace(/^A /,mNameA+' ').replace(/^B /,mNameB+' ').replace(/^A: /,mNameA+': ').replace(/^B: /,mNameB+': '):'';const _pWnPrefix=pr.winner==='a'?mNameA:mNameB;
-    const _pScore=_pScoreRaw2?_pScoreRaw2.replace(_pWnPrefix+' ','').replace(_pWnPrefix+': ',''):''
-            pressSummaryHU=_pScore?`<span style="color:${wc};font-weight:500;font-size:12px">${wn}</span><span style="color:${wc};font-size:11px"> · </span><span style="color:${wc};font-weight:500;font-size:12px">${_pScore}</span>`:`<span style="color:${wc};font-weight:500;font-size:12px">${wn}</span>`;if(_clHU){pressNetStrHU='$'+pr.sv.toFixed(2);pressNetClrHU=wc;}}
-            html+=`<div style="margin:0 10px 8px;border:0.5px solid var(--color-border-tertiary);border-left:2px solid #1D9E75;border-radius:var(--border-radius-md);overflow:hidden">`;
-            html+=`<div style="background:var(--color-background-secondary);padding:7px 12px;display:flex;align-items:center;cursor:pointer" onclick="STATE.mpExpanded['${pressKeyHU}']=!STATE.mpExpanded['${pressKeyHU}'];_gsRefreshAfterEdit()">`;
-            html+=`<div style="width:36px;flex-shrink:0"><span style="font-size:11px;font-weight:600;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap">${pressShortLabel}</span></div>`;
-            html+=`<div style="width:52px;flex-shrink:0"></div>`;
-            html+=`<div style="flex:1;padding-left:16px;display:flex;align-items:center;gap:5px;min-width:0">${pressSummaryHU}${pressNetStrHU?`<span style="color:${pressNetClrHU};font-size:11px"> · </span><span style="font-size:12px;font-weight:700;color:${pressNetClrHU}">${pressNetStrHU}</span>`:''}</div>`;
-            html+=`<div style="width:40px;flex-shrink:0;text-align:right"><span style="font-size:11px;color:#1D9E75;display:inline-block;transform:${pressExpHU?'rotate(180deg)':'rotate(0deg)'}">▼</span></div>`;
-            html+=`</div>`;
-            if(pressExpHU){
-              function calcPressMsHU(p2,h){
-                const pSeg={start:p2.startHole-holeOffset(r),end:seg.end};
-                const holesInPress=pSeg.end-pSeg.start;let pdiff=0,plastPlayed=-1,pclosedAt=-1,pleadAtClose=-1;
-                for(let ph=pSeg.start;ph<=h&&ph<pSeg.end;ph++){const pres=calcMPHU(ph+holeOffset(r),r,_fi,mi);if(!pres)break;plastPlayed=ph;if(pres.halved){}else if(pres.aWins)pdiff++;else pdiff--;const pp=ph-pSeg.start+1;const pl=holesInPress-pp;if(Math.abs(pdiff)>pl&&pclosedAt<0){pclosedAt=ph;pleadAtClose=Math.abs(pdiff);}}
-                if(plastPlayed<pSeg.start)return null;
-                const php=plastPlayed-pSeg.start+1;const phl=holesInPress-php;const plead=Math.abs(pdiff);const pleader=pdiff>0?'A':pdiff<0?'B':null;
-                let pscoreStr;if(pclosedAt>=0){const cpd=pclosedAt-pSeg.start+1;const cpl=holesInPress-cpd;pscoreStr=(pleader==='A'?'Team A':'Team B')+' '+pleadAtClose+'&'+cpl;}else if(!pleader){pscoreStr='A/S';}else if(plead===phl){pscoreStr=(pleader==='A'?'Team A':'Team B')+': Dormie '+plead;}else{pscoreStr=(pleader==='A'?'Team A':'Team B')+': '+plead+' up';}
-                return{diff:pdiff,lead:plead,leader:pleader,holesPlayed:php,holesLeft:phl,closed:pclosedAt>=0,closedAtHole:pclosedAt,scoreStr:pscoreStr};
-              }
-              const pressStartH=p.startHole-holeOffset(r);
-              html+=buildHUGameRows(pressStartH,seg.end,h=>calcPressMsHU(p,h),[],true);
-              html+=`<div style="background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);padding:7px 12px;display:flex;align-items:center"><div style="width:36px;flex-shrink:0"><span style="font-size:11px;color:var(--color-text-tertiary)">Result</span></div><div style="width:52px;flex-shrink:0"></div><div style="flex:1;padding-left:16px">${pressSummaryHU}</div><div style="width:40px;flex-shrink:0"></div></div>`;
-            }
+            let _pc;
+            if(!pr)_pc=_chipH('ns','Not started');
+            else if(!pr.closed&&pr.playableLeft>0){const _s=_scH(pr.scoreStr);_pc=_s?_chipH(_s.l==='A'?'al':'bl',_ini(_s.l)+' '+_s.t):_chipH('ns','All square');}
+            else if(pr.winner==='tie'&&pr.cutShort&&pr.lead>0)_pc=_chipH('ns','No winner');
+            else if(pr.winner==='tie')_pc=_chipH('ns','Halved');
+            else{const _w=pr.winner==='a'?'A':'B';const _s=_scH(pr.scoreStr);_pc=_chipH(pr.winner==='a'?'a':'b',_ini(_w)+(_s?' '+_s.t:' won'));}
+            const _p1=p.startHole+1,_pN=seg.end+_ofsH;
+            html+=`<div class="mpk-bet"><div class="mpk-bh" onclick="STATE.mpExpanded['${pressKeyHU}']=!STATE.mpExpanded['${pressKeyHU}'];_gsRefreshAfterEdit()"><span class="mpk-pt">${p.auto?'AUTO':'PRESS'}</span><b>${_p1===_pN?'Hole '+_p1:'Holes '+_p1+' to '+_pN}</b><span class="st">${_mH(p.val)}</span>${_pc}<i class="${pressExpHU?'open':''}">›</i></div>`;
+            if(pressExpHU)html+=buildHUGameRows(p.startHole-_ofsH,seg.end,h=>calcPressMsHU(p,h),true);
             html+=`</div>`;
           });
-          // Summary card once the match has started, pressed or not
-          if(pressesHU.length>0||_phase(finalMsHU)!=='ns'){
-            const _aggDoneHU=_phase(finalMsHU)==='done'&&!anyPressLiveHU;
-            const wn=pressNetHU>0?mNameA:mNameB;
-            const gameNetDisplay=!_aggDoneHU?'In progress':pressNetHU===0?'No Blood':`${wn} wins · $${Math.abs(pressNetHU).toFixed(2)}`;
-            const _aggClrHU=_aggDoneHU?mNetClr:'var(--color-text-secondary)';
-            const _mpEnHU=_mpEndNote(r,_fi,_mpTagHU);
-            html+=`<div style="margin:0 10px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:9px 12px;background:var(--color-background-secondary)"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em">Match Result</span><span style="font-weight:600;font-size:12px;color:${_aggClrHU}">${gameNetDisplay}</span></div>${_mpEnHU?`<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:4px">${_mpEnHU}</div>`:''}</div>`;
-          }
-          html+=`<div style="height:8px"></div>`;
+          if(_mpEnHU)html+=`<div class="mpk-en" style="padding:10px 2px 0">${_mpEnHU}</div>`;
+          html+=`</div>`;
         }
+        html+=`</div>`;
       });
-      html+=`</div>`;
     } else {
     // v124.9, Kyle 14 Oct, canvas "Games tab": the team card. Same data as before, read the same way:
     // anyPressLive, pressNetA, _phase, _mpVoided, the end tag. What changed is how it is drawn.
