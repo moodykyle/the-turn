@@ -962,14 +962,14 @@ body.force-light{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpA
 .grk .t{display:flex;align-items:baseline;gap:8px;font-size:14px;min-width:0}
 .grk .t b{font-weight:600;color:var(--color-text-primary);flex:none}
 .grk .t .nm{font-size:12px;color:var(--color-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.grk .b{display:flex;align-items:center;gap:8px;margin-top:7px;padding-left:8px}
+.grk .b{display:flex;align-items:center;gap:8px;margin-top:7px;padding-left:12px}
 .grk .c{width:68px;flex:none;font-size:12px;color:var(--color-text-tertiary)}
 .grk .c b{font-size:15px;font-weight:700;color:var(--color-text-secondary)}.grk .c b.z{color:var(--color-text-tertiary)}
-.grk .dl{display:flex;flex-direction:column;gap:3px}
+.grk .dl{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px}
 .grk .dr{display:flex;gap:2px}
 .grk .dn{display:flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;font-size:8px;font-weight:600;background:var(--color-background-secondary);color:var(--color-text-tertiary)}
-.grk .dn.on{background:var(--mpA);color:#fff}
-.grk .m{margin-left:auto}
+.grk .dn.on{background:var(--mpAf);color:var(--mpAt)}
+.grk .m{flex:none}
 .gs-net.warn .t b{color:#E0A45C}
 #appToast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab-bar-h) + 62px);z-index:10003;
   background:#2A1F14;border:1px solid #5C4423;border-radius:10px;padding:11px 13px;
@@ -2468,7 +2468,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.27';
+const APP_VERSION='v124.28';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
