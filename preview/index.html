@@ -970,6 +970,11 @@ body.force-light{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpA
 .grk .dn{display:flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;font-size:8px;font-weight:600;background:var(--color-background-secondary);color:var(--color-text-tertiary)}
 .grk .dn.on{background:var(--mpAf);color:var(--mpAt)}
 .grk .m{flex:none}
+/* v124.29: Two's Club, one row per 2. */
+.twk{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;padding:9px 14px;font-size:14px;border-top:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
+.twk .hd{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;background:var(--mpAf);color:var(--mpAt)}
+.twk .tc{font-size:12px;color:var(--color-text-tertiary);text-align:right}
+.twk-e{padding:12px 14px;font-size:13px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary)}
 .gs-net.warn .t b{color:#E0A45C}
 #appToast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab-bar-h) + 62px);z-index:10003;
   background:#2A1F14;border:1px solid #5C4423;border-radius:10px;padding:11px 13px;
@@ -2468,7 +2473,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.28';
+const APP_VERSION='v124.29';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -17544,63 +17549,30 @@ function renderGamesContent(){
     }
   }
   if(g==='twos'){
-    const _tr=r;
-    const _off_tw=holeOffset(_tr),_n_tw=roundHoleCount(_tr);
-    const _twAmt=WK.twosAmt||25;
-    const _twPot=(_twAmt*WK.players.length).toFixed(0);
-    // Find all holes where at least one player has scored (show all played holes; highlight 2s)
-    // Two's Club counts any score of 2 regardless of par
-    const _twHoles=[];
-    for(let _h=_off_tw;_h<_off_tw+_n_tw;_h++){
-      const _hs=STATE.scores[_tr][_h];
-      // A LIVE 2 only. v120.31 capped Four-Ball's money without capping its board and the
-      // board printed the word undefined. The board here is this grid, so it caps with the
-      // money or not at all. A hole whose only 2s sit past their own foursome's end is not a
-      // row with a blank in it, it is a hole those players never played.
-      if(_hs&&_hs.some((s,pi)=>s===2&&!_mpHoleDead(_tr,_fsOfPlayer(_tr,pi),_h)))_twHoles.push(_h);
-    }
-    let _twBodyHtml='';
-    if(_twHoles.length===0){
-      _twBodyHtml=`<div style="font-size:13px;color:var(--color-text-secondary)">No 2s yet</div>`;
-    } else {
-      // Header row
-      _twBodyHtml=`<table style="width:100%;border-collapse:collapse">`;
-      _twBodyHtml+=`<tr><th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:left;padding:4px 0 6px;border-bottom:0.5px solid var(--color-border-tertiary)">Hole</th>`;
-      WK.players.forEach((_,pi)=>{
-        _twBodyHtml+=`<th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:center;padding:4px 0 6px;border-bottom:0.5px solid var(--color-border-tertiary)">${WK.players[pi].ini||displayName(pi).slice(0,2)}</th>`;
-      });
-      _twBodyHtml+=`</tr>`;
-      _twHoles.forEach(_h=>{
-        const _scores=STATE.scores[_tr][_h];
-        const _anyPlayed=_scores&&_scores.some(s=>s!==null);
-        _twBodyHtml+=`<tr>`;
-        _twBodyHtml+=`<td style="font-size:12px;color:var(--color-text-secondary);padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary)">H${_h+1}</td>`;
-        WK.players.forEach((_,pi)=>{
-          // Past his own end hole this man has no score to show, whatever the row holds.
-          // Falls through to the same tertiary dash a blank cell already draws: in a
-          // one-character column that is the honest mark, and the row header still says
-          // which hole it was.
-          const _dead_tw=_mpHoleDead(_tr,_fsOfPlayer(_tr,pi),_h);
-          const _g=(!_dead_tw&&_scores&&_scores[pi]!==null)?_scores[pi]:null;
-          const _isTwo=_g===2;
-          const _cell=_g===null?((!_anyPlayed)?'<span style="color:var(--color-text-tertiary)">-</span>':'<span style="color:var(--color-text-tertiary)">-</span>'):_isTwo?`<span style="font-weight:600;color:#1D9E75">2 ✓</span>`:`<span style="color:var(--color-text-tertiary)">${_g}</span>`;
-          _twBodyHtml+=`<td style="text-align:center;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary)">${_cell}</td>`;
-        });
-        _twBodyHtml+=`</tr>`;
-      });
-      _twBodyHtml+=`</table>`;
-      // Summary: who has 2s
-      const _twCounts=calcRoundTwos(_tr);
-      const _twHavers=WK.players.map((_,pi)=>_twCounts[pi]>0?displayName(pi):null).filter(Boolean);
-      let _twSummary='';
-      if(_twHavers.length===0){
-        _twSummary=`<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:10px;padding-top:8px;border-top:0.5px solid var(--color-border-tertiary)">No 2s yet · Pot: $${_twPot}</div>`;
-      } else {
-        _twSummary=`<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:10px;padding-top:8px;border-top:0.5px solid var(--color-border-tertiary)">In the club: <strong style="color:var(--color-text-primary)">${_twHavers.join(', ')}</strong> · Pot: $${_twPot}</div>`;
-      }
-      _twBodyHtml+=_twSummary;
-    }
-    document.getElementById('gamesContent').innerHTML=`<div class="section-card" style="margin-bottom:10px;padding:14px"><div style="font-size:11px;color:var(--color-text-tertiary);letter-spacing:0.05em;margin-bottom:10px">TWO'S CLUB · $${_twAmt}/player · Pot $${_twPot}</div>${_twBodyHtml}</div>`;
+    // v124.29, Kyle 15 Oct, canvas "Games tab: Two's Club": the trip pot, one row per 2 this round, what a 2 is worth.
+    const _tr=r,_n=WK.players.length,_amt=WK.twosAmt||25,_pot=_amt*_n;
+    const _m=v=>{v=Math.abs(v);return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
+    const _ord=k=>{const t=k%100;return k+((t>10&&t<14)?'th':(['th','st','nd','rd'][k%10]||'th'));};
+    // A player's 2s in the order he made them, counted as calcTwos counts them (dead holes skipped).
+    const _seen=Array(_n).fill(0),_rows=[];
+    WK.rounds.forEach((_,rr)=>{if(rr>_tr)return;
+      const off=holeOffset(rr),nh=roundHoleCount(rr);
+      for(let h=off;h<off+nh;h++){const row=STATE.scores[rr]&&STATE.scores[rr][h];if(!row)continue;
+        for(let pi=0;pi<_n;pi++){if(row[pi]!==2||_mpHoleDead(rr,_fsOfPlayer(rr,pi),h))continue;
+          _seen[pi]++;if(rr===_tr)_rows.push({h,pi,k:_seen[pi]});}}});
+    const _tot=calcTwos().reduce((x,y)=>x+y,0);
+    let h='<div class="section-card mpk"><div class="mpk-hd"><b>Pot '+_m(_pot)+'</b><span>Trip · '+_m(_amt)+' a player · '+_n+(_n===1?' player':' players')+'</span></div>';
+    if(!_rows.length)h+='<div class="twk-e">No 2s this round</div>';
+    _rows.forEach(x=>{
+      const par=_fbHolePar(_tr,x.h),tag=par===4?'<span class="mpk-hm" style="margin-left:6px">Eagle</span>':par>=5?'<span class="mpk-hm" style="margin-left:6px">Albatross</span>':'';
+      h+='<div class="twk"><span><span class="hd">'+(x.h+1)+'</span></span><span>'+displayName(x.pi)+tag+'</span><span class="tc">'+_ord(x.k)+' on the trip</span></div>';
+    });
+    let ftL,ftC='';
+    if(_tot<=0){ftL='No 2s on the trip yet';ftC='<span class="mpc ns">'+_m(_amt)+' a player</span>';}
+    else{const _done=WK.rounds.every((_,rr)=>isRoundComplete(rr));
+      ftL=_tot+(_tot===1?' two':' twos')+' on the trip · '+_m(_pot/_tot)+' each'+(_done?'':' so far');}
+    h+='<div class="mpk-ft"><span>'+ftL+'</span>'+ftC+'</div></div>';
+    document.getElementById('gamesContent').innerHTML=h;
   }
   if(def){
     const setupHtml=_gsSetupPlaceholder(def,r);
