@@ -302,7 +302,9 @@ body.force-light .sc-grid td.sr-gvoid{background:repeating-linear-gradient(135de
 .sc-grid th{font-size:13px;}.sc-grid tr.hd-sm td{font-size:11px;}.sc-grid tr.hd-sm td.player-col,.sc-grid tr.hd-par td.player-col{font-size:12px;font-weight:400;color:var(--color-text-secondary);}
 .sc-grid tr.hd-par td{font-size:13px;}.sc-grid tr.hd-par td.turn-col,.sc-grid tr.hd-par td.total-col,.sc-grid tr.hd-sm td.turn-col,.sc-grid tr.hd-sm td.total-col{font-weight:600;}
 @media(prefers-color-scheme:dark){body:not(.force-light) .sc-grid .net-col{background:#0A2E1F;color:#4ADE80;}}
-#ctxRdSel.sc-card .fs-pill{display:none;}.stroke-dot{width:3px;height:3px;border-radius:50%;background:#1D9E75;display:inline-block;margin:0 1.5px;}.stroke-dot-give{background:#D85A30;}
+#ctxRdSel.sc-card .fs-pill{display:none;}
+/* v124.45: sideways on a phone with the grid showing, the grid gets the screen; upright brings the rest back. */
+@media (orientation:landscape) and (max-height:500px){body.sc-cv #mainScreen .header,body.sc-cv #ctxRdSel,body.sc-cv #scoreActionRow,body.sc-cv #mainTabBar,body.sc-cv #scGridWrap>div:not(.sc-grid-wrap){display:none!important;}body.sc-cv .gf-filter{margin:4px 8px!important;}body.sc-cv .gf-filter button{padding:5px 0!important;font-size:13px!important;}}.stroke-dot{width:3px;height:3px;border-radius:50%;background:#1D9E75;display:inline-block;margin:0 1.5px;}.stroke-dot-give{background:#D85A30;}
 .view{padding:1rem;}
 .view-title{font-size:16px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;}
 .view-sub{font-size:12px;color:var(--color-text-secondary);margin-bottom:0.75rem;}
@@ -2499,7 +2501,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.44';
+const APP_VERSION='v124.45';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -8659,6 +8661,7 @@ function _updateHoleStrip(){
 window._actToggleView=function(){
   _scViewMode=(_scViewMode==='hole')?'card':'hole';
   {const _cs=document.getElementById('ctxRdSel');if(_cs)_cs.classList.toggle('sc-card',_scViewMode==='card');}
+  document.body.classList.toggle('sc-cv',_scViewMode==='card');
   const holeWrap=document.getElementById('holeDetailWrap');
   const cardWrap=document.getElementById('inlineCardWrap');
   if(_scViewMode==='card'){
@@ -8731,6 +8734,7 @@ function _gsCollapseAll(){
 }
 function setView(v){
   if(_fsP)window._fsPromptClose();
+  document.body.classList.remove('sc-cv'); // v124.45: any tab change leaves the grid view
   // v124.17: arriving on Games from anywhere else starts collapsed.
   if(v==='games'){const _gv=document.getElementById('view-games');if(!_gv||_gv.style.display!=='block')_gsCollapseAll();}
   // Normalize: 'scores' is the new name for entry; both route to view-entry content
