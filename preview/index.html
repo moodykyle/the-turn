@@ -2479,7 +2479,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.36';
+const APP_VERSION='v124.37';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -17991,7 +17991,8 @@ function calcRoundSkins(r){
     const _p8End=fsHoleCount(r,fi),_segEnd=Math.max(seg.start,Math.min(seg.end,_p8End));
     for(let h=seg.start;h<_segEnd;h++){
       const res=skinHoleWinner(h+_off_sk,r,fi);
-      if(!res||res.tied){carry++;continue;}
+      if(!res)continue; // v124.37: a hole with no scores adds nothing; the carry waits for the next scored hole
+      if(res.tied){carry++;continue;}
       const val=(roundValFs('skinsVal',r,fi,WK.skinsVal||5))*carry;
       if(_indiv){
         const wi=res.winner;
@@ -18739,7 +18740,7 @@ function skinsCarryAt(r,hi,fi){
   fi=fi||0;
   const sG=skinsGamesForRound(r,fi),_th_sca=roundHoleCount(r),_off_sca=holeOffset(r),segs=getSegments(sG,_th_sca),si=segForHole(hi-_off_sca,sG,_th_sca),seg=segs[si];
   let carry=1;
-  for(let h=seg.start;h<hi-_off_sca;h++){const res=skinHoleWinner(h+_off_sca,r,fi);if(!res||res.tied)carry++;else carry=1;}
+  for(let h=seg.start;h<hi-_off_sca;h++){const res=skinHoleWinner(h+_off_sca,r,fi);if(!res)continue;if(res.tied)carry++;else carry=1;}
   return carry;
 }
 function calcSkinsRound(r,fi){
@@ -19268,6 +19269,9 @@ function setHammerSegsForRound(r,v){
       STATE.hammerTeams[r][fi]=defaultHammerTeamsForFlight(r,fi);
       STATE.hammerState[r][fi]=Array(18).fill(null);
     });autoSave();s2WriteActive();_gsRefreshAfterEdit();});}
+// v124.37: what a conceded hole pays, in hole order: base plus the carry into it, doubled for every throw but the
+// last (the concede is at the value before the last double). Worked out on read, so a hole scored late moves it.
+function _hmConcedeOf(base,carry,throws){let v=base+carry;for(let i=0;i<throws-1;i++)v*=2;return v;}
 function calcHammerCarry(r,si,upToHole,fi){
   fi=fi||0;
   // Compute carry pot accumulated from start of segment up to (not including) upToHole
@@ -19289,7 +19293,8 @@ function calcHammerCarry(r,si,upToHole,fi){
     else {
       const tA=tm[0],tB=tm[1];
       const nA=tA.map(pi=>getNetForFlight(pi,h,r,_hfp)),nB=tB.map(pi=>getNetForFlight(pi,h,r,_hfp));
-      if([...nA,...nB].some(v=>v===null)){carry+=pot;continue;}
+      // v124.37: a hole with no scores adds nothing; the carry waits for the next scored hole.
+      if([...nA,...nB].some(v=>v===null))continue;
       const sA=scoring==='bestball'?Math.min(...nA):nA.reduce((s,v)=>s+v,0);
       const sB=scoring==='bestball'?Math.min(...nB):nB.reduce((s,v)=>s+v,0);
       if(sA===sB){if(halveCarry==='carry')carry=pot;else carry=0;}
@@ -19336,7 +19341,8 @@ function calcHammerSegResult(r,si,fi){
     hs.throws.forEach(()=>{pot*=2;});
     if(hs.conceded){
       const winTeam=hs.concededBy===0?1:0;
-      if(winTeam===0)netA+=hs.concedeVal;else netB+=hs.concedeVal;
+      const cv=_hmConcedeOf(baseVal,carry,hs.throws.length);
+      if(winTeam===0)netA+=cv;else netB+=cv;
     } else {
       const nA=tA.map(pi=>getNetForFlight(pi,h,r,_hfp)),nB=tB.map(pi=>getNetForFlight(pi,h,r,_hfp));
       if([...nA,...nB].some(v=>v===null))continue;
@@ -19398,8 +19404,7 @@ function resolveHammer(action,r,hi){
     if(!hc)return;
     const lastThrower=hs.throws[hs.throws.length-1];
     const hSeg=hammerSegsForRound(r,fi),si=segForHole(hi,hSeg);
-    let preVal=roundValFs('hammerVal',r,fi,WK.hammerVal||2)+calcHammerCarry(r,si,hi,fi);
-    for(let i=0;i<hs.throws.length-1;i++)preVal*=2;
+    const preVal=_hmConcedeOf(roundValFs('hammerVal',r,fi,WK.hammerVal||2),calcHammerCarry(r,si,hi,fi),hs.throws.length);
     hs.conceded=true;hs.concedeVal=preVal;hs.concededBy=lastThrower===0?1:0;
   }
   autoSave();renderHammerBox();if(document.getElementById('view-games').style.display!=='none')renderGamesTab();
@@ -19412,6 +19417,7 @@ function renderHammerBox(){
   {const _hn=_gameGroupNote('hammer',(flightsForRound(r)[_hbfi]||[]).length);if(_hn){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Hammer</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">'+_hn+'.</div></div>';return;}}
   if(!gameOnFs('hammer',r,_hbfi)){wrap.innerHTML='';return;}const hc=calcHammerHole(hi,r,_hbfi);if(!hc){wrap.innerHTML='';return;}
   const{tA,tB,nA,nB,scoreA,scoreB,allIn,hs,potVal,si}=hc;
+  const _cv=_hmConcedeOf(hc.baseVal,hc.carry,hs.throws.length);
   const locked=isFlightLocked(r,_hbfi);
   const nameA=tA.map(i=>displayName(i));const nameB=tB.map(i=>displayName(i));
   const scoring=roundValFs('hammerScoring',r,_hbfi,WK.hammerScoring||'bestball');
@@ -19476,7 +19482,7 @@ function renderHammerBox(){
   if(hs.conceded){
     const winTeam=hs.concededBy===0?1:0;
     const winLtr=winTeam===0?'A':'B';
-    const settleAmt=payout==='perteam'?hs.concedeVal/2:hs.concedeVal;
+    const settleAmt=payout==='perteam'?_cv/2:_cv;
     resultRow=`<div class="mp-result-bar"><span class="mp-result-text">${winLtr} wins (conceded)</span><span style="font-size:12px;font-weight:600;color:#1D9E75">+${fmt(settleAmt)}</span></div>`;
   } else if(allIn){
     const halveCarry=roundValFs('hammerHalve',r,_hbfi,WK.hammerHalve||'carry');
@@ -19492,7 +19498,7 @@ function renderHammerBox(){
   // Accepted banner
   const acceptedBanner=hs.accepted&&!hs.conceded&&!allIn?`<div style="display:flex;align-items:center;padding:5px 12px;background:#E1F5EE;border-bottom:0.5px solid #5DCAA5"><span style="font-size:11px;font-weight:500;color:#0F6E56">✓ Accepted - pot doubled to ${fmt(potVal)}</span></div>`:'';
   const throwHistory=hs.throws.length>0?" · "+hs.throws.map(t=>"🔨"+(t===0?"A":"B")).join(" "):"";
-  const displayPotVal=hs.conceded?hs.concedeVal:potVal;
+  const displayPotVal=hs.conceded?_cv:potVal;
   const potLabel=`<span style="font-size:12px;font-weight:500;color:#1D9E75">Pot ${fmt(displayPotVal)}${throwHistory}</span>`;
   const hSeg2=hammerSegsForRound(r,_hbfi),seg3=getSegments(hSeg2)[si];
   const hammerHdr=`<div class="calc-hd"><span>Hammer · G${si+1} H${seg3.start+holeOffset(r)+1}-${seg3.end+holeOffset(r)}</span>${potLabel}</div>`;
@@ -19711,13 +19717,13 @@ function _renderHammerFlightBlock(r,fi,labelHd){
         const w=hs.concededBy===0?1:0;
         mid=tags+`<span class="q">${w===0?'B':'A'} conceded</span>`;
         win=`<span class="w ${w===0?'ca':'cb'}">${w===0?'A':'B'}</span>`;
-        rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span class="it">${_m(hs.concedeVal)}</span><span>${mid}</span>${win}</div>`;
+        rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span class="it">${_m(_hmConcedeOf(baseVal,carry,hs.throws.length))}</span><span>${mid}</span>${win}</div>`;
         carry=0;carryAt=0;played++;lastH=hn;continue;
       }
       const nA=tA.map(pi=>getNetForFlight(pi,h,r,_hfp)),nB=tB.map(pi=>getNetForFlight(pi,h,r,_hfp));
       if([...nA,...nB].some(v=>v===null)){
         rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span>${_m(pot)}</span><span>${mid}</span><span class="w"><span class="q">-</span></span></div>`;
-        carry=pot;continue;
+        continue; // v124.37: unscored, so it carries nothing; the carry passes to the next scored hole
       }
       played++;lastH=hn;
       const sA=scoring==='bestball'?Math.min(...nA):nA.reduce((x,v)=>x+v,0);
