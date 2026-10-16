@@ -2479,7 +2479,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.35';
+const APP_VERSION='v124.38';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -11079,8 +11079,39 @@ function renderHoleDots(){const r=STATE.currentRound;const nHoles=roundHoleCount
   // a device that may well pick foursome 1, and the grid then never opens for the group
   // the user actually joined.
   if(!_fsPickPending(r))_srAutoExpand(r,_srFi);}
-function jumpHole(i){const r=STATE.currentRound,_lo=holeOffset(r);if(!(i>=_lo&&i<=_lo+roundHoleCount(r)-1))return;STATE.razzleToastOk=false;STATE.currentHole=i;updateHoleUI();}
-function changeHole(d){const r=STATE.currentRound,curHole=STATE.currentHole,_maxHi=Math.max(_navLastHole(r,_navFi(r)),curHole),nextHole=Math.max(holeOffset(r),Math.min(_maxHi,curHole+d));const _chfi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(d>0&&gameOnFs('razzle',r,_chfi)&&razzleMatchClosedOnHole(r,curHole)&&!isFlightLocked(r,_chfi)){const _cms=calcRazzle(r,_chfi);const _closedM=_cms.find(m=>m.closedOnHole===curHole);const _nextMi=_closedM?_closedM.mi+1:_cms.length;const _teamsSet=STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r]&&STATE.razzleMatchTeams[r][_chfi]&&STATE.razzleMatchTeams[r][_chfi][_nextMi];if(!_teamsSet){showRazzleTeamModal(r,nextHole);return;}}if(d>0){if(!STATE.razzleHWM)STATE.razzleHWM={};const hwm=(STATE.razzleHWM[r]&&STATE.razzleHWM[r][_chfi]!==undefined)?STATE.razzleHWM[r][_chfi]:-1;if(nextHole>hwm){if(!STATE.razzleHWM[r])STATE.razzleHWM[r]={};STATE.razzleHWM[r][_chfi]=nextHole;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}}else{STATE.razzleToastOk=false;}STATE.currentHole=nextHole;updateHoleUI();}
+// v124.38 (Kyle 16 Oct): moving forward past holes this foursome hasn't fully scored asks first, once per hole.
+// _bhAcked holds the holes already skipped (round:foursome:hole), for this session only.
+var _bhAcked={};
+function _bhBlankBetween(r,from,to){
+  if(isReadOnly||_fsPickPending(r)||!canEditTrip())return [];
+  var fi=_curFi(r);
+  if(isFlightLocked(r,fi)||(STATE.settledRounds||[]).includes(r)||_pencilViewerLocked(r,fi))return [];
+  var need=_flightNeedIdxs(r);if(!need.length)return [];
+  var last=holeOffset(r)+fsHoleCount(r,fi),out=[];
+  for(var h=from;h<to&&h<last;h++){
+    if(_bhAcked[r+':'+fi+':'+h])continue;
+    var row=STATE.scores[r]&&STATE.scores[r][h];
+    if(!row||!need.every(function(pi){return row[pi]!==null&&row[pi]!==undefined;}))out.push(h);
+  }
+  return out;
+}
+// True when it opened the sheet; go() runs on "Go to hole N", after the skipped holes are remembered.
+function _bhGuard(r,to,go){
+  var from=STATE.currentHole;if(!(to>from))return false;
+  var miss=_bhBlankBetween(r,from,to);if(!miss.length)return false;
+  var fi=_curFi(r),n=miss.map(function(h){return h+1;}),one=n.length===1;
+  var run=n[n.length-1]-n[0]===n.length-1;
+  var names=one?'Hole '+n[0]:(run?'Holes '+n[0]+' to '+n[n.length-1]:'Holes '+n.slice(0,-1).join(', ')+' and '+n[n.length-1]);
+  var carry=gameOnFs('hammer',r,fi)||gameOnFs('skins',r,fi);
+  var body=carry?'Any carry lands on the next hole you score, and moves once '+(one?'hole '+n[0]+' is':'they are')+' scored.'
+    :'You can come back and score '+(one?'it':'them')+' any time.';
+  _confirmSheet({icon:'ti-alert-triangle',warn:true,title:names+(one?' isn’t':' aren’t')+' scored yet',body:body,
+    cancelLabel:'Stay on '+(from+1),okLabel:'Go to hole '+(to+1),
+    onOk:function(){miss.forEach(function(h){_bhAcked[r+':'+fi+':'+h]=true;});go();}});
+  return true;
+}
+function jumpHole(i){const r=STATE.currentRound,_lo=holeOffset(r);if(!(i>=_lo&&i<=_lo+roundHoleCount(r)-1))return;if(_bhGuard(r,i,function(){jumpHole(i);}))return;STATE.razzleToastOk=false;STATE.currentHole=i;updateHoleUI();}
+function changeHole(d){if(d>0){const _bhR=STATE.currentRound,_bhTo=Math.min(Math.max(_navLastHole(_bhR,_navFi(_bhR)),STATE.currentHole),STATE.currentHole+d);if(_bhGuard(_bhR,_bhTo,function(){changeHole(d);}))return;}const r=STATE.currentRound,curHole=STATE.currentHole,_maxHi=Math.max(_navLastHole(r,_navFi(r)),curHole),nextHole=Math.max(holeOffset(r),Math.min(_maxHi,curHole+d));const _chfi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(d>0&&gameOnFs('razzle',r,_chfi)&&razzleMatchClosedOnHole(r,curHole)&&!isFlightLocked(r,_chfi)){const _cms=calcRazzle(r,_chfi);const _closedM=_cms.find(m=>m.closedOnHole===curHole);const _nextMi=_closedM?_closedM.mi+1:_cms.length;const _teamsSet=STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r]&&STATE.razzleMatchTeams[r][_chfi]&&STATE.razzleMatchTeams[r][_chfi][_nextMi];if(!_teamsSet){showRazzleTeamModal(r,nextHole);return;}}if(d>0){if(!STATE.razzleHWM)STATE.razzleHWM={};const hwm=(STATE.razzleHWM[r]&&STATE.razzleHWM[r][_chfi]!==undefined)?STATE.razzleHWM[r][_chfi]:-1;if(nextHole>hwm){if(!STATE.razzleHWM[r])STATE.razzleHWM[r]={};STATE.razzleHWM[r][_chfi]=nextHole;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}}else{STATE.razzleToastOk=false;}STATE.currentHole=nextHole;updateHoleUI();}
 function _fsPillOutside(e){
   var p=document.getElementById('fsPill');
   if(p&&!p.contains(e.target)){p.classList.remove('open');document.removeEventListener('click',_fsPillOutside,true);}
@@ -13716,6 +13747,8 @@ function _confirmSheet(opts){
   card.style.cssText='width:100%;max-width:440px;background:var(--color-background-primary);border-top:0.5px solid var(--color-border-tertiary);border-radius:16px 16px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box';
   var iconHtml=opts.icon?(opts.danger
     ?'<div style="display:flex;justify-content:center;margin-bottom:12px"><div class="ts-danger-bg" style="width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center"><i class="ti '+opts.icon+' ts-danger" style="font-size:20px" aria-hidden="true"></i></div></div>'
+    // v124.38: opts.warn is an amber icon (the .carry and short-round amber) for a heads-up, not a loss.
+    :opts.warn?'<div style="display:flex;justify-content:center;margin-bottom:12px"><div style="width:42px;height:42px;border-radius:50%;background:rgba(217,119,6,0.15);display:flex;align-items:center;justify-content:center"><i class="ti '+opts.icon+'" style="font-size:20px;color:#D97706" aria-hidden="true"></i></div></div>'
     :'<div style="display:flex;justify-content:center;margin-bottom:12px"><div style="width:42px;height:42px;border-radius:50%;background:rgba(29,158,117,0.15);display:flex;align-items:center;justify-content:center"><i class="ti '+opts.icon+'" style="font-size:20px;color:#1D9E75" aria-hidden="true"></i></div></div>'):'';
   var okStyle=opts.danger?'color:#FFFFFF;background:#C9372C':'color:#0c1712;background:#1D9E75';
   card.innerHTML=iconHtml
@@ -16423,9 +16456,10 @@ window._gsOpenAddPicker=function(){
     const _yes=inactive.filter(def=>!_gameLaneNote(def.id,r,_laneAP));
     const _no=inactive.filter(def=>_gameLaneNote(def.id,r,_laneAP));
     const _split=(_yes.length&&_no.length)?'<div class="gs-add-split"><i></i><span>Not available for these foursomes</span><i></i></div>':'';
-    // v123.56: a game locked because a foursome is too small gets a way to the foursomes.
+    // v123.56: a game locked by foursome size gets a way to the foursomes. v124.36: "the wrong size", since Nines
+    // wants exactly 3 and a foursome of four is too big for it, not too small.
     const _size=_no.some(def=>/Needs \d[\d, or]* players/.test(String(_gameLaneNote(def.id,r,_laneAP)||'')));
-    const _fsNote=_size?'<div class="gs-add-fsnote">Some foursomes are too small for these games. <button type="button" onclick="window._gsCheckFoursomes('+r+')">Check foursomes ›</button></div>':'';
+    const _fsNote=_size?'<div class="gs-add-fsnote">Some foursomes are the wrong size for these games. <button type="button" onclick="window._gsCheckFoursomes('+r+')">Check foursomes ›</button></div>':'';
     // v123.57: the note heads the locked list, so it is seen without scrolling.
     list.innerHTML=_yes.map(_mkRow).join('')+_split+_fsNote+_no.map(_mkRow).join('');
   }
@@ -17990,7 +18024,8 @@ function calcRoundSkins(r){
     const _p8End=fsHoleCount(r,fi),_segEnd=Math.max(seg.start,Math.min(seg.end,_p8End));
     for(let h=seg.start;h<_segEnd;h++){
       const res=skinHoleWinner(h+_off_sk,r,fi);
-      if(!res||res.tied){carry++;continue;}
+      if(!res)continue; // v124.37: a hole with no scores adds nothing; the carry waits for the next scored hole
+      if(res.tied){carry++;continue;}
       const val=(roundValFs('skinsVal',r,fi,WK.skinsVal||5))*carry;
       if(_indiv){
         const wi=res.winner;
@@ -18738,7 +18773,7 @@ function skinsCarryAt(r,hi,fi){
   fi=fi||0;
   const sG=skinsGamesForRound(r,fi),_th_sca=roundHoleCount(r),_off_sca=holeOffset(r),segs=getSegments(sG,_th_sca),si=segForHole(hi-_off_sca,sG,_th_sca),seg=segs[si];
   let carry=1;
-  for(let h=seg.start;h<hi-_off_sca;h++){const res=skinHoleWinner(h+_off_sca,r,fi);if(!res||res.tied)carry++;else carry=1;}
+  for(let h=seg.start;h<hi-_off_sca;h++){const res=skinHoleWinner(h+_off_sca,r,fi);if(!res)continue;if(res.tied)carry++;else carry=1;}
   return carry;
 }
 function calcSkinsRound(r,fi){
@@ -19267,6 +19302,9 @@ function setHammerSegsForRound(r,v){
       STATE.hammerTeams[r][fi]=defaultHammerTeamsForFlight(r,fi);
       STATE.hammerState[r][fi]=Array(18).fill(null);
     });autoSave();s2WriteActive();_gsRefreshAfterEdit();});}
+// v124.37: what a conceded hole pays, in hole order: base plus the carry into it, doubled for every throw but the
+// last (the concede is at the value before the last double). Worked out on read, so a hole scored late moves it.
+function _hmConcedeOf(base,carry,throws){let v=base+carry;for(let i=0;i<throws-1;i++)v*=2;return v;}
 function calcHammerCarry(r,si,upToHole,fi){
   fi=fi||0;
   // Compute carry pot accumulated from start of segment up to (not including) upToHole
@@ -19288,7 +19326,8 @@ function calcHammerCarry(r,si,upToHole,fi){
     else {
       const tA=tm[0],tB=tm[1];
       const nA=tA.map(pi=>getNetForFlight(pi,h,r,_hfp)),nB=tB.map(pi=>getNetForFlight(pi,h,r,_hfp));
-      if([...nA,...nB].some(v=>v===null)){carry+=pot;continue;}
+      // v124.37: a hole with no scores adds nothing; the carry waits for the next scored hole.
+      if([...nA,...nB].some(v=>v===null))continue;
       const sA=scoring==='bestball'?Math.min(...nA):nA.reduce((s,v)=>s+v,0);
       const sB=scoring==='bestball'?Math.min(...nB):nB.reduce((s,v)=>s+v,0);
       if(sA===sB){if(halveCarry==='carry')carry=pot;else carry=0;}
@@ -19335,7 +19374,8 @@ function calcHammerSegResult(r,si,fi){
     hs.throws.forEach(()=>{pot*=2;});
     if(hs.conceded){
       const winTeam=hs.concededBy===0?1:0;
-      if(winTeam===0)netA+=hs.concedeVal;else netB+=hs.concedeVal;
+      const cv=_hmConcedeOf(baseVal,carry,hs.throws.length);
+      if(winTeam===0)netA+=cv;else netB+=cv;
     } else {
       const nA=tA.map(pi=>getNetForFlight(pi,h,r,_hfp)),nB=tB.map(pi=>getNetForFlight(pi,h,r,_hfp));
       if([...nA,...nB].some(v=>v===null))continue;
@@ -19397,8 +19437,7 @@ function resolveHammer(action,r,hi){
     if(!hc)return;
     const lastThrower=hs.throws[hs.throws.length-1];
     const hSeg=hammerSegsForRound(r,fi),si=segForHole(hi,hSeg);
-    let preVal=roundValFs('hammerVal',r,fi,WK.hammerVal||2)+calcHammerCarry(r,si,hi,fi);
-    for(let i=0;i<hs.throws.length-1;i++)preVal*=2;
+    const preVal=_hmConcedeOf(roundValFs('hammerVal',r,fi,WK.hammerVal||2),calcHammerCarry(r,si,hi,fi),hs.throws.length);
     hs.conceded=true;hs.concedeVal=preVal;hs.concededBy=lastThrower===0?1:0;
   }
   autoSave();renderHammerBox();if(document.getElementById('view-games').style.display!=='none')renderGamesTab();
@@ -19411,6 +19450,7 @@ function renderHammerBox(){
   {const _hn=_gameGroupNote('hammer',(flightsForRound(r)[_hbfi]||[]).length);if(_hn){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Hammer</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">'+_hn+'.</div></div>';return;}}
   if(!gameOnFs('hammer',r,_hbfi)){wrap.innerHTML='';return;}const hc=calcHammerHole(hi,r,_hbfi);if(!hc){wrap.innerHTML='';return;}
   const{tA,tB,nA,nB,scoreA,scoreB,allIn,hs,potVal,si}=hc;
+  const _cv=_hmConcedeOf(hc.baseVal,hc.carry,hs.throws.length);
   const locked=isFlightLocked(r,_hbfi);
   const nameA=tA.map(i=>displayName(i));const nameB=tB.map(i=>displayName(i));
   const scoring=roundValFs('hammerScoring',r,_hbfi,WK.hammerScoring||'bestball');
@@ -19475,7 +19515,7 @@ function renderHammerBox(){
   if(hs.conceded){
     const winTeam=hs.concededBy===0?1:0;
     const winLtr=winTeam===0?'A':'B';
-    const settleAmt=payout==='perteam'?hs.concedeVal/2:hs.concedeVal;
+    const settleAmt=payout==='perteam'?_cv/2:_cv;
     resultRow=`<div class="mp-result-bar"><span class="mp-result-text">${winLtr} wins (conceded)</span><span style="font-size:12px;font-weight:600;color:#1D9E75">+${fmt(settleAmt)}</span></div>`;
   } else if(allIn){
     const halveCarry=roundValFs('hammerHalve',r,_hbfi,WK.hammerHalve||'carry');
@@ -19491,7 +19531,7 @@ function renderHammerBox(){
   // Accepted banner
   const acceptedBanner=hs.accepted&&!hs.conceded&&!allIn?`<div style="display:flex;align-items:center;padding:5px 12px;background:#E1F5EE;border-bottom:0.5px solid #5DCAA5"><span style="font-size:11px;font-weight:500;color:#0F6E56">✓ Accepted - pot doubled to ${fmt(potVal)}</span></div>`:'';
   const throwHistory=hs.throws.length>0?" · "+hs.throws.map(t=>"🔨"+(t===0?"A":"B")).join(" "):"";
-  const displayPotVal=hs.conceded?hs.concedeVal:potVal;
+  const displayPotVal=hs.conceded?_cv:potVal;
   const potLabel=`<span style="font-size:12px;font-weight:500;color:#1D9E75">Pot ${fmt(displayPotVal)}${throwHistory}</span>`;
   const hSeg2=hammerSegsForRound(r,_hbfi),seg3=getSegments(hSeg2)[si];
   const hammerHdr=`<div class="calc-hd"><span>Hammer · G${si+1} H${seg3.start+holeOffset(r)+1}-${seg3.end+holeOffset(r)}</span>${potLabel}</div>`;
@@ -19710,13 +19750,13 @@ function _renderHammerFlightBlock(r,fi,labelHd){
         const w=hs.concededBy===0?1:0;
         mid=tags+`<span class="q">${w===0?'B':'A'} conceded</span>`;
         win=`<span class="w ${w===0?'ca':'cb'}">${w===0?'A':'B'}</span>`;
-        rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span class="it">${_m(hs.concedeVal)}</span><span>${mid}</span>${win}</div>`;
+        rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span class="it">${_m(_hmConcedeOf(baseVal,carry,hs.throws.length))}</span><span>${mid}</span>${win}</div>`;
         carry=0;carryAt=0;played++;lastH=hn;continue;
       }
       const nA=tA.map(pi=>getNetForFlight(pi,h,r,_hfp)),nB=tB.map(pi=>getNetForFlight(pi,h,r,_hfp));
       if([...nA,...nB].some(v=>v===null)){
         rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span>${_m(pot)}</span><span>${mid}</span><span class="w"><span class="q">-</span></span></div>`;
-        carry=pot;continue;
+        continue; // v124.37: unscored, so it carries nothing; the carry passes to the next scored hole
       }
       played++;lastH=hn;
       const sA=scoring==='bestball'?Math.min(...nA):nA.reduce((x,v)=>x+v,0);
