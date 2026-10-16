@@ -2479,7 +2479,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.37';
+const APP_VERSION='v124.38';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -11079,8 +11079,39 @@ function renderHoleDots(){const r=STATE.currentRound;const nHoles=roundHoleCount
   // a device that may well pick foursome 1, and the grid then never opens for the group
   // the user actually joined.
   if(!_fsPickPending(r))_srAutoExpand(r,_srFi);}
-function jumpHole(i){const r=STATE.currentRound,_lo=holeOffset(r);if(!(i>=_lo&&i<=_lo+roundHoleCount(r)-1))return;STATE.razzleToastOk=false;STATE.currentHole=i;updateHoleUI();}
-function changeHole(d){const r=STATE.currentRound,curHole=STATE.currentHole,_maxHi=Math.max(_navLastHole(r,_navFi(r)),curHole),nextHole=Math.max(holeOffset(r),Math.min(_maxHi,curHole+d));const _chfi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(d>0&&gameOnFs('razzle',r,_chfi)&&razzleMatchClosedOnHole(r,curHole)&&!isFlightLocked(r,_chfi)){const _cms=calcRazzle(r,_chfi);const _closedM=_cms.find(m=>m.closedOnHole===curHole);const _nextMi=_closedM?_closedM.mi+1:_cms.length;const _teamsSet=STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r]&&STATE.razzleMatchTeams[r][_chfi]&&STATE.razzleMatchTeams[r][_chfi][_nextMi];if(!_teamsSet){showRazzleTeamModal(r,nextHole);return;}}if(d>0){if(!STATE.razzleHWM)STATE.razzleHWM={};const hwm=(STATE.razzleHWM[r]&&STATE.razzleHWM[r][_chfi]!==undefined)?STATE.razzleHWM[r][_chfi]:-1;if(nextHole>hwm){if(!STATE.razzleHWM[r])STATE.razzleHWM[r]={};STATE.razzleHWM[r][_chfi]=nextHole;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}}else{STATE.razzleToastOk=false;}STATE.currentHole=nextHole;updateHoleUI();}
+// v124.38 (Kyle 16 Oct): moving forward past holes this foursome hasn't fully scored asks first, once per hole.
+// _bhAcked holds the holes already skipped (round:foursome:hole), for this session only.
+var _bhAcked={};
+function _bhBlankBetween(r,from,to){
+  if(isReadOnly||_fsPickPending(r)||!canEditTrip())return [];
+  var fi=_curFi(r);
+  if(isFlightLocked(r,fi)||(STATE.settledRounds||[]).includes(r)||_pencilViewerLocked(r,fi))return [];
+  var need=_flightNeedIdxs(r);if(!need.length)return [];
+  var last=holeOffset(r)+fsHoleCount(r,fi),out=[];
+  for(var h=from;h<to&&h<last;h++){
+    if(_bhAcked[r+':'+fi+':'+h])continue;
+    var row=STATE.scores[r]&&STATE.scores[r][h];
+    if(!row||!need.every(function(pi){return row[pi]!==null&&row[pi]!==undefined;}))out.push(h);
+  }
+  return out;
+}
+// True when it opened the sheet; go() runs on "Go to hole N", after the skipped holes are remembered.
+function _bhGuard(r,to,go){
+  var from=STATE.currentHole;if(!(to>from))return false;
+  var miss=_bhBlankBetween(r,from,to);if(!miss.length)return false;
+  var fi=_curFi(r),n=miss.map(function(h){return h+1;}),one=n.length===1;
+  var run=n[n.length-1]-n[0]===n.length-1;
+  var names=one?'Hole '+n[0]:(run?'Holes '+n[0]+' to '+n[n.length-1]:'Holes '+n.slice(0,-1).join(', ')+' and '+n[n.length-1]);
+  var carry=gameOnFs('hammer',r,fi)||gameOnFs('skins',r,fi);
+  var body=carry?'Any carry lands on the next hole you score, and moves once '+(one?'hole '+n[0]+' is':'they are')+' scored.'
+    :'You can come back and score '+(one?'it':'them')+' any time.';
+  _confirmSheet({icon:'ti-alert-triangle',warn:true,title:names+(one?' isn’t':' aren’t')+' scored yet',body:body,
+    cancelLabel:'Stay on '+(from+1),okLabel:'Go to hole '+(to+1),
+    onOk:function(){miss.forEach(function(h){_bhAcked[r+':'+fi+':'+h]=true;});go();}});
+  return true;
+}
+function jumpHole(i){const r=STATE.currentRound,_lo=holeOffset(r);if(!(i>=_lo&&i<=_lo+roundHoleCount(r)-1))return;if(_bhGuard(r,i,function(){jumpHole(i);}))return;STATE.razzleToastOk=false;STATE.currentHole=i;updateHoleUI();}
+function changeHole(d){if(d>0){const _bhR=STATE.currentRound,_bhTo=Math.min(Math.max(_navLastHole(_bhR,_navFi(_bhR)),STATE.currentHole),STATE.currentHole+d);if(_bhGuard(_bhR,_bhTo,function(){changeHole(d);}))return;}const r=STATE.currentRound,curHole=STATE.currentHole,_maxHi=Math.max(_navLastHole(r,_navFi(r)),curHole),nextHole=Math.max(holeOffset(r),Math.min(_maxHi,curHole+d));const _chfi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(d>0&&gameOnFs('razzle',r,_chfi)&&razzleMatchClosedOnHole(r,curHole)&&!isFlightLocked(r,_chfi)){const _cms=calcRazzle(r,_chfi);const _closedM=_cms.find(m=>m.closedOnHole===curHole);const _nextMi=_closedM?_closedM.mi+1:_cms.length;const _teamsSet=STATE.razzleMatchTeams&&STATE.razzleMatchTeams[r]&&STATE.razzleMatchTeams[r][_chfi]&&STATE.razzleMatchTeams[r][_chfi][_nextMi];if(!_teamsSet){showRazzleTeamModal(r,nextHole);return;}}if(d>0){if(!STATE.razzleHWM)STATE.razzleHWM={};const hwm=(STATE.razzleHWM[r]&&STATE.razzleHWM[r][_chfi]!==undefined)?STATE.razzleHWM[r][_chfi]:-1;if(nextHole>hwm){if(!STATE.razzleHWM[r])STATE.razzleHWM[r]={};STATE.razzleHWM[r][_chfi]=nextHole;STATE.razzleToastOk=true;}else{STATE.razzleToastOk=false;}}else{STATE.razzleToastOk=false;}STATE.currentHole=nextHole;updateHoleUI();}
 function _fsPillOutside(e){
   var p=document.getElementById('fsPill');
   if(p&&!p.contains(e.target)){p.classList.remove('open');document.removeEventListener('click',_fsPillOutside,true);}
@@ -13716,6 +13747,8 @@ function _confirmSheet(opts){
   card.style.cssText='width:100%;max-width:440px;background:var(--color-background-primary);border-top:0.5px solid var(--color-border-tertiary);border-radius:16px 16px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box';
   var iconHtml=opts.icon?(opts.danger
     ?'<div style="display:flex;justify-content:center;margin-bottom:12px"><div class="ts-danger-bg" style="width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center"><i class="ti '+opts.icon+' ts-danger" style="font-size:20px" aria-hidden="true"></i></div></div>'
+    // v124.38: opts.warn is an amber icon (the .carry and short-round amber) for a heads-up, not a loss.
+    :opts.warn?'<div style="display:flex;justify-content:center;margin-bottom:12px"><div style="width:42px;height:42px;border-radius:50%;background:rgba(217,119,6,0.15);display:flex;align-items:center;justify-content:center"><i class="ti '+opts.icon+'" style="font-size:20px;color:#D97706" aria-hidden="true"></i></div></div>'
     :'<div style="display:flex;justify-content:center;margin-bottom:12px"><div style="width:42px;height:42px;border-radius:50%;background:rgba(29,158,117,0.15);display:flex;align-items:center;justify-content:center"><i class="ti '+opts.icon+'" style="font-size:20px;color:#1D9E75" aria-hidden="true"></i></div></div>'):'';
   var okStyle=opts.danger?'color:#FFFFFF;background:#C9372C':'color:#0c1712;background:#1D9E75';
   card.innerHTML=iconHtml
