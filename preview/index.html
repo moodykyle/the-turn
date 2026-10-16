@@ -282,7 +282,25 @@ body.force-light .sc-grid td.sr-gvoid{background:repeating-linear-gradient(135de
 .sc-cell.bogey{border:1.5px solid #EF9F27;color:#EF9F27;}
 .sc-cell.double{border:1.5px solid #D85A30;color:#D85A30;}
 .sc-cell.par{color:var(--color-text-secondary);}
-.dot-row{height:6px;display:flex;align-items:center;justify-content:center;}.stroke-dot{width:3px;height:3px;border-radius:50%;background:#1D9E75;display:inline-block;margin:0 1.5px;}.stroke-dot-give{background:#D85A30;}
+.dot-row{height:6px;display:flex;align-items:center;justify-content:center;}
+/* v124.41 (Grid B): separate borders so each foursome's block can round its corners; heavier scores and totals;
+   alternating tint; section headings; the F2 box hides while the grid shows; Net dark green in Auto too. */
+.sc-grid{border-collapse:separate;border-spacing:0;}
+.sc-grid th,.sc-grid td{border:0;border-right:1px solid var(--color-border-tertiary);border-bottom:1px solid var(--color-border-tertiary);}
+.sc-grid tr>:first-child{border-left:1px solid var(--color-border-tertiary);}
+.sc-grid tr:first-child>*{border-top:1px solid var(--color-border-tertiary);}
+.sc-grid tr.fs-top>*{border-top:1px solid var(--color-border-secondary);}
+.sc-grid tr.fs-top>:first-child{border-top-left-radius:12px;}.sc-grid tr.fs-top>:last-child{border-top-right-radius:12px;}
+.sc-grid tr.fs-bot>:first-child{border-bottom-left-radius:12px;}.sc-grid tr.fs-bot>:last-child{border-bottom-right-radius:12px;}
+.sc-grid tr.alt>td{box-shadow:inset 0 0 0 200px rgba(127,127,127,0.07);}
+.sc-grid tr.fs-hd>td{border:0;background:transparent!important;padding:0;box-shadow:none;}
+.sc-grid .sc-fsh{position:sticky;left:0;width:calc(100vw - 24px);max-width:456px;box-sizing:border-box;padding:0 10px;margin:18px 0 8px;}
+.sc-grid tr.fs-hd.first .sc-fsh{margin-top:12px;}
+.sc-grid .sc-cell{width:24px;height:24px;font-size:15px;font-weight:600;}
+.sc-grid td.player-col{font-weight:600;}
+.sc-grid td.total-col,.sc-grid td.turn-col,.sc-grid td.net-col{font-size:15px;font-weight:700;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .sc-grid .net-col{background:#0A2E1F;color:#4ADE80;}}
+#ctxRdSel.sc-card .fs-pill{display:none;}.stroke-dot{width:3px;height:3px;border-radius:50%;background:#1D9E75;display:inline-block;margin:0 1.5px;}.stroke-dot-give{background:#D85A30;}
 .view{padding:1rem;}
 .view-title{font-size:16px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;}
 .view-sub{font-size:12px;color:var(--color-text-secondary);margin-bottom:0.75rem;}
@@ -2479,7 +2497,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.40';
+const APP_VERSION='v124.41';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -8638,6 +8656,7 @@ function _updateHoleStrip(){
 
 window._actToggleView=function(){
   _scViewMode=(_scViewMode==='hole')?'card':'hole';
+  {const _cs=document.getElementById('ctxRdSel');if(_cs)_cs.classList.toggle('sc-card',_scViewMode==='card');}
   const holeWrap=document.getElementById('holeDetailWrap');
   const cardWrap=document.getElementById('inlineCardWrap');
   if(_scViewMode==='card'){
@@ -8729,6 +8748,7 @@ function setView(v){
   // Content render dispatch
   if(v==='scores'||v==='entry'){
     _scViewMode='hole';
+    {const _cs=document.getElementById('ctxRdSel');if(_cs)_cs.classList.remove('sc-card');}
     const holeWrap=document.getElementById('holeDetailWrap');
     const cardWrap=document.getElementById('inlineCardWrap');
     if(holeWrap)holeWrap.style.display='';
@@ -9436,7 +9456,7 @@ function renderScorecard(){
   let _huPairNet=null;if(gameOnFs('mp',r,_fp)&&isHeadsUp(r)&&huNetOffMatchLow(r,_fp)){const _siHU=segForHole(hi-holeOffset(r),mpGamesForRound(r,_fp),roundHoleCount(r));const _tmHU=STATE.mpTeams[r]?.[_fp]?.[_siHU];if(_tmHU&&_tmHU[0]&&_tmHU[1]){_huPairNet={};for(let _mi=0;_mi<_tmHU[0].length;_mi++){const _pa=_tmHU[0][_mi],_pb=_tmHU[1][_mi];if(_pa!==undefined&&_pb!==undefined){_huPairNet[_pa]=[_pa,_pb];_huPairNet[_pb]=[_pa,_pb];}}}}
   // Snake holder for the ACTIVE foursome at this hole (the card only shows that foursome).
   const _snkHolder=gameOnFs('snake',r,_fp)?currentSnakeHolderForFlight(r,hi,_fp):null;
-  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const grTick=gameOn('grinders',r)&&grPlayerOk(r,i,hi)?`<span class="gr-tick" title="Par or better">&#10003;</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const _flk=isFlightLocked(r,_fp==null?_curFi(r):_fp);const roStyle=_pvLock?'pointer-events:none':(isReadOnly?'opacity:0.5;pointer-events:none':((_flk||_deadH)?'pointer-events:none':''));const _rowDim=((_pvLock&&!_flk)||_deadH)?'opacity:0.42;':'';const _minusBtn=(_pvLock||_deadH||_flk)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':((_pvLock||_flk)?'':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbLtr(_fbRowDiv[i])}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="avatar" style="background:${p.bg};color:${p.fg};width:36px;height:36px;font-size:12px">${p.ini}</div><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}${grTick}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('')+_grHoleChip(r,_fp,hi);
+  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag==='FIELD'?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const grTick=gameOn('grinders',r)&&grPlayerOk(r,i,hi)?`<span class="gr-tick" title="Par or better">&#10003;</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const _flk=isFlightLocked(r,_fp==null?_curFi(r):_fp);const roStyle=_pvLock?'pointer-events:none':(isReadOnly?'opacity:0.5;pointer-events:none':((_flk||_deadH)?'pointer-events:none':''));const _rowDim=((_pvLock&&!_flk)||_deadH)?'opacity:0.42;':'';const _minusBtn=(_pvLock||_deadH||_flk)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':((_pvLock||_flk)?'':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbLtr(_fbRowDiv[i])}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}${grTick}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('')+_grHoleChip(r,_fp,hi);
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
   try{renderNinesBox();}catch(ne){console.error('renderNinesBox error:',ne);const nw=document.getElementById('ninesBoxWrap');if(nw)nw.innerHTML='';}
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
@@ -11296,7 +11316,7 @@ function renderSCGrid(){
     // two different end holes at once. Only the player cells stripe.
     const _gvShort=(fi!==null&&fi!==undefined)&&fsEndedShort(r,fi);
     const _gvEnd=off+fsHoleCount(r,fi);
-    idxs.forEach((pi)=>{
+    idxs.forEach((pi,_k)=>{
       const cells=activeHoles.map((hole,i)=>{
         const hi=i+off;
         const _gv=_gvShort&&hi>=_gvEnd;
@@ -11322,8 +11342,10 @@ function renderSCGrid(){
       const tOut=activeHoles.slice(0,_scSplit).reduce((a,_,i)=>a+(STATE.scores[r][i+off][pi]||0),0);
       const tIn=activeHoles.slice(_scSplit).reduce((a,_,i)=>a+(STATE.scores[r][i+_scSplit+off][pi]||0),0);
       const tN=activeHoles.reduce((a,_,i)=>{const n=getNet(pi,i+off,r);return n!==null?a+n:a;},0);
-      rows+=`<tr>`;
-      rows+=`<td class="player-col"><span style="font-weight:500">${displayName(pi)}</span></td>`;
+      // v124.41: the block's first and last rows round its corners; every other row is tinted.
+      const _rc=[_k===0?'fs-top':'',_k===idxs.length-1?'fs-bot':'',_k%2?'alt':''].filter(Boolean).join(' ');
+      rows+=`<tr${_rc?` class="${_rc}"`:''}>`;
+      rows+=`<td class="player-col">${displayName(pi)}</td>`;
       if(_scSplit){
         cells.forEach((c,i)=>{rows+=c;if(i===_scSplit-1)rows+=`<td class="turn-col">${hasOut?tOut:''}</td>`;});
         rows+=`<td class="turn-col">${hasIn?tIn:''}</td>`;
@@ -11345,7 +11367,7 @@ function renderSCGrid(){
   }else if(_sel===-1){
     _fl.forEach((grp,gi)=>{
       const idxs=grp.filter(pi=>pi>=0);
-      playerRows+='<tr><td colspan="'+(activeHoles.length+3+(_scSplit?2:0))+'" style="position:static;left:auto;text-align:left;background:transparent;border-bottom:none;padding:14px 10px 4px;font-size:12px;font-weight:500;color:var(--color-text-secondary)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(gi)+';margin-right:7px;vertical-align:middle"></span>Foursome '+(gi+1)+'</td></tr>';
+      playerRows+='<tr class="fs-hd'+(gi===0?' first':'')+'"><td colspan="'+(activeHoles.length+3+(_scSplit?2:0))+'"><div class="sec-hd gs-sec gs-fsh go sc-fsh" onclick="_scGridFilterPick('+gi+')"><span>Foursome '+(gi+1)+'</span><i></i><span class="ch">\u203a</span></div></td></tr>';
       playerRows+=_scGridRowsFor(idxs,gi);
     });
   }else{
