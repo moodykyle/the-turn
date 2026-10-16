@@ -953,6 +953,8 @@ body.force-light{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpA
 .mpk-hr.vg{grid-template-columns:30px 70px minmax(0,1fr) 56px}
 .mpk-hr.rz{grid-template-columns:30px 52px minmax(0,1fr) 74px}
 .mpk-hr.mpk-hh{padding:5px 12px;font-size:11px;color:var(--color-text-tertiary)}.mpk-hr.mpk-hh .w{font-weight:400}
+.mpk-hh>span:nth-child(-n+2),.mpk-hh~.mpk-hr>span:nth-child(-n+2){text-align:center}
+.mpk-hh~.mpk-hr .hp{margin-left:0}
 /* v124.25: individual Skins, the heading row over the players. */
 .sk-lbh{display:flex;align-items:center;gap:12px;padding:6px 14px 4px;font-size:11px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary)}
 .sk-lbh span:first-child{width:26px;text-align:center}.sk-lbh span:last-child{margin-left:auto}
@@ -2477,7 +2479,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.33';
+const APP_VERSION='v124.34';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
