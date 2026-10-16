@@ -2479,7 +2479,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.35';
+const APP_VERSION='v124.36';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -16423,9 +16423,10 @@ window._gsOpenAddPicker=function(){
     const _yes=inactive.filter(def=>!_gameLaneNote(def.id,r,_laneAP));
     const _no=inactive.filter(def=>_gameLaneNote(def.id,r,_laneAP));
     const _split=(_yes.length&&_no.length)?'<div class="gs-add-split"><i></i><span>Not available for these foursomes</span><i></i></div>':'';
-    // v123.56: a game locked because a foursome is too small gets a way to the foursomes.
+    // v123.56: a game locked by foursome size gets a way to the foursomes. v124.36: "the wrong size", since Nines
+    // wants exactly 3 and a foursome of four is too big for it, not too small.
     const _size=_no.some(def=>/Needs \d[\d, or]* players/.test(String(_gameLaneNote(def.id,r,_laneAP)||'')));
-    const _fsNote=_size?'<div class="gs-add-fsnote">Some foursomes are too small for these games. <button type="button" onclick="window._gsCheckFoursomes('+r+')">Check foursomes ›</button></div>':'';
+    const _fsNote=_size?'<div class="gs-add-fsnote">Some foursomes are the wrong size for these games. <button type="button" onclick="window._gsCheckFoursomes('+r+')">Check foursomes ›</button></div>':'';
     // v123.57: the note heads the locked list, so it is seen without scrolling.
     list.innerHTML=_yes.map(_mkRow).join('')+_split+_fsNote+_no.map(_mkRow).join('');
   }
