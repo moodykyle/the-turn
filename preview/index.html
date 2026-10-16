@@ -2501,7 +2501,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.45';
+const APP_VERSION='v124.46';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -10869,8 +10869,9 @@ function renderMPHoleBox(){
   if(!tA||!tB){wrap.innerHTML='';return;}
   const seg=getSegments(mpG,roundHoleCount(r))[si];
   const _huBox=isHeadsUp(r);
-  const mpFmtLabel=_huBox?'Heads up 1v1':'2v2 best ball';
-  const _mpTitle=`Match Play · G${si+1} H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}`;
+  // v124.46: the match in the title, its holes on the second line (as the Games tab names them).
+  const mpFmtLabel=`Holes ${seg.start+holeOffset(r)+1} to ${seg.end+holeOffset(r)} · `+(_huBox?'Heads up 1v1':'2v2 best ball');
+  const _mpTitle=`Match Play · ${_huBox?'Game':'Match'} ${si+1}`;
   const hdr=gameBoxHeaderWithFmt(_mpTitle,mpFmtLabel);
   if(_huBox){
     // HU: render two mini match blocks
@@ -10957,11 +10958,15 @@ function renderMPHoleBox(){
   function mpTeamBlock(team,scores,bestScore,isWinner){
     const players=team.map((pi,idx)=>{const s=scores?scores[idx]:null;return`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net">${s!==null&&s===bestScore&&isWinner?'<span class="mp-best">best → </span>':''}${s!==null?'net '+s:'—'}</span></div>`;}).join('');
     const teamLbl=_huBox?displayName(team[0]):(team===tA?'A':'B');
-    return `<div class="mp-team-block"><div class="mp-team-letter">${teamLbl}</div><div class="mp-team-players">${players}</div></div>`;
+    const _tlc=_huBox?'':` style="color:var(--mp${team===tA?'A':'B'})"`;
+    return `<div class="mp-team-block"><div class="mp-team-letter"${_tlc}>${teamLbl}</div><div class="mp-team-players">${players}</div></div>`;
   }
   const res=calcMP(hi,r,_fi);
   const ms=calcMPMatchScore(r,_fi,si,hi);
   const r2=r,si2=si;
+  // v124.46: the standing in words, in the leader's colour.
+  const _mpSt=x=>{const t=String(x).replace(/^([AB]): /,'$1 ').replace(/^A\/S$/,'All square');const c=/^A\b/.test(t)?'var(--mpA)':/^B\b/.test(t)?'var(--mpB)':'var(--color-text-secondary)';return{t,c};};
+  const _mpUsd=v=>'$'+(Number(v)%1?Number(v).toFixed(2):Number(v));
   // Press button and cancel — always built regardless of score state
   const activePresses2=getPresses(r2,_fi,si2);
   let pressBtn='';
@@ -10978,11 +10983,13 @@ function renderMPHoleBox(){
   activePresses.forEach((p,pi)=>{
     const pr=calcPressResult(r2,_fi,si2,p);
     const pLabel=p.auto?'Auto-press':'Press '+(pi+1);
-    const pStatus=pr?(pr.scoreStr||(pr.winner==='tie'?'A/S':pr.winner==='a'?'A leads':'B leads')):'—';
-    const pClr=pr?'#1D9E75':'var(--color-text-tertiary)';
-    pressRows+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;font-size:11px;background:var(--color-background-secondary);${pi>0?'border-top:0.5px solid var(--color-border-tertiary);':''}"><span style="color:var(--color-text-secondary);font-weight:500">${pLabel} ${p.startHole+1===seg.end?'H'+(p.startHole+1):'H'+(p.startHole+1)+'-'+seg.end} · $${p.val.toFixed(2)}</span><span style="color:${pClr};font-weight:500">${pStatus}</span></div>`;
+    const _pst=_mpSt(pr?(pr.scoreStr||(pr.winner==='tie'?'A/S':pr.winner==='a'?'A leads':'B leads')):'—');
+    const pStatus=_pst.t;
+    const pClr=pr?_pst.c:'var(--color-text-tertiary)';
+    const _pEnd=seg.end+holeOffset(r2);
+    pressRows+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;font-size:12px;background:var(--color-background-secondary);${pi>0?'border-top:0.5px solid var(--color-border-tertiary);':''}"><span style="color:var(--color-text-secondary);font-weight:500">${pLabel} · ${p.startHole+1===_pEnd?'Hole '+(p.startHole+1):'Holes '+(p.startHole+1)+' to '+_pEnd} · ${_mpUsd(p.val)}</span><span style="color:${pClr};font-weight:500">${pStatus}</span></div>`;
   });
-  const pressCard=pressRows?`<div style="margin:8px 12px 10px;border:0.5px solid var(--color-border-tertiary);border-left:2px solid #1D9E75;border-radius:6px;overflow:hidden"><div style="padding:4px 10px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.05em">Presses</div>${pressRows}</div>`:'';
+  const pressCard=pressRows?`<div style="margin:8px 12px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:6px;overflow:hidden"><div style="padding:4px 10px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.05em">Presses</div>${pressRows}</div>`:'';
   let cancelBtn='';
   if(!res){
     // A running total is a property of the MATCH, not of the hole you are standing on,
@@ -10991,16 +10998,16 @@ function renderMPHoleBox(){
     // was read as no data, here real data was thrown away for want of a result.
     // holesPlayed counts from the segment start, so the hole NUMBER is seg.start +
     // holesPlayed + holeOffset. Match-over comparison mirrors the scored path exactly.
-    const _msStr=ms?ms.scoreStr.replace('Team A','A').replace('Team B','B'):'A/S';
+    const _msSt=_mpSt(ms?ms.scoreStr.replace('Team A','A').replace('Team B','B'):'A/S'),_msStr=_msSt.t;
     const _msLeft=(ms&&ms.closed&&hi>ms.closedAtHole)?'Match over'
       :(ms?('Thru '+(seg.start+ms.holesPlayed+holeOffset(r))):'Not started');
-    const statusBar=`<div class="mp-result-bar"><span class="mp-result-text" style="color:var(--color-text-secondary)">${_msLeft}</span><span class="mp-result-text" style="font-size:13px;color:#1D9E75">${_msStr}</span></div>`;
+    const statusBar=`<div class="mp-result-bar"><span class="mp-result-text" style="color:var(--color-text-secondary)">${_msLeft}</span><span class="mp-result-text" style="font-size:13px;color:${_msSt.c}">${_msStr}</span></div>`;
     wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdrP}${mpTeamBlock(tA,null,null,false)}${mpTeamBlock(tB,null,null,false)}${statusBar}${pressCard}</div>`;return;
   }
-  const scoreStr=ms?ms.scoreStr.replace('Team A','A').replace('Team B','B'):'A/S';
+  const _scSt=_mpSt(ms?ms.scoreStr.replace('Team A','A').replace('Team B','B'):'A/S'),scoreStr=_scSt.t;
   const isPostClose=ms&&ms.closed&&hi>ms.closedAtHole;
   const winnerTxt=isPostClose?'Match over':res.halved?'Halved':res.aWins?'A wins':'B wins';
-  const resultBar=`<div class="mp-result-bar"><span class="mp-result-text">${winnerTxt}</span><span class="mp-result-text" style="font-size:13px;color:#1D9E75">${scoreStr}</span></div>`;
+  const resultBar=`<div class="mp-result-bar"><span class="mp-result-text">${winnerTxt}</span><span class="mp-result-text" style="font-size:13px;color:${_scSt.c}">${scoreStr}</span></div>`;
   wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdrP}${mpTeamBlock(tA,res.nA,res.bestA,res.aWins)}${mpTeamBlock(tB,res.nB,res.bestB,!res.aWins&&!res.halved)}${resultBar}${pressCard}</div>`;
 }
 function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap'),r=STATE.currentRound,hi=STATE.currentHole;if(!gameOn('vegas',STATE.currentRound)){wrap.innerHTML='';return;}if(WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Vegas</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>`;return;}const _vfi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(!gameOnFs('vegas',r,_vfi)){wrap.innerHTML='';return;}const _vfp=flightsForRound(r)[_vfi]||[];if(_vfp.length<4){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Vegas</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">This foursome needs 4 players.</div></div>';return;}const vSeg=vegasSegForRound(r,_vfi),si=segForHole(hi-holeOffset(r),vSeg,roundHoleCount(r)),_vtv=STATE.vegTeams[r]&&STATE.vegTeams[r][_vfi]&&STATE.vegTeams[r][_vfi][si];if(!_vtv||!Array.isArray(_vtv[0])||!Array.isArray(_vtv[1])||_vtv[0].length<2||_vtv[1].length<2){wrap.innerHTML='';return;}const tA=_vtv[0],tB=_vtv[1];
