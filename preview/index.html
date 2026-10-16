@@ -294,11 +294,13 @@ body.force-light .sc-grid td.sr-gvoid{background:repeating-linear-gradient(135de
 .sc-grid tr.fs-bot>:first-child{border-bottom-left-radius:12px;}.sc-grid tr.fs-bot>:last-child{border-bottom-right-radius:12px;}
 .sc-grid tr.alt>td{box-shadow:inset 0 0 0 200px rgba(127,127,127,0.07);}
 .sc-grid tr.fs-hd>td{border:0;background:transparent!important;padding:0;box-shadow:none;}
-.sc-grid .sc-fsh{position:sticky;left:0;width:calc(100vw - 24px);max-width:456px;box-sizing:border-box;padding:0 10px;margin:18px 0 8px;}
+.sc-grid .sc-fsh{position:sticky;left:0;width:calc(100vw - 24px);max-width:456px;box-sizing:border-box;padding:0 10px;margin:28px 0 8px;}
 .sc-grid tr.fs-hd.first .sc-fsh{margin-top:12px;}
 .sc-grid .sc-cell{width:24px;height:24px;font-size:15px;font-weight:600;}
-.sc-grid td.player-col{font-weight:600;}
-.sc-grid td.total-col,.sc-grid td.turn-col,.sc-grid td.net-col{font-size:15px;font-weight:700;}
+.sc-grid tr.pr td.player-col{font-weight:600;}
+.sc-grid tr.pr td.total-col,.sc-grid tr.pr td.turn-col,.sc-grid tr.pr td.net-col{font-size:15px;font-weight:700;}
+.sc-grid th{font-size:13px;}.sc-grid tr.hd-sm td{font-size:11px;}.sc-grid tr.hd-sm td.player-col,.sc-grid tr.hd-par td.player-col{font-size:12px;font-weight:400;color:var(--color-text-secondary);}
+.sc-grid tr.hd-par td{font-size:13px;}.sc-grid tr.hd-par td.turn-col,.sc-grid tr.hd-par td.total-col,.sc-grid tr.hd-sm td.turn-col,.sc-grid tr.hd-sm td.total-col{font-weight:600;}
 @media(prefers-color-scheme:dark){body:not(.force-light) .sc-grid .net-col{background:#0A2E1F;color:#4ADE80;}}
 #ctxRdSel.sc-card .fs-pill{display:none;}.stroke-dot{width:3px;height:3px;border-radius:50%;background:#1D9E75;display:inline-block;margin:0 1.5px;}.stroke-dot-give{background:#D85A30;}
 .view{padding:1rem;}
@@ -2497,7 +2499,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.41';
+const APP_VERSION='v124.42';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -11292,24 +11294,24 @@ function renderSCGrid(){
   if(_scShowYards){
     const _ydsOut=activeHoles.slice(0,_scSplit).reduce((a,h)=>a+(h.yardage||0),0);
     const _ydsIn=activeHoles.slice(_scSplit).reduce((a,h)=>a+(h.yardage||0),0);
-    yardsRow=`<tr><td class="player-col" style="font-size:10px;color:var(--color-text-secondary)">Yards</td>`;
-    activeHoles.forEach((h,i)=>{yardsRow+=`<td style="color:var(--color-text-secondary);font-size:10px">${h.yardage||0}</td>`;if(_scSplit&&i===_scSplit-1)yardsRow+=`<td class="turn-col" style="font-size:10px">${_ydsOut}</td>`;});
-    if(_scSplit)yardsRow+=`<td class="turn-col" style="font-size:10px">${_ydsIn}</td>`;
-    yardsRow+=`<td class="total-col" style="font-size:11px">${_scTotalYds}</td><td class="net-col"></td></tr>`;
+    yardsRow=`<tr class="hd-sm"><td class="player-col">Yards</td>`;
+    activeHoles.forEach((h,i)=>{yardsRow+=`<td style="color:var(--color-text-secondary)">${h.yardage||0}</td>`;if(_scSplit&&i===_scSplit-1)yardsRow+=`<td class="turn-col">${_ydsOut}</td>`;});
+    if(_scSplit)yardsRow+=`<td class="turn-col">${_ydsIn}</td>`;
+    yardsRow+=`<td class="total-col">${_scTotalYds}</td><td class="net-col"></td></tr>`;
   }
   let hdr=`<tr><th class="player-col">Hole</th>`;
   activeHoles.forEach((_,i)=>{hdr+=`<th>${i+off+1}</th>`;if(_scSplit&&i===_scSplit-1)hdr+=`<th class="turn-col">Out</th>`;});
   if(_scSplit)hdr+=`<th class="turn-col">In</th>`;
   hdr+=`<th class="total-col">Tot</th><th class="net-col">Net</th></tr>`;
-  let parRow=`<tr><td class="player-col" style="font-size:10px;color:var(--color-text-secondary)">Par</td>`;
+  let parRow=`<tr class="hd-par"><td class="player-col">Par</td>`;
   activeHoles.forEach((h,i)=>{parRow+=`<td style="color:var(--color-text-secondary)">${h.par}</td>`;if(_scSplit&&i===_scSplit-1)parRow+=`<td class="turn-col">${_scParOut}</td>`;});
   if(_scSplit)parRow+=`<td class="turn-col">${_scParIn}</td>`;
   parRow+=`<td class="total-col">${totalPar}</td><td class="net-col"></td></tr>`;
-  let hcpRow=`<tr><td class="player-col" style="font-size:10px;color:var(--color-text-secondary)">HCP</td>`;
-  activeHoles.forEach((h,i)=>{hcpRow+=`<td style="color:var(--color-text-secondary);font-size:10px">${h.si}</td>`;if(_scSplit&&i===_scSplit-1)hcpRow+=`<td class="turn-col"></td>`;});
+  let hcpRow=`<tr class="hd-sm"><td class="player-col">HCP</td>`;
+  activeHoles.forEach((h,i)=>{hcpRow+=`<td style="color:var(--color-text-secondary)">${h.si}</td>`;if(_scSplit&&i===_scSplit-1)hcpRow+=`<td class="turn-col"></td>`;});
   if(_scSplit)hcpRow+=`<td class="turn-col"></td>`;
   hcpRow+=`<td class="total-col"></td><td class="net-col"></td></tr>`;
-  function _scGridRowsFor(idxs,fi){
+  function _scGridRowsFor(idxs,fi,block){
     let rows='';
     // Holes past THIS foursome's end hole were never played. Header rows stay neutral
     // because they are shared by every foursome in the All view and cannot be true for
@@ -11343,8 +11345,8 @@ function renderSCGrid(){
       const tIn=activeHoles.slice(_scSplit).reduce((a,_,i)=>a+(STATE.scores[r][i+_scSplit+off][pi]||0),0);
       const tN=activeHoles.reduce((a,_,i)=>{const n=getNet(pi,i+off,r);return n!==null?a+n:a;},0);
       // v124.41: the block's first and last rows round its corners; every other row is tinted.
-      const _rc=[_k===0?'fs-top':'',_k===idxs.length-1?'fs-bot':'',_k%2?'alt':''].filter(Boolean).join(' ');
-      rows+=`<tr${_rc?` class="${_rc}"`:''}>`;
+      const _rc=['pr',block&&_k===0?'fs-top':'',block&&_k===idxs.length-1?'fs-bot':'',_k%2?'alt':''].filter(Boolean).join(' ');
+      rows+=`<tr class="${_rc}">`;
       rows+=`<td class="player-col">${displayName(pi)}</td>`;
       if(_scSplit){
         cells.forEach((c,i)=>{rows+=c;if(i===_scSplit-1)rows+=`<td class="turn-col">${hasOut?tOut:''}</td>`;});
@@ -11368,10 +11370,12 @@ function renderSCGrid(){
     _fl.forEach((grp,gi)=>{
       const idxs=grp.filter(pi=>pi>=0);
       playerRows+='<tr class="fs-hd'+(gi===0?' first':'')+'"><td colspan="'+(activeHoles.length+3+(_scSplit?2:0))+'"><div class="sec-hd gs-sec gs-fsh go sc-fsh" onclick="_scGridFilterPick('+gi+')"><span>Foursome '+(gi+1)+'</span><i></i><span class="ch">\u203a</span></div></td></tr>';
-      playerRows+=_scGridRowsFor(idxs,gi);
+      playerRows+=_scGridRowsFor(idxs,gi,true);
     });
   }else{
-    playerRows=_scGridRowsFor((_fl[_sel]||[]).filter(pi=>pi>=0),_sel);
+    // v124.42: one foursome showing gets its heading too (no arrow, no tap), so its block follows a heading as on All.
+    playerRows='<tr class="fs-hd first"><td colspan="'+(activeHoles.length+3+(_scSplit?2:0))+'"><div class="sec-hd gs-sec gs-fsh sc-fsh"><span>Foursome '+(_sel+1)+'</span><i></i></div></td></tr>'
+      +_scGridRowsFor((_fl[_sel]||[]).filter(pi=>pi>=0),_sel,true);
   }
 
   const legend=`<div style="display:flex;gap:10px;padding:0.75rem 1rem;font-size:10px;color:var(--color-text-secondary);flex-wrap:wrap;align-items:center"><span><span class="sc-cell eagle" style="display:inline-flex;width:16px;height:16px;font-size:9px">2</span> Eagle</span><span><span class="sc-cell birdie" style="display:inline-flex;width:16px;height:16px;font-size:9px">3</span> Birdie</span><span><span class="sc-cell bogey" style="display:inline-flex;width:16px;height:16px;font-size:9px">5</span> Bogey</span><span><span class="sc-cell double" style="display:inline-flex;width:16px;height:16px;font-size:9px">6</span> Double+</span><span><span style="width:6px;height:6px;border-radius:50%;background:#1D9E75;display:inline-block;margin-right:2px"></span>Stroke</span></div>`;
