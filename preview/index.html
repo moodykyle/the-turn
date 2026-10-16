@@ -2479,7 +2479,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.38';
+const APP_VERSION='v124.39';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7384,21 +7384,20 @@ function calcPressResult(r,fi,si,press){
   const endHole=seg.end+_off_pr;
   const tm=STATE.mpTeams[r]?.[fi]?.[si];if(!tm)return null;
   const _huPr=press.mi!==undefined;
-  let pA=0,pB=0,lastPlayed=-1;
+  let pA=0,pB=0,lastPlayed=-1,scored=0;
   const _pressStart=press.startHole-_off_pr;
   for(let h=_pressStart;h<endHole;h++){
-    const res=_huPr?calcMPHU(h+_off_pr,r,fi,press.mi):calcMP(h+_off_pr,r,fi);if(!res)break;
-    lastPlayed=h;
+    // v124.39: a blank hole is skipped; the press keeps counting the holes after it.
+    const res=_huPr?calcMPHU(h+_off_pr,r,fi,press.mi):calcMP(h+_off_pr,r,fi);if(!res)continue;
+    lastPlayed=h;scored++;
     if(res.aWins)pA++;else if(res.halved){pA+=0.5;pB+=0.5;}else pB++;
-    const holesPlayed=h-_pressStart+1;
-    const holesLeft=(endHole-_pressStart)-holesPlayed;
+    const holesLeft=(endHole-_pressStart)-scored;
     if(Math.abs(pA-pB)>holesLeft)break;
   }
   if(lastPlayed<_pressStart)return null;
   let winner=pA>pB?'a':pB>pA?'b':'tie';
-  const holesPlayed=lastPlayed-_pressStart+1;
   const holesInPress=endHole-press.startHole;
-  const holesLeft=holesInPress-holesPlayed;
+  const holesLeft=holesInPress-scored;
   const lead=Math.abs(pA-pB);
   const closed=lead>holesLeft;
   // A press is contracted to run to the end of its segment. holesInPress and holesLeft
@@ -7424,7 +7423,7 @@ function calcPressResult(r,fi,si,press){
     let cd=0,cl=holesInPress2;
     let tpA=0,tpB=0;
     for(let h=press.startHole;h<endHole;h++){
-      const res2=_huPr?calcMPHU(h,r,fi,press.mi):calcMP(h,r,fi);if(!res2)break;
+      const res2=_huPr?calcMPHU(h,r,fi,press.mi):calcMP(h,r,fi);if(!res2)continue;
       if(res2.aWins)tpA++;else if(res2.halved){tpA+=0.5;tpB+=0.5;}else tpB++;
       cd++;cl=holesInPress2-cd;
       if(Math.abs(tpA-tpB)>cl){const fl=Math.abs(tpA-tpB);pScoreStr=(tpA>tpB?'A':'B')+' '+fl+'&'+cl;break;}
@@ -10451,27 +10450,27 @@ function calcMPMatchScore(r,fi,si,throughHole){fi=fi||0;
   let lastHolePlayed=-1;
   let closedAtHole=-1;
   let leadAtClose=-1;
+  // v124.39: a blank hole is skipped, not the end of the match; scored counts the holes that have a result.
+  let scored=0,scoredAtClose=0;
   for(let h=seg.start;h<=throughHole&&h<_segEnd;h++){
     const res=calcMP(h+_off_ms,r,fi);
-    if(!res)break;
-    lastHolePlayed=h;
+    if(!res)continue;
+    lastHolePlayed=h;scored++;
     if(res.halved){/* no change */}
     else if(res.aWins)diff++;
     else diff--;
     // check if match is closed (lead > holes remaining in seg)
-    const holesPlayedSoFar=h-seg.start+1;
-    const holesLeft=holesInSeg-holesPlayedSoFar;
-    if(Math.abs(diff)>holesLeft&&closedAtHole<0){closedAtHole=h;leadAtClose=Math.abs(diff);}
+    const holesLeft=holesInSeg-scored;
+    if(Math.abs(diff)>holesLeft&&closedAtHole<0){closedAtHole=h;leadAtClose=Math.abs(diff);scoredAtClose=scored;}
   }
   if(lastHolePlayed<seg.start)return null; // no holes played yet in seg
-  const holesPlayed=lastHolePlayed-seg.start+1;
-  const holesLeft=holesInSeg-holesPlayed;
+  const holesPlayed=lastHolePlayed-seg.start+1; // "Thru N" reads this: through the last scored hole
+  const holesLeft=holesInSeg-scored;
   const lead=Math.abs(diff);
   const leader=diff>0?'A':diff<0?'B':null;
   let scoreStr;
   if(closedAtHole>=0){
-    const closedPlayed=closedAtHole-seg.start+1;
-    const closedLeft=holesInSeg-closedPlayed;
+    const closedLeft=holesInSeg-scoredAtClose;
     scoreStr=(leader==='A'?'Team A':'Team B')+' '+leadAtClose+'&'+closedLeft;
   } else if(!leader){
     scoreStr='A/S';
@@ -10482,7 +10481,7 @@ function calcMPMatchScore(r,fi,si,throughHole){fi=fi||0;
   }
   return{diff,lead,leader,holesPlayed,holesLeft,closed:closedAtHole>=0,closedAtHole,scoreStr};
 }
-function calcMPMatchScoreHU(r,fi,gi,mi,throughHole){fi=fi||0;const _th=roundHoleCount(r),_off=holeOffset(r);const seg=getSegments(mpGamesForRound(r,fi),_th)[gi];if(!seg)return null;const _p8End=fsHoleCount(r,fi),_segEnd=Math.max(seg.start,Math.min(seg.end,_p8End));const holesInSeg=_segEnd-seg.start;let diff=0,lastHolePlayed=-1,closedAtHole=-1,leadAtClose=-1;for(let h=seg.start;h<=throughHole&&h<_segEnd;h++){const res=calcMPHU(h+_off,r,fi,mi);if(!res)break;lastHolePlayed=h;if(!res.halved){if(res.aWins)diff++;else diff--;}const holesPlayedSoFar=h-seg.start+1,holesLeft=holesInSeg-holesPlayedSoFar;if(Math.abs(diff)>holesLeft&&closedAtHole<0){closedAtHole=h;leadAtClose=Math.abs(diff);}}if(lastHolePlayed<seg.start)return null;const holesPlayed=lastHolePlayed-seg.start+1,holesLeft=holesInSeg-holesPlayed;const lead=Math.abs(diff),leader=diff>0?'A':diff<0?'B':null;let scoreStr;if(closedAtHole>=0){const cp=closedAtHole-seg.start+1,cl=holesInSeg-cp;scoreStr=(leader==='A'?'Team A':'Team B')+' '+leadAtClose+'&'+cl;}else if(!leader){scoreStr='A/S';}else if(lead===holesLeft){scoreStr=(leader==='A'?'Team A':'Team B')+': Dormie '+lead;}else{scoreStr=(leader==='A'?'Team A':'Team B')+': '+lead+' up';}return{diff,lead,leader,holesPlayed,holesLeft,closed:closedAtHole>=0,closedAtHole,scoreStr};}
+function calcMPMatchScoreHU(r,fi,gi,mi,throughHole){fi=fi||0;const _th=roundHoleCount(r),_off=holeOffset(r);const seg=getSegments(mpGamesForRound(r,fi),_th)[gi];if(!seg)return null;const _p8End=fsHoleCount(r,fi),_segEnd=Math.max(seg.start,Math.min(seg.end,_p8End));const holesInSeg=_segEnd-seg.start;let diff=0,lastHolePlayed=-1,closedAtHole=-1,leadAtClose=-1,scored=0,scoredAtClose=0;for(let h=seg.start;h<=throughHole&&h<_segEnd;h++){const res=calcMPHU(h+_off,r,fi,mi);if(!res)continue;lastHolePlayed=h;scored++;if(!res.halved){if(res.aWins)diff++;else diff--;}const holesLeft=holesInSeg-scored;if(Math.abs(diff)>holesLeft&&closedAtHole<0){closedAtHole=h;leadAtClose=Math.abs(diff);scoredAtClose=scored;}}if(lastHolePlayed<seg.start)return null;const holesPlayed=lastHolePlayed-seg.start+1,holesLeft=holesInSeg-scored;const lead=Math.abs(diff),leader=diff>0?'A':diff<0?'B':null;let scoreStr;if(closedAtHole>=0){const cl=holesInSeg-scoredAtClose;scoreStr=(leader==='A'?'Team A':'Team B')+' '+leadAtClose+'&'+cl;}else if(!leader){scoreStr='A/S';}else if(lead===holesLeft){scoreStr=(leader==='A'?'Team A':'Team B')+': Dormie '+lead;}else{scoreStr=(leader==='A'?'Team A':'Team B')+': '+lead+' up';}return{diff,lead,leader,holesPlayed,holesLeft,closed:closedAtHole>=0,closedAtHole,scoreStr};}
 function gameBoxHeader(title,rightContent){
   return `<div class="calc-hd"><span>${title}</span>${rightContent?`<span>${rightContent}</span>`:''}</div>`;
 }
@@ -17721,11 +17720,11 @@ function renderMPRound(){
           }
           function calcPressMsHU(p2,h){
             const pSeg={start:p2.startHole-_ofsH,end:seg.end};
-            const holesInPress=pSeg.end-pSeg.start;let pdiff=0,plastPlayed=-1,pclosedAt=-1,pleadAtClose=-1;
-            for(let ph=pSeg.start;ph<=h&&ph<pSeg.end;ph++){const pres=calcMPHU(ph+_ofsH,r,_fi,mi);if(!pres)break;plastPlayed=ph;if(pres.halved){}else if(pres.aWins)pdiff++;else pdiff--;const pp=ph-pSeg.start+1;const pl=holesInPress-pp;if(Math.abs(pdiff)>pl&&pclosedAt<0){pclosedAt=ph;pleadAtClose=Math.abs(pdiff);}}
+            const holesInPress=pSeg.end-pSeg.start;let pdiff=0,plastPlayed=-1,pclosedAt=-1,pleadAtClose=-1,pn=0,pnAt=0;
+            for(let ph=pSeg.start;ph<=h&&ph<pSeg.end;ph++){const pres=calcMPHU(ph+_ofsH,r,_fi,mi);if(!pres)continue;plastPlayed=ph;pn++;if(pres.halved){}else if(pres.aWins)pdiff++;else pdiff--;const pl=holesInPress-pn;if(Math.abs(pdiff)>pl&&pclosedAt<0){pclosedAt=ph;pleadAtClose=Math.abs(pdiff);pnAt=pn;}}
             if(plastPlayed<pSeg.start)return null;
-            const php=plastPlayed-pSeg.start+1;const phl=holesInPress-php;const plead=Math.abs(pdiff);const pleader=pdiff>0?'A':pdiff<0?'B':null;
-            let pscoreStr;if(pclosedAt>=0){const cpd=pclosedAt-pSeg.start+1;const cpl=holesInPress-cpd;pscoreStr=(pleader==='A'?'Team A':'Team B')+' '+pleadAtClose+'&'+cpl;}else if(!pleader){pscoreStr='A/S';}else if(plead===phl){pscoreStr=(pleader==='A'?'Team A':'Team B')+': Dormie '+plead;}else{pscoreStr=(pleader==='A'?'Team A':'Team B')+': '+plead+' up';}
+            const php=plastPlayed-pSeg.start+1;const phl=holesInPress-pn;const plead=Math.abs(pdiff);const pleader=pdiff>0?'A':pdiff<0?'B':null;
+            let pscoreStr;if(pclosedAt>=0){const cpl=holesInPress-pnAt;pscoreStr=(pleader==='A'?'Team A':'Team B')+' '+pleadAtClose+'&'+cpl;}else if(!pleader){pscoreStr='A/S';}else if(plead===phl){pscoreStr=(pleader==='A'?'Team A':'Team B')+': Dormie '+plead;}else{pscoreStr=(pleader==='A'?'Team A':'Team B')+': '+plead+' up';}
             return{diff:pdiff,lead:plead,leader:pleader,holesPlayed:php,holesLeft:phl,closed:pclosedAt>=0,closedAtHole:pclosedAt,scoreStr:pscoreStr};
           }
           html+=`<div class="mpk-bets">`;
@@ -17826,11 +17825,11 @@ function renderMPRound(){
       }
       function calcPressMsForHole(p,h){
         const pSeg={start:p.startHole,end:seg.end};
-        const holesInPress=pSeg.end-pSeg.start;let pdiff=0,plastPlayed=-1,pclosedAt=-1,pleadAtClose=-1;
-        for(let ph=pSeg.start;ph<=h&&ph<pSeg.end;ph++){const pres=calcMP(ph,r,_fi);if(!pres)break;plastPlayed=ph;if(pres.halved){}else if(pres.aWins)pdiff++;else pdiff--;const pp=ph-pSeg.start+1;const pl=holesInPress-pp;if(Math.abs(pdiff)>pl&&pclosedAt<0){pclosedAt=ph;pleadAtClose=Math.abs(pdiff);}}
+        const holesInPress=pSeg.end-pSeg.start;let pdiff=0,plastPlayed=-1,pclosedAt=-1,pleadAtClose=-1,pn=0,pnAt=0;
+        for(let ph=pSeg.start;ph<=h&&ph<pSeg.end;ph++){const pres=calcMP(ph,r,_fi);if(!pres)continue;plastPlayed=ph;pn++;if(pres.halved){}else if(pres.aWins)pdiff++;else pdiff--;const pl=holesInPress-pn;if(Math.abs(pdiff)>pl&&pclosedAt<0){pclosedAt=ph;pleadAtClose=Math.abs(pdiff);pnAt=pn;}}
         if(plastPlayed<pSeg.start)return null;
-        const php=plastPlayed-pSeg.start+1;const phl=holesInPress-php;const plead=Math.abs(pdiff);const pleader=pdiff>0?'A':pdiff<0?'B':null;
-        let pscoreStr;if(pclosedAt>=0){const cpd=pclosedAt-pSeg.start+1;const cpl=holesInPress-cpd;pscoreStr=(pleader==='A'?'Team A':'Team B')+' '+pleadAtClose+'&'+cpl;}else if(!pleader){pscoreStr='A/S';}else if(plead===phl){pscoreStr=(pleader==='A'?'Team A':'Team B')+': Dormie '+plead;}else{pscoreStr=(pleader==='A'?'Team A':'Team B')+': '+plead+' up';}
+        const php=plastPlayed-pSeg.start+1;const phl=holesInPress-pn;const plead=Math.abs(pdiff);const pleader=pdiff>0?'A':pdiff<0?'B':null;
+        let pscoreStr;if(pclosedAt>=0){const cpl=holesInPress-pnAt;pscoreStr=(pleader==='A'?'Team A':'Team B')+' '+pleadAtClose+'&'+cpl;}else if(!pleader){pscoreStr='A/S';}else if(plead===phl){pscoreStr=(pleader==='A'?'Team A':'Team B')+': Dormie '+plead;}else{pscoreStr=(pleader==='A'?'Team A':'Team B')+': '+plead+' up';}
         return{diff:pdiff,lead:plead,leader:pleader,holesPlayed:php,holesLeft:phl,closed:pclosedAt>=0,closedAtHole:pclosedAt,scoreStr:pscoreStr};
       }
       html+=`<div class="mpk-bets">`;
