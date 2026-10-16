@@ -2479,7 +2479,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.34';
+const APP_VERSION='v124.35';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -19589,22 +19589,22 @@ function _ninesFlightBlock(r,fi,labelHd){
   const order=[0,1,2].slice().sort(function(a,b){return roll.pts[b]-roll.pts[a];});
   const key='nines'+r+'f'+fi;
   const open=!!(STATE.ninesExpanded&&STATE.ninesExpanded[key]);
-  html+='<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">';
   const _nVal=roundValFs('ninesVal',r,fi,WK.ninesVal||1);
   const _nT=roll.pts[0]+roll.pts[1]+roll.pts[2];
-  html+='<div style="padding:9px 14px;background:var(--color-background-secondary);display:flex;align-items:center"><span style="flex:1;font-size:13px;font-weight:600;color:var(--color-text-primary)">Standings</span><span style="font-size:12px;color:var(--color-text-secondary)">$'+_nVal+'/pt</span></div>';
-  html+='<div style="padding:8px 14px;display:flex;flex-direction:column;gap:7px">';
+  const _m=v=>{v=Math.abs(v);return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
+  html+='<div class="section-card mpk"><div class="mpk-hd"><b>Standings</b><span>'+_m(_nVal)+' a point</span></div>';
+  html+='<div>';
   order.forEach(function(i){
     const _nNet=(3*roll.pts[i]-_nT)*_nVal;
     const _nClr=_nNet>0?'#1D9E75':_nNet<0?'#D85A30':'var(--color-text-tertiary)';
-    const _nStr=(_nNet<0?'-$':'+$')+Math.abs(_nNet).toFixed(2);
-    html+='<div style="display:flex;align-items:center;gap:10px"><span style="flex:1;font-size:13px;color:var(--color-text-primary)">'+displayName(roll.members[i])+'</span><span style="font-size:13px;color:var(--color-text-secondary)">'+roll.pts[i]+' pts</span><span style="font-size:13px;font-weight:600;color:'+_nClr+';width:70px;text-align:right">'+(_nNet===0?'$0.00':_nStr)+'</span></div>';
+    const _nStr=_nNet>0?'+'+_m(_nNet):_nNet<0?'-'+_m(_nNet):'$0';
+    html+='<div class="wfk-r"><span>'+displayName(roll.members[i])+'</span><span class="p"><span style="color:var(--color-text-secondary)">'+roll.pts[i]+' pts</span><span class="m" style="color:'+_nClr+'">'+_nStr+'</span></span></div>';
   });
   html+='</div>';
-  html+='<div style="padding:6px 14px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-tertiary)">'+roll.holes+' of '+fsHoleCount(r,fi)+' holes scored</div>';
+  html+='<div class="mpk-en" style="padding-top:8px;border-top:0.5px solid var(--color-border-tertiary)">'+roll.holes+' of '+fsHoleCount(r,fi)+' holes scored</div>';
   html+='</div>';
-  html+='<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">';
-  html+='<div style="padding:9px 14px;background:var(--color-background-secondary);display:flex;align-items:center;cursor:pointer" onclick="_ninesToggle(\''+key+'\')"><span style="flex:1;font-size:13px;font-weight:600;color:var(--color-text-primary)">Nines - Rd '+(r+1)+'</span><span style="font-size:12px;color:#1D9E75">'+(open?'&#9650;':'&#9660;')+'</span></div>';
+  html+='<div class="section-card mpk">';
+  html+='<div class="mpk-hd" onclick="_ninesToggle(\''+key+'\')"><b>Hole by hole</b><span></span><i class="'+(open?'open':'')+'">\u203a</i></div>';
   if(open)html+='<div style="padding:0 8px 8px">'+_ninesGrid(r,fi,roll.members,_off,_n)+'</div>';
   html+='</div>';
   return html;
@@ -19620,11 +19620,11 @@ function renderNinesRound(){
   if(!gameOn('nines',r)){el.innerHTML='<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Nines is off for this round</div>';return;}
   const fl=flightsForRound(r);
   if(fl.length<=1){el.innerHTML=_ninesFlightBlock(r,0,null);return;}
-  let html='';
+  let html='',_k=0;
   for(let fi=0;fi<fl.length;fi++){
     if(_fsOff('nines',r,fi))continue;
-    const hd='<div style="display:flex;align-items:center;gap:7px;padding:8px 2px 4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(fi+1)+'</span><span style="font-size:11px;color:var(--color-text-secondary);margin-left:auto">'+flightMemberInitials(r,fi)+'</span></div>';
-    html+=_ninesFlightBlock(r,fi,hd);
+    // v124.35: the shared foursome heading, as every other game.
+    html+=_ninesFlightBlock(r,fi,_gtFsHead(fi,true,_k++>0));
   }
   el.innerHTML=html||'<div style="text-align:center;color:var(--color-text-secondary);padding:2rem 0">Nines is off for every foursome this round</div>';
 }
