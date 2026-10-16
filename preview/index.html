@@ -974,6 +974,8 @@ body.force-light{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpA
 .twk{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;padding:9px 14px;font-size:14px;border-top:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
 .twk .hd{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;background:var(--mpAf);color:var(--mpAt)}
 .twk .tc{font-size:12px;color:var(--color-text-tertiary);text-align:right}
+.wfk-r{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:0.5px solid var(--color-border-tertiary);font-size:14px;color:var(--color-text-primary)}
+.wfk-r .p{display:flex;gap:12px;align-items:baseline;font-size:13px}.wfk-r .p .m{min-width:52px;text-align:right}
 .twk-e{padding:12px 14px;font-size:13px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary)}
 .gs-net.warn .t b{color:#E0A45C}
 #appToast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab-bar-h) + 62px);z-index:10003;
@@ -2473,7 +2475,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.30';
+const APP_VERSION='v124.31';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -12522,9 +12524,9 @@ function _renderWolfRoundBlock(r,fi,flightPlayers,wolfVal,labelHd){
     holePtsMatrix[hi]=flightPlayers.map((pi,idx)=>({pi,delta:curr[idx].pts-prev[idx].pts}));
   }
   const initials=flightPlayers.map(pi=>{const p=WK.players[pi];const parts=(p.name||p.last||'?').split(' ');return parts.length>1?parts[0][0]+parts[parts.length-1][0]:p.last?p.last.substring(0,2):'??';});
-  let html=labelHd?'<div style="display:flex;align-items:center;gap:7px;padding:2px 2px 8px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+_flightsAccent0(fi)+'"></span><span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">Foursome '+(fi+1)+'</span></div>':'';
-  html+='<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">';
-  html+='<div style="padding:10px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="(function(){var b=document.getElementById(\'wgb_'+r+'_'+fi+'\');var open=b.style.display===\'none\';b.style.display=open?\'\':\' none\';})()"><span style="font-size:14px;font-weight:500">Wolf - Rd '+(r+1)+'</span><span style="font-size:11px;color:#1D9E75">\u25bc</span></div>';
+  let html=labelHd||'';
+  html+='<div class="section-card mpk">';
+  html+='<div class="mpk-hd" onclick="(function(e){var b=document.getElementById(\'wgb_'+r+'_'+fi+'\');var open=b.style.display===\'none\';b.style.display=open?\'\':\'none\';var i=e.querySelector(\'i\');if(i)i.className=open?\'open\':\'\';})(this)"><b>Hole by hole</b><span></span><i class="">\u203a</i></div>';
   html+='<div id="wgb_'+r+'_'+fi+'" style="display:none">';
   html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;table-layout:fixed"><thead><tr style="border-bottom:0.5px solid var(--color-border-tertiary)">';
   html+='<th style="font-size:10px;color:var(--color-text-tertiary);font-weight:400;text-align:center;padding:6px 4px;width:44px;background:var(--color-background-secondary);border-right:0.5px solid var(--color-border-tertiary)">H</th>';
@@ -12568,16 +12570,16 @@ function _renderWolfRoundBlock(r,fi,flightPlayers,wolfVal,labelHd){
   html+='<div style="padding:8px 14px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);display:flex;gap:8px;align-items:center"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#9FE1CB"></span><span style="font-size:11px;color:var(--color-text-secondary)">Wolf this hole</span></div>';
   html+='</div>';
   html+='</div>';
-  html+='<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">';
-  html+='<div style="padding:10px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Standings</span><span style="font-size:11px;color:var(--color-text-tertiary)">$'+wolfVal+'/pt</span></div>';
-  html+='<div style="padding:10px 14px">';
+  const _m=v=>{v=Math.abs(v);return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
+  html+='<div class="section-card mpk"><div class="mpk-hd"><b>Standings</b><span>'+_m(wolfVal)+' a point</span></div>';
+  html+='<div>';
   const sorted=[...pts].sort((a,b)=>b.pts-a.pts);
   sorted.forEach(p=>{
     const dollars=(p.pts*wolfVal);
     const ptColor=p.pts>0?'#1D9E75':p.pts<0?'#D85A30':'var(--color-text-tertiary)';
     const ptStr=p.pts>0?'+'+p.pts+' pts':p.pts<0?p.pts+' pts':'0 pts';
-    const dolStr=dollars>0?'+$'+dollars.toFixed(2):dollars<0?'-$'+Math.abs(dollars).toFixed(2):'$0.00';
-    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;color:var(--color-text-primary)">'+displayName(p.pi)+'</span><div style="display:flex;gap:12px;align-items:baseline"><span style="font-size:13px;color:'+ptColor+'">'+ptStr+'</span><span style="font-size:12px;color:'+ptColor+';min-width:56px;text-align:right">'+dolStr+'</span></div></div>';
+    const dolStr=dollars>0?'+'+_m(dollars):dollars<0?'-'+_m(dollars):'$0';
+    html+='<div class="wfk-r"><span>'+displayName(p.pi)+'</span><span class="p"><span style="color:'+ptColor+'">'+ptStr+'</span><span class="m" style="color:'+ptColor+'">'+dolStr+'</span></span></div>';
   });
   html+='</div></div>';
   return html;
@@ -12600,13 +12602,13 @@ function renderWolfRound(){
   let filterHtml='';
   const toRender=sel===-1?fl.map((_,i)=>i):[sel];
   let html=filterHtml;
-  toRender.forEach(fi=>{
+  toRender.forEach((fi,k)=>{
     const flightPlayers=fl[fi]||[];
     if(flightPlayers.length<4){
       html+='<div class="section-card" style="margin-bottom:10px;padding:14px"><div style="font-size:13px;color:var(--color-text-secondary)">Foursome '+(fi+1)+' requires 4 players.</div></div>';
       return;
     }
-    html+=_renderWolfRoundBlock(r,fi,flightPlayers,roundValFs('wolfVal',r,fi,WK.wolfVal||1),sel===-1);
+    html+=_renderWolfRoundBlock(r,fi,flightPlayers,roundValFs('wolfVal',r,fi,WK.wolfVal||1),sel===-1?_gtFsHead(fi,true,k>0):null);
   });
   el.innerHTML=html;
 }
