@@ -951,6 +951,7 @@ body.force-light{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpA
 .mpk-hr .cy{color:var(--mpPt);font-size:12px}
 .mpk-hr .it{font-style:italic}
 .mpk-hr.vg{grid-template-columns:30px 70px minmax(0,1fr) 56px}
+.mpk-hr.rz{grid-template-columns:30px 52px minmax(0,1fr) 74px}
 /* v124.25: individual Skins, the heading row over the players. */
 .sk-lbh{display:flex;align-items:center;gap:12px;padding:6px 14px 4px;font-size:11px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary)}
 .sk-lbh span:first-child{width:26px;text-align:center}.sk-lbh span:last-child{margin-left:auto}
@@ -2475,7 +2476,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.31';
+const APP_VERSION='v124.32';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7304,7 +7305,7 @@ function _gtFt(played,live,lead,amt,money,thru,rateTxt){
 function _mpEndChip(tag){
   if(tag==='stopped')return'cut short';
   if(tag==='unplayed')return'not played';
-  if(tag==='award')return'awarded';
+  if(tag==='award'||tag==='awardrun')return'awarded';
   if(tag==='void')return'void';
   if(tag==='square'||tag==='decided')return'cut short';
   return'';
@@ -7313,6 +7314,7 @@ function _mpEndNote(r,fi,tag){
   if(!tag)return'';
   const h=holeOffset(r)+fsHoleCount(r,fi);
   if(tag==='award')return'Awarded to the leader. Play ended at hole '+h+'.';
+  if(tag==='awardrun')return'Awarded to the leader. The match never closed out.';
   if(tag==='void')return'No winner. Play ended at hole '+h+'.';
   if(tag==='square')return'All square when play ended at hole '+h+'.';
   if(tag==='decided')return'Match was already decided. Play ended at hole '+h+'.';
@@ -10750,100 +10752,73 @@ function renderRazzleRound(){
   let fh='';
   const toRender=sel===-1?fl.map((_,i)=>i):[sel];
   let html=fh;
-  toRender.forEach(fi=>{const labelHd=(sel===-1)?'<div class="gf-blk-lbl"><span class="bd" style="background:'+_flightsAccent0(fi)+'"></span>Foursome '+(fi+1)+'</div>':null;html+=_renderRazzleFlightBlock(r,fi,labelHd);});
+  toRender.forEach((fi,k)=>{html+=_renderRazzleFlightBlock(r,fi,sel===-1?_gtFsHead(fi,true,k>0):null);});
   el.innerHTML=html;
 }
 function _renderRazzleFlightBlock(r,fi,labelHd){
+  // v124.32, Kyle 15 Oct: the shared team card (_gtCard), as Hammer and Vegas.
   const _rzfp=flightsForRound(r)[fi]||[];
   const matches=calcRazzle(r,fi);
-  const fmt=v=>v>=0?'+$'+v.toFixed(2):'-$'+Math.abs(v).toFixed(2);
+  const _m=v=>{v=Math.abs(v);return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
+  const _chip=(k,t)=>`<span class="mpc ${k}">${t}</span>`;
   if(!STATE.razzleExpanded)STATE.razzleExpanded={};
   if(!matches.length)return (labelHd||'')+'<div style="text-align:center;color:var(--color-text-secondary);padding:1.2rem 0">No scores yet</div>';
   let html=labelHd||'';
   matches.forEach(m=>{
     if(!m.tA||!m.tB)return;
-    const nA=m.tA.map(i=>displayName(i)).join(' & '),nB=m.tB.map(i=>displayName(i)).join(' & ');
-    const aWins=m.winner==='a',bWins=m.winner==='b';
+    const aWins=m.winner==='a';
     const key='r'+r+'f'+fi+'m'+m.mi;
-    const expanded=STATE.razzleExpanded[key]===true;// default collapsed
-    // Header summary
-    const _rzLbl='<span style="font-size:11px;color:var(--color-text-tertiary)">Match Result: </span>';
-    const _rzSt=_rzMatchStatus(r,fi,m);
-    let statusStr;
-    if(_rzSt==='win'){const wLtr=aWins?'A':'B';const wClr=aWins?'#1D9E75':'#185FA5';statusStr=_rzLbl+'<span style="color:'+wClr+';font-weight:500">'+wLtr+' wins · $'+m.pot.toFixed(2)+'</span>'+(m.leaderWin===true?'<span class="rz-awarded">awarded</span>':'');}
-    else if(_rzSt==='ns'){statusStr=_rzLbl+'<span style="color:var(--color-text-tertiary)">Not started</span>';}
-    else if(_rzSt==='noblood'){statusStr=_rzLbl+'<span style="color:var(--color-text-secondary);font-weight:500">No Blood</span>'
-      +(_rzEndNote(r,fi,m)?'<span class="end-chip">cut short</span>':'');}
-    else{statusStr=_rzLbl+'<span style="color:var(--color-text-secondary)">In progress</span>';}
-    html+='<div class="section-card" style="margin-bottom:10px;padding:0;overflow:hidden">';
-    html+='<div style="padding:10px 14px;cursor:pointer;background:var(--color-background-secondary)" onclick="toggleRazzleMatch(\''+key+'\')">';
-    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Match '+(m.mi+1)+' · H'+(m.startHole+1)+(m.endHole>m.startHole?'-'+(m.endHole+1):'')+'</span><span style="color:#1D9E75;font-size:12px">'+(expanded?'▲':'▼')+'</span></div>';
-    html+='<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#1D9E75;margin-bottom:2px">TEAM A</div><div style="font-size:11px;font-weight:500;color:#1D9E75">'+nA+'</div></div><div style="flex:1;text-align:right"><div style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#185FA5;margin-bottom:2px">TEAM B</div><div style="font-size:11px;font-weight:500;color:#185FA5">'+nB+'</div></div></div>';
-    html+='<div style="font-size:12px;padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">'+statusStr+'</div>';
-    html+='</div>';
-    if(expanded){
-      // Hole rows
-      for(let h=m.startHole;h<=m.endHole;h++){
-        const hl=m.holeLog.find(l=>l.hi===h);
-        if(!hl){html+='<div style="display:grid;grid-template-columns:28px 1fr 80px;align-items:center;padding:5px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px"><span style="color:var(--color-text-tertiary)">H'+(h+1)+'</span><span style="color:var(--color-text-tertiary)">-</span><span></span></div>';continue;}
-        const {holePtsA,holePtsB,runA,runLead,runLeader,teamPt,indPt}=hl;
-        const hW=holePtsA>holePtsB?'a':holePtsB>holePtsA?'b':null;
-        // closedOnHole, not winner. A leader win carries a winner with closedOnHole at -1,
-        // and every hole is h > -1, which lit up a branch that had never run before.
-        const isClosed=m.closedOnHole>=0&&h===m.closedOnHole;
-        const isPost=m.closedOnHole>=0&&h>m.closedOnHole;
-        // An awarded match is decided on its last hole, without ever closing out.
-        const isAwarded=m.leaderWin===true&&h===m.endHole;
-        const fRunAG=m.holeLog.length?m.holeLog[m.holeLog.length-1].runA:0;const fLeadG=Math.abs(fRunAG);const scoreStr=isPost?'closed':(isClosed||isAwarded)?((m.winner==='a'?'A':'B')+' wins '+fLeadG+'-0'):(hl.runLeader?hl.runLeader+' '+hl.runLead+'-0':'A/S');
-        // Bonus indicators inline on the hole row
-        const par=WK.rounds[r].course.holes[h]?.par||4;
-        const birdCount=[...m.tA,...m.tB].filter(pi=>{if(roundValFs('razzleBirdieGross',r,fi,WK.razzleBirdieGross)){const g=STATE.scores[r][h][pi];return g!==null&&(par-g)>=1;}const n=getNetForFlight(pi,h,r,_rzfp);return n!==null&&(par-n)>=1;}).length;
-        const holeNumInMatch=h-m.startHole; // 0-based
-        const bonusBits=[];
-        if(m.sweep&&holeNumInMatch===1)bonusBits.push({lbl:'sweep',clr:'#1D9E75'}); // sweep = won in 2 holes (index 1)
-        if(m.fiveHole&&holeNumInMatch===4)bonusBits.push({lbl:'5-hole',clr:'#1D9E75'}); // 5-hole bonus = reached hole 5 (index 4)
-        if(birdCount>0)bonusBits.push({lbl:birdCount+' birdie'+(birdCount>1?'s':''),clr:'#1D9E75'});
-        const bonusTags=bonusBits.map(b=>'<span style="font-size:9px;background:rgba(29,158,117,0.15);color:'+b.clr+';border-radius:3px;padding:1px 4px;margin-right:3px">'+b.lbl+'</span>').join('');
-        const holeWinLetter=hW==='a'?'A':hW==='b'?'B':null;
-        const holeResultColor=hW==='a'?'#1D9E75':hW==='b'?'#185FA5':'var(--color-text-secondary)';
-        const holeResult=holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinLetter+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB));const holeResultColorFinal=holePtsA===0&&holePtsB===0||holePtsA===holePtsB?'#D97706':holeResultColor;
-        const standingColor=(isClosed||isAwarded)?(m.winner==='a'?'#1D9E75':'#185FA5'):'var(--color-text-secondary)';
-        html+='<div style="display:grid;grid-template-columns:28px 1fr 1fr 72px;align-items:center;gap:4px;padding:5px 16px 5px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px'+(isPost?';opacity:0.45':'')+'"><span style="color:var(--color-text-tertiary)">H'+(h+1)+'</span><span style="color:'+holeResultColorFinal+';text-align:center">'+holeResult+'</span><span style="text-align:right;padding-right:6px">'+bonusTags+'</span><span style="text-align:right;color:'+standingColor+'">'+scoreStr+'</span></div>';
-      }
-      // Footer
-      if(m.winner){
-        const bonusDetail=[];
-        const _swA=roundValFs('razzleSweepBonus',r,fi,WK.razzleSweepBonus||5);
-        // Derived, not recomputed. Whatever is left of the pot after the stake, the
-        // 5-hole contribution and the sweep IS the birdie money, under every toggle.
-        const _bdA=m.pot-m.stake-m.fiveAdd-(m.sweep?_swA:0);
-        if(m.sweep)bonusDetail.push('Sweep +$'+_swA.toFixed(2));
-        if(m.fiveHole)bonusDetail.push('5-hole +$'+m.fiveAdd.toFixed(2));
-        if(_bdA>0)bonusDetail.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':'')+' +$'+_bdA.toFixed(2));
-        const winColor=aWins?'#1D9E75':'#185FA5';
-        html+='<div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:12px;background:var(--color-background-secondary)">';
-        html+='<span style="font-weight:500;color:'+winColor+'">'+(aWins?'A':'B')+' wins</span>';
-        if(m.leaderWin===true){
-          const _awTxt=fsEndedShort(r,fi)
-            ? 'Awarded to the leader. Play ended at hole '+(m.endHole+1)+'.'
-            : 'Awarded to the leader. The match never closed out.';
-          html+='<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:2px">'+_awTxt+'</div>';
-        }
-        const baseStr='Base $'+m.stake.toFixed(2);const allParts=[baseStr].concat(bonusDetail);html+='<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:2px">'+allParts.join(' · ')+' : Total $'+m.pot.toFixed(2)+'</div>';
-        html+='</div>';
-      } else if(m.holesPlayed===0){
-        html+='<div style="padding:8px 12px;font-size:12px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)">No scores yet</div>';
-      } else {
-        const _rzEn=_rzEndNote(r,fi,m);
-        html+='<div style="padding:8px 12px;font-size:12px;color:var(--color-text-secondary);border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)">No blood'
-          +(_rzEn?'<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:2px">'+_rzEn+'</div>':'')+'</div>';
-      }
+    const expanded=STATE.razzleExpanded[key]===true;
+    const _st=_rzMatchStatus(r,fi,m);
+    const last=m.holeLog.length?m.holeLog[m.holeLog.length-1]:null;
+    const runA=last?last.runA:0,lead=runA>0?'A':runA<0?'B':null,up=Math.abs(runA);
+    // The end tag for _gtCard: awarded to the leader, or (no winner, the foursome stopped early) cut short.
+    let tag='';
+    // Awarded: when play was called, the shared note names the hole; on a full round it never closed out.
+    if(m.leaderWin===true)tag=fsEndedShort(r,fi)?'award':'awardrun';
+    else if(_st==='noblood'&&fsEndedShort(r,fi))tag=runA===0?'square':'void';
+    let ftL,ftC='';
+    if(_st==='win'){
+      ftL=(aWins?'A':'B')+' won'+(m.closedOnHole>=0?' on '+(m.closedOnHole+1):'');
+      ftC=_chip(aWins?'a':'b',(aWins?'A':'B')+' +'+_m(m.sv));
+    }else if(_st==='noblood'){
+      ftL=lead?lead+' '+up+' up':'All square';ftC=_chip('ns','No blood');
+    }else{
+      ftL=(lead?lead+' '+up+' up':'All square')+(last?' thru '+(last.hi+1):'');ftC=_chip('ns',_m(m.pot)+' at stake');
     }
-    html+='</div>';
+    // Open: one row per hole of this match.
+    let rows='';
+    const birdGross=roundValFs('razzleBirdieGross',r,fi,WK.razzleBirdieGross);
+    for(let h=m.startHole;h<=m.endHole;h++){
+      const hl=m.holeLog.find(l=>l.hi===h);
+      if(!hl){rows+=`<div class="mpk-hr rz"><span class="hn">${h+1}</span><span></span><span></span><span class="w"><span class="q">-</span></span></div>`;continue;}
+      const pa=hl.holePtsA,pb=hl.holePtsB;
+      const res=pa===0&&pb===0?'<span class="q">Tied</span>':pa===pb?'<span class="cy">Split</span>':`<span class="${pa>pb?'ca':'cb'}">${pa>pb?'A':'B'} ${Math.max(pa,pb)}-${Math.min(pa,pb)}</span>`;
+      const par=_fbHolePar(r,h),k=h-m.startHole;
+      const bc=[...m.tA,...m.tB].filter(pi=>{if(birdGross){const g=STATE.scores[r][h][pi];return g!==null&&(par-g)>=1;}const n=getNetForFlight(pi,h,r,_rzfp);return n!==null&&(par-n)>=1;}).length;
+      let tags='';
+      if(bc>0)tags+=`<span class="mpk-hm">${bc>1?bc+' birdies':'Birdie'}</span>`;
+      if(m.sweep&&k===1)tags+='<span class="mpk-hm">Sweep</span>';
+      if(m.fiveHole&&k===4)tags+='<span class="mpk-hm">5-hole</span>';
+      const decided=(m.closedOnHole>=0&&h===m.closedOnHole)||(m.leaderWin===true&&h===m.endHole);
+      // The running score as the box and the old card say it: "A 2-0", "A/S", and the verdict on the deciding hole.
+      const stand=decided?`<span class="w ${aWins?'ca':'cb'}">${aWins?'A':'B'} wins ${up}-0</span>`:hl.runLeader?`<span class="w">${hl.runLeader} ${hl.runLead}-0</span>`:'<span class="w"><span class="q">A/S</span></span>';
+      rows+=`<div class="mpk-hr rz"><span class="hn">${h+1}</span>${res}<span>${tags}</span>${stand}</div>`;
+    }
+    if(m.winner){
+      // What the pot is made of. Whatever is left after the stake, the 5-hole and the sweep IS the birdie money.
+      const sw=roundValFs('razzleSweepBonus',r,fi,WK.razzleSweepBonus||5),bd=m.pot-m.stake-m.fiveAdd-(m.sweep?sw:0);
+      const parts=['Stake '+_m(m.stake)];
+      if(m.sweep)parts.push('sweep '+_m(sw));
+      if(m.fiveHole)parts.push('5-hole '+_m(m.fiveAdd));
+      if(bd>0)parts.push(m.birdieCount+(m.birdieCount===1?' birdie ':' birdies ')+_m(bd));
+      rows+=`<div class="mpk-en" style="padding-top:8px;border-top:0.5px solid var(--color-border-tertiary)">${parts.join(' · ')} = ${_m(m.pot)}</div>`;
+    }
+    html+=_gtCard({r,fi,si:m.mi,tA:m.tA,tB:m.tB,tag,toggle:"toggleRazzleMatch('"+key+"')",expanded,rows,ftL,ftC,
+      from:m.startHole+1,to:m.endHole+1,sub:m.birdieCount?' · '+m.birdieCount+(m.birdieCount===1?' birdie':' birdies'):''});
   });
   return html;
 }
-
 function toggleRazzleMatch(key){
   if(!STATE.razzleExpanded)STATE.razzleExpanded={};
   STATE.razzleExpanded[key]=!STATE.razzleExpanded[key];
