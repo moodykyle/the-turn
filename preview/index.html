@@ -1206,6 +1206,8 @@ body.force-light{
 
 /* + create sheet */
 .hmcs-hd{font-size:16px;font-weight:600;color:var(--color-text-primary);padding:6px 18px 2px;}
+/* v124.50: the Pick partner sheet's title and label; their colours come from the accent rules. */
+.wf-pk-t{font-size:16px;font-weight:600;color:var(--color-text-primary)}.wf-pk-l{font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:10px}
 .hmcs-sub{font-size:12.5px;color:var(--color-text-secondary);padding:0 18px 12px;}
 .hmcs-opt{display:flex;align-items:center;gap:12px;width:calc(100% - 28px);margin:0 14px 9px;padding:13px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;cursor:pointer;text-align:left;font-family:inherit;}
 .hmcs-ic{width:34px;height:34px;border-radius:9px;background:var(--brand-weak);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -1448,12 +1450,12 @@ body.force-dark .home-wb-h,body.force-dark .home-gtile-name,body.force-dark .gp-
 /* v123.43: titles take the accent in both modes (green by day, gold at night); section labels
    deep green / cream. Player and course names keep the text colour. */
 .qr-step-t{font-size:17px;font-weight:500;color:var(--color-text-primary);}
-@media(prefers-color-scheme:light){body:not(.force-dark) .event-name,body:not(.force-dark) .hole-label,body:not(.force-dark) .hmcs-hd,body:not(.force-dark) .grp-sheet-title,body:not(.force-dark) .qr-step-t,body:not(.force-dark) .scr-title{color:#13795B;}body:not(.force-dark) .rdsheet-hd,body:not(.force-dark) .board-section-label{color:#0F4D36;}}
-body.force-light .event-name,body.force-light .hole-label,body.force-light .hmcs-hd,body.force-light .grp-sheet-title,body.force-light .qr-step-t,body.force-light .scr-title{color:#13795B;}
-body.force-light .rdsheet-hd,body.force-light .board-section-label{color:#0F4D36;}
-@media(prefers-color-scheme:dark){body:not(.force-light) .event-name,body:not(.force-light) .hmcs-hd,body:not(.force-light) .grp-sheet-title,body:not(.force-light) .qr-step-t,body:not(.force-light) .scr-title{color:#EFC456;}body:not(.force-light) .rdsheet-hd,body:not(.force-light) .board-section-label{color:#EDE6D3;}}
-body.force-dark .event-name,body.force-dark .hmcs-hd,body.force-dark .grp-sheet-title,body.force-dark .qr-step-t,body.force-dark .scr-title{color:#EFC456;}
-body.force-dark .rdsheet-hd,body.force-dark .board-section-label{color:#EDE6D3;}
+@media(prefers-color-scheme:light){body:not(.force-dark) .event-name,body:not(.force-dark) .hole-label,body:not(.force-dark) .hmcs-hd,body:not(.force-dark) .wf-pk-t,body:not(.force-dark) .grp-sheet-title,body:not(.force-dark) .qr-step-t,body:not(.force-dark) .scr-title{color:#13795B;}body:not(.force-dark) .rdsheet-hd,body:not(.force-dark) .wf-pk-l,body:not(.force-dark) .board-section-label{color:#0F4D36;}}
+body.force-light .event-name,body.force-light .hole-label,body.force-light .hmcs-hd,body.force-light .wf-pk-t,body.force-light .grp-sheet-title,body.force-light .qr-step-t,body.force-light .scr-title{color:#13795B;}
+body.force-light .rdsheet-hd,body.force-light .wf-pk-l,body.force-light .board-section-label{color:#0F4D36;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .event-name,body:not(.force-light) .hmcs-hd,body:not(.force-light) .wf-pk-t,body:not(.force-light) .grp-sheet-title,body:not(.force-light) .qr-step-t,body:not(.force-light) .scr-title{color:#EFC456;}body:not(.force-light) .rdsheet-hd,body:not(.force-light) .wf-pk-l,body:not(.force-light) .board-section-label{color:#EDE6D3;}}
+body.force-dark .event-name,body.force-dark .hmcs-hd,body.force-dark .wf-pk-t,body.force-dark .grp-sheet-title,body.force-dark .qr-step-t,body.force-dark .scr-title{color:#EFC456;}
+body.force-dark .rdsheet-hd,body.force-dark .wf-pk-l,body.force-dark .board-section-label{color:#EDE6D3;}
 /* v123.49: the In Progress and Your Rounds page titles, in the title accent. */
 .pg-title{position:absolute;left:0;right:0;text-align:center;font-size:16px;font-weight:700;color:var(--color-text-primary);pointer-events:none;}
 @media(prefers-color-scheme:light){body:not(.force-dark) .pg-title{color:#13795B;}}
@@ -2505,7 +2507,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.49';
+const APP_VERSION='v124.50';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -12298,15 +12300,16 @@ function openWolfPickModal(hi,r,fi){
   const isBlind=existingPick&&existingPick.type==='blind';
   const wolfPill='<span style="font-size:10px;background:#085041;color:#9FE1CB;padding:1px 6px;border-radius:999px;font-weight:400;margin-left:4px">wolf</span>';
   let html='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center" id="wolfPickOverlay" onclick="if(event.target===this)closeWolfPickModal()">';
-  html+='<div style="background:var(--color-background-primary);border-radius:var(--border-radius-lg) var(--border-radius-lg) 0 0;width:100%;max-width:480px;overflow:hidden">';
+  html+='<div style="background:var(--color-background-primary);border-top:0.5px solid var(--color-border-tertiary);border-radius:16px 16px 0 0;width:100%;max-width:480px;overflow:hidden">';
   const hole=WK.rounds[r].course.holes?.[hi]||{par:4,si:hi+1};
-  html+=`<div style="background:#0F6E56;padding:14px 16px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:11px;color:#9FE1CB;letter-spacing:0.06em">HOLE ${hi+1} - PAR ${hole.par} - SI ${hole.si}</div><div style="font-size:18px;font-weight:500;color:#E1F5EE">Wolf</div></div><div style="background:#085041;border-radius:999px;padding:6px 14px;text-align:center"><div style="font-size:11px;color:#9FE1CB">Wolf</div><div style="font-size:15px;font-weight:500;color:#E1F5EE">${wolfName}</div></div></div>`;
+  // v124.50: themed header (was a fixed green band), the title in the accent.
+  html+=`<div style="padding:18px 16px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div class="wf-pk-t">Wolf · Hole ${hi+1}</div><div style="font-size:13px;color:var(--color-text-secondary);margin-top:3px">Par ${hole.par} · SI ${hole.si} · <span style="color:var(--color-text-primary);font-weight:500">${wolfName}</span>${wolfPill}</div></div>`;
   if(!blindOff){
     const blindChecked=isBlind?'checked':'';
-    html+=`<div style="padding:12px 16px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Go blind wolf</div><div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">Declare before tee shots - ${blindMult}x points</div></div><label class="toggle"><input type="checkbox" id="wolfBlindToggle" ${blindChecked} onchange="setWolfPick(${r},${hi},this.checked?'lone':'lone',null,${fi})"><span class="toggle-slider"></span></label></div>`;
+    html+=`<div style="padding:12px 16px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Go blind wolf</div><div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">Declare before tee shots · ${blindMult}x points</div></div><label class="toggle"><input type="checkbox" id="wolfBlindToggle" ${blindChecked} onchange="setWolfPick(${r},${hi},this.checked?'lone':'lone',null,${fi})"><span class="toggle-slider"></span></label></div>`;
   }
   const teeLabels=['1st tee','2nd tee','3rd tee'];
-  html+='<div style="padding:12px 16px"><div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:10px;letter-spacing:0.05em">TAP TO PICK PARTNER</div><div style="display:flex;flex-direction:column;gap:8px">';
+  html+='<div style="padding:12px 16px"><div class="wf-pk-l">Pick a partner</div><div style="display:flex;flex-direction:column;gap:8px">';
   others.forEach((pi,idx)=>{
     const sel=(existingPick&&existingPick.type==='partner'&&existingPick.partner===pi);
     const bg=sel?'#085041':'var(--color-background-secondary)';
@@ -12319,9 +12322,9 @@ function openWolfPickModal(hi,r,fi){
   const loneBg=loneSel?'#085041':'var(--color-background-secondary)';
   const loneBorder=loneSel?'0.5px solid #0F6E56':'0.5px solid var(--color-border-secondary)';
   const loneColor=loneSel?'#E1F5EE':'var(--color-text-secondary)';
-  html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:${loneBg};border-radius:var(--border-radius-md);border:${loneBorder};cursor:pointer" onclick="setWolfPick(${r},${hi},'lone',null,${fi})"><div style="font-size:14px;font-style:italic;color:${loneColor}">Go lone wolf</div><div style="font-size:11px;color:${loneColor}">1 vs 3</div></div>`;
+  html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:${loneBg};border-radius:var(--border-radius-md);border:${loneBorder};cursor:pointer" onclick="setWolfPick(${r},${hi},'lone',null,${fi})"><div style="font-size:14px;color:${loneColor}">Lone wolf</div><div style="font-size:11px;color:${loneColor}">1 vs 3</div></div>`;
   html+='</div></div>';
-  html+='<div style="padding:12px 16px 24px"><button style="width:100%;padding:12px;font-size:14px;font-weight:500;border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary)" onclick="closeWolfPickModal()">Cancel</button></div>';
+  html+='<div style="padding:12px 16px 24px"><button style="width:100%;padding:11px 0;font-size:14px;font-weight:500;border-radius:10px;background:transparent;color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary)" onclick="closeWolfPickModal()">Cancel</button></div>';
   html+='</div></div>';
   const overlay=document.createElement('div');
   overlay.innerHTML=html;
@@ -12378,7 +12381,7 @@ function renderWolfBox(){
   }
   let html='<div class="calc-box" style="margin-top:0.75rem">';
   if(!pick){
-    html+=`<div class="calc-hd" style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center"><span>Wolf - H${hi+1}</span>${_wbBaseNote}</div>${!locked?`<button class="btn-sm" style="background:#0F6E56;color:#E1F5EE;border:none" onclick="openWolfPickModal(${hi},${r},${fi})">Pick Partner</button>`:''}</div>`;
+    html+=`<div class="calc-hd" style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center"><span>Wolf · Hole ${hi+1}</span>${_wbBaseNote}</div>${!locked?`<button class="btn-sm" style="background:#0F6E56;color:#E1F5EE;border:none" onclick="openWolfPickModal(${hi},${r},${fi})">Pick partner</button>`:''}</div>`;
     html+=`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Wolf this hole: <span style="font-weight:500;color:var(--color-text-primary)">${wolfName}</span>${wolfPill}</div>`;
   }else{
     const isBlind=pick.type==='blind';
@@ -12392,7 +12395,7 @@ function renderWolfBox(){
     const typeBadge=isBlind?`<span style="font-size:11px;background:#085041;color:#9FE1CB;padding:2px 8px;border-radius:999px;margin-left:6px">Blind wolf</span>`:isLone?`<span style="font-size:11px;color:var(--color-text-tertiary);margin-left:6px">Lone wolf</span>`:'';
     const hdrColor=wolfHolePts>0?'#1D9E75':wolfHolePts<0?'#D85A30':'var(--color-text-tertiary)';
     const holePtsStr=wolfHolePts>0?`+${wolfHolePts} pts`:wolfHolePts<0?`${wolfHolePts} pts`:'Push';
-    html+=`<div class="calc-hd" style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center"><span>Wolf - H${hi+1}</span>${typeBadge}${_wbBaseNote}</div>${changePick}</div>`;
+    html+=`<div class="calc-hd" style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center"><span>Wolf · Hole ${hi+1}</span>${typeBadge}${_wbBaseNote}</div>${changePick}</div>`;
     if(isLone){
       const wolfNet=getNetForFlight(wolf,hi,r,flightPlayers);
       const others=flightPlayers.filter(i=>i!==wolf);
@@ -12404,8 +12407,8 @@ function renderWolfBox(){
       }
       
       const loneDot=`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#1D9E75;margin-right:4px;vertical-align:middle;flex-shrink:0"></span>`;
-      html+=`<div class="mp-team-block"><div class="mp-team-letter">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">${wolfName}${wolfPill}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${wolfWins===true?loneDot:''}${wolfNet!==null?wolfNet:'-'}</span></div></div></div>`;
-      html+=`<div class="mp-team-block"><div class="mp-team-letter">B</div><div class="mp-team-players">`;
+      html+=`<div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mpA)">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">${wolfName}${wolfPill}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${wolfWins===true?loneDot:''}${wolfNet!==null?wolfNet:'-'}</span></div></div></div>`;
+      html+=`<div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mpB)">B</div><div class="mp-team-players">`;
       others.forEach(pi=>{const n=getNetForFlight(pi,hi,r,flightPlayers);const isBestB=loneMode==='A'&&otherNets.length&&n===otherNets[0].net;const showFieldDot=wolfWins===false&&(loneMode==='B'||isBestB);html+=`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showFieldDot?loneDot:''}${n!==null?n:'-'}</span></div>`;});
       html+=`</div></div>`;
       let resultStr='';
@@ -12418,7 +12421,7 @@ function renderWolfBox(){
       const lonePtsWon=3*loneMult;
       const lonePtsStr=`${lonePtsWon} pts`;
       // Not ready is not a Push. See wolfHoleReady.
-      const loneWinnerStr=!_wReady?`<span style="color:var(--color-text-tertiary)">Waiting on scores</span>`:wolfWinsResult===true?`<span style="color:#1D9E75;font-weight:500">Wolf wins · ${lonePtsStr}</span>`:wolfWinsResult===false?`<span style="color:#D85A30;font-weight:500">Field wins · ${lonePtsStr}</span>`:`<span style="color:var(--color-text-tertiary)">Push</span>`;
+      const loneWinnerStr=!_wReady?`<span style="color:var(--color-text-tertiary)">Waiting on scores</span>`:wolfWinsResult===true?`<span style="color:var(--mpA);font-weight:500">Wolf wins · ${lonePtsStr}</span>`:wolfWinsResult===false?`<span style="color:var(--mpB);font-weight:500">Field wins · ${lonePtsStr}</span>`:`<span style="color:var(--color-text-tertiary)">Push</span>`;
       html+=`<div style="padding:8px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between"><div>${loneWinnerStr}</div><span style="font-size:11px;color:var(--color-text-tertiary);text-align:right">${resultStr}</span></div>`;
     }else{
       const partneri=pick.partner;
@@ -12450,16 +12453,16 @@ function renderWolfBox(){
       const aPartnerBest=partnerMode==='bestball'&&wolfNet!==null&&partnerNet!==null&&partnerNet<wolfNet;
       const showAWolfDot=aWins===true&&(partnerMode==='combined'||aWolfBest);
       const showAPartnerDot=aWins===true&&(partnerMode==='combined'||aPartnerBest);
-      html+=`<div class="mp-team-block"><div class="mp-team-letter">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">${wolfName}${wolfPill}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showAWolfDot?winDot:''}${aWolfScore}</span></div><div class="mp-player-line"><span class="mp-player-name">${displayName(partneri)}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showAPartnerDot?winDot:''}${aPartnerScore}</span></div></div></div>`;
+      html+=`<div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mpA)">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">${wolfName}${wolfPill}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showAWolfDot?winDot:''}${aWolfScore}</span></div><div class="mp-player-line"><span class="mp-player-name">${displayName(partneri)}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showAPartnerDot?winDot:''}${aPartnerScore}</span></div></div></div>`;
       const bNets=others.map(i=>getNetForFlight(i,hi,r,flightPlayers));
       const bBestNet=bNets.every(n=>n!==null)?Math.min(...bNets):null;
-      html+=`<div class="mp-team-block"><div class="mp-team-letter">B</div><div class="mp-team-players">`;
+      html+=`<div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mpB)">B</div><div class="mp-team-players">`;
       others.forEach(pi=>{const n=getNetForFlight(pi,hi,r,flightPlayers);const isBest=partnerMode==='bestball'&&n!==null&&n===bBestNet;const showBDot=aWins===false&&(partnerMode==='combined'||isBest);html+=`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showBDot?winDot:''}${n!==null?n:'-'}</span></div>`;});
       html+=`</div></div>`;
       const ptsWon=1;
       const ptsStr=`${ptsWon} pt`;
       // Not ready is not a Push. scoresReady already carries wolfHoleReady plus pick validity.
-      const winnerStr=!scoresReady?`<span style="color:var(--color-text-tertiary)">Waiting on scores</span>`:aWins===true?`<span style="color:#1D9E75;font-weight:500">Team A wins · ${ptsStr}</span>`:aWins===false?`<span style="color:#1D9E75;font-weight:500">Team B wins · ${ptsStr}</span>`:`<span style="color:var(--color-text-tertiary)">Push</span>`;
+      const winnerStr=!scoresReady?`<span style="color:var(--color-text-tertiary)">Waiting on scores</span>`:aWins===true?`<span style="color:var(--mpA);font-weight:500">Team A wins · ${ptsStr}</span>`:aWins===false?`<span style="color:var(--mpB);font-weight:500">Team B wins · ${ptsStr}</span>`:`<span style="color:var(--color-text-tertiary)">Push</span>`;
       const scoreStr=scoresReady?`A: ${sA} &nbsp;&nbsp; B: ${sB}`:'';
       html+=`<div style="padding:8px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between"><div>${winnerStr}</div><span style="font-size:11px;color:var(--color-text-tertiary);text-align:right">${scoreStr}</span></div>`;
     }
@@ -12471,14 +12474,14 @@ function renderWolfBox(){
   // state, not an empty one - Rd 1 was square through H8 and the strip silently vanished.
   // A gate that cannot distinguish "no result" from "even" must not decide visibility.
   const runPts=calcWolfPoints(r,hi,fi);
-  html+='<div style="display:flex;gap:6px;padding:8px 12px;flex-wrap:wrap;justify-content:center;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary)">';
+  html+='<div style="display:flex;gap:12px;padding:8px 12px;flex-wrap:wrap;justify-content:center;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary)">';
   runPts.forEach(p=>{
     const pts=p.pts;
     const clr=pts>0?'#1D9E75':pts<0?'#D85A30':'var(--color-text-tertiary)';
     const ptsStr=pts>0?'+'+pts:String(pts);
     const pl=WK.players[p.pi];
     html+=`<div style="display:flex;align-items:center;gap:4px;font-size:12px">`;
-    html+=`<div class="avatar" style="width:20px;height:20px;font-size:7px;background:${pl.bg};color:${pl.fg}">${pl.ini}</div>`;
+    html+=`<span style="color:var(--color-text-secondary)">${pl.ini}</span>`; // v124.50: initials, no circle
     html+=`<span style="font-weight:600;color:${clr}">${ptsStr}</span></div>`;
   });
   html+='</div>';
