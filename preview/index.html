@@ -2507,7 +2507,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.56';
+const APP_VERSION='v124.57';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -19870,26 +19870,26 @@ function renderSettle(){
       const _mem=(flightsForRound(r)[fi]||[]);const _segDone=_mem.length>0&&STATE.scores[r].slice(seg.start,seg.end).every(h=>_mem.every(pi=>h[pi]!==null));const _baseMs=isHeadsUp(r)?calcMPMatchScoreHU(r,fi,si,mi||0,seg.end-1):calcMPMatchScore(r,fi,si,seg.end-1);
       if(!(_baseMs&&(_baseMs.closed||_segDone)))return;
       const audMpVal=winner==='tie'?0:settleVal(roundValFs('gameVal',r,fi,WK.gameVal),tA.length,WK.mpSettle||'perplayer');
-      const _audLabel=isHeadsUp(r)?`${roundLabel(r)} ${seg.label} Match ${(mi||0)+1}`:`${roundLabel(r)} ${seg.label}`;
+      const _audLabel=isHeadsUp(r)?`${roundLabel(r)} ${seg.label} Match ${(mi||0)+1}`:`${roundLabel(r)} Match ${si+1}`; // v124.57: as the Scores box
       tA.forEach(pi=>{auditGolf[pi].mp.push({label:_audLabel,val:winner==='a'?audMpVal:winner==='b'?-audMpVal:0,desc:mpResultDesc(winner,pA,pB,'a',seg.end-seg.start)});});
       tB.forEach(pi=>{auditGolf[pi].mp.push({label:_audLabel,val:winner==='b'?audMpVal:winner==='a'?-audMpVal:0,desc:mpResultDesc(winner,pA,pB,'b',seg.end-seg.start)});});
       // Press audit entries
       getPresses(r,fi,si,isHeadsUp(r)?mi:undefined).forEach((p,pi)=>{
         const pr=calcPressResult(r,fi,si,p);if(!pr)return;if(!(pr.closed||_segDone))return;
-        const pLabel=`${roundLabel(r)} ${seg.label} ${p.auto?'Auto-press':'Press '+(pi+1)}`;
+        const pLabel=`${roundLabel(r)} ${isHeadsUp(r)?seg.label:'Match '+(si+1)} ${p.auto?'Auto-press':'Press '+(pi+1)}`;
         const pSign=pr.winner==='a'?1:pr.winner==='b'?-1:0;
         tA.forEach(pli=>{auditGolf[pli].mp.push({label:pLabel,val:pSign*pr.sv,desc:mpResultDesc(pr.winner,pr.pA,pr.pB,'a',seg.end-p.startHole)});});
         tB.forEach(pli=>{auditGolf[pli].mp.push({label:pLabel,val:-pSign*pr.sv,desc:mpResultDesc(pr.winner,pr.pA,pr.pB,'b',seg.end-p.startHole)});});
       });
     });
     const vegR=gameOn('vegas',r)?calcRoundVegas(r):{gameResults:[],net:[]};
-    vegR.gameResults.forEach(({seg,tA,tB,ptsA,ptsB,dollarA})=>{
+    vegR.gameResults.forEach(({seg,si,tA,tB,ptsA,ptsB,dollarA})=>{
       // Only show if at least one score entered in this segment
       const segHasScores=STATE.scores[r].slice(seg.start,seg.end).some(h=>h.some(s=>s!==null));
       if(!segHasScores)return;
       const audVegSv=settleVal(dollarA,tA.length,WK.vegasSettle||'perplayer');
-      tA.forEach(pi=>{auditGolf[pi].vegas.push({label:`${roundLabel(r)} ${seg.label}`,val:audVegSv,desc:`${ptsA}pts vs ${ptsB}pts`});});
-      tB.forEach(pi=>{auditGolf[pi].vegas.push({label:`${roundLabel(r)} ${seg.label}`,val:-audVegSv,desc:`${ptsB}pts vs ${ptsA}pts`});});
+      tA.forEach(pi=>{auditGolf[pi].vegas.push({label:`${roundLabel(r)} Match ${si+1}`,val:audVegSv,desc:`${ptsA}pts vs ${ptsB}pts`});});
+      tB.forEach(pi=>{auditGolf[pi].vegas.push({label:`${roundLabel(r)} Match ${si+1}`,val:-audVegSv,desc:`${ptsB}pts vs ${ptsA}pts`});});
     });
     if(gameOn('hammer',r)){
       flightsForRound(r).forEach((_hfpA,fi)=>{
@@ -19900,11 +19900,11 @@ function renderSettle(){
         const payout=roundValFs('hammerPayout',r,fi,WK.hammerPayout||'perplayer');
         const sv=payout==='perteam'?0.5:1;
         const seg2=getSegments(hammerSegsForRound(r,fi),roundHoleCount(r))[si];
-        const segLabel=`G${si+1} H${seg2.start+holeOffset(r)+1}-${seg2.end+holeOffset(r)}`;
+        const segLabel=`Match ${si+1}`,segHoles=`Holes ${seg2.start+holeOffset(r)+1} to ${seg2.end+holeOffset(r)}`;
         const netVal=(res.netA-res.netB)*sv;
         if(netVal!==0){
-          tm[0].forEach(pi=>{auditGolf[pi].hammer.push({label:`${roundLabel(r)} ${segLabel}`,val:netVal});});
-          tm[1].forEach(pi=>{auditGolf[pi].hammer.push({label:`${roundLabel(r)} ${segLabel}`,val:-netVal});});
+          tm[0].forEach(pi=>{auditGolf[pi].hammer.push({label:`${roundLabel(r)} ${segLabel}`,val:netVal,desc:segHoles});});
+          tm[1].forEach(pi=>{auditGolf[pi].hammer.push({label:`${roundLabel(r)} ${segLabel}`,val:-netVal,desc:segHoles});});
         }
       });
       });
