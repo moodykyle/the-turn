@@ -2505,7 +2505,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.48';
+const APP_VERSION='v124.49';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -10548,7 +10548,7 @@ function renderRazzleBox(){
   if(!matches.length){
     const teams=razzleTeamsForMatch(r,0,_rbfi);
     const nA=teams[0].map(i=>displayName(i)).join(' & '),nB=teams[1].map(i=>displayName(i)).join(' & ');
-    wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle · Match 1',nA+' vs '+nB)+'<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
+    wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle · Match 1',nA+' vs '+nB,true)+'<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
     return;
   }
   let activeMatch=null;
@@ -10559,7 +10559,7 @@ function renderRazzleBox(){
     const nextMi=closedCount;
     const nextTeams=razzleTeamsForMatch(r,nextMi,_rbfi);
     const nA=nextTeams[0].map(i=>displayName(i)).join(' & '),nB=nextTeams[1].map(i=>displayName(i)).join(' & ');
-    wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle · Match '+(nextMi+1),'H'+(hi+1))+'<div class="mp-team-block"><div class="mp-team-letter">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nA+'</span></div></div></div><div class="mp-team-block"><div class="mp-team-letter">B</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nB+'</span></div></div></div><div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
+    wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle · Match '+(nextMi+1),'From hole '+(hi+1),true)+'<div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mpA)">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nA+'</span></div></div></div><div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mpB)">B</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nB+'</span></div></div></div><div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
     return;
   }
   const m=activeMatch,tA=m.tA,tB=m.tB;
@@ -10567,13 +10567,14 @@ function renderRazzleBox(){
   const holeEntry=m.holeLog.find(l=>l.hi===hi);
   if(!holeEntry){
     const nAp=m.tA.map(i=>displayName(i)).join(' & '),nBp=m.tB.map(i=>displayName(i)).join(' & ');
-    wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle · Match '+(m.mi+1),'H'+(m.startHole+1)+'-current')+'<div class="mp-team-block"><div class="mp-team-letter">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nAp+'</span></div></div></div><div class="mp-team-block"><div class="mp-team-letter">B</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nBp+'</span></div></div></div><div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
+    wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle · Match '+(m.mi+1),'From hole '+(m.startHole+1),true)+'<div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mpA)">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nAp+'</span></div></div></div><div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mpB)">B</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nBp+'</span></div></div></div><div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
     return;
   }
   const {holePtsA,holePtsB,runA,runLead,runLeader}=holeEntry;
   // Decided, not closed: a leader win has closedOnHole -1, which hi>=-1 always satisfies.
   const matchClosed=(m.closedOnHole>=0&&hi>=m.closedOnHole)||m.leaderWin===true;
-  const hdr=gameBoxHeaderWithFmt('Razzle Dazzle · Match '+(m.mi+1),'H'+(m.startHole+1)+'-'+(m.endHole+1));
+  // v124.49: the holes in words, not in capitals.
+  const hdr=gameBoxHeaderWithFmt('Razzle Dazzle · Match '+(m.mi+1),m.startHole===m.endHole?'Hole '+(m.startHole+1):'Holes '+(m.startHole+1)+' to '+(m.endHole+1),true);
   let scoreStr;
   if(matchClosed){const fRunA=m.holeLog.length?m.holeLog[m.holeLog.length-1].runA:0;const fLead=Math.abs(fRunA);scoreStr=(m.winner==='a'?'A':'B')+' wins '+fLead+'-0';}
   else if(runLeader){scoreStr=runLeader+' '+runLead+'-0';}
@@ -10609,13 +10610,14 @@ function renderRazzleBox(){
       const badgeHtml=badges.length?'<span style="font-size:10px;font-weight:600;color:#1D9E75;margin-right:6px">+'+badges.join(' +')+'</span>':'';
       return '<div class="mp-player-line"><span class="mp-player-name">'+displayName(pi)+'</span><span style="margin-left:auto;display:flex;align-items:center">'+badgeHtml+'<span style="font-size:12px;color:var(--color-text-secondary)">net '+nets[idx]+'</span></span></div>';
     }).join('');
-    return '<div class="mp-team-block"><div class="mp-team-letter">'+ltr+'</div><div class="mp-team-players">'+players+'</div></div>';
+    return '<div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mp'+ltr+')">'+ltr+'</div><div class="mp-team-players">'+players+'</div></div>';
   }
   // 4-column result bar — right column: "A 2 up" not full names
   const teamScoreStr='Team: '+(res?res.sumA:'-')+' vs '+(res?res.sumB:'-');
   const indStr=holeEntry.indPt?('Ind: '+(holeEntry.indPt==='a'?'A':'B')):'Ind: Tied';
-  const finalRunA=m.holeLog.length?m.holeLog[m.holeLog.length-1].runA:0;const finalLead=Math.abs(finalRunA);const standingStr=matchClosed?((m.winner==='a'?'A':'B')+' wins '+finalLead+'-0'):(runLeader?runLeader+' '+runLead+'-0':'A/S');
-  const resultBar='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;padding:8px 12px;font-size:11px;background:var(--color-background-secondary)"><span style="color:'+(holePtsA===0&&holePtsB===0||holePtsA===holePtsB?'#D97706':'var(--color-text-secondary)')+';">'+(holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinner+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB)))+'</span><span style="color:var(--color-text-secondary);text-align:center">'+teamScoreStr+'</span><span style="color:var(--color-text-secondary);text-align:center">'+indStr+'</span><span style="color:#1D9E75;text-align:right;font-weight:500">'+standingStr+'</span></div>';
+  const finalRunA=m.holeLog.length?m.holeLog[m.holeLog.length-1].runA:0;const finalLead=Math.abs(finalRunA);const standingStr=matchClosed?((m.winner==='a'?'A':'B')+' wins '+finalLead+'-0'):(runLeader?runLeader+' '+runLead+'-0':'All square');
+  const _rzStC=/^A\b/.test(standingStr)?'var(--mpA)':/^B\b/.test(standingStr)?'var(--mpB)':'var(--color-text-secondary)';
+  const resultBar='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;padding:8px 12px;font-size:11px;background:var(--color-background-secondary)"><span style="color:var(--color-text-secondary);">'+(holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinner+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB)))+'</span><span style="color:var(--color-text-secondary);text-align:center">'+teamScoreStr+'</span><span style="color:var(--color-text-secondary);text-align:center">'+indStr+'</span><span style="color:'+_rzStC+';text-align:right;font-weight:500">'+standingStr+'</span></div>';
   if(res){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+hdr+razzleTeamBlock(tA,res.nA,res.sumA,res.bestA)+razzleTeamBlock(tB,res.nB,res.sumB,res.bestB)+resultBar+'</div>';}
   else{wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+hdr+'<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';}
 }
