@@ -2507,7 +2507,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.52';
+const APP_VERSION='v124.53';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -15983,8 +15983,8 @@ function renderFBBox(){
   const pot=d.ante*pool.players.length;
   let h='<div class="calc-box" style="margin-top:0.75rem">';
   h+='<div class="calc-hd" style="display:flex;justify-content:space-between;align-items:center">'
-    +'<span>Four-Ball - H'+(hi+1)+'</span>'
-    +'<span style="font-weight:400;color:var(--color-text-tertiary);text-transform:none;font-size:11px">Pot '+_fbMoney(pot)+'</span></div>';
+    +'<span>Four-Ball · Hole '+(hi+1)+'</span>' // v124.53
+    +'<span style="font-size:12px;font-weight:500;color:#1D9E75;text-transform:none">Pot $'+(pot%1?pot.toFixed(2):pot)+'</span></div>';
   // This hole, for the teams sitting in front of you.
   const _f43box=fbFive43(r);
   const _nBalls=_f43box?fbBallsForPar(_fbHolePar(r,hi)):1;
@@ -16017,9 +16017,11 @@ function renderFBBox(){
   h+='</div>';
   // Standings.
   h+='<div style="border-top:0.5px solid var(--color-border-tertiary);padding:7px 12px 9px">';
-  h+='<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-tertiary);margin-bottom:5px">Standings</div>';
+  h+='<div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:5px">Standings</div>';
   const _fl=flightsForRound(r);
   const _fsTags=rows.map(function(row){return _fbFsOfTeam(r,row.team);});
+  // v124.53 (Kyle, option 4): initials only when some team listed is not shown above; then on every row.
+  const _allAbove=rows.every(function(row){return mine.indexOf(row.team)>=0||mine.some(function(t){return t.length===row.team.length&&t.every(function(pi){return row.team.indexOf(pi)>=0;});});});
   const _tagsAddNothing=_fsTags.every(function(fk,i){
     return fk.length===1&&fk[0]===fbTeamNo(r,rows[i].team);
   });
@@ -16033,7 +16035,7 @@ function renderFBBox(){
     const tag=(_fl.length>1&&fk.length&&!_tagsAddNothing)?('F'+fk.join('/F')):'';
     h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:12px">'
       +'<span style="color:var(--color-text-secondary)">'+pos+'. Team '+_fbLtr(ti+1)
-      +'<span style="color:var(--color-text-tertiary);font-size:10px;margin-left:5px">'+nm+(tag?(' &middot; '+tag):'')+'</span></span>'
+      +(_allAbove?'':('<span style="color:var(--color-text-tertiary);font-size:10px;margin-left:5px">'+nm+(tag?(' &middot; '+tag):'')+'</span>'))+'</span>'
       +'<span>'+(played
         ?('<span style="color:'+_fbParCol(row.card.toPar)+';font-weight:600">'+_fbToPar(row.card.toPar)+'</span>'
           +' <span style="color:var(--color-text-tertiary);font-size:10px">thru '+row.card.played+'</span>')
