@@ -2507,7 +2507,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.55';
+const APP_VERSION='v124.56';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -17263,7 +17263,7 @@ function _gsSplitLabel(game,r,sp){
   if(game==='mp'&&isHeadsUp(r))return f(sp[0][0])+'<i>v</i>'+f(sp[0][1])+' \u00b7 '+f(sp[1][0])+'<i>v</i>'+f(sp[1][1]);
   return f(sp[0][0])+' &amp; '+f(sp[0][1])+'<i>v</i>'+f(sp[1][0])+' &amp; '+f(sp[1][1]);
 }
-function _gsSegsFor(game,r,fi){return game==='hammer'?getSegments(hammerSegsForRound(r,fi)):game==='vegas'?getSegments(vegasSegForRound(r,fi),roundHoleCount(r)):game==='skins'?getSegments(skinsGamesForRound(r,fi),roundHoleCount(r)):getSegments(mpGamesForRound(r,fi),roundHoleCount(r));}
+function _gsSegsFor(game,r,fi){return game==='hammer'?getSegments(hammerSegsForRound(r,fi),roundHoleCount(r)):game==='vegas'?getSegments(vegasSegForRound(r,fi),roundHoleCount(r)):game==='skins'?getSegments(skinsGamesForRound(r,fi),roundHoleCount(r)):getSegments(mpGamesForRound(r,fi),roundHoleCount(r));}
 // v123.85: the foursome pill (v123.82) for any Teams section. Its own key per game; the All lane only.
 function _gsFsPill(game,r,fl,sel){
   if(!(fl.length>1&&sel===-1))return {pick:-1,html:''};
@@ -18333,7 +18333,7 @@ function renderMoney(){
     if(gameOn('fourball',r))calcRoundFourBall(r).forEach((v,i)=>roundNet[i]+=v);
     if(gameOn('grinders',r))calcRoundGrinders(r).forEach((v,i)=>roundNet[i]+=v);
     if(gameOn('nines',r))calcNinesNetAllFlights(r).forEach((v,i)=>roundNet[i]+=v);
-    if(gameOn('hammer',r)){flightsForRound(r).forEach((_hfpR,fi)=>{if(_fsOff('hammer',r,fi))return;getSegments(hammerSegsForRound(r,fi)).forEach((_,si)=>{const res=calcHammerSegResult(r,si,fi);if(!res)return;const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;const payout=roundValFs('hammerPayout',r,fi,WK.hammerPayout||'perplayer');const sv=payout==='perteam'?0.5:1;const nv=(res.netA-res.netB)*sv;tm[0].forEach(pi=>{roundNet[pi]+=nv;});tm[1].forEach(pi=>{roundNet[pi]-=nv;});});});}
+    if(gameOn('hammer',r)){flightsForRound(r).forEach((_hfpR,fi)=>{if(_fsOff('hammer',r,fi))return;getSegments(hammerSegsForRound(r,fi),roundHoleCount(r)).forEach((_,si)=>{const res=calcHammerSegResult(r,si,fi);if(!res)return;const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;const payout=roundValFs('hammerPayout',r,fi,WK.hammerPayout||'perplayer');const sv=payout==='perteam'?0.5:1;const nv=(res.netA-res.netB)*sv;tm[0].forEach(pi=>{roundNet[pi]+=nv;});tm[1].forEach(pi=>{roundNet[pi]-=nv;});});});}
     // Use snapshotted amounts for settled rounds so mid-weekend payouts don't double-count
     const snapNet=settled&&STATE.roundSettleData?.[r]?.snapNet;
     const netForTotal=snapNet||roundNet;
@@ -18567,7 +18567,7 @@ function renderMoney(){
       const hamPayoutM=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');
       html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Hammer${WK.rounds[r].independentGames?'':' - $'+roundVal('hammerVal',r,WK.hammerVal||2)+'/hole'}${_hIndM?'':' · '+(hamPayoutM==='perteam'?'per team':'per player')}</div>`;
       flightsForRound(r).forEach((_hfpM,fi)=>{if(_fsOff('hammer',r,fi))return;
-      getSegments(hammerSegsForRound(r,fi)).forEach((_seg2,si2)=>{
+      getSegments(hammerSegsForRound(r,fi),roundHoleCount(r)).forEach((_seg2,si2)=>{
         const resM=calcHammerSegResult(r,si2,fi);if(!resM)return;
         const tmM=STATE.hammerTeams?.[r]?.[fi]?.[si2];if(!tmM)return;
         const hamSvM=roundValFs('hammerPayout',r,fi,WK.hammerPayout||'perplayer')==='perteam'?0.5:1;
@@ -19320,16 +19320,17 @@ function calcHammerCarry(r,si,upToHole,fi){
   fi=fi||0;
   // Compute carry pot accumulated from start of segment up to (not including) upToHole
   // Does NOT rely on stored .carried - computes from scores directly
-  const hSeg=hammerSegsForRound(r,fi),seg=getSegments(hSeg)[si];
+  // v124.56: the match splits the round's own holes (relative); hammerState, scores and upToHole are absolute.
+  const hSeg=hammerSegsForRound(r,fi),_off=holeOffset(r),seg=getSegments(hSeg,roundHoleCount(r))[si];
   const baseVal=roundValFs('hammerVal',r,fi,WK.hammerVal||2);
   const halveCarry=roundValFs('hammerHalve',r,fi,WK.hammerHalve||'carry');
   const scoring=roundValFs('hammerScoring',r,fi,WK.hammerScoring||'bestball');
   const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];
-  if(!tm)return 0;
+  if(!tm||!seg)return 0;
   const _hfp=flightsForRound(r)[fi]||[];
-  const clampedTo=Math.min(upToHole,seg.end);
+  const clampedTo=Math.min(upToHole,seg.end+_off);
   let carry=0;
-  for(let h=seg.start;h<clampedTo;h++){
+  for(let h=seg.start+_off;h<clampedTo;h++){
     const hs=STATE.hammerState?.[r]?.[fi]?.[h]||{throws:[],conceded:false,concedeVal:0};
     let pot=baseVal+carry;
     hs.throws.forEach(()=>{pot*=2;});
@@ -19350,7 +19351,7 @@ function calcHammerCarry(r,si,upToHole,fi){
 function calcHammerHole(hi,r,fi){
   fi=fi||0;
   if(!gameOnFs('hammer',r,fi))return null;
-  const hSeg=hammerSegsForRound(r,fi),si=segForHole(hi,hSeg);
+  const hSeg=hammerSegsForRound(r,fi),si=segForHole(hi-holeOffset(r),hSeg,roundHoleCount(r));
   const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm||!tm[0]||!tm[1])return null;
   const tA=tm[0],tB=tm[1];
   const _hfp=flightsForRound(r)[fi]||[];
@@ -19369,16 +19370,17 @@ function calcHammerHole(hi,r,fi){
 function calcHammerSegResult(r,si,fi){
   fi=fi||0;
   if(!gameOnFs('hammer',r,fi))return null;
-  const hSeg=hammerSegsForRound(r,fi),seg=getSegments(hSeg)[si];
+  const hSeg=hammerSegsForRound(r,fi),_off=holeOffset(r),seg=getSegments(hSeg,roundHoleCount(r))[si];
   const baseVal=roundValFs('hammerVal',r,fi,WK.hammerVal||2);
   const halveCarry=roundValFs('hammerHalve',r,fi,WK.hammerHalve||'carry');
   const scoring=roundValFs('hammerScoring',r,fi,WK.hammerScoring||'bestball');
-  const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return null;
+  const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm||!seg)return null;
   const tA=tm[0],tB=tm[1];
   const _hfp=flightsForRound(r)[fi]||[];
   let netA=0,netB=0;
   const _p8End=fsHoleCount(r,fi),_segEnd=Math.max(seg.start,Math.min(seg.end,_p8End));
-  for(let h=seg.start;h<_segEnd;h++){
+  for(let _rh=seg.start;_rh<_segEnd;_rh++){
+    const h=_rh+_off; // absolute: hammerState and scores are keyed by the course hole
     const hs=STATE.hammerState?.[r]?.[fi]?.[h]||{throws:[],conceded:false,concedeVal:0};
     const carry=calcHammerCarry(r,si,h,fi);
     let pot=baseVal+carry;
@@ -19447,7 +19449,7 @@ function resolveHammer(action,r,hi){
     const hc=calcHammerHole(hi,r,fi);
     if(!hc)return;
     const lastThrower=hs.throws[hs.throws.length-1];
-    const hSeg=hammerSegsForRound(r,fi),si=segForHole(hi,hSeg);
+    const hSeg=hammerSegsForRound(r,fi),si=segForHole(hi-holeOffset(r),hSeg,roundHoleCount(r));
     const preVal=_hmConcedeOf(roundValFs('hammerVal',r,fi,WK.hammerVal||2),calcHammerCarry(r,si,hi,fi),hs.throws.length);
     hs.conceded=true;hs.concedeVal=preVal;hs.concededBy=lastThrower===0?1:0;
   }
@@ -19544,7 +19546,7 @@ function renderHammerBox(){
   const throwHistory=hs.throws.length>0?" · "+hs.throws.map(t=>"🔨"+(t===0?"A":"B")).join(" "):"";
   const displayPotVal=hs.conceded?_cv:potVal;
   const potLabel=`<span style="font-size:12px;font-weight:500;color:#1D9E75">Pot ${fmt(displayPotVal)}${throwHistory}</span>`;
-  const hSeg2=hammerSegsForRound(r,_hbfi),seg3=getSegments(hSeg2)[si];
+  const hSeg2=hammerSegsForRound(r,_hbfi),seg3=getSegments(hSeg2,roundHoleCount(r))[si];
   // v124.47: the match in the title, its holes on the second line (as Match Play's box).
   const hammerHdr=`<div class="calc-hd" style="align-items:center"><div style="display:flex;flex-direction:column;gap:1px"><span>Hammer · Match ${si+1}</span><span style="font-weight:400;font-size:11px;color:var(--color-text-tertiary);text-transform:none;letter-spacing:0">Holes ${seg3.start+holeOffset(r)+1} to ${seg3.end+holeOffset(r)}</span></div>${potLabel}</div>`;
   // Team A occupies rows 1..a, the separator is row a+1, team B starts at a+2. Team
@@ -19723,7 +19725,7 @@ function _renderHammerFlightBlock(r,fi,labelHd){
   // v124.18, Kyle 15 Oct, canvas "Games tab: Hammer": the Match Play card's face. Money reads the same as
   // before: calcHammerSegResult for the totals, the per-team split for perteam. The rows below walk the holes
   // once, for the header's hammer count, the bottom line's thru and carry, and (open) the hole rows.
-  const hSeg=hammerSegsForRound(r,fi),segs=getSegments(hSeg);
+  const hSeg=hammerSegsForRound(r,fi),segs=getSegments(hSeg,roundHoleCount(r));
   const baseVal=roundValFs('hammerVal',r,fi,WK.hammerVal||2);
   const payout=roundValFs('hammerPayout',r,fi,WK.hammerPayout||'perplayer');
   const scoring=roundValFs('hammerScoring',r,fi,WK.hammerScoring||'bestball');
@@ -19747,14 +19749,14 @@ function _renderHammerFlightBlock(r,fi,labelHd){
     const expanded=STATE.hammerExpanded[key]===true;
     const _tag=_segStopTag(r,fi,seg);
     // carryAt is what the last PLAYED hole carries into the next; an unscored hole's pot is not a carry yet.
-    // One pass over the holes. h is round relative (seg.start is), and hammerState is keyed the same way.
+    // One pass over the holes. h is round relative (seg.start is); hammerState and scores are keyed by h+_ofs.
     let carry=0,carryAt=0,throwsN=0,played=0,lastH=-1,open=0,rows='';
     for(let h=seg.start;h<seg.end;h++){
       const hn=h+_ofs+1;
       // A dead hole neither shows a pot nor advances the carry: the carry froze at the end hole.
       if(_mpHoleDead(r,fi,h+_ofs)){rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span></span><span><span class="q">not played</span></span><span></span></div>`;continue;}
       open++;
-      const hs=STATE.hammerState?.[r]?.[fi]?.[h]||{throws:[],conceded:false,concedeVal:0};
+      const hs=STATE.hammerState?.[r]?.[fi]?.[h+_ofs]||{throws:[],conceded:false,concedeVal:0};
       let pot=baseVal+carry;
       hs.throws.forEach(()=>{pot*=2;});
       throwsN+=hs.throws.length;
@@ -19767,7 +19769,7 @@ function _renderHammerFlightBlock(r,fi,labelHd){
         rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span class="it">${_m(_hmConcedeOf(baseVal,carry,hs.throws.length))}</span><span>${mid}</span>${win}</div>`;
         carry=0;carryAt=0;played++;lastH=hn;continue;
       }
-      const nA=tA.map(pi=>getNetForFlight(pi,h,r,_hfp)),nB=tB.map(pi=>getNetForFlight(pi,h,r,_hfp));
+      const nA=tA.map(pi=>getNetForFlight(pi,h+_ofs,r,_hfp)),nB=tB.map(pi=>getNetForFlight(pi,h+_ofs,r,_hfp));
       if([...nA,...nB].some(v=>v===null)){
         rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span>${_m(pot)}</span><span>${mid}</span><span class="w"><span class="q">-</span></span></div>`;
         continue; // v124.37: unscored, so it carries nothing; the carry passes to the next scored hole
@@ -19816,7 +19818,7 @@ function calcGolfNetPerPlayer(){
   if(gameOnAny('skins')){WK.rounds.forEach((_,r)=>{const _srn=calcRoundSkins(r).net;for(let _pi=0;_pi<n;_pi++)skNet[_pi]+=_srn[_pi];});}
   // Hammer net
   const hammNet=Array(n).fill(0);
-  if(gameOnAny('hammer')){WK.rounds.forEach((_,r)=>{flightsForRound(r).forEach((_hfp,fi)=>{getSegments(hammerSegsForRound(r,fi)).forEach((seg,si)=>{const res=calcHammerSegResult(r,si,fi);if(!res)return;const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;const payout=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');const sv=payout==='perteam'?0.5:1;const _hd=(res.netA-res.netB)*sv;tm[0].forEach(pi=>hammNet[pi]+=_hd);tm[1].forEach(pi=>hammNet[pi]-=_hd);});});});}
+  if(gameOnAny('hammer')){WK.rounds.forEach((_,r)=>{flightsForRound(r).forEach((_hfp,fi)=>{getSegments(hammerSegsForRound(r,fi),roundHoleCount(r)).forEach((seg,si)=>{const res=calcHammerSegResult(r,si,fi);if(!res)return;const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;const payout=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');const sv=payout==='perteam'?0.5:1;const _hd=(res.netA-res.netB)*sv;tm[0].forEach(pi=>hammNet[pi]+=_hd);tm[1].forEach(pi=>hammNet[pi]-=_hd);});});});}
   // Two's net
   const twosNet=Array(n).fill(0);
   if(gameOn('twos',0)){let totTwos=0;const twos=Array(n).fill(0);STATE.scores.forEach((rd,r)=>{rd.forEach((h,hi)=>{h.forEach((g,pi)=>{if(g===2){twos[pi]++;totTwos++;}});});});const tp=WK.twosAmt*n;if(totTwos>0)twos.forEach((c,i)=>{twosNet[i]+=(c/totTwos)*tp-WK.twosAmt;});}// else: no 2s, no blood
@@ -19892,12 +19894,12 @@ function renderSettle(){
     if(gameOn('hammer',r)){
       flightsForRound(r).forEach((_hfpA,fi)=>{
       if(_fsOff('hammer',r,fi))return;
-      getSegments(hammerSegsForRound(r,fi)).forEach((_seg,si)=>{
+      getSegments(hammerSegsForRound(r,fi),roundHoleCount(r)).forEach((_seg,si)=>{
         const res=calcHammerSegResult(r,si,fi);if(!res)return;
         const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;
         const payout=roundValFs('hammerPayout',r,fi,WK.hammerPayout||'perplayer');
         const sv=payout==='perteam'?0.5:1;
-        const seg2=getSegments(hSegA)[si];
+        const seg2=getSegments(hammerSegsForRound(r,fi),roundHoleCount(r))[si];
         const segLabel=`G${si+1} H${seg2.start+holeOffset(r)+1}-${seg2.end+holeOffset(r)}`;
         const netVal=(res.netA-res.netB)*sv;
         if(netVal!==0){
