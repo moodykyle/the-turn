@@ -2505,7 +2505,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.47';
+const APP_VERSION='v124.48';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -10503,8 +10503,9 @@ function gameBoxHeaderWithTeams(title,tA,tB){
   const nB=tB.map(i=>displayName(i)).join(' & ');
   return `<div class="calc-hd" style="flex-direction:column;gap:1px;align-items:stretch"><div><span>${title}</span></div><div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)"><span style="opacity:0.6">A:</span> ${nA}</div><div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)"><span style="opacity:0.6">B:</span> ${nB}</div></div>`;
 }
-function gameBoxHeaderWithFmt(title,fmt){
-  return `<div class="calc-hd" style="flex-direction:column;gap:1px;align-items:stretch"><div><span>${title}</span></div>${fmt?`<div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)">${fmt}</div>`:''}</div>`;
+function gameBoxHeaderWithFmt(title,fmt,plain){
+  // v124.48: plain keeps the second line out of capitals (the Scores boxes' light touch).
+  return `<div class="calc-hd" style="flex-direction:column;gap:1px;align-items:stretch"><div><span>${title}</span></div>${fmt?`<div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)${plain?';text-transform:none;letter-spacing:0':''}">${fmt}</div>`:''}</div>`;
 }
 // Same header, plus a right-hand action slot. Used by the match play box so Press sits
 // as far from Save & Continue as the box allows.
@@ -18860,8 +18861,10 @@ function renderSkinsBoxWrap(){
   const carry=skinsCarryAt(r,hi,_sbfi);
   const res=skinHoleWinner(hi,r,_sbfi);
   const skinsFmtLabel=WK.skinsFmt==='individual'?'Individual':'2v2 best ball';
-  const hdr=gameBoxHeaderWithFmt(`Skins · G${si+1} H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}`,skinsFmtLabel);
-  const carryTxt=`${carry} skin${carry>1?'s':''} · $${(roundValFs('skinsVal',STATE.currentRound,_sbfi,WK.skinsVal)*carry).toFixed(2)}`;
+  // v124.48: the match in the title, its holes on the second line; whole dollars.
+  const hdr=gameBoxHeaderWithFmt(`Skins · Match ${si+1}`,`Holes ${seg.start+holeOffset(r)+1} to ${seg.end+holeOffset(r)} · `+skinsFmtLabel,true);
+  const _skAmt=roundValFs('skinsVal',STATE.currentRound,_sbfi,WK.skinsVal)*carry;
+  const carryTxt=`${carry} skin${carry>1?'s':''} · $${_skAmt%1?_skAmt.toFixed(2):_skAmt}`;
   let body='';
   if(WK.skinsFmt==='team'&&skTeam){
     const netsA=skTeam[0].map(pi=>getNetForFlight(pi,hi,r,_sbfp));
@@ -18872,7 +18875,7 @@ function renderSkinsBoxWrap(){
     const bWins=res&&!res.tied&&res.winner==='b';
     function skTeamBlock(team,nets,best,isWinner,ltr){
       const players=team.map((pi,idx)=>`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net">${nets[idx]!==null&&nets[idx]===best&&isWinner?'<span class="mp-best">best \u2192 </span>':''}${nets[idx]!==null?'net '+nets[idx]:'\u2014'}</span></div>`).join('');
-      return `<div class="mp-team-block"><div class="mp-team-letter">${ltr}</div><div class="mp-team-players">${players}</div></div>`;
+      return `<div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mp${ltr})">${ltr}</div><div class="mp-team-players">${players}</div></div>`;
     }
     body=skTeamBlock(skTeam[0],netsA,bestA,aWins,'A')+skTeamBlock(skTeam[1],netsB,bestB,bWins,'B');
   }
@@ -18888,15 +18891,15 @@ function renderSkinsBoxWrap(){
     leftTxt=(_skStd&&_skStd.holesPlayed>0)?('Thru '+(seg.start+_skStd.holesPlayed+holeOffset(r))):'Not started';
     midColor='var(--color-text-secondary)';
   } else if(res.tied){
-    leftTxt='Tied';
-    midTxt=`${carry} skin${carry>1?'s':''} carry`;
-    midColor='#D97706';
+    leftTxt='Halved';
+    midTxt=`${carry} skin${carry>1?'s carry':' carries'}`;
+    midColor='var(--color-text-secondary)';
   } else if(res.type==='individual'){
     leftTxt=`${displayName(res.winner)} wins`;
     midColor='#1D9E75';
   } else {
     leftTxt=res.winner==='a'?'A wins':'B wins';
-    midColor='#1D9E75';
+    midColor=res.winner==='a'?'var(--mpA)':'var(--mpB)';
   }
   const resultBar=`<div class="mp-result-bar"><span class="mp-result-text">${leftTxt}</span><span style="font-size:12px;font-weight:600;color:${midColor}">${midTxt}</span></div>`;
   // The result bar describes THIS HOLE. The strip below describes the SEGMENT.
@@ -18921,11 +18924,11 @@ function renderSkinsBoxWrap(){
     } else {
       _skLeft='A '+_skStd.a+' \u00b7 B '+_skStd.b;
       const _skNet=_skStd.a-_skStd.b;
-      if(_skNet===0){_skRight='No Blood';}
+      if(_skNet===0){_skRight='No blood';}
       else{
         const _skAbs=Math.abs(_skNet);
         _skRight=(_skNet>0?'A':'B')+' +'+_skAbs+' skin'+(_skAbs!==1?'s':'');
-        _skRightClr=_skNet>0?'#1D9E75':'#185FA5';
+        _skRightClr=_skNet>0?'var(--mpA)':'var(--mpB)';
       }
     }
   } else {
