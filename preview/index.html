@@ -2507,7 +2507,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.53';
+const APP_VERSION='v124.54';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -16025,22 +16025,25 @@ function renderFBBox(){
   const _tagsAddNothing=_fsTags.every(function(fk,i){
     return fk.length===1&&fk[0]===fbTeamNo(r,rows[i].team);
   });
+  // v124.54: one grid, a column per part, so the rows line up (rank, team, initials, foursome, spacer, to par, thru).
+  const _fbTagOf=function(_ri){const fk=_fsTags[_ri];return (_fl.length>1&&fk.length&&!_tagsAddNothing)?('F'+fk.join('/F')):'';};
+  const _fbIni=!_allAbove, _fbF=!_allAbove&&rows.some(function(row,_ri){return !!_fbTagOf(_ri);});
+  h+='<div class="fb-st" style="display:grid;grid-template-columns:auto auto'+(_fbIni?' auto':'')+(_fbF?' auto':'')+' 1fr auto auto;column-gap:8px;row-gap:3px;align-items:baseline;font-size:12px">';
   rows.forEach(function(row,_ri){
-    const pos=row.pos;
     const ti=fbTeamNo(r,row.team)-1;
     const played=row.card.played>0;
     const nm=row.team.map(function(pi){return WK.players[pi].ini;}).join('+');
-    // Which group each team sits in. Withheld when it only repeats the team number.
-    const fk=_fsTags[_ri];
-    const tag=(_fl.length>1&&fk.length&&!_tagsAddNothing)?('F'+fk.join('/F')):'';
-    h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:12px">'
-      +'<span style="color:var(--color-text-secondary)">'+pos+'. Team '+_fbLtr(ti+1)
-      +(_allAbove?'':('<span style="color:var(--color-text-tertiary);font-size:10px;margin-left:5px">'+nm+(tag?(' &middot; '+tag):'')+'</span>'))+'</span>'
-      +'<span>'+(played
-        ?('<span style="color:'+_fbParCol(row.card.toPar)+';font-weight:600">'+_fbToPar(row.card.toPar)+'</span>'
-          +' <span style="color:var(--color-text-tertiary);font-size:10px">thru '+row.card.played+'</span>')
-        :'<span style="color:var(--color-text-tertiary)">-</span>')+'</span></div>';
+    const _t3='color:var(--color-text-tertiary);font-size:11px';
+    h+='<span style="color:var(--color-text-secondary);text-align:right">'+row.pos+'.</span>'
+      +'<span style="color:var(--color-text-secondary)">Team '+_fbLtr(ti+1)+'</span>'
+      +(_fbIni?'<span style="'+_t3+'">'+nm+'</span>':'')
+      +(_fbF?'<span style="'+_t3+'">'+_fbTagOf(_ri)+'</span>':'')
+      +'<span></span>'
+      +(played?'<span style="text-align:right;color:'+_fbParCol(row.card.toPar)+';font-weight:600">'+_fbToPar(row.card.toPar)+'</span>'
+        :'<span style="text-align:right;color:var(--color-text-tertiary)">-</span>')
+      +'<span style="'+_t3+'">'+(played?'thru '+row.card.played:'')+'</span>';
   });
+  h+='</div>';
   // Say what the zero is. When a foursome game is also live, the scorecard above is on
   // a DIFFERENT zero and cannot show both, so name that rather than let it puzzle anyone.
   const netOn=!!(STATE.netOffFlightLow||STATE.netOffLow);
