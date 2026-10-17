@@ -2507,7 +2507,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.54';
+const APP_VERSION='v124.55';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -19691,14 +19691,16 @@ function renderNinesBox(){
   if(_nn){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Nines</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">'+_nn+'.</div></div>';return;}
   const hc=calcNinesHole(hi,r,_nbfi);
   const roll=calcNinesPoints(r,_nbfi,hi);
-  let html='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Nines</div>';
+  // v124.55: the hole in the title, the column labels on top.
+  let html='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Nines · Hole '+(hi+1)+'</div>';
   html+='<div style="padding:8px 12px;display:flex;flex-direction:column;gap:5px">';
+  html+='<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--color-text-tertiary)"><span style="flex:1"></span><span style="width:44px;text-align:right">Hole</span><span style="width:34px;text-align:right">Total</span></div>';
   fp.forEach(function(pi,i){
     const hp=hc?hc.pts[i]:null;
-    html+='<div style="display:flex;align-items:center;gap:8px"><span style="flex:1;font-size:13px;color:var(--color-text-primary)">'+displayName(pi)+'</span><span style="font-size:12px;color:var(--color-text-secondary);width:44px;text-align:right">'+(hp===null?'-':'+'+hp)+'</span><span style="font-size:13px;font-weight:600;color:#1D9E75;width:34px;text-align:right">'+roll.pts[i]+'</span></div>';
+    html+='<div style="display:flex;align-items:center;gap:8px"><span style="flex:1;font-size:13px;color:var(--color-text-primary)">'+displayName(pi)+'</span><span style="font-size:12px;color:var(--color-text-secondary);width:44px;text-align:right">'+(hp===null?'-':'+'+hp)+'</span><span style="font-size:13px;font-weight:600;color:var(--color-text-primary);width:34px;text-align:right">'+roll.pts[i]+'</span></div>';
   });
   html+='</div>';
-  html+='<div style="padding:6px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-tertiary)">'+(hc?'This hole / total':'Waiting on all three scores')+'</div>';
+  if(!hc)html+='<div style="padding:6px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-tertiary)">Waiting on all three scores</div>';
   html+='</div>';
   wrap.innerHTML=html;
 }
