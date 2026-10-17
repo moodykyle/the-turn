@@ -227,6 +227,10 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(52%) sepia(9
    and the nets line up by construction instead of by reserving matching widths in two
    independent rows. The control column is auto, so with no live control it collapses to
    nothing and the box reads as it always did. */
+/* v124.47: the accepted band, themed (was a fixed mint strip). */
+.hm-acc{display:flex;align-items:center;padding:5px 12px;background:#E1F5EE;border-bottom:0.5px solid #5DCAA5}.hm-acc span{font-size:11px;font-weight:500;color:#0F6E56}
+body.force-dark .hm-acc{background:#0F3B2C;border-bottom-color:#1D9E75}body.force-dark .hm-acc span{color:#5DCAA5}
+@media(prefers-color-scheme:dark){body:not(.force-light) .hm-acc{background:#0F3B2C;border-bottom-color:#1D9E75}body:not(.force-light) .hm-acc span{color:#5DCAA5}}
 .hm-grid{display:grid;grid-template-columns:20px auto auto 1fr;align-items:center;column-gap:12px;row-gap:2px;padding:8px 12px;}
 .hm-grid.badged{grid-template-columns:20px auto auto 1fr auto;}
 .hm-ltr{grid-column:1;font-size:18px;font-weight:700;color:var(--color-text-secondary);text-align:center;}
@@ -2501,7 +2505,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.46';
+const APP_VERSION='v124.47';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -19464,7 +19468,7 @@ function renderHammerBox(){
   const pendingResponse=hs.throws.length>0&&!hs.conceded&&!hs.accepted;
   const canThrowA=!locked&&!hs.conceded&&!pendingResponse&&(maxH===0||hs.throws.length<maxH)&&(mode!=='alt'||lastThrower!==0);
   const canThrowB=!locked&&!hs.conceded&&!pendingResponse&&(maxH===0||hs.throws.length<maxH)&&(mode!=='alt'||lastThrower!==1);
-  const fmt=v=>'$'+v.toFixed(2);
+  const fmt=v=>'$'+(v%1?v.toFixed(2):v); // v124.47: whole dollars, cents only when there are any
   // Pre-doubling pot for concede label
   let preDoubleVal=roundValFs('hammerVal',r,_hbfi,WK.hammerVal||2)+calcHammerCarry(r,si,hi,_hbfi);
   for(let i=0;i<hs.throws.length-1;i++)preDoubleVal*=2;
@@ -19496,7 +19500,7 @@ function renderHammerBox(){
         mid=`<div class="hm-btn" onclick="throwHammer(${teamIdx},${r},${hi})"><span class="ic">\uD83D\uDD28</span><span class="lb">Hammer</span></div>`;
       }
     }
-    let h=`<span class="hm-ltr" style="${span}">${ltr}</span>`;
+    let h=`<span class="hm-ltr" style="${span};color:var(--mp${ltr})">${ltr}</span>`;
     if(mid)h+=`<div class="hm-mid" style="${span}">${mid}</div>`;
     names.forEach((name,ni)=>{
       const net=nets[ni];
@@ -19519,25 +19523,26 @@ function renderHammerBox(){
     const winTeam=hs.concededBy===0?1:0;
     const winLtr=winTeam===0?'A':'B';
     const settleAmt=payout==='perteam'?_cv/2:_cv;
-    resultRow=`<div class="mp-result-bar"><span class="mp-result-text">${winLtr} wins (conceded)</span><span style="font-size:12px;font-weight:600;color:#1D9E75">+${fmt(settleAmt)}</span></div>`;
+    resultRow=`<div class="mp-result-bar"><span class="mp-result-text">${winLtr} wins (conceded)</span><span style="font-size:12px;font-weight:600;color:var(--mp${winLtr})">${winLtr} +${fmt(settleAmt)}</span></div>`;
   } else if(allIn){
     const halveCarry=roundValFs('hammerHalve',r,_hbfi,WK.hammerHalve||'carry');
     if(scoreA===scoreB){
       const nextPot=halveCarry==='carry'?(potVal+roundValFs('hammerVal',r,_hbfi,WK.hammerVal||2)):roundValFs('hammerVal',r,_hbfi,WK.hammerVal||2);
-      resultRow=`<div class="mp-result-bar"><span class="mp-result-text" style="color:var(--color-text-secondary)">Tied - carries</span><span style="font-size:12px;font-weight:600;color:var(--color-text-secondary)">Next pot ${fmt(nextPot)}</span></div>`;
+      resultRow=`<div class="mp-result-bar"><span class="mp-result-text" style="color:var(--color-text-secondary)">Halved, carries</span><span style="font-size:12px;font-weight:600;color:var(--color-text-secondary)">Next pot ${fmt(nextPot)}</span></div>`;
     } else {
       const winner=scoreA<scoreB?'A':'B';
       const settleAmt=payout==='perteam'?potVal/2:potVal;
-      resultRow=`<div class="mp-result-bar"><span class="mp-result-text">${winner} wins</span><span style="font-size:12px;font-weight:600;color:#1D9E75">+${fmt(settleAmt)}</span></div>`;
+      resultRow=`<div class="mp-result-bar"><span class="mp-result-text">${winner} wins</span><span style="font-size:12px;font-weight:600;color:var(--mp${winner})">${winner} +${fmt(settleAmt)}</span></div>`;
     }
   }
   // Accepted banner
-  const acceptedBanner=hs.accepted&&!hs.conceded&&!allIn?`<div style="display:flex;align-items:center;padding:5px 12px;background:#E1F5EE;border-bottom:0.5px solid #5DCAA5"><span style="font-size:11px;font-weight:500;color:#0F6E56">✓ Accepted - pot doubled to ${fmt(potVal)}</span></div>`:'';
+  const acceptedBanner=hs.accepted&&!hs.conceded&&!allIn?`<div class="hm-acc"><span>✓ Accepted. Pot doubled to ${fmt(potVal)}</span></div>`:'';
   const throwHistory=hs.throws.length>0?" · "+hs.throws.map(t=>"🔨"+(t===0?"A":"B")).join(" "):"";
   const displayPotVal=hs.conceded?_cv:potVal;
   const potLabel=`<span style="font-size:12px;font-weight:500;color:#1D9E75">Pot ${fmt(displayPotVal)}${throwHistory}</span>`;
   const hSeg2=hammerSegsForRound(r,_hbfi),seg3=getSegments(hSeg2)[si];
-  const hammerHdr=`<div class="calc-hd"><span>Hammer · G${si+1} H${seg3.start+holeOffset(r)+1}-${seg3.end+holeOffset(r)}</span>${potLabel}</div>`;
+  // v124.47: the match in the title, its holes on the second line (as Match Play's box).
+  const hammerHdr=`<div class="calc-hd" style="align-items:center"><div style="display:flex;flex-direction:column;gap:1px"><span>Hammer · Match ${si+1}</span><span style="font-weight:400;font-size:11px;color:var(--color-text-tertiary);text-transform:none;letter-spacing:0">Holes ${seg3.start+holeOffset(r)+1} to ${seg3.end+holeOffset(r)}</span></div>${potLabel}</div>`;
   // Team A occupies rows 1..a, the separator is row a+1, team B starts at a+2. Team
   // sizes are read off the rosters rather than assumed to be two, so a 1v1 hammer
   // lays out correctly.
