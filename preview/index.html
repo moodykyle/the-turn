@@ -2507,7 +2507,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.51';
+const APP_VERSION='v124.52';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -11013,10 +11013,10 @@ function renderMPHoleBox(){
 function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap'),r=STATE.currentRound,hi=STATE.currentHole;if(!gameOn('vegas',STATE.currentRound)){wrap.innerHTML='';return;}if(WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Vegas</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>`;return;}const _vfi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(!gameOnFs('vegas',r,_vfi)){wrap.innerHTML='';return;}const _vfp=flightsForRound(r)[_vfi]||[];if(_vfp.length<4){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Vegas</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">This foursome needs 4 players.</div></div>';return;}const vSeg=vegasSegForRound(r,_vfi),si=segForHole(hi-holeOffset(r),vSeg,roundHoleCount(r)),_vtv=STATE.vegTeams[r]&&STATE.vegTeams[r][_vfi]&&STATE.vegTeams[r][_vfi][si];if(!_vtv||!Array.isArray(_vtv[0])||!Array.isArray(_vtv[1])||_vtv[0].length<2||_vtv[1].length<2){wrap.innerHTML='';return;}const tA=_vtv[0],tB=_vtv[1];
   const vTeamLabel=`${displayName(tA[0])} & ${displayName(tA[1])} vs ${displayName(tB[0])} & ${displayName(tB[1])}`;
   const vSeg2=vegasSegForRound(r,_vfi),seg2=getSegments(vSeg2,roundHoleCount(r))[si];
-  const hdr=gameBoxHeaderWithFmt(`Vegas · G${si+1} H${seg2.start+holeOffset(r)+1}-${seg2.end+holeOffset(r)}`,'');
+  const hdr=gameBoxHeaderWithFmt(`Vegas · Match ${si+1}`,`Holes ${seg2.start+holeOffset(r)+1} to ${seg2.end+holeOffset(r)}`,true); // v124.52
   const res=calcVegas(hi,r,_vfi);
   // Pre-scores: show team blocks with dashes (mirrors Skins layout)
-  function vegasTeamBlockEmpty(ltr,team){const rows=team.map(pi=>`<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:3px"><span style="font-size:13px;color:var(--color-text-secondary)">net —</span></div>`).join('');return `<div style="display:flex;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="flex:2;display:flex;align-items:center"><div class="mp-team-letter">${ltr}</div><div>${team.map(pi=>`<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:3px">${displayName(pi)}</div>`).join('')}</div></div><div style="flex:1;text-align:center">${rows}</div><div style="flex:1;text-align:right"><span class="vegas-num" style="color:var(--color-text-tertiary)">—</span></div></div>`;}
+  function vegasTeamBlockEmpty(ltr,team){const rows=team.map(pi=>`<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:3px"><span style="font-size:13px;color:var(--color-text-secondary)">net —</span></div>`).join('');return `<div style="display:flex;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="flex:2;display:flex;align-items:center"><div class="mp-team-letter" style="color:var(--mp${ltr})">${ltr}</div><div>${team.map(pi=>`<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:3px">${displayName(pi)}</div>`).join('')}</div></div><div style="flex:1;text-align:center">${rows}</div><div style="flex:1;text-align:right"><span class="vegas-num" style="color:var(--color-text-tertiary)">—</span></div></div>`;}
   let inner=!res?(vegasTeamBlockEmpty('A',tA)+vegasTeamBlockEmpty('B',tB)):'placeholder';
   if(res){
     const fA=res.aFlip?'<span class="flip-badge">flipped</span>':'';
@@ -11037,7 +11037,7 @@ function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap')
       }).join('');
       return `<div style="display:flex;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
         <div style="flex:2;display:flex;align-items:center">
-          <div class="mp-team-letter">${ltr}</div>
+          <div class="mp-team-letter" style="color:var(--mp${ltr})">${ltr}</div>
           <div>
             <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:3px">${displayName(team[0])}</div>
             <div style="font-size:13px;color:var(--color-text-secondary)">${displayName(team[1])}</div>
@@ -11056,7 +11056,7 @@ function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap')
           vegasTeamBlock('B',tB,nB,res.numB,`${res.loB}+${res.hiB}`,fB,res.trigB)+
           `<div class="mp-result-bar">
             <span class="mp-result-text">${rt}${dbl?' '+dbl:''}</span>
-            <span class="mp-result-text" style="color:${res.tied?'var(--color-text-secondary)':'#1D9E75'}">${pt}</span>
+            <span class="mp-result-text" style="color:${res.tied?'var(--color-text-secondary)':res.aWins?'var(--mpA)':'var(--mpB)'}">${pt}</span>
           </div>`;
   }
   wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdr}${inner}</div>`;}
