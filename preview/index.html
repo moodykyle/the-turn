@@ -2509,7 +2509,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.60';
+const APP_VERSION='v124.61';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -9477,7 +9477,26 @@ function renderScorecard(){
   try{renderRazzleBox();}catch(re){console.error('renderRazzleBox error:',re);const w=document.getElementById('razzleBoxWrap');if(w)w.innerHTML='';}
   try{renderWolfBox();}catch(we){console.error('renderWolfBox error:',we);const wb=document.getElementById('wolfBoxWrap');if(wb)wb.innerHTML='';}
   try{renderFBBox();}catch(fe){console.error('renderFBBox error:',fe);const fbb=document.getElementById('fbBoxWrap');if(fbb)fbb.innerHTML='';}}
-function adjScore(pi,delta){if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRound,_curFi(STATE.currentRound)))return;if(isFlightLocked(STATE.currentRound,_curFi(STATE.currentRound)))return;
+// v124.61 (Kyle 18 Oct, screen recording): on iPhone the page moved while scoring, worst on a short round that only
+// just scrolls. Every score and hole redraw records the scroll first and puts it back on the next frames, unless the
+// finger has moved since (a real scroll) or the page is no longer that tall.
+var _pinMoved=0;
+function _pinTouched(){_pinMoved=Date.now();}
+try{window.addEventListener('touchmove',_pinTouched,{passive:true});window.addEventListener('wheel',_pinTouched,{passive:true});}catch(e){}
+function _pinScroll(y){
+  if(typeof requestAnimationFrame!=='function')return;
+  const t0=Date.now();
+  const fix=function(){
+    if(_pinMoved>=t0)return;
+    const se=document.scrollingElement||document.documentElement;
+    if(Math.abs((window.scrollY||0)-y)<=1)return;
+    if(!se||se.scrollHeight-window.innerHeight<y-1)return;
+    window.scrollTo(0,y);
+  };
+  requestAnimationFrame(function(){fix();requestAnimationFrame(fix);});
+  setTimeout(fix,350);
+}
+function adjScore(pi,delta){_pinScroll(window.scrollY||0);if(isReadOnly)return;if(_pencilViewerLocked(STATE.currentRound,_curFi(STATE.currentRound)))return;if(isFlightLocked(STATE.currentRound,_curFi(STATE.currentRound)))return;
   // Refusing only at Save was not enough: this writes straight to STATE and schedules
   // its own autoSave, so the number stuck and synced anyway. Refuse the keystroke.
   {const _asR=STATE.currentRound,_asHi=STATE.currentHole,_asFi=_curFi(_asR);
@@ -11090,6 +11109,11 @@ function renderHoleDots(){const r=STATE.currentRound;const nHoles=roundHoleCount
   } else if(_srOk&&_srDone>=1&&_srDone<nHoles){
     html+='<div class="sr-striprow"><span>Play called?</span>'+
       '<button class="sr-link" style="font-size:12px" onclick="_endRoundSheet('+r+')">End round at '+_srDone+'</button></div>';
+  } else {
+    // v124.61 (Kyle 18 Oct): the row keeps its space when there is nothing to say, so finishing a hole never
+    // changes the page height (the page moved on iPhone when this row came and went).
+    html+='<div class="sr-striprow" aria-hidden="true" style="visibility:hidden"><span>Play called?</span>'+
+      '<span class="sr-link" style="font-size:12px">End round at 1</span></div>';
   }
   document.getElementById('holeDots').innerHTML=html;
   // The one-shot is keyed on the foursome. Firing it pre-pick spends foursome 0's key on
@@ -11180,7 +11204,7 @@ function _fsPillPick(i){
   _fsPillRender();
   updateHoleUI();
 }
-function updateHoleUI(){
+function updateHoleUI(){_pinScroll(window.scrollY||0);
   if(!WK||!STATE||!WK.rounds||!WK.players)return;
   const r=STATE.currentRound,hi=STATE.currentHole;
   // Fire any pending auto-press toasts for this hole
