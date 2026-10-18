@@ -2509,7 +2509,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.64';
+const APP_VERSION='v124.65';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -20100,7 +20100,9 @@ function _mnOpenGame(r,g){STATE.gamesViewRound=r;STATE.gamesViewGame=g;
   // v124.63 (Kyle 18 Oct): a game only some foursomes play lives on that foursome's lane, not on All.
   const fl=flightsForRound(r),on=fl.map((_,fi)=>fi).filter(fi=>!_fsOff(g,r,fi));
   STATE.gamesLane=(fl.length>1&&on.length&&on.length<fl.length)?on[0]:'both';
-  setView('games');}
+  setView('games');
+  // v124.65 (Kyle 18 Oct): the Games tab kept the scroll Bets had, so Razzle opened at the bottom. Start at the top.
+  window.scrollTo(0,0);}
 
 // Init
 function dismissSplash(){
