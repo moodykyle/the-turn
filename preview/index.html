@@ -2509,7 +2509,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.59';
+const APP_VERSION='v124.60';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -18283,7 +18283,7 @@ function _settleOpenKeys(){
   return k;
 }
 function _mnTopCard(){
-  const S=STATE.settledRounds||[],done=_tripComplete(),open=_settleOpenKeys(),unit=WK.isQuickRound?'round':'trip';
+  const S=STATE.settledRounds||[],done=_tripComplete(),open=_settleOpenKeys(),one=WK.rounds.length===1;
   const _m=function(v){return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
   const pays=function(t){return t.map(function(x){return '<div class="mn-pay"><span>'+_gtEsc(displayName(x.from))+' <em>pays</em> '+_gtEsc(displayName(x.to))+'</span><b>'+_m(x.amt)+'</b></div>';}).join('');};
   if(done&&!open.length&&S.length){
@@ -18293,9 +18293,9 @@ function _mnTopCard(){
       +(isReadOnly?'':'<div class="mn-top-b"><button class="mn-link" onclick="_undoSettleUp()">Undo settle up</button></div>')+'</div>';
   }
   const t=_settleNums().txns,n=t.length,cnt=n?n+(n===1?' payment':' payments'):'Nothing owed';
-  if(!done)return '<div class="mn-top"><div class="mn-top-l">If the '+unit+' ended now</div><div class="mn-top-v">'+cnt+'</div><div class="mn-top-s">Settle opens when '+(WK.isQuickRound?'the round':'the last round')+' is complete.</div>'+pays(t)+'</div>';
+  if(!done)return '<div class="mn-top"><div class="mn-top-l">If it ended now</div><div class="mn-top-v">'+cnt+'</div><div class="mn-top-s">Settle opens when '+(one?'the round is':'every round is')+' complete.</div>'+pays(t)+'</div>';
   const tie=!WK.isQuickRound&&potAward().mode==='unresolved';
-  return '<div class="mn-top"><div class="mn-top-l">Settle up · the whole '+unit+'</div><div class="mn-top-v">'+cnt+'</div><div class="mn-top-s">'
+  return '<div class="mn-top"><div class="mn-top-l">Settle up · '+(one?'the round':'every round')+'</div><div class="mn-top-v">'+cnt+'</div><div class="mn-top-s">'
     +(tie?'Break the weekend bet tie first.':(WK.isQuickRound?'Every game and expense together.':'Golf, the weekend bet and expenses together.'))+'</div>'+pays(t)
     +((!tie&&!isReadOnly)?'<div class="mn-top-b"><button class="mn-btn" onclick="_settleUp()">Settle up</button></div>':'')+'</div>';
 }
