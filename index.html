@@ -227,6 +227,10 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(52%) sepia(9
    and the nets line up by construction instead of by reserving matching widths in two
    independent rows. The control column is auto, so with no live control it collapses to
    nothing and the box reads as it always did. */
+/* v124.47: the accepted band, themed (was a fixed mint strip). */
+.hm-acc{display:flex;align-items:center;padding:5px 12px;background:#E1F5EE;border-bottom:0.5px solid #5DCAA5}.hm-acc span{font-size:11px;font-weight:500;color:#0F6E56}
+body.force-dark .hm-acc{background:#0F3B2C;border-bottom-color:#1D9E75}body.force-dark .hm-acc span{color:#5DCAA5}
+@media(prefers-color-scheme:dark){body:not(.force-light) .hm-acc{background:#0F3B2C;border-bottom-color:#1D9E75}body:not(.force-light) .hm-acc span{color:#5DCAA5}}
 .hm-grid{display:grid;grid-template-columns:20px auto auto 1fr;align-items:center;column-gap:12px;row-gap:2px;padding:8px 12px;}
 .hm-grid.badged{grid-template-columns:20px auto auto 1fr auto;}
 .hm-ltr{grid-column:1;font-size:18px;font-weight:700;color:var(--color-text-secondary);text-align:center;}
@@ -1202,6 +1206,8 @@ body.force-light{
 
 /* + create sheet */
 .hmcs-hd{font-size:16px;font-weight:600;color:var(--color-text-primary);padding:6px 18px 2px;}
+/* v124.50: the Pick partner sheet's title and label; their colours come from the accent rules. */
+.wf-pk-t{font-size:16px;font-weight:600;color:var(--color-text-primary)}.wf-pk-l{font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:10px}
 .hmcs-sub{font-size:12.5px;color:var(--color-text-secondary);padding:0 18px 12px;}
 .hmcs-opt{display:flex;align-items:center;gap:12px;width:calc(100% - 28px);margin:0 14px 9px;padding:13px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;cursor:pointer;text-align:left;font-family:inherit;}
 .hmcs-ic{width:34px;height:34px;border-radius:9px;background:var(--brand-weak);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -1444,12 +1450,12 @@ body.force-dark .home-wb-h,body.force-dark .home-gtile-name,body.force-dark .gp-
 /* v123.43: titles take the accent in both modes (green by day, gold at night); section labels
    deep green / cream. Player and course names keep the text colour. */
 .qr-step-t{font-size:17px;font-weight:500;color:var(--color-text-primary);}
-@media(prefers-color-scheme:light){body:not(.force-dark) .event-name,body:not(.force-dark) .hole-label,body:not(.force-dark) .hmcs-hd,body:not(.force-dark) .grp-sheet-title,body:not(.force-dark) .qr-step-t,body:not(.force-dark) .scr-title{color:#13795B;}body:not(.force-dark) .rdsheet-hd,body:not(.force-dark) .board-section-label{color:#0F4D36;}}
-body.force-light .event-name,body.force-light .hole-label,body.force-light .hmcs-hd,body.force-light .grp-sheet-title,body.force-light .qr-step-t,body.force-light .scr-title{color:#13795B;}
-body.force-light .rdsheet-hd,body.force-light .board-section-label{color:#0F4D36;}
-@media(prefers-color-scheme:dark){body:not(.force-light) .event-name,body:not(.force-light) .hmcs-hd,body:not(.force-light) .grp-sheet-title,body:not(.force-light) .qr-step-t,body:not(.force-light) .scr-title{color:#EFC456;}body:not(.force-light) .rdsheet-hd,body:not(.force-light) .board-section-label{color:#EDE6D3;}}
-body.force-dark .event-name,body.force-dark .hmcs-hd,body.force-dark .grp-sheet-title,body.force-dark .qr-step-t,body.force-dark .scr-title{color:#EFC456;}
-body.force-dark .rdsheet-hd,body.force-dark .board-section-label{color:#EDE6D3;}
+@media(prefers-color-scheme:light){body:not(.force-dark) .event-name,body:not(.force-dark) .hole-label,body:not(.force-dark) .hmcs-hd,body:not(.force-dark) .wf-pk-t,body:not(.force-dark) .grp-sheet-title,body:not(.force-dark) .qr-step-t,body:not(.force-dark) .scr-title{color:#13795B;}body:not(.force-dark) .rdsheet-hd,body:not(.force-dark) .wf-pk-l,body:not(.force-dark) .board-section-label{color:#0F4D36;}}
+body.force-light .event-name,body.force-light .hole-label,body.force-light .hmcs-hd,body.force-light .wf-pk-t,body.force-light .grp-sheet-title,body.force-light .qr-step-t,body.force-light .scr-title{color:#13795B;}
+body.force-light .rdsheet-hd,body.force-light .wf-pk-l,body.force-light .board-section-label{color:#0F4D36;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .event-name,body:not(.force-light) .hmcs-hd,body:not(.force-light) .wf-pk-t,body:not(.force-light) .grp-sheet-title,body:not(.force-light) .qr-step-t,body:not(.force-light) .scr-title{color:#EFC456;}body:not(.force-light) .rdsheet-hd,body:not(.force-light) .wf-pk-l,body:not(.force-light) .board-section-label{color:#EDE6D3;}}
+body.force-dark .event-name,body.force-dark .hmcs-hd,body.force-dark .wf-pk-t,body.force-dark .grp-sheet-title,body.force-dark .qr-step-t,body.force-dark .scr-title{color:#EFC456;}
+body.force-dark .rdsheet-hd,body.force-dark .wf-pk-l,body.force-dark .board-section-label{color:#EDE6D3;}
 /* v123.49: the In Progress and Your Rounds page titles, in the title accent. */
 .pg-title{position:absolute;left:0;right:0;text-align:center;font-size:16px;font-weight:700;color:var(--color-text-primary);pointer-events:none;}
 @media(prefers-color-scheme:light){body:not(.force-dark) .pg-title{color:#13795B;}}
@@ -2501,7 +2507,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.45';
+const APP_VERSION='v124.58';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -10375,23 +10381,14 @@ function renderSnakeEntry(){
   if(!Array.isArray(STATE.snakeHolder[r][_fp]))STATE.snakeHolder[r][_fp]=Array(18).fill(null);
   const currentHolder=currentSnakeHolderForFlight(r,hi,_fp);
   const pot=calcSnakePotForFlight(r,_fp);
-  const potDisplay=pot>0?`<span style="font-size:11px;color:var(--color-text-secondary);margin-left:8px">Pot: <strong>$${pot.toFixed(2)}</strong></span>`:'';
+  // v124.51: the pot as Hammer shows it, whole dollars.
+  const potDisplay=pot>0?`<span style="font-size:12px;font-weight:500;color:#1D9E75">Pot $${pot%1?pot.toFixed(2):pot}</span>`:'';
   const _snkMembers=(flightsForRound(r)[_fp]||WK.players.map((_,i)=>i)).filter(pi=>typeof pi==='number'&&pi>=0);
   const options=`<option value="">No holder</option>`+
     _snkMembers.map(i=>`<option value="${i}"${currentHolder===i?' selected':''}>${displayName(i)}</option>`).join('')+
-    (currentHolder!==null?`<option value="clear">⬜ Clear snake</option>`:'');
-  wrap.innerHTML=`<div style="margin:0.75rem 1rem 0;padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary)">
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:16px">🐍</span>
-      <span style="font-size:12px;font-weight:500;color:var(--color-text-primary)">Snake holder</span>
-      ${potDisplay}
-    </div>
-    <div style="margin-top:8px">
-      <select id="snakeSelect" onchange="onSnakeChange(this.value)" style="width:100%;padding:7px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary)">
-        ${options}
-      </select>
-    </div>
-  </div>`;
+    (currentHolder!==null?`<option value="clear">Clear snake</option>`:'');
+  // v124.51: the shared box frame (was its own panel).
+  wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd" style="align-items:center"><span><span style="font-size:14px;margin-right:6px">🐍</span>Snake</span>${potDisplay}</div><div style="padding:10px 12px 12px"><div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:6px">Holding the snake</div><select id="snakeSelect" class="ie-sel" onchange="onSnakeChange(this.value)" style="width:100%;padding:8px 28px 8px 10px;border:0.5px solid var(--color-border-secondary);border-radius:10px;font-size:14px;background-color:var(--color-background-primary);color:var(--color-text-primary);font-family:inherit">${options}</select></div></div>`;
 }
 
 function onSnakeChange(val){
@@ -10499,8 +10496,9 @@ function gameBoxHeaderWithTeams(title,tA,tB){
   const nB=tB.map(i=>displayName(i)).join(' & ');
   return `<div class="calc-hd" style="flex-direction:column;gap:1px;align-items:stretch"><div><span>${title}</span></div><div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)"><span style="opacity:0.6">A:</span> ${nA}</div><div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)"><span style="opacity:0.6">B:</span> ${nB}</div></div>`;
 }
-function gameBoxHeaderWithFmt(title,fmt){
-  return `<div class="calc-hd" style="flex-direction:column;gap:1px;align-items:stretch"><div><span>${title}</span></div>${fmt?`<div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)">${fmt}</div>`:''}</div>`;
+function gameBoxHeaderWithFmt(title,fmt,plain){
+  // v124.48: plain keeps the second line out of capitals (the Scores boxes' light touch).
+  return `<div class="calc-hd" style="flex-direction:column;gap:1px;align-items:stretch"><div><span>${title}</span></div>${fmt?`<div style="font-weight:400;font-size:11px;color:var(--color-text-tertiary)${plain?';text-transform:none;letter-spacing:0':''}">${fmt}</div>`:''}</div>`;
 }
 // Same header, plus a right-hand action slot. Used by the match play box so Press sits
 // as far from Save & Continue as the box allows.
@@ -10543,7 +10541,7 @@ function renderRazzleBox(){
   if(!matches.length){
     const teams=razzleTeamsForMatch(r,0,_rbfi);
     const nA=teams[0].map(i=>displayName(i)).join(' & '),nB=teams[1].map(i=>displayName(i)).join(' & ');
-    wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle · Match 1',nA+' vs '+nB)+'<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
+    wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle · Match 1',nA+' vs '+nB,true)+'<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
     return;
   }
   let activeMatch=null;
@@ -10554,7 +10552,7 @@ function renderRazzleBox(){
     const nextMi=closedCount;
     const nextTeams=razzleTeamsForMatch(r,nextMi,_rbfi);
     const nA=nextTeams[0].map(i=>displayName(i)).join(' & '),nB=nextTeams[1].map(i=>displayName(i)).join(' & ');
-    wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle · Match '+(nextMi+1),'H'+(hi+1))+'<div class="mp-team-block"><div class="mp-team-letter">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nA+'</span></div></div></div><div class="mp-team-block"><div class="mp-team-letter">B</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nB+'</span></div></div></div><div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
+    wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle · Match '+(nextMi+1),'From hole '+(hi+1),true)+'<div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mpA)">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nA+'</span></div></div></div><div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mpB)">B</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nB+'</span></div></div></div><div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
     return;
   }
   const m=activeMatch,tA=m.tA,tB=m.tB;
@@ -10562,13 +10560,14 @@ function renderRazzleBox(){
   const holeEntry=m.holeLog.find(l=>l.hi===hi);
   if(!holeEntry){
     const nAp=m.tA.map(i=>displayName(i)).join(' & '),nBp=m.tB.map(i=>displayName(i)).join(' & ');
-    wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle · Match '+(m.mi+1),'H'+(m.startHole+1)+'-current')+'<div class="mp-team-block"><div class="mp-team-letter">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nAp+'</span></div></div></div><div class="mp-team-block"><div class="mp-team-letter">B</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nBp+'</span></div></div></div><div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
+    wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+gameBoxHeaderWithFmt('Razzle Dazzle · Match '+(m.mi+1),'From hole '+(m.startHole+1),true)+'<div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mpA)">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nAp+'</span></div></div></div><div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mpB)">B</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">'+nBp+'</span></div></div></div><div style="padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';
     return;
   }
   const {holePtsA,holePtsB,runA,runLead,runLeader}=holeEntry;
   // Decided, not closed: a leader win has closedOnHole -1, which hi>=-1 always satisfies.
   const matchClosed=(m.closedOnHole>=0&&hi>=m.closedOnHole)||m.leaderWin===true;
-  const hdr=gameBoxHeaderWithFmt('Razzle Dazzle · Match '+(m.mi+1),'H'+(m.startHole+1)+'-'+(m.endHole+1));
+  // v124.49: the holes in words, not in capitals.
+  const hdr=gameBoxHeaderWithFmt('Razzle Dazzle · Match '+(m.mi+1),m.startHole===m.endHole?'Hole '+(m.startHole+1):'Holes '+(m.startHole+1)+' to '+(m.endHole+1),true);
   let scoreStr;
   if(matchClosed){const fRunA=m.holeLog.length?m.holeLog[m.holeLog.length-1].runA:0;const fLead=Math.abs(fRunA);scoreStr=(m.winner==='a'?'A':'B')+' wins '+fLead+'-0';}
   else if(runLeader){scoreStr=runLeader+' '+runLead+'-0';}
@@ -10604,13 +10603,14 @@ function renderRazzleBox(){
       const badgeHtml=badges.length?'<span style="font-size:10px;font-weight:600;color:#1D9E75;margin-right:6px">+'+badges.join(' +')+'</span>':'';
       return '<div class="mp-player-line"><span class="mp-player-name">'+displayName(pi)+'</span><span style="margin-left:auto;display:flex;align-items:center">'+badgeHtml+'<span style="font-size:12px;color:var(--color-text-secondary)">net '+nets[idx]+'</span></span></div>';
     }).join('');
-    return '<div class="mp-team-block"><div class="mp-team-letter">'+ltr+'</div><div class="mp-team-players">'+players+'</div></div>';
+    return '<div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mp'+ltr+')">'+ltr+'</div><div class="mp-team-players">'+players+'</div></div>';
   }
   // 4-column result bar — right column: "A 2 up" not full names
   const teamScoreStr='Team: '+(res?res.sumA:'-')+' vs '+(res?res.sumB:'-');
   const indStr=holeEntry.indPt?('Ind: '+(holeEntry.indPt==='a'?'A':'B')):'Ind: Tied';
-  const finalRunA=m.holeLog.length?m.holeLog[m.holeLog.length-1].runA:0;const finalLead=Math.abs(finalRunA);const standingStr=matchClosed?((m.winner==='a'?'A':'B')+' wins '+finalLead+'-0'):(runLeader?runLeader+' '+runLead+'-0':'A/S');
-  const resultBar='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;padding:8px 12px;font-size:11px;background:var(--color-background-secondary)"><span style="color:'+(holePtsA===0&&holePtsB===0||holePtsA===holePtsB?'#D97706':'var(--color-text-secondary)')+';">'+(holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinner+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB)))+'</span><span style="color:var(--color-text-secondary);text-align:center">'+teamScoreStr+'</span><span style="color:var(--color-text-secondary);text-align:center">'+indStr+'</span><span style="color:#1D9E75;text-align:right;font-weight:500">'+standingStr+'</span></div>';
+  const finalRunA=m.holeLog.length?m.holeLog[m.holeLog.length-1].runA:0;const finalLead=Math.abs(finalRunA);const standingStr=matchClosed?((m.winner==='a'?'A':'B')+' wins '+finalLead+'-0'):(runLeader?runLeader+' '+runLead+'-0':'All square');
+  const _rzStC=/^A\b/.test(standingStr)?'var(--mpA)':/^B\b/.test(standingStr)?'var(--mpB)':'var(--color-text-secondary)';
+  const resultBar='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;padding:8px 12px;font-size:11px;background:var(--color-background-secondary)"><span style="color:var(--color-text-secondary);">'+(holePtsA===0&&holePtsB===0?'Tied':holePtsA===holePtsB?'Split':(holeWinner+' wins '+Math.max(holePtsA,holePtsB)+'-'+Math.min(holePtsA,holePtsB)))+'</span><span style="color:var(--color-text-secondary);text-align:center">'+teamScoreStr+'</span><span style="color:var(--color-text-secondary);text-align:center">'+indStr+'</span><span style="color:'+_rzStC+';text-align:right;font-weight:500">'+standingStr+'</span></div>';
   if(res){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+hdr+razzleTeamBlock(tA,res.nA,res.sumA,res.bestA)+razzleTeamBlock(tB,res.nB,res.sumB,res.bestB)+resultBar+'</div>';}
   else{wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem">'+hdr+'<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Enter scores to calculate</div></div>';}
 }
@@ -10869,8 +10869,9 @@ function renderMPHoleBox(){
   if(!tA||!tB){wrap.innerHTML='';return;}
   const seg=getSegments(mpG,roundHoleCount(r))[si];
   const _huBox=isHeadsUp(r);
-  const mpFmtLabel=_huBox?'Heads up 1v1':'2v2 best ball';
-  const _mpTitle=`Match Play · G${si+1} H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}`;
+  // v124.46: the match in the title, its holes on the second line (as the Games tab names them).
+  const mpFmtLabel=`Holes ${seg.start+holeOffset(r)+1} to ${seg.end+holeOffset(r)} · `+(_huBox?'Heads up 1v1':'2v2 best ball');
+  const _mpTitle=`Match Play · ${_huBox?'Game':'Match'} ${si+1}`;
   const hdr=gameBoxHeaderWithFmt(_mpTitle,mpFmtLabel);
   if(_huBox){
     // HU: render two mini match blocks
@@ -10957,11 +10958,15 @@ function renderMPHoleBox(){
   function mpTeamBlock(team,scores,bestScore,isWinner){
     const players=team.map((pi,idx)=>{const s=scores?scores[idx]:null;return`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net">${s!==null&&s===bestScore&&isWinner?'<span class="mp-best">best → </span>':''}${s!==null?'net '+s:'—'}</span></div>`;}).join('');
     const teamLbl=_huBox?displayName(team[0]):(team===tA?'A':'B');
-    return `<div class="mp-team-block"><div class="mp-team-letter">${teamLbl}</div><div class="mp-team-players">${players}</div></div>`;
+    const _tlc=_huBox?'':` style="color:var(--mp${team===tA?'A':'B'})"`;
+    return `<div class="mp-team-block"><div class="mp-team-letter"${_tlc}>${teamLbl}</div><div class="mp-team-players">${players}</div></div>`;
   }
   const res=calcMP(hi,r,_fi);
   const ms=calcMPMatchScore(r,_fi,si,hi);
   const r2=r,si2=si;
+  // v124.46: the standing in words, in the leader's colour.
+  const _mpSt=x=>{const t=String(x).replace(/^([AB]): /,'$1 ').replace(/^A\/S$/,'All square');const c=/^A\b/.test(t)?'var(--mpA)':/^B\b/.test(t)?'var(--mpB)':'var(--color-text-secondary)';return{t,c};};
+  const _mpUsd=v=>'$'+(Number(v)%1?Number(v).toFixed(2):Number(v));
   // Press button and cancel — always built regardless of score state
   const activePresses2=getPresses(r2,_fi,si2);
   let pressBtn='';
@@ -10978,11 +10983,13 @@ function renderMPHoleBox(){
   activePresses.forEach((p,pi)=>{
     const pr=calcPressResult(r2,_fi,si2,p);
     const pLabel=p.auto?'Auto-press':'Press '+(pi+1);
-    const pStatus=pr?(pr.scoreStr||(pr.winner==='tie'?'A/S':pr.winner==='a'?'A leads':'B leads')):'—';
-    const pClr=pr?'#1D9E75':'var(--color-text-tertiary)';
-    pressRows+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;font-size:11px;background:var(--color-background-secondary);${pi>0?'border-top:0.5px solid var(--color-border-tertiary);':''}"><span style="color:var(--color-text-secondary);font-weight:500">${pLabel} ${p.startHole+1===seg.end?'H'+(p.startHole+1):'H'+(p.startHole+1)+'-'+seg.end} · $${p.val.toFixed(2)}</span><span style="color:${pClr};font-weight:500">${pStatus}</span></div>`;
+    const _pst=_mpSt(pr?(pr.scoreStr||(pr.winner==='tie'?'A/S':pr.winner==='a'?'A leads':'B leads')):'—');
+    const pStatus=_pst.t;
+    const pClr=pr?_pst.c:'var(--color-text-tertiary)';
+    const _pEnd=seg.end+holeOffset(r2);
+    pressRows+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;font-size:12px;background:var(--color-background-secondary);${pi>0?'border-top:0.5px solid var(--color-border-tertiary);':''}"><span style="color:var(--color-text-secondary);font-weight:500">${pLabel} · ${p.startHole+1===_pEnd?'Hole '+(p.startHole+1):'Holes '+(p.startHole+1)+' to '+_pEnd} · ${_mpUsd(p.val)}</span><span style="color:${pClr};font-weight:500">${pStatus}</span></div>`;
   });
-  const pressCard=pressRows?`<div style="margin:8px 12px 10px;border:0.5px solid var(--color-border-tertiary);border-left:2px solid #1D9E75;border-radius:6px;overflow:hidden"><div style="padding:4px 10px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.05em">Presses</div>${pressRows}</div>`:'';
+  const pressCard=pressRows?`<div style="margin:8px 12px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:6px;overflow:hidden"><div style="padding:4px 10px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.05em">Presses</div>${pressRows}</div>`:'';
   let cancelBtn='';
   if(!res){
     // A running total is a property of the MATCH, not of the hole you are standing on,
@@ -10991,25 +10998,25 @@ function renderMPHoleBox(){
     // was read as no data, here real data was thrown away for want of a result.
     // holesPlayed counts from the segment start, so the hole NUMBER is seg.start +
     // holesPlayed + holeOffset. Match-over comparison mirrors the scored path exactly.
-    const _msStr=ms?ms.scoreStr.replace('Team A','A').replace('Team B','B'):'A/S';
+    const _msSt=_mpSt(ms?ms.scoreStr.replace('Team A','A').replace('Team B','B'):'A/S'),_msStr=_msSt.t;
     const _msLeft=(ms&&ms.closed&&hi>ms.closedAtHole)?'Match over'
       :(ms?('Thru '+(seg.start+ms.holesPlayed+holeOffset(r))):'Not started');
-    const statusBar=`<div class="mp-result-bar"><span class="mp-result-text" style="color:var(--color-text-secondary)">${_msLeft}</span><span class="mp-result-text" style="font-size:13px;color:#1D9E75">${_msStr}</span></div>`;
+    const statusBar=`<div class="mp-result-bar"><span class="mp-result-text" style="color:var(--color-text-secondary)">${_msLeft}</span><span class="mp-result-text" style="font-size:13px;color:${_msSt.c}">${_msStr}</span></div>`;
     wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdrP}${mpTeamBlock(tA,null,null,false)}${mpTeamBlock(tB,null,null,false)}${statusBar}${pressCard}</div>`;return;
   }
-  const scoreStr=ms?ms.scoreStr.replace('Team A','A').replace('Team B','B'):'A/S';
+  const _scSt=_mpSt(ms?ms.scoreStr.replace('Team A','A').replace('Team B','B'):'A/S'),scoreStr=_scSt.t;
   const isPostClose=ms&&ms.closed&&hi>ms.closedAtHole;
   const winnerTxt=isPostClose?'Match over':res.halved?'Halved':res.aWins?'A wins':'B wins';
-  const resultBar=`<div class="mp-result-bar"><span class="mp-result-text">${winnerTxt}</span><span class="mp-result-text" style="font-size:13px;color:#1D9E75">${scoreStr}</span></div>`;
+  const resultBar=`<div class="mp-result-bar"><span class="mp-result-text">${winnerTxt}</span><span class="mp-result-text" style="font-size:13px;color:${_scSt.c}">${scoreStr}</span></div>`;
   wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdrP}${mpTeamBlock(tA,res.nA,res.bestA,res.aWins)}${mpTeamBlock(tB,res.nB,res.bestB,!res.aWins&&!res.halved)}${resultBar}${pressCard}</div>`;
 }
 function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap'),r=STATE.currentRound,hi=STATE.currentHole;if(!gameOn('vegas',STATE.currentRound)){wrap.innerHTML='';return;}if(WK.players.length<4){wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Vegas</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Requires 4 players.</div></div>`;return;}const _vfi=isMultiFlight(r)?(getFlightPick(r)||0):0;if(!gameOnFs('vegas',r,_vfi)){wrap.innerHTML='';return;}const _vfp=flightsForRound(r)[_vfi]||[];if(_vfp.length<4){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Vegas</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">This foursome needs 4 players.</div></div>';return;}const vSeg=vegasSegForRound(r,_vfi),si=segForHole(hi-holeOffset(r),vSeg,roundHoleCount(r)),_vtv=STATE.vegTeams[r]&&STATE.vegTeams[r][_vfi]&&STATE.vegTeams[r][_vfi][si];if(!_vtv||!Array.isArray(_vtv[0])||!Array.isArray(_vtv[1])||_vtv[0].length<2||_vtv[1].length<2){wrap.innerHTML='';return;}const tA=_vtv[0],tB=_vtv[1];
   const vTeamLabel=`${displayName(tA[0])} & ${displayName(tA[1])} vs ${displayName(tB[0])} & ${displayName(tB[1])}`;
   const vSeg2=vegasSegForRound(r,_vfi),seg2=getSegments(vSeg2,roundHoleCount(r))[si];
-  const hdr=gameBoxHeaderWithFmt(`Vegas · G${si+1} H${seg2.start+holeOffset(r)+1}-${seg2.end+holeOffset(r)}`,'');
+  const hdr=gameBoxHeaderWithFmt(`Vegas · Match ${si+1}`,`Holes ${seg2.start+holeOffset(r)+1} to ${seg2.end+holeOffset(r)}`,true); // v124.52
   const res=calcVegas(hi,r,_vfi);
   // Pre-scores: show team blocks with dashes (mirrors Skins layout)
-  function vegasTeamBlockEmpty(ltr,team){const rows=team.map(pi=>`<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:3px"><span style="font-size:13px;color:var(--color-text-secondary)">net —</span></div>`).join('');return `<div style="display:flex;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="flex:2;display:flex;align-items:center"><div class="mp-team-letter">${ltr}</div><div>${team.map(pi=>`<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:3px">${displayName(pi)}</div>`).join('')}</div></div><div style="flex:1;text-align:center">${rows}</div><div style="flex:1;text-align:right"><span class="vegas-num" style="color:var(--color-text-tertiary)">—</span></div></div>`;}
+  function vegasTeamBlockEmpty(ltr,team){const rows=team.map(pi=>`<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:3px"><span style="font-size:13px;color:var(--color-text-secondary)">net —</span></div>`).join('');return `<div style="display:flex;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="flex:2;display:flex;align-items:center"><div class="mp-team-letter" style="color:var(--mp${ltr})">${ltr}</div><div>${team.map(pi=>`<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:3px">${displayName(pi)}</div>`).join('')}</div></div><div style="flex:1;text-align:center">${rows}</div><div style="flex:1;text-align:right"><span class="vegas-num" style="color:var(--color-text-tertiary)">—</span></div></div>`;}
   let inner=!res?(vegasTeamBlockEmpty('A',tA)+vegasTeamBlockEmpty('B',tB)):'placeholder';
   if(res){
     const fA=res.aFlip?'<span class="flip-badge">flipped</span>':'';
@@ -11030,7 +11037,7 @@ function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap')
       }).join('');
       return `<div style="display:flex;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
         <div style="flex:2;display:flex;align-items:center">
-          <div class="mp-team-letter">${ltr}</div>
+          <div class="mp-team-letter" style="color:var(--mp${ltr})">${ltr}</div>
           <div>
             <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:3px">${displayName(team[0])}</div>
             <div style="font-size:13px;color:var(--color-text-secondary)">${displayName(team[1])}</div>
@@ -11049,7 +11056,7 @@ function renderVegasBoxWrap(){const wrap=document.getElementById('vegasBoxWrap')
           vegasTeamBlock('B',tB,nB,res.numB,`${res.loB}+${res.hiB}`,fB,res.trigB)+
           `<div class="mp-result-bar">
             <span class="mp-result-text">${rt}${dbl?' '+dbl:''}</span>
-            <span class="mp-result-text" style="color:${res.tied?'var(--color-text-secondary)':'#1D9E75'}">${pt}</span>
+            <span class="mp-result-text" style="color:${res.tied?'var(--color-text-secondary)':res.aWins?'var(--mpA)':'var(--mpB)'}">${pt}</span>
           </div>`;
   }
   wrap.innerHTML=`<div class="calc-box" style="margin-top:0.75rem">${hdr}${inner}</div>`;}
@@ -12284,15 +12291,16 @@ function openWolfPickModal(hi,r,fi){
   const isBlind=existingPick&&existingPick.type==='blind';
   const wolfPill='<span style="font-size:10px;background:#085041;color:#9FE1CB;padding:1px 6px;border-radius:999px;font-weight:400;margin-left:4px">wolf</span>';
   let html='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center" id="wolfPickOverlay" onclick="if(event.target===this)closeWolfPickModal()">';
-  html+='<div style="background:var(--color-background-primary);border-radius:var(--border-radius-lg) var(--border-radius-lg) 0 0;width:100%;max-width:480px;overflow:hidden">';
+  html+='<div style="background:var(--color-background-primary);border-top:0.5px solid var(--color-border-tertiary);border-radius:16px 16px 0 0;width:100%;max-width:480px;overflow:hidden">';
   const hole=WK.rounds[r].course.holes?.[hi]||{par:4,si:hi+1};
-  html+=`<div style="background:#0F6E56;padding:14px 16px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:11px;color:#9FE1CB;letter-spacing:0.06em">HOLE ${hi+1} - PAR ${hole.par} - SI ${hole.si}</div><div style="font-size:18px;font-weight:500;color:#E1F5EE">Wolf</div></div><div style="background:#085041;border-radius:999px;padding:6px 14px;text-align:center"><div style="font-size:11px;color:#9FE1CB">Wolf</div><div style="font-size:15px;font-weight:500;color:#E1F5EE">${wolfName}</div></div></div>`;
+  // v124.50: themed header (was a fixed green band), the title in the accent.
+  html+=`<div style="padding:18px 16px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div class="wf-pk-t">Wolf · Hole ${hi+1}</div><div style="font-size:13px;color:var(--color-text-secondary);margin-top:3px">Par ${hole.par} · SI ${hole.si} · <span style="color:var(--color-text-primary);font-weight:500">${wolfName}</span>${wolfPill}</div></div>`;
   if(!blindOff){
     const blindChecked=isBlind?'checked':'';
-    html+=`<div style="padding:12px 16px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Go blind wolf</div><div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">Declare before tee shots - ${blindMult}x points</div></div><label class="toggle"><input type="checkbox" id="wolfBlindToggle" ${blindChecked} onchange="setWolfPick(${r},${hi},this.checked?'lone':'lone',null,${fi})"><span class="toggle-slider"></span></label></div>`;
+    html+=`<div style="padding:12px 16px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Go blind wolf</div><div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">Declare before tee shots · ${blindMult}x points</div></div><label class="toggle"><input type="checkbox" id="wolfBlindToggle" ${blindChecked} onchange="setWolfPick(${r},${hi},this.checked?'lone':'lone',null,${fi})"><span class="toggle-slider"></span></label></div>`;
   }
   const teeLabels=['1st tee','2nd tee','3rd tee'];
-  html+='<div style="padding:12px 16px"><div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:10px;letter-spacing:0.05em">TAP TO PICK PARTNER</div><div style="display:flex;flex-direction:column;gap:8px">';
+  html+='<div style="padding:12px 16px"><div class="wf-pk-l">Pick a partner</div><div style="display:flex;flex-direction:column;gap:8px">';
   others.forEach((pi,idx)=>{
     const sel=(existingPick&&existingPick.type==='partner'&&existingPick.partner===pi);
     const bg=sel?'#085041':'var(--color-background-secondary)';
@@ -12305,9 +12313,9 @@ function openWolfPickModal(hi,r,fi){
   const loneBg=loneSel?'#085041':'var(--color-background-secondary)';
   const loneBorder=loneSel?'0.5px solid #0F6E56':'0.5px solid var(--color-border-secondary)';
   const loneColor=loneSel?'#E1F5EE':'var(--color-text-secondary)';
-  html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:${loneBg};border-radius:var(--border-radius-md);border:${loneBorder};cursor:pointer" onclick="setWolfPick(${r},${hi},'lone',null,${fi})"><div style="font-size:14px;font-style:italic;color:${loneColor}">Go lone wolf</div><div style="font-size:11px;color:${loneColor}">1 vs 3</div></div>`;
+  html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:${loneBg};border-radius:var(--border-radius-md);border:${loneBorder};cursor:pointer" onclick="setWolfPick(${r},${hi},'lone',null,${fi})"><div style="font-size:14px;color:${loneColor}">Lone wolf</div><div style="font-size:11px;color:${loneColor}">1 vs 3</div></div>`;
   html+='</div></div>';
-  html+='<div style="padding:12px 16px 24px"><button style="width:100%;padding:12px;font-size:14px;font-weight:500;border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary)" onclick="closeWolfPickModal()">Cancel</button></div>';
+  html+='<div style="padding:12px 16px 24px"><button style="width:100%;padding:11px 0;font-size:14px;font-weight:500;border-radius:10px;background:transparent;color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary)" onclick="closeWolfPickModal()">Cancel</button></div>';
   html+='</div></div>';
   const overlay=document.createElement('div');
   overlay.innerHTML=html;
@@ -12364,7 +12372,7 @@ function renderWolfBox(){
   }
   let html='<div class="calc-box" style="margin-top:0.75rem">';
   if(!pick){
-    html+=`<div class="calc-hd" style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center"><span>Wolf - H${hi+1}</span>${_wbBaseNote}</div>${!locked?`<button class="btn-sm" style="background:#0F6E56;color:#E1F5EE;border:none" onclick="openWolfPickModal(${hi},${r},${fi})">Pick Partner</button>`:''}</div>`;
+    html+=`<div class="calc-hd" style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center"><span>Wolf · Hole ${hi+1}</span>${_wbBaseNote}</div>${!locked?`<button class="btn-sm" style="background:#0F6E56;color:#E1F5EE;border:none" onclick="openWolfPickModal(${hi},${r},${fi})">Pick partner</button>`:''}</div>`;
     html+=`<div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">Wolf this hole: <span style="font-weight:500;color:var(--color-text-primary)">${wolfName}</span>${wolfPill}</div>`;
   }else{
     const isBlind=pick.type==='blind';
@@ -12378,7 +12386,7 @@ function renderWolfBox(){
     const typeBadge=isBlind?`<span style="font-size:11px;background:#085041;color:#9FE1CB;padding:2px 8px;border-radius:999px;margin-left:6px">Blind wolf</span>`:isLone?`<span style="font-size:11px;color:var(--color-text-tertiary);margin-left:6px">Lone wolf</span>`:'';
     const hdrColor=wolfHolePts>0?'#1D9E75':wolfHolePts<0?'#D85A30':'var(--color-text-tertiary)';
     const holePtsStr=wolfHolePts>0?`+${wolfHolePts} pts`:wolfHolePts<0?`${wolfHolePts} pts`:'Push';
-    html+=`<div class="calc-hd" style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center"><span>Wolf - H${hi+1}</span>${typeBadge}${_wbBaseNote}</div>${changePick}</div>`;
+    html+=`<div class="calc-hd" style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center"><span>Wolf · Hole ${hi+1}</span>${typeBadge}${_wbBaseNote}</div>${changePick}</div>`;
     if(isLone){
       const wolfNet=getNetForFlight(wolf,hi,r,flightPlayers);
       const others=flightPlayers.filter(i=>i!==wolf);
@@ -12390,8 +12398,8 @@ function renderWolfBox(){
       }
       
       const loneDot=`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#1D9E75;margin-right:4px;vertical-align:middle;flex-shrink:0"></span>`;
-      html+=`<div class="mp-team-block"><div class="mp-team-letter">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">${wolfName}${wolfPill}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${wolfWins===true?loneDot:''}${wolfNet!==null?wolfNet:'-'}</span></div></div></div>`;
-      html+=`<div class="mp-team-block"><div class="mp-team-letter">B</div><div class="mp-team-players">`;
+      html+=`<div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mpA)">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">${wolfName}${wolfPill}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${wolfWins===true?loneDot:''}${wolfNet!==null?wolfNet:'-'}</span></div></div></div>`;
+      html+=`<div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mpB)">B</div><div class="mp-team-players">`;
       others.forEach(pi=>{const n=getNetForFlight(pi,hi,r,flightPlayers);const isBestB=loneMode==='A'&&otherNets.length&&n===otherNets[0].net;const showFieldDot=wolfWins===false&&(loneMode==='B'||isBestB);html+=`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showFieldDot?loneDot:''}${n!==null?n:'-'}</span></div>`;});
       html+=`</div></div>`;
       let resultStr='';
@@ -12404,7 +12412,7 @@ function renderWolfBox(){
       const lonePtsWon=3*loneMult;
       const lonePtsStr=`${lonePtsWon} pts`;
       // Not ready is not a Push. See wolfHoleReady.
-      const loneWinnerStr=!_wReady?`<span style="color:var(--color-text-tertiary)">Waiting on scores</span>`:wolfWinsResult===true?`<span style="color:#1D9E75;font-weight:500">Wolf wins · ${lonePtsStr}</span>`:wolfWinsResult===false?`<span style="color:#D85A30;font-weight:500">Field wins · ${lonePtsStr}</span>`:`<span style="color:var(--color-text-tertiary)">Push</span>`;
+      const loneWinnerStr=!_wReady?`<span style="color:var(--color-text-tertiary)">Waiting on scores</span>`:wolfWinsResult===true?`<span style="color:var(--mpA);font-weight:500">Wolf wins · ${lonePtsStr}</span>`:wolfWinsResult===false?`<span style="color:var(--mpB);font-weight:500">Field wins · ${lonePtsStr}</span>`:`<span style="color:var(--color-text-tertiary)">Push</span>`;
       html+=`<div style="padding:8px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between"><div>${loneWinnerStr}</div><span style="font-size:11px;color:var(--color-text-tertiary);text-align:right">${resultStr}</span></div>`;
     }else{
       const partneri=pick.partner;
@@ -12436,16 +12444,16 @@ function renderWolfBox(){
       const aPartnerBest=partnerMode==='bestball'&&wolfNet!==null&&partnerNet!==null&&partnerNet<wolfNet;
       const showAWolfDot=aWins===true&&(partnerMode==='combined'||aWolfBest);
       const showAPartnerDot=aWins===true&&(partnerMode==='combined'||aPartnerBest);
-      html+=`<div class="mp-team-block"><div class="mp-team-letter">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">${wolfName}${wolfPill}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showAWolfDot?winDot:''}${aWolfScore}</span></div><div class="mp-player-line"><span class="mp-player-name">${displayName(partneri)}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showAPartnerDot?winDot:''}${aPartnerScore}</span></div></div></div>`;
+      html+=`<div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mpA)">A</div><div class="mp-team-players"><div class="mp-player-line"><span class="mp-player-name">${wolfName}${wolfPill}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showAWolfDot?winDot:''}${aWolfScore}</span></div><div class="mp-player-line"><span class="mp-player-name">${displayName(partneri)}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showAPartnerDot?winDot:''}${aPartnerScore}</span></div></div></div>`;
       const bNets=others.map(i=>getNetForFlight(i,hi,r,flightPlayers));
       const bBestNet=bNets.every(n=>n!==null)?Math.min(...bNets):null;
-      html+=`<div class="mp-team-block"><div class="mp-team-letter">B</div><div class="mp-team-players">`;
+      html+=`<div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mpB)">B</div><div class="mp-team-players">`;
       others.forEach(pi=>{const n=getNetForFlight(pi,hi,r,flightPlayers);const isBest=partnerMode==='bestball'&&n!==null&&n===bBestNet;const showBDot=aWins===false&&(partnerMode==='combined'||isBest);html+=`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net" style="display:flex;align-items:center;justify-content:flex-end">${showBDot?winDot:''}${n!==null?n:'-'}</span></div>`;});
       html+=`</div></div>`;
       const ptsWon=1;
       const ptsStr=`${ptsWon} pt`;
       // Not ready is not a Push. scoresReady already carries wolfHoleReady plus pick validity.
-      const winnerStr=!scoresReady?`<span style="color:var(--color-text-tertiary)">Waiting on scores</span>`:aWins===true?`<span style="color:#1D9E75;font-weight:500">Team A wins · ${ptsStr}</span>`:aWins===false?`<span style="color:#1D9E75;font-weight:500">Team B wins · ${ptsStr}</span>`:`<span style="color:var(--color-text-tertiary)">Push</span>`;
+      const winnerStr=!scoresReady?`<span style="color:var(--color-text-tertiary)">Waiting on scores</span>`:aWins===true?`<span style="color:var(--mpA);font-weight:500">Team A wins · ${ptsStr}</span>`:aWins===false?`<span style="color:var(--mpB);font-weight:500">Team B wins · ${ptsStr}</span>`:`<span style="color:var(--color-text-tertiary)">Push</span>`;
       const scoreStr=scoresReady?`A: ${sA} &nbsp;&nbsp; B: ${sB}`:'';
       html+=`<div style="padding:8px 12px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between"><div>${winnerStr}</div><span style="font-size:11px;color:var(--color-text-tertiary);text-align:right">${scoreStr}</span></div>`;
     }
@@ -12457,14 +12465,14 @@ function renderWolfBox(){
   // state, not an empty one - Rd 1 was square through H8 and the strip silently vanished.
   // A gate that cannot distinguish "no result" from "even" must not decide visibility.
   const runPts=calcWolfPoints(r,hi,fi);
-  html+='<div style="display:flex;gap:6px;padding:8px 12px;flex-wrap:wrap;justify-content:center;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary)">';
+  html+='<div style="display:flex;gap:12px;padding:8px 12px;flex-wrap:wrap;justify-content:center;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary)">';
   runPts.forEach(p=>{
     const pts=p.pts;
     const clr=pts>0?'#1D9E75':pts<0?'#D85A30':'var(--color-text-tertiary)';
     const ptsStr=pts>0?'+'+pts:String(pts);
     const pl=WK.players[p.pi];
     html+=`<div style="display:flex;align-items:center;gap:4px;font-size:12px">`;
-    html+=`<div class="avatar" style="width:20px;height:20px;font-size:7px;background:${pl.bg};color:${pl.fg}">${pl.ini}</div>`;
+    html+=`<span style="color:var(--color-text-secondary)">${pl.ini}</span>`; // v124.50: initials, no circle
     html+=`<span style="font-weight:600;color:${clr}">${ptsStr}</span></div>`;
   });
   html+='</div>';
@@ -15975,8 +15983,8 @@ function renderFBBox(){
   const pot=d.ante*pool.players.length;
   let h='<div class="calc-box" style="margin-top:0.75rem">';
   h+='<div class="calc-hd" style="display:flex;justify-content:space-between;align-items:center">'
-    +'<span>Four-Ball - H'+(hi+1)+'</span>'
-    +'<span style="font-weight:400;color:var(--color-text-tertiary);text-transform:none;font-size:11px">Pot '+_fbMoney(pot)+'</span></div>';
+    +'<span>Four-Ball · Hole '+(hi+1)+'</span>' // v124.53
+    +'<span style="font-size:12px;font-weight:500;color:#1D9E75;text-transform:none">Pot $'+(pot%1?pot.toFixed(2):pot)+'</span></div>';
   // This hole, for the teams sitting in front of you.
   const _f43box=fbFive43(r);
   const _nBalls=_f43box?fbBallsForPar(_fbHolePar(r,hi)):1;
@@ -16009,28 +16017,33 @@ function renderFBBox(){
   h+='</div>';
   // Standings.
   h+='<div style="border-top:0.5px solid var(--color-border-tertiary);padding:7px 12px 9px">';
-  h+='<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-tertiary);margin-bottom:5px">Standings</div>';
+  h+='<div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:5px">Standings</div>';
   const _fl=flightsForRound(r);
   const _fsTags=rows.map(function(row){return _fbFsOfTeam(r,row.team);});
+  // v124.53 (Kyle, option 4): initials only when some team listed is not shown above; then on every row.
+  const _allAbove=rows.every(function(row){return mine.indexOf(row.team)>=0||mine.some(function(t){return t.length===row.team.length&&t.every(function(pi){return row.team.indexOf(pi)>=0;});});});
   const _tagsAddNothing=_fsTags.every(function(fk,i){
     return fk.length===1&&fk[0]===fbTeamNo(r,rows[i].team);
   });
+  // v124.54: one grid, a column per part, so the rows line up (rank, team, initials, foursome, spacer, to par, thru).
+  const _fbTagOf=function(_ri){const fk=_fsTags[_ri];return (_fl.length>1&&fk.length&&!_tagsAddNothing)?('F'+fk.join('/F')):'';};
+  const _fbIni=!_allAbove, _fbF=!_allAbove&&rows.some(function(row,_ri){return !!_fbTagOf(_ri);});
+  h+='<div class="fb-st" style="display:grid;grid-template-columns:auto auto'+(_fbIni?' auto':'')+(_fbF?' auto':'')+' 1fr auto auto;column-gap:8px;row-gap:3px;align-items:baseline;font-size:12px">';
   rows.forEach(function(row,_ri){
-    const pos=row.pos;
     const ti=fbTeamNo(r,row.team)-1;
     const played=row.card.played>0;
     const nm=row.team.map(function(pi){return WK.players[pi].ini;}).join('+');
-    // Which group each team sits in. Withheld when it only repeats the team number.
-    const fk=_fsTags[_ri];
-    const tag=(_fl.length>1&&fk.length&&!_tagsAddNothing)?('F'+fk.join('/F')):'';
-    h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:12px">'
-      +'<span style="color:var(--color-text-secondary)">'+pos+'. Team '+_fbLtr(ti+1)
-      +'<span style="color:var(--color-text-tertiary);font-size:10px;margin-left:5px">'+nm+(tag?(' &middot; '+tag):'')+'</span></span>'
-      +'<span>'+(played
-        ?('<span style="color:'+_fbParCol(row.card.toPar)+';font-weight:600">'+_fbToPar(row.card.toPar)+'</span>'
-          +' <span style="color:var(--color-text-tertiary);font-size:10px">thru '+row.card.played+'</span>')
-        :'<span style="color:var(--color-text-tertiary)">-</span>')+'</span></div>';
+    const _t3='color:var(--color-text-tertiary);font-size:11px';
+    h+='<span style="color:var(--color-text-secondary);text-align:right">'+row.pos+'.</span>'
+      +'<span style="color:var(--color-text-secondary)">Team '+_fbLtr(ti+1)+'</span>'
+      +(_fbIni?'<span style="'+_t3+'">'+nm+'</span>':'')
+      +(_fbF?'<span style="'+_t3+'">'+_fbTagOf(_ri)+'</span>':'')
+      +'<span></span>'
+      +(played?'<span style="text-align:right;color:'+_fbParCol(row.card.toPar)+';font-weight:600">'+_fbToPar(row.card.toPar)+'</span>'
+        :'<span style="text-align:right;color:var(--color-text-tertiary)">-</span>')
+      +'<span style="'+_t3+'">'+(played?'thru '+row.card.played:'')+'</span>';
   });
+  h+='</div>';
   // Say what the zero is. When a foursome game is also live, the scorecard above is on
   // a DIFFERENT zero and cannot show both, so name that rather than let it puzzle anyone.
   const netOn=!!(STATE.netOffFlightLow||STATE.netOffLow);
@@ -17250,7 +17263,7 @@ function _gsSplitLabel(game,r,sp){
   if(game==='mp'&&isHeadsUp(r))return f(sp[0][0])+'<i>v</i>'+f(sp[0][1])+' \u00b7 '+f(sp[1][0])+'<i>v</i>'+f(sp[1][1]);
   return f(sp[0][0])+' &amp; '+f(sp[0][1])+'<i>v</i>'+f(sp[1][0])+' &amp; '+f(sp[1][1]);
 }
-function _gsSegsFor(game,r,fi){return game==='hammer'?getSegments(hammerSegsForRound(r,fi)):game==='vegas'?getSegments(vegasSegForRound(r,fi),roundHoleCount(r)):game==='skins'?getSegments(skinsGamesForRound(r,fi),roundHoleCount(r)):getSegments(mpGamesForRound(r,fi),roundHoleCount(r));}
+function _gsSegsFor(game,r,fi){return game==='hammer'?getSegments(hammerSegsForRound(r,fi),roundHoleCount(r)):game==='vegas'?getSegments(vegasSegForRound(r,fi),roundHoleCount(r)):game==='skins'?getSegments(skinsGamesForRound(r,fi),roundHoleCount(r)):getSegments(mpGamesForRound(r,fi),roundHoleCount(r));}
 // v123.85: the foursome pill (v123.82) for any Teams section. Its own key per game; the All lane only.
 function _gsFsPill(game,r,fl,sel){
   if(!(fl.length>1&&sel===-1))return {pick:-1,html:''};
@@ -18320,7 +18333,7 @@ function renderMoney(){
     if(gameOn('fourball',r))calcRoundFourBall(r).forEach((v,i)=>roundNet[i]+=v);
     if(gameOn('grinders',r))calcRoundGrinders(r).forEach((v,i)=>roundNet[i]+=v);
     if(gameOn('nines',r))calcNinesNetAllFlights(r).forEach((v,i)=>roundNet[i]+=v);
-    if(gameOn('hammer',r)){flightsForRound(r).forEach((_hfpR,fi)=>{if(_fsOff('hammer',r,fi))return;getSegments(hammerSegsForRound(r,fi)).forEach((_,si)=>{const res=calcHammerSegResult(r,si,fi);if(!res)return;const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;const payout=roundValFs('hammerPayout',r,fi,WK.hammerPayout||'perplayer');const sv=payout==='perteam'?0.5:1;const nv=(res.netA-res.netB)*sv;tm[0].forEach(pi=>{roundNet[pi]+=nv;});tm[1].forEach(pi=>{roundNet[pi]-=nv;});});});}
+    if(gameOn('hammer',r)){flightsForRound(r).forEach((_hfpR,fi)=>{if(_fsOff('hammer',r,fi))return;getSegments(hammerSegsForRound(r,fi),roundHoleCount(r)).forEach((_,si)=>{const res=calcHammerSegResult(r,si,fi);if(!res)return;const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;const payout=roundValFs('hammerPayout',r,fi,WK.hammerPayout||'perplayer');const sv=payout==='perteam'?0.5:1;const nv=(res.netA-res.netB)*sv;tm[0].forEach(pi=>{roundNet[pi]+=nv;});tm[1].forEach(pi=>{roundNet[pi]-=nv;});});});}
     // Use snapshotted amounts for settled rounds so mid-weekend payouts don't double-count
     const snapNet=settled&&STATE.roundSettleData?.[r]?.snapNet;
     const netForTotal=snapNet||roundNet;
@@ -18385,7 +18398,7 @@ function renderMoney(){
             const gcol='display:grid;grid-template-columns:1fr 72px;align-items:center;gap:8px;padding:2px 0';
             const maxSkins=Math.max(0,..._pool.map(pi=>skinsByPlayer[pi]||0));
             html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
-              <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">${seg.label} \u00b7 H${seg.start+1+_skOff}-${seg.end+_skOff}</div>`;
+              <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">Match ${gr.si+1} \u00b7 Holes ${seg.start+1+_skOff} to ${seg.end+_skOff}</div>`;
             _pool.forEach(pi=>{
               const sk=skinsByPlayer[pi]||0;
               const isWinner=sk===maxSkins&&sk>0;
@@ -18407,7 +18420,7 @@ function renderMoney(){
             const dollarStr=`+$${skSv.toFixed(2)}`;
             const gcol='display:grid;grid-template-columns:1fr 52px 64px;align-items:center;gap:4px;padding:2px 0';
             html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
-              <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">${seg.label}</div>
+              <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">Match ${gr.si+1}</div>
               <div style="${gcol}">
                 <span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}</span>
                 <span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${skinsA} skin${skinsA!==1?'s':''}</span>
@@ -18482,7 +18495,7 @@ function renderMoney(){
           </div>`;
         });
         html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
-          <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">${isHeadsUp(r)?seg.label+' · Match '+((mi||0)+1):seg.label}</div>
+          <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">${isHeadsUp(r)?seg.label+' · Match '+((mi||0)+1):'Match '+(si+1)}</div>
           <div style="${gcol}">
             <span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}</span>
             <span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:var(--color-text-primary)':tied?'color:var(--color-text-secondary)':'visibility:hidden'}">${aWins||tied?scoreLabel:''}</span>
@@ -18497,7 +18510,7 @@ function renderMoney(){
         </div>${pressHtml}`;
       });
     }
-    if(gameOn('razzle',r)){const _rzAny=flightsForRound(r).some((_,_zfi)=>calcRazzle(r,_zfi).some(m=>m.winner));if(_rzAny){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Razzle Dazzle${WK.rounds[r].independentGames?'':' - $'+roundVal('razzleVal',r,WK.razzleVal||5).toFixed(2)+'/match'} · ${(roundVal('razzleSettle',r,WK.razzleSettle||'perplayer'))==='perplayer'?'per player':'per team'}</div>`;flightsForRound(r).forEach((_rfp,_zfi)=>{const rzMatches=calcRazzle(r,_zfi).filter(m=>m.winner);if(!rzMatches.length)return;if(isMultiFlight(r))html+=`<div style="padding:4px 12px;font-size:10px;font-weight:600;color:var(--color-text-tertiary);background:var(--color-background-secondary)">Foursome ${_zfi+1}</div>`;rzMatches.forEach(m=>{if(!m.tA||!m.tB)return;const aWins=m.winner==='a',bWins=m.winner==='b';const nameA=m.tA.map(i=>displayName(i)).join(' & ');const nameB=m.tB.map(i=>displayName(i)).join(' & ');const dollarStr='+$'+m.sv.toFixed(2);const bonusBits=[];if(m.sweep)bonusBits.push('sweep');if(m.fiveHole)bonusBits.push('5-hole');if(m.birdieCount>0)bonusBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const bonusNote=bonusBits.length?` <span style="font-size:10px;color:var(--color-text-tertiary)">(${bonusBits.join(', ')})</span>`:'';const gcol='display:grid;grid-template-columns:1fr 64px;align-items:center;gap:8px;padding:2px 0';const winBits=[];if(m.sweep)winBits.push('sweep');else if(m.fiveHole)winBits.push('5-hole');if(m.birdieCount>0)winBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const winNote=winBits.length?' · '+winBits.join(', '):'';html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">Match ${m.mi+1} · H${m.startHole+1}-${m.endHole+1} · pot $${m.pot.toFixed(2)}</div><div style="${gcol}"><span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}${aWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${aWins?dollarStr:''}</span></div><div style="${gcol}"><span style="font-size:13px;${bWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameB}${bWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${bWins?dollarStr:''}</span></div></div>`;});});}}
+    if(gameOn('razzle',r)){const _rzAny=flightsForRound(r).some((_,_zfi)=>calcRazzle(r,_zfi).some(m=>m.winner));if(_rzAny){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Razzle Dazzle${WK.rounds[r].independentGames?'':' - $'+roundVal('razzleVal',r,WK.razzleVal||5).toFixed(2)+'/match'} · ${(roundVal('razzleSettle',r,WK.razzleSettle||'perplayer'))==='perplayer'?'per player':'per team'}</div>`;flightsForRound(r).forEach((_rfp,_zfi)=>{const rzMatches=calcRazzle(r,_zfi).filter(m=>m.winner);if(!rzMatches.length)return;if(isMultiFlight(r))html+=`<div style="padding:4px 12px;font-size:10px;font-weight:600;color:var(--color-text-tertiary);background:var(--color-background-secondary)">Foursome ${_zfi+1}</div>`;rzMatches.forEach(m=>{if(!m.tA||!m.tB)return;const aWins=m.winner==='a',bWins=m.winner==='b';const nameA=m.tA.map(i=>displayName(i)).join(' & ');const nameB=m.tB.map(i=>displayName(i)).join(' & ');const dollarStr='+$'+m.sv.toFixed(2);const bonusBits=[];if(m.sweep)bonusBits.push('sweep');if(m.fiveHole)bonusBits.push('5-hole');if(m.birdieCount>0)bonusBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const bonusNote=bonusBits.length?` <span style="font-size:10px;color:var(--color-text-tertiary)">(${bonusBits.join(', ')})</span>`:'';const gcol='display:grid;grid-template-columns:1fr 64px;align-items:center;gap:8px;padding:2px 0';const winBits=[];if(m.sweep)winBits.push('sweep');else if(m.fiveHole)winBits.push('5-hole');if(m.birdieCount>0)winBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const winNote=winBits.length?' · '+winBits.join(', '):'';html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">Match ${m.mi+1} · ${m.startHole===m.endHole?'Hole '+(m.startHole+1):'Holes '+(m.startHole+1)+' to '+(m.endHole+1)} · pot $${m.pot.toFixed(2)}</div><div style="${gcol}"><span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}${aWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${aWins?dollarStr:''}</span></div><div style="${gcol}"><span style="font-size:13px;${bWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameB}${bWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${bWins?dollarStr:''}</span></div></div>`;});});}}
     if(gameOn('nines',r)){
       const _nfl=flightsForRound(r);
       const _nMulti=_nfl.length>1;
@@ -18527,14 +18540,14 @@ function renderMoney(){
       let _flipTag='';
       if(!_isDefFlip){if(_vfL==='off'){_flipTag=' · no flips';}else if(_vfL==='eagle'){_flipTag=_vdL?(_vtL?' · eagle only':' · eagle flip · no 2-bird dbl'):' · eagle flip · no double';}else{_flipTag=_vdL?(_vtL?'':' · no 2-bird dbl'):' · birdie flip · no double';}}
       html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Vegas${WK.rounds[r].independentGames?'':' - $'+roundVal('vegasVal',r,WK.vegasVal).toFixed(2)+'/pt'} · ${(WK.vegasSettle||'perplayer')==='perplayer'?'per player':'per team'}${_flipTag}</div>`;
-      vegR.gameResults.forEach(({seg,tA,tB,ptsA,ptsB,dollarA})=>{
+      vegR.gameResults.forEach(({seg,si,tA,tB,ptsA,ptsB,dollarA})=>{
         const aWins=dollarA>0, bWins=dollarA<0, tied=dollarA===0;
         const nameA=tA.map(i=>displayName(i)).join(' & ');
         const nameB=tB.map(i=>displayName(i)).join(' & ');
         const dollarStr=`+$${Math.abs(dollarA).toFixed(2)}`;
         const gcol='display:grid;grid-template-columns:1fr 52px 64px;align-items:center;gap:4px;padding:2px 0';
         html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
-          <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">${seg.label}</div>
+          <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">Match ${si+1}</div>
           <div style="${gcol}">
             <span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}</span>
             <span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${ptsA}pts</span>
@@ -18554,7 +18567,7 @@ function renderMoney(){
       const hamPayoutM=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');
       html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Hammer${WK.rounds[r].independentGames?'':' - $'+roundVal('hammerVal',r,WK.hammerVal||2)+'/hole'}${_hIndM?'':' · '+(hamPayoutM==='perteam'?'per team':'per player')}</div>`;
       flightsForRound(r).forEach((_hfpM,fi)=>{if(_fsOff('hammer',r,fi))return;
-      getSegments(hammerSegsForRound(r,fi)).forEach((_seg2,si2)=>{
+      getSegments(hammerSegsForRound(r,fi),roundHoleCount(r)).forEach((_seg2,si2)=>{
         const resM=calcHammerSegResult(r,si2,fi);if(!resM)return;
         const tmM=STATE.hammerTeams?.[r]?.[fi]?.[si2];if(!tmM)return;
         const hamSvM=roundValFs('hammerPayout',r,fi,WK.hammerPayout||'perplayer')==='perteam'?0.5:1;
@@ -18566,7 +18579,7 @@ function renderMoney(){
         const potStr=`+$${potAmt%1===0?potAmt.toFixed(2):potAmt.toFixed(2)}`;
         const boldA=winTeam===0;
         const boldB=winTeam===1;
-        html+=`<div style="padding:6px 12px 2px;font-size:10px;color:var(--color-text-tertiary)">Game ${si2+1}</div>`;
+        html+=`<div style="padding:6px 12px 2px;font-size:10px;color:var(--color-text-tertiary)">Match ${si2+1}</div>`;
         html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 12px 1px"><span style="font-size:13px;${boldA?'font-weight:700;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${namesA}</span>${boldA?`<span style="font-size:13px;font-weight:600;color:#1D9E75">${potStr}</span>`:''}</div>`;
         html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:1px 12px 6px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px;${boldB?'font-weight:700;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${namesB}</span>${boldB?`<span style="font-size:13px;font-weight:600;color:#1D9E75">${potStr}</span>`:''}</div>`;
       });
@@ -18849,8 +18862,10 @@ function renderSkinsBoxWrap(){
   const carry=skinsCarryAt(r,hi,_sbfi);
   const res=skinHoleWinner(hi,r,_sbfi);
   const skinsFmtLabel=WK.skinsFmt==='individual'?'Individual':'2v2 best ball';
-  const hdr=gameBoxHeaderWithFmt(`Skins · G${si+1} H${seg.start+holeOffset(r)+1}-${seg.end+holeOffset(r)}`,skinsFmtLabel);
-  const carryTxt=`${carry} skin${carry>1?'s':''} · $${(roundValFs('skinsVal',STATE.currentRound,_sbfi,WK.skinsVal)*carry).toFixed(2)}`;
+  // v124.48: the match in the title, its holes on the second line; whole dollars.
+  const hdr=gameBoxHeaderWithFmt(`Skins · Match ${si+1}`,`Holes ${seg.start+holeOffset(r)+1} to ${seg.end+holeOffset(r)} · `+skinsFmtLabel,true);
+  const _skAmt=roundValFs('skinsVal',STATE.currentRound,_sbfi,WK.skinsVal)*carry;
+  const carryTxt=`${carry} skin${carry>1?'s':''} · $${_skAmt%1?_skAmt.toFixed(2):_skAmt}`;
   let body='';
   if(WK.skinsFmt==='team'&&skTeam){
     const netsA=skTeam[0].map(pi=>getNetForFlight(pi,hi,r,_sbfp));
@@ -18861,7 +18876,7 @@ function renderSkinsBoxWrap(){
     const bWins=res&&!res.tied&&res.winner==='b';
     function skTeamBlock(team,nets,best,isWinner,ltr){
       const players=team.map((pi,idx)=>`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net">${nets[idx]!==null&&nets[idx]===best&&isWinner?'<span class="mp-best">best \u2192 </span>':''}${nets[idx]!==null?'net '+nets[idx]:'\u2014'}</span></div>`).join('');
-      return `<div class="mp-team-block"><div class="mp-team-letter">${ltr}</div><div class="mp-team-players">${players}</div></div>`;
+      return `<div class="mp-team-block"><div class="mp-team-letter" style="color:var(--mp${ltr})">${ltr}</div><div class="mp-team-players">${players}</div></div>`;
     }
     body=skTeamBlock(skTeam[0],netsA,bestA,aWins,'A')+skTeamBlock(skTeam[1],netsB,bestB,bWins,'B');
   }
@@ -18877,15 +18892,15 @@ function renderSkinsBoxWrap(){
     leftTxt=(_skStd&&_skStd.holesPlayed>0)?('Thru '+(seg.start+_skStd.holesPlayed+holeOffset(r))):'Not started';
     midColor='var(--color-text-secondary)';
   } else if(res.tied){
-    leftTxt='Tied';
-    midTxt=`${carry} skin${carry>1?'s':''} carry`;
-    midColor='#D97706';
+    leftTxt='Halved';
+    midTxt=`${carry} skin${carry>1?'s carry':' carries'}`;
+    midColor='var(--color-text-secondary)';
   } else if(res.type==='individual'){
     leftTxt=`${displayName(res.winner)} wins`;
     midColor='#1D9E75';
   } else {
     leftTxt=res.winner==='a'?'A wins':'B wins';
-    midColor='#1D9E75';
+    midColor=res.winner==='a'?'var(--mpA)':'var(--mpB)';
   }
   const resultBar=`<div class="mp-result-bar"><span class="mp-result-text">${leftTxt}</span><span style="font-size:12px;font-weight:600;color:${midColor}">${midTxt}</span></div>`;
   // The result bar describes THIS HOLE. The strip below describes the SEGMENT.
@@ -18910,11 +18925,11 @@ function renderSkinsBoxWrap(){
     } else {
       _skLeft='A '+_skStd.a+' \u00b7 B '+_skStd.b;
       const _skNet=_skStd.a-_skStd.b;
-      if(_skNet===0){_skRight='No Blood';}
+      if(_skNet===0){_skRight='No blood';}
       else{
         const _skAbs=Math.abs(_skNet);
         _skRight=(_skNet>0?'A':'B')+' +'+_skAbs+' skin'+(_skAbs!==1?'s':'');
-        _skRightClr=_skNet>0?'#1D9E75':'#185FA5';
+        _skRightClr=_skNet>0?'var(--mpA)':'var(--mpB)';
       }
     }
   } else {
@@ -19305,16 +19320,17 @@ function calcHammerCarry(r,si,upToHole,fi){
   fi=fi||0;
   // Compute carry pot accumulated from start of segment up to (not including) upToHole
   // Does NOT rely on stored .carried - computes from scores directly
-  const hSeg=hammerSegsForRound(r,fi),seg=getSegments(hSeg)[si];
+  // v124.56: the match splits the round's own holes (relative); hammerState, scores and upToHole are absolute.
+  const hSeg=hammerSegsForRound(r,fi),_off=holeOffset(r),seg=getSegments(hSeg,roundHoleCount(r))[si];
   const baseVal=roundValFs('hammerVal',r,fi,WK.hammerVal||2);
   const halveCarry=roundValFs('hammerHalve',r,fi,WK.hammerHalve||'carry');
   const scoring=roundValFs('hammerScoring',r,fi,WK.hammerScoring||'bestball');
   const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];
-  if(!tm)return 0;
+  if(!tm||!seg)return 0;
   const _hfp=flightsForRound(r)[fi]||[];
-  const clampedTo=Math.min(upToHole,seg.end);
+  const clampedTo=Math.min(upToHole,seg.end+_off);
   let carry=0;
-  for(let h=seg.start;h<clampedTo;h++){
+  for(let h=seg.start+_off;h<clampedTo;h++){
     const hs=STATE.hammerState?.[r]?.[fi]?.[h]||{throws:[],conceded:false,concedeVal:0};
     let pot=baseVal+carry;
     hs.throws.forEach(()=>{pot*=2;});
@@ -19335,7 +19351,7 @@ function calcHammerCarry(r,si,upToHole,fi){
 function calcHammerHole(hi,r,fi){
   fi=fi||0;
   if(!gameOnFs('hammer',r,fi))return null;
-  const hSeg=hammerSegsForRound(r,fi),si=segForHole(hi,hSeg);
+  const hSeg=hammerSegsForRound(r,fi),si=segForHole(hi-holeOffset(r),hSeg,roundHoleCount(r));
   const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm||!tm[0]||!tm[1])return null;
   const tA=tm[0],tB=tm[1];
   const _hfp=flightsForRound(r)[fi]||[];
@@ -19354,16 +19370,17 @@ function calcHammerHole(hi,r,fi){
 function calcHammerSegResult(r,si,fi){
   fi=fi||0;
   if(!gameOnFs('hammer',r,fi))return null;
-  const hSeg=hammerSegsForRound(r,fi),seg=getSegments(hSeg)[si];
+  const hSeg=hammerSegsForRound(r,fi),_off=holeOffset(r),seg=getSegments(hSeg,roundHoleCount(r))[si];
   const baseVal=roundValFs('hammerVal',r,fi,WK.hammerVal||2);
   const halveCarry=roundValFs('hammerHalve',r,fi,WK.hammerHalve||'carry');
   const scoring=roundValFs('hammerScoring',r,fi,WK.hammerScoring||'bestball');
-  const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return null;
+  const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm||!seg)return null;
   const tA=tm[0],tB=tm[1];
   const _hfp=flightsForRound(r)[fi]||[];
   let netA=0,netB=0;
   const _p8End=fsHoleCount(r,fi),_segEnd=Math.max(seg.start,Math.min(seg.end,_p8End));
-  for(let h=seg.start;h<_segEnd;h++){
+  for(let _rh=seg.start;_rh<_segEnd;_rh++){
+    const h=_rh+_off; // absolute: hammerState and scores are keyed by the course hole
     const hs=STATE.hammerState?.[r]?.[fi]?.[h]||{throws:[],conceded:false,concedeVal:0};
     const carry=calcHammerCarry(r,si,h,fi);
     let pot=baseVal+carry;
@@ -19432,7 +19449,7 @@ function resolveHammer(action,r,hi){
     const hc=calcHammerHole(hi,r,fi);
     if(!hc)return;
     const lastThrower=hs.throws[hs.throws.length-1];
-    const hSeg=hammerSegsForRound(r,fi),si=segForHole(hi,hSeg);
+    const hSeg=hammerSegsForRound(r,fi),si=segForHole(hi-holeOffset(r),hSeg,roundHoleCount(r));
     const preVal=_hmConcedeOf(roundValFs('hammerVal',r,fi,WK.hammerVal||2),calcHammerCarry(r,si,hi,fi),hs.throws.length);
     hs.conceded=true;hs.concedeVal=preVal;hs.concededBy=lastThrower===0?1:0;
   }
@@ -19457,7 +19474,7 @@ function renderHammerBox(){
   const pendingResponse=hs.throws.length>0&&!hs.conceded&&!hs.accepted;
   const canThrowA=!locked&&!hs.conceded&&!pendingResponse&&(maxH===0||hs.throws.length<maxH)&&(mode!=='alt'||lastThrower!==0);
   const canThrowB=!locked&&!hs.conceded&&!pendingResponse&&(maxH===0||hs.throws.length<maxH)&&(mode!=='alt'||lastThrower!==1);
-  const fmt=v=>'$'+v.toFixed(2);
+  const fmt=v=>'$'+(v%1?v.toFixed(2):v); // v124.47: whole dollars, cents only when there are any
   // Pre-doubling pot for concede label
   let preDoubleVal=roundValFs('hammerVal',r,_hbfi,WK.hammerVal||2)+calcHammerCarry(r,si,hi,_hbfi);
   for(let i=0;i<hs.throws.length-1;i++)preDoubleVal*=2;
@@ -19489,7 +19506,7 @@ function renderHammerBox(){
         mid=`<div class="hm-btn" onclick="throwHammer(${teamIdx},${r},${hi})"><span class="ic">\uD83D\uDD28</span><span class="lb">Hammer</span></div>`;
       }
     }
-    let h=`<span class="hm-ltr" style="${span}">${ltr}</span>`;
+    let h=`<span class="hm-ltr" style="${span};color:var(--mp${ltr})">${ltr}</span>`;
     if(mid)h+=`<div class="hm-mid" style="${span}">${mid}</div>`;
     names.forEach((name,ni)=>{
       const net=nets[ni];
@@ -19512,25 +19529,26 @@ function renderHammerBox(){
     const winTeam=hs.concededBy===0?1:0;
     const winLtr=winTeam===0?'A':'B';
     const settleAmt=payout==='perteam'?_cv/2:_cv;
-    resultRow=`<div class="mp-result-bar"><span class="mp-result-text">${winLtr} wins (conceded)</span><span style="font-size:12px;font-weight:600;color:#1D9E75">+${fmt(settleAmt)}</span></div>`;
+    resultRow=`<div class="mp-result-bar"><span class="mp-result-text">${winLtr} wins (conceded)</span><span style="font-size:12px;font-weight:600;color:var(--mp${winLtr})">${winLtr} +${fmt(settleAmt)}</span></div>`;
   } else if(allIn){
     const halveCarry=roundValFs('hammerHalve',r,_hbfi,WK.hammerHalve||'carry');
     if(scoreA===scoreB){
       const nextPot=halveCarry==='carry'?(potVal+roundValFs('hammerVal',r,_hbfi,WK.hammerVal||2)):roundValFs('hammerVal',r,_hbfi,WK.hammerVal||2);
-      resultRow=`<div class="mp-result-bar"><span class="mp-result-text" style="color:var(--color-text-secondary)">Tied - carries</span><span style="font-size:12px;font-weight:600;color:var(--color-text-secondary)">Next pot ${fmt(nextPot)}</span></div>`;
+      resultRow=`<div class="mp-result-bar"><span class="mp-result-text" style="color:var(--color-text-secondary)">Halved, carries</span><span style="font-size:12px;font-weight:600;color:var(--color-text-secondary)">Next pot ${fmt(nextPot)}</span></div>`;
     } else {
       const winner=scoreA<scoreB?'A':'B';
       const settleAmt=payout==='perteam'?potVal/2:potVal;
-      resultRow=`<div class="mp-result-bar"><span class="mp-result-text">${winner} wins</span><span style="font-size:12px;font-weight:600;color:#1D9E75">+${fmt(settleAmt)}</span></div>`;
+      resultRow=`<div class="mp-result-bar"><span class="mp-result-text">${winner} wins</span><span style="font-size:12px;font-weight:600;color:var(--mp${winner})">${winner} +${fmt(settleAmt)}</span></div>`;
     }
   }
   // Accepted banner
-  const acceptedBanner=hs.accepted&&!hs.conceded&&!allIn?`<div style="display:flex;align-items:center;padding:5px 12px;background:#E1F5EE;border-bottom:0.5px solid #5DCAA5"><span style="font-size:11px;font-weight:500;color:#0F6E56">✓ Accepted - pot doubled to ${fmt(potVal)}</span></div>`:'';
+  const acceptedBanner=hs.accepted&&!hs.conceded&&!allIn?`<div class="hm-acc"><span>✓ Accepted. Pot doubled to ${fmt(potVal)}</span></div>`:'';
   const throwHistory=hs.throws.length>0?" · "+hs.throws.map(t=>"🔨"+(t===0?"A":"B")).join(" "):"";
   const displayPotVal=hs.conceded?_cv:potVal;
   const potLabel=`<span style="font-size:12px;font-weight:500;color:#1D9E75">Pot ${fmt(displayPotVal)}${throwHistory}</span>`;
-  const hSeg2=hammerSegsForRound(r,_hbfi),seg3=getSegments(hSeg2)[si];
-  const hammerHdr=`<div class="calc-hd"><span>Hammer · G${si+1} H${seg3.start+holeOffset(r)+1}-${seg3.end+holeOffset(r)}</span>${potLabel}</div>`;
+  const hSeg2=hammerSegsForRound(r,_hbfi),seg3=getSegments(hSeg2,roundHoleCount(r))[si];
+  // v124.47: the match in the title, its holes on the second line (as Match Play's box).
+  const hammerHdr=`<div class="calc-hd" style="align-items:center"><div style="display:flex;flex-direction:column;gap:1px"><span>Hammer · Match ${si+1}</span><span style="font-weight:400;font-size:11px;color:var(--color-text-tertiary);text-transform:none;letter-spacing:0">Holes ${seg3.start+holeOffset(r)+1} to ${seg3.end+holeOffset(r)}</span></div>${potLabel}</div>`;
   // Team A occupies rows 1..a, the separator is row a+1, team B starts at a+2. Team
   // sizes are read off the rosters rather than assumed to be two, so a 1v1 hammer
   // lays out correctly.
@@ -19675,14 +19693,16 @@ function renderNinesBox(){
   if(_nn){wrap.innerHTML='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Nines</div><div style="padding:10px 12px;font-size:13px;color:var(--color-text-secondary)">'+_nn+'.</div></div>';return;}
   const hc=calcNinesHole(hi,r,_nbfi);
   const roll=calcNinesPoints(r,_nbfi,hi);
-  let html='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Nines</div>';
+  // v124.55: the hole in the title, the column labels on top.
+  let html='<div class="calc-box" style="margin-top:0.75rem"><div class="calc-hd">Nines · Hole '+(hi+1)+'</div>';
   html+='<div style="padding:8px 12px;display:flex;flex-direction:column;gap:5px">';
+  html+='<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--color-text-tertiary)"><span style="flex:1"></span><span style="width:44px;text-align:right">Hole</span><span style="width:34px;text-align:right">Total</span></div>';
   fp.forEach(function(pi,i){
     const hp=hc?hc.pts[i]:null;
-    html+='<div style="display:flex;align-items:center;gap:8px"><span style="flex:1;font-size:13px;color:var(--color-text-primary)">'+displayName(pi)+'</span><span style="font-size:12px;color:var(--color-text-secondary);width:44px;text-align:right">'+(hp===null?'-':'+'+hp)+'</span><span style="font-size:13px;font-weight:600;color:#1D9E75;width:34px;text-align:right">'+roll.pts[i]+'</span></div>';
+    html+='<div style="display:flex;align-items:center;gap:8px"><span style="flex:1;font-size:13px;color:var(--color-text-primary)">'+displayName(pi)+'</span><span style="font-size:12px;color:var(--color-text-secondary);width:44px;text-align:right">'+(hp===null?'-':'+'+hp)+'</span><span style="font-size:13px;font-weight:600;color:var(--color-text-primary);width:34px;text-align:right">'+roll.pts[i]+'</span></div>';
   });
   html+='</div>';
-  html+='<div style="padding:6px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-tertiary)">'+(hc?'This hole / total':'Waiting on all three scores')+'</div>';
+  if(!hc)html+='<div style="padding:6px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-tertiary)">Waiting on all three scores</div>';
   html+='</div>';
   wrap.innerHTML=html;
 }
@@ -19705,7 +19725,7 @@ function _renderHammerFlightBlock(r,fi,labelHd){
   // v124.18, Kyle 15 Oct, canvas "Games tab: Hammer": the Match Play card's face. Money reads the same as
   // before: calcHammerSegResult for the totals, the per-team split for perteam. The rows below walk the holes
   // once, for the header's hammer count, the bottom line's thru and carry, and (open) the hole rows.
-  const hSeg=hammerSegsForRound(r,fi),segs=getSegments(hSeg);
+  const hSeg=hammerSegsForRound(r,fi),segs=getSegments(hSeg,roundHoleCount(r));
   const baseVal=roundValFs('hammerVal',r,fi,WK.hammerVal||2);
   const payout=roundValFs('hammerPayout',r,fi,WK.hammerPayout||'perplayer');
   const scoring=roundValFs('hammerScoring',r,fi,WK.hammerScoring||'bestball');
@@ -19729,14 +19749,14 @@ function _renderHammerFlightBlock(r,fi,labelHd){
     const expanded=STATE.hammerExpanded[key]===true;
     const _tag=_segStopTag(r,fi,seg);
     // carryAt is what the last PLAYED hole carries into the next; an unscored hole's pot is not a carry yet.
-    // One pass over the holes. h is round relative (seg.start is), and hammerState is keyed the same way.
+    // One pass over the holes. h is round relative (seg.start is); hammerState and scores are keyed by h+_ofs.
     let carry=0,carryAt=0,throwsN=0,played=0,lastH=-1,open=0,rows='';
     for(let h=seg.start;h<seg.end;h++){
       const hn=h+_ofs+1;
       // A dead hole neither shows a pot nor advances the carry: the carry froze at the end hole.
       if(_mpHoleDead(r,fi,h+_ofs)){rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span></span><span><span class="q">not played</span></span><span></span></div>`;continue;}
       open++;
-      const hs=STATE.hammerState?.[r]?.[fi]?.[h]||{throws:[],conceded:false,concedeVal:0};
+      const hs=STATE.hammerState?.[r]?.[fi]?.[h+_ofs]||{throws:[],conceded:false,concedeVal:0};
       let pot=baseVal+carry;
       hs.throws.forEach(()=>{pot*=2;});
       throwsN+=hs.throws.length;
@@ -19749,7 +19769,7 @@ function _renderHammerFlightBlock(r,fi,labelHd){
         rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span class="it">${_m(_hmConcedeOf(baseVal,carry,hs.throws.length))}</span><span>${mid}</span>${win}</div>`;
         carry=0;carryAt=0;played++;lastH=hn;continue;
       }
-      const nA=tA.map(pi=>getNetForFlight(pi,h,r,_hfp)),nB=tB.map(pi=>getNetForFlight(pi,h,r,_hfp));
+      const nA=tA.map(pi=>getNetForFlight(pi,h+_ofs,r,_hfp)),nB=tB.map(pi=>getNetForFlight(pi,h+_ofs,r,_hfp));
       if([...nA,...nB].some(v=>v===null)){
         rows+=`<div class="mpk-hr"><span class="hn">${hn}</span><span>${_m(pot)}</span><span>${mid}</span><span class="w"><span class="q">-</span></span></div>`;
         continue; // v124.37: unscored, so it carries nothing; the carry passes to the next scored hole
@@ -19798,7 +19818,7 @@ function calcGolfNetPerPlayer(){
   if(gameOnAny('skins')){WK.rounds.forEach((_,r)=>{const _srn=calcRoundSkins(r).net;for(let _pi=0;_pi<n;_pi++)skNet[_pi]+=_srn[_pi];});}
   // Hammer net
   const hammNet=Array(n).fill(0);
-  if(gameOnAny('hammer')){WK.rounds.forEach((_,r)=>{flightsForRound(r).forEach((_hfp,fi)=>{getSegments(hammerSegsForRound(r,fi)).forEach((seg,si)=>{const res=calcHammerSegResult(r,si,fi);if(!res)return;const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;const payout=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');const sv=payout==='perteam'?0.5:1;const _hd=(res.netA-res.netB)*sv;tm[0].forEach(pi=>hammNet[pi]+=_hd);tm[1].forEach(pi=>hammNet[pi]-=_hd);});});});}
+  if(gameOnAny('hammer')){WK.rounds.forEach((_,r)=>{flightsForRound(r).forEach((_hfp,fi)=>{getSegments(hammerSegsForRound(r,fi),roundHoleCount(r)).forEach((seg,si)=>{const res=calcHammerSegResult(r,si,fi);if(!res)return;const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;const payout=roundVal('hammerPayout',r,WK.hammerPayout||'perplayer');const sv=payout==='perteam'?0.5:1;const _hd=(res.netA-res.netB)*sv;tm[0].forEach(pi=>hammNet[pi]+=_hd);tm[1].forEach(pi=>hammNet[pi]-=_hd);});});});}
   // Two's net
   const twosNet=Array(n).fill(0);
   if(gameOn('twos',0)){let totTwos=0;const twos=Array(n).fill(0);STATE.scores.forEach((rd,r)=>{rd.forEach((h,hi)=>{h.forEach((g,pi)=>{if(g===2){twos[pi]++;totTwos++;}});});});const tp=WK.twosAmt*n;if(totTwos>0)twos.forEach((c,i)=>{twosNet[i]+=(c/totTwos)*tp-WK.twosAmt;});}// else: no 2s, no blood
@@ -19850,41 +19870,41 @@ function renderSettle(){
       const _mem=(flightsForRound(r)[fi]||[]);const _segDone=_mem.length>0&&STATE.scores[r].slice(seg.start,seg.end).every(h=>_mem.every(pi=>h[pi]!==null));const _baseMs=isHeadsUp(r)?calcMPMatchScoreHU(r,fi,si,mi||0,seg.end-1):calcMPMatchScore(r,fi,si,seg.end-1);
       if(!(_baseMs&&(_baseMs.closed||_segDone)))return;
       const audMpVal=winner==='tie'?0:settleVal(roundValFs('gameVal',r,fi,WK.gameVal),tA.length,WK.mpSettle||'perplayer');
-      const _audLabel=isHeadsUp(r)?`${roundLabel(r)} ${seg.label} Match ${(mi||0)+1}`:`${roundLabel(r)} ${seg.label}`;
+      const _audLabel=isHeadsUp(r)?`${roundLabel(r)} ${seg.label} Match ${(mi||0)+1}`:`${roundLabel(r)} Match ${si+1}`; // v124.57: as the Scores box
       tA.forEach(pi=>{auditGolf[pi].mp.push({label:_audLabel,val:winner==='a'?audMpVal:winner==='b'?-audMpVal:0,desc:mpResultDesc(winner,pA,pB,'a',seg.end-seg.start)});});
       tB.forEach(pi=>{auditGolf[pi].mp.push({label:_audLabel,val:winner==='b'?audMpVal:winner==='a'?-audMpVal:0,desc:mpResultDesc(winner,pA,pB,'b',seg.end-seg.start)});});
       // Press audit entries
       getPresses(r,fi,si,isHeadsUp(r)?mi:undefined).forEach((p,pi)=>{
         const pr=calcPressResult(r,fi,si,p);if(!pr)return;if(!(pr.closed||_segDone))return;
-        const pLabel=`${roundLabel(r)} ${seg.label} ${p.auto?'Auto-press':'Press '+(pi+1)}`;
+        const pLabel=`${roundLabel(r)} ${isHeadsUp(r)?seg.label:'Match '+(si+1)} ${p.auto?'Auto-press':'Press '+(pi+1)}`;
         const pSign=pr.winner==='a'?1:pr.winner==='b'?-1:0;
         tA.forEach(pli=>{auditGolf[pli].mp.push({label:pLabel,val:pSign*pr.sv,desc:mpResultDesc(pr.winner,pr.pA,pr.pB,'a',seg.end-p.startHole)});});
         tB.forEach(pli=>{auditGolf[pli].mp.push({label:pLabel,val:-pSign*pr.sv,desc:mpResultDesc(pr.winner,pr.pA,pr.pB,'b',seg.end-p.startHole)});});
       });
     });
     const vegR=gameOn('vegas',r)?calcRoundVegas(r):{gameResults:[],net:[]};
-    vegR.gameResults.forEach(({seg,tA,tB,ptsA,ptsB,dollarA})=>{
+    vegR.gameResults.forEach(({seg,si,tA,tB,ptsA,ptsB,dollarA})=>{
       // Only show if at least one score entered in this segment
       const segHasScores=STATE.scores[r].slice(seg.start,seg.end).some(h=>h.some(s=>s!==null));
       if(!segHasScores)return;
       const audVegSv=settleVal(dollarA,tA.length,WK.vegasSettle||'perplayer');
-      tA.forEach(pi=>{auditGolf[pi].vegas.push({label:`${roundLabel(r)} ${seg.label}`,val:audVegSv,desc:`${ptsA}pts vs ${ptsB}pts`});});
-      tB.forEach(pi=>{auditGolf[pi].vegas.push({label:`${roundLabel(r)} ${seg.label}`,val:-audVegSv,desc:`${ptsB}pts vs ${ptsA}pts`});});
+      tA.forEach(pi=>{auditGolf[pi].vegas.push({label:`${roundLabel(r)} Match ${si+1}`,val:audVegSv,desc:`${ptsA}pts vs ${ptsB}pts`});});
+      tB.forEach(pi=>{auditGolf[pi].vegas.push({label:`${roundLabel(r)} Match ${si+1}`,val:-audVegSv,desc:`${ptsB}pts vs ${ptsA}pts`});});
     });
     if(gameOn('hammer',r)){
       flightsForRound(r).forEach((_hfpA,fi)=>{
       if(_fsOff('hammer',r,fi))return;
-      getSegments(hammerSegsForRound(r,fi)).forEach((_seg,si)=>{
+      getSegments(hammerSegsForRound(r,fi),roundHoleCount(r)).forEach((_seg,si)=>{
         const res=calcHammerSegResult(r,si,fi);if(!res)return;
         const tm=STATE.hammerTeams?.[r]?.[fi]?.[si];if(!tm)return;
         const payout=roundValFs('hammerPayout',r,fi,WK.hammerPayout||'perplayer');
         const sv=payout==='perteam'?0.5:1;
-        const seg2=getSegments(hSegA)[si];
-        const segLabel=`G${si+1} H${seg2.start+holeOffset(r)+1}-${seg2.end+holeOffset(r)}`;
+        const seg2=getSegments(hammerSegsForRound(r,fi),roundHoleCount(r))[si];
+        const segLabel=`Match ${si+1}`,segHoles=`Holes ${seg2.start+holeOffset(r)+1} to ${seg2.end+holeOffset(r)}`;
         const netVal=(res.netA-res.netB)*sv;
         if(netVal!==0){
-          tm[0].forEach(pi=>{auditGolf[pi].hammer.push({label:`${roundLabel(r)} ${segLabel}`,val:netVal});});
-          tm[1].forEach(pi=>{auditGolf[pi].hammer.push({label:`${roundLabel(r)} ${segLabel}`,val:-netVal});});
+          tm[0].forEach(pi=>{auditGolf[pi].hammer.push({label:`${roundLabel(r)} ${segLabel}`,val:netVal,desc:segHoles});});
+          tm[1].forEach(pi=>{auditGolf[pi].hammer.push({label:`${roundLabel(r)} ${segLabel}`,val:-netVal,desc:segHoles});});
         }
       });
       });
