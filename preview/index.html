@@ -2507,7 +2507,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.57';
+const APP_VERSION='v124.58';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -18398,7 +18398,7 @@ function renderMoney(){
             const gcol='display:grid;grid-template-columns:1fr 72px;align-items:center;gap:8px;padding:2px 0';
             const maxSkins=Math.max(0,..._pool.map(pi=>skinsByPlayer[pi]||0));
             html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
-              <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">${seg.label} \u00b7 H${seg.start+1+_skOff}-${seg.end+_skOff}</div>`;
+              <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">Match ${gr.si+1} \u00b7 Holes ${seg.start+1+_skOff} to ${seg.end+_skOff}</div>`;
             _pool.forEach(pi=>{
               const sk=skinsByPlayer[pi]||0;
               const isWinner=sk===maxSkins&&sk>0;
@@ -18420,7 +18420,7 @@ function renderMoney(){
             const dollarStr=`+$${skSv.toFixed(2)}`;
             const gcol='display:grid;grid-template-columns:1fr 52px 64px;align-items:center;gap:4px;padding:2px 0';
             html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
-              <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">${seg.label}</div>
+              <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">Match ${gr.si+1}</div>
               <div style="${gcol}">
                 <span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}</span>
                 <span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${skinsA} skin${skinsA!==1?'s':''}</span>
@@ -18495,7 +18495,7 @@ function renderMoney(){
           </div>`;
         });
         html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
-          <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">${isHeadsUp(r)?seg.label+' · Match '+((mi||0)+1):seg.label}</div>
+          <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">${isHeadsUp(r)?seg.label+' · Match '+((mi||0)+1):'Match '+(si+1)}</div>
           <div style="${gcol}">
             <span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}</span>
             <span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:var(--color-text-primary)':tied?'color:var(--color-text-secondary)':'visibility:hidden'}">${aWins||tied?scoreLabel:''}</span>
@@ -18510,7 +18510,7 @@ function renderMoney(){
         </div>${pressHtml}`;
       });
     }
-    if(gameOn('razzle',r)){const _rzAny=flightsForRound(r).some((_,_zfi)=>calcRazzle(r,_zfi).some(m=>m.winner));if(_rzAny){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Razzle Dazzle${WK.rounds[r].independentGames?'':' - $'+roundVal('razzleVal',r,WK.razzleVal||5).toFixed(2)+'/match'} · ${(roundVal('razzleSettle',r,WK.razzleSettle||'perplayer'))==='perplayer'?'per player':'per team'}</div>`;flightsForRound(r).forEach((_rfp,_zfi)=>{const rzMatches=calcRazzle(r,_zfi).filter(m=>m.winner);if(!rzMatches.length)return;if(isMultiFlight(r))html+=`<div style="padding:4px 12px;font-size:10px;font-weight:600;color:var(--color-text-tertiary);background:var(--color-background-secondary)">Foursome ${_zfi+1}</div>`;rzMatches.forEach(m=>{if(!m.tA||!m.tB)return;const aWins=m.winner==='a',bWins=m.winner==='b';const nameA=m.tA.map(i=>displayName(i)).join(' & ');const nameB=m.tB.map(i=>displayName(i)).join(' & ');const dollarStr='+$'+m.sv.toFixed(2);const bonusBits=[];if(m.sweep)bonusBits.push('sweep');if(m.fiveHole)bonusBits.push('5-hole');if(m.birdieCount>0)bonusBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const bonusNote=bonusBits.length?` <span style="font-size:10px;color:var(--color-text-tertiary)">(${bonusBits.join(', ')})</span>`:'';const gcol='display:grid;grid-template-columns:1fr 64px;align-items:center;gap:8px;padding:2px 0';const winBits=[];if(m.sweep)winBits.push('sweep');else if(m.fiveHole)winBits.push('5-hole');if(m.birdieCount>0)winBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const winNote=winBits.length?' · '+winBits.join(', '):'';html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">Match ${m.mi+1} · H${m.startHole+1}-${m.endHole+1} · pot $${m.pot.toFixed(2)}</div><div style="${gcol}"><span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}${aWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${aWins?dollarStr:''}</span></div><div style="${gcol}"><span style="font-size:13px;${bWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameB}${bWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${bWins?dollarStr:''}</span></div></div>`;});});}}
+    if(gameOn('razzle',r)){const _rzAny=flightsForRound(r).some((_,_zfi)=>calcRazzle(r,_zfi).some(m=>m.winner));if(_rzAny){html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Razzle Dazzle${WK.rounds[r].independentGames?'':' - $'+roundVal('razzleVal',r,WK.razzleVal||5).toFixed(2)+'/match'} · ${(roundVal('razzleSettle',r,WK.razzleSettle||'perplayer'))==='perplayer'?'per player':'per team'}</div>`;flightsForRound(r).forEach((_rfp,_zfi)=>{const rzMatches=calcRazzle(r,_zfi).filter(m=>m.winner);if(!rzMatches.length)return;if(isMultiFlight(r))html+=`<div style="padding:4px 12px;font-size:10px;font-weight:600;color:var(--color-text-tertiary);background:var(--color-background-secondary)">Foursome ${_zfi+1}</div>`;rzMatches.forEach(m=>{if(!m.tA||!m.tB)return;const aWins=m.winner==='a',bWins=m.winner==='b';const nameA=m.tA.map(i=>displayName(i)).join(' & ');const nameB=m.tB.map(i=>displayName(i)).join(' & ');const dollarStr='+$'+m.sv.toFixed(2);const bonusBits=[];if(m.sweep)bonusBits.push('sweep');if(m.fiveHole)bonusBits.push('5-hole');if(m.birdieCount>0)bonusBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const bonusNote=bonusBits.length?` <span style="font-size:10px;color:var(--color-text-tertiary)">(${bonusBits.join(', ')})</span>`:'';const gcol='display:grid;grid-template-columns:1fr 64px;align-items:center;gap:8px;padding:2px 0';const winBits=[];if(m.sweep)winBits.push('sweep');else if(m.fiveHole)winBits.push('5-hole');if(m.birdieCount>0)winBits.push(m.birdieCount+' birdie'+(m.birdieCount>1?'s':''));const winNote=winBits.length?' · '+winBits.join(', '):'';html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">Match ${m.mi+1} · ${m.startHole===m.endHole?'Hole '+(m.startHole+1):'Holes '+(m.startHole+1)+' to '+(m.endHole+1)} · pot $${m.pot.toFixed(2)}</div><div style="${gcol}"><span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}${aWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${aWins?dollarStr:''}</span></div><div style="${gcol}"><span style="font-size:13px;${bWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameB}${bWins?`<span style="font-size:10px;color:var(--color-text-tertiary);font-weight:400">${winNote}</span>`:''}</span><span style="font-size:12px;text-align:right;${bWins?'font-weight:500;color:#1D9E75':'visibility:hidden'}">${bWins?dollarStr:''}</span></div></div>`;});});}}
     if(gameOn('nines',r)){
       const _nfl=flightsForRound(r);
       const _nMulti=_nfl.length>1;
@@ -18540,14 +18540,14 @@ function renderMoney(){
       let _flipTag='';
       if(!_isDefFlip){if(_vfL==='off'){_flipTag=' · no flips';}else if(_vfL==='eagle'){_flipTag=_vdL?(_vtL?' · eagle only':' · eagle flip · no 2-bird dbl'):' · eagle flip · no double';}else{_flipTag=_vdL?(_vtL?'':' · no 2-bird dbl'):' · birdie flip · no double';}}
       html+=`<div style="padding:8px 12px;font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-secondary);border-top:0.5px solid var(--color-border-secondary)">Vegas${WK.rounds[r].independentGames?'':' - $'+roundVal('vegasVal',r,WK.vegasVal).toFixed(2)+'/pt'} · ${(WK.vegasSettle||'perplayer')==='perplayer'?'per player':'per team'}${_flipTag}</div>`;
-      vegR.gameResults.forEach(({seg,tA,tB,ptsA,ptsB,dollarA})=>{
+      vegR.gameResults.forEach(({seg,si,tA,tB,ptsA,ptsB,dollarA})=>{
         const aWins=dollarA>0, bWins=dollarA<0, tied=dollarA===0;
         const nameA=tA.map(i=>displayName(i)).join(' & ');
         const nameB=tB.map(i=>displayName(i)).join(' & ');
         const dollarStr=`+$${Math.abs(dollarA).toFixed(2)}`;
         const gcol='display:grid;grid-template-columns:1fr 52px 64px;align-items:center;gap:4px;padding:2px 0';
         html+=`<div style="padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">
-          <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">${seg.label}</div>
+          <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px">Match ${si+1}</div>
           <div style="${gcol}">
             <span style="font-size:13px;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${nameA}</span>
             <span style="font-size:12px;text-align:right;${aWins?'font-weight:500;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${ptsA}pts</span>
@@ -18579,7 +18579,7 @@ function renderMoney(){
         const potStr=`+$${potAmt%1===0?potAmt.toFixed(2):potAmt.toFixed(2)}`;
         const boldA=winTeam===0;
         const boldB=winTeam===1;
-        html+=`<div style="padding:6px 12px 2px;font-size:10px;color:var(--color-text-tertiary)">Game ${si2+1}</div>`;
+        html+=`<div style="padding:6px 12px 2px;font-size:10px;color:var(--color-text-tertiary)">Match ${si2+1}</div>`;
         html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 12px 1px"><span style="font-size:13px;${boldA?'font-weight:700;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${namesA}</span>${boldA?`<span style="font-size:13px;font-weight:600;color:#1D9E75">${potStr}</span>`:''}</div>`;
         html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:1px 12px 6px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:13px;${boldB?'font-weight:700;color:var(--color-text-primary)':'color:var(--color-text-secondary)'}">${namesB}</span>${boldB?`<span style="font-size:13px;font-weight:600;color:#1D9E75">${potStr}</span>`:''}</div>`;
       });
