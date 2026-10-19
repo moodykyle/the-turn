@@ -194,6 +194,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(52%) sepia(9
 .score-block{display:flex;flex-direction:column;align-items:center;width:38px;}
 .score-val{font-size:20px;font-weight:500;line-height:1.1;}
 .score-val.eagle{color:#0F6E56;}.score-val.birdie{color:#1D9E75;}.score-val.par{color:var(--color-text-primary);}.score-val.bogey{color:#D85A30;}.score-val.double{color:#993C1D;}
+.player-row.pr-done .player-name{font-size:17px;}.player-row.pr-done .score-val{font-size:24px;}.player-row.pr-done .stroke-tag{font-size:12px;}.player-row.pr-done .net-val{font-size:11px;}
 .net-val{font-size:10px;color:var(--color-text-secondary);line-height:1.2;}
 .rel-badge{font-size:10px;min-width:18px;text-align:center;}
 .rel-under{color:#1D9E75;}.rel-over{color:#D85A30;}
@@ -1086,6 +1087,9 @@ body.force-dark .text-input.geo-bad{border-color:#F28B82!important;}
   white-space:nowrap;
 }
 .act-clear.active{color:#C0392B;cursor:pointer;}
+.act-final{display:flex;align-items:center;gap:8px;min-width:0;font-size:16px;font-weight:700;color:var(--color-text-primary);white-space:nowrap;}
+.act-final .ti{font-size:20px;color:#1D9E75;flex-shrink:0;}
+.act-edit{justify-self:end;height:40px;min-width:76px;padding:0 12px;border-radius:11px;background:var(--tint);color:var(--tint-tx);border:0.5px solid var(--tint-bd);font-family:inherit;font-size:14px;font-weight:600;white-space:nowrap;cursor:pointer;}
 .act-save{
   background:var(--tint);
   color:var(--tint-tx);
@@ -2509,7 +2513,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.74';
+const APP_VERSION='v124.75';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -8561,9 +8565,8 @@ function _updateActionRow(){
     const _arFi=_curFi(r);
     if(isFlightLocked(r,_arFi)){
       row.style.gridTemplateColumns='1fr auto 64px';
-      row.innerHTML='<div class="act-final" style="display:flex;align-items:center;gap:6px;min-width:0;font-size:14px;font-weight:600;color:var(--color-text-primary);white-space:nowrap">'
-        +'<i class="ti ti-circle-check" style="font-size:16px;color:#1D9E75;flex-shrink:0" aria-hidden="true"></i>Final</div>'
-        +'<button class="act-clear" onclick="window._doneEdit()" style="background:#1D9E75;color:#0c1712;border:none">Edit</button>'+_gridBtn;
+      row.innerHTML='<div class="act-final"><i class="ti ti-circle-check" aria-hidden="true"></i>Round complete</div>'
+        +'<button class="act-edit" onclick="window._doneEdit()">Edit</button>'+_gridBtn;
       _updateActionRowGameLock();
       return;
     }
@@ -8571,8 +8574,8 @@ function _updateActionRow(){
       // Every hole in, never finished, and the pencil is not yours: nobody closed it out.
       if(_fsAllScored(r,_arFi)&&!holdsPencil(r,_arFi)){
         row.style.gridTemplateColumns='1fr auto 64px';
-        row.innerHTML='<div class="act-pencil-done" style="display:flex;align-items:center;gap:6px;min-width:0;font-size:13px;color:var(--color-text-secondary);white-space:nowrap">Round complete</div>'
-          +'<button class="act-clear" onclick="window._doneEdit()" style="background:#1D9E75;color:#0c1712;border:none">Edit</button>'+_gridBtn;
+        row.innerHTML='<div class="act-pencil-done" style="display:flex;align-items:center;gap:6px;min-width:0;font-size:13px;color:var(--color-text-secondary);white-space:nowrap">All holes in</div>'
+          +'<button class="act-edit" onclick="window._doneEdit()">Edit</button>'+_gridBtn;
         _updateActionRowGameLock();
         return;
       }
@@ -8589,7 +8592,7 @@ function _updateActionRow(){
         row.innerHTML='<div class="act-pencil-viewing" style="display:flex;align-items:center;gap:6px;min-width:0">'
           +'<i class="ti ti-pencil" style="font-size:14px;color:#e0b44a;flex-shrink:0" aria-hidden="true"></i>'
           +'<span style="font-size:13px;color:#e6c977;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_hName+' is scoring</span>'
-          +'</div><button class="act-clear" onclick="window._pencilTakeoverConfirm()" style="background:#1D9E75;color:#0c1712;border:none">Take Over</button>'+_gridBtn;
+          +'</div><button class="act-edit" onclick="window._pencilTakeoverConfirm()">Take Over</button>'+_gridBtn;
         _updateActionRowGameLock();
         return;
       }
@@ -8947,7 +8950,7 @@ function openRoundSheet(fnName,cur){
     const _rdHasScores=STATE.scores[i]&&STATE.scores[i].some(h=>h&&h.some(s=>s!==null));
     // v123.20: Final means finished (locked), the same word the bar uses. A full card nobody
     // finished is Round complete, again as on the bar.
-    const st=_fc.whole?'<div class="rdsheet-st done">Final</div>':(_fc.k>0?'<div class="rdsheet-st">'+_fc.k+' of '+_fc.n+' foursomes final</div>':(done?'<div class="rdsheet-st">Round complete</div>':(_rdHasScores?'<div class="rdsheet-st live">In progress</div>':'<div class="rdsheet-st">Not started</div>')));
+    const st=_fc.whole?'<div class="rdsheet-st done">Round complete</div>':(_fc.k>0?'<div class="rdsheet-st">'+_fc.k+' of '+_fc.n+' foursomes final</div>':(done?'<div class="rdsheet-st">All holes in</div>':(_rdHasScores?'<div class="rdsheet-st live">In progress</div>':'<div class="rdsheet-st">Not started</div>')));
     return '<div class="rdsheet-row'+(isCur?' cur':'')+'" onclick="'+fnName+'('+i+');closeRoundSheet()">'
       +'<span class="rdsheet-rd">'+roundLabel(i)+'</span>'
       +'<div class="rdsheet-meta"><div class="rdsheet-nm">'+rdLabel(i)+'</div>'+st+'</div></div>';
@@ -9470,7 +9473,7 @@ function renderScorecard(){
   let _huPairNet=null;if(gameOnFs('mp',r,_fp)&&isHeadsUp(r)&&huNetOffMatchLow(r,_fp)){const _siHU=segForHole(hi-holeOffset(r),mpGamesForRound(r,_fp),roundHoleCount(r));const _tmHU=STATE.mpTeams[r]?.[_fp]?.[_siHU];if(_tmHU&&_tmHU[0]&&_tmHU[1]){_huPairNet={};for(let _mi=0;_mi<_tmHU[0].length;_mi++){const _pa=_tmHU[0][_mi],_pb=_tmHU[1][_mi];if(_pa!==undefined&&_pb!==undefined){_huPairNet[_pa]=[_pa,_pb];_huPairNet[_pb]=[_pa,_pb];}}}}
   // Snake holder for the ACTIVE foursome at this hole (the card only shows that foursome).
   const _snkHolder=gameOnFs('snake',r,_fp)?currentSnakeHolderForFlight(r,hi,_fp):null;
-  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag==='FIELD'?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const grTick=gameOn('grinders',r)&&grPlayerOk(r,i,hi)?`<span class="gr-tick" title="Par or better">&#10003;</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const _flk=isFlightLocked(r,_fp==null?_curFi(r):_fp);const roStyle=_pvLock?'pointer-events:none':(isReadOnly?'opacity:0.5;pointer-events:none':((_flk||_deadH)?'pointer-events:none':''));const _rowDim=((_pvLock&&!_flk)||_deadH)?'opacity:0.42;':'';const _minusBtn=(_pvLock||_deadH||_flk)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':((_pvLock||_flk)?'':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=isWolfPlayer?'player-row wolf-player-row':'player-row';const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbLtr(_fbRowDiv[i])}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}${grTick}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('')+_grHoleChip(r,_fp,hi);
+  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag==='FIELD'?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const grTick=gameOn('grinders',r)&&grPlayerOk(r,i,hi)?`<span class="gr-tick" title="Par or better">&#10003;</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const _flk=isFlightLocked(r,_fp==null?_curFi(r):_fp);const roStyle=_pvLock?'pointer-events:none':(isReadOnly?'opacity:0.5;pointer-events:none':((_flk||_deadH)?'pointer-events:none':''));const _rowDim=((_pvLock&&!_flk)||_deadH)?'opacity:0.42;':'';const _minusBtn=(_pvLock||_deadH||_flk)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':((_pvLock||_flk)?'':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=(isWolfPlayer?'player-row wolf-player-row':'player-row')+(_flk?' pr-done':'');const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbLtr(_fbRowDiv[i])}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}${grTick}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('')+_grHoleChip(r,_fp,hi);
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
   try{renderNinesBox();}catch(ne){console.error('renderNinesBox error:',ne);const nw=document.getElementById('ninesBoxWrap');if(nw)nw.innerHTML='';}
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
