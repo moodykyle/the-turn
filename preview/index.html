@@ -1308,7 +1308,7 @@ body.force-light .sec-hd.gs-sec{color:#13795B;}
 .setup-row.gs-row:not(.gs-wide)>.qrw-seg.gs-seg{width:200px;box-sizing:border-box;}
 .setup-row.gs-row:not(.gs-wide)>.qrw-seg.gs-seg button{padding:0 6px;}
 .setup-row.gs-row.gs-bonus{align-items:flex-start;}
-.gs-bonus .gs-lbl{padding-top:3px;}
+.gs-bonus .gs-lbl{padding-top:3px;}.su-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:2px 14px;margin-bottom:6px;}.su-card .gs-row{padding:10px 0;}.su-card .gs-row+.gs-row,.su-card .su-rd+.su-rd,.su-card .su-rd+.su-add,.su-card .su-ad+.su-ad,.su-card .su-ad+.su-subhd,.su-card .su-ad+.su-need{border-top:0.5px solid var(--color-border-tertiary);}.su-card .gs-lbl{flex:1;min-width:0;}.su-card .gs-lbl b{font-size:15px;font-weight:500;color:var(--color-text-primary);}.su-card .gs-lbl small{display:block;font-size:12px;color:var(--color-text-secondary);margin-top:2px;line-height:1.35;}.su-card .gs-wide .gs-seg{width:100%;}.su-in{width:190px;max-width:60%;text-align:right;font-size:15px;background:transparent;border:none;color:var(--color-text-primary);}.su-rd{display:flex;align-items:center;gap:8px;padding:10px 0;}.su-rl{width:52px;flex-shrink:0;font-size:13px;color:var(--color-text-secondary);}.su-card .su-sel{flex:1 1 0;width:auto;min-width:0;font-size:15px;text-overflow:ellipsis;}.su-pills{display:flex;gap:6px;flex-shrink:0;}.su-nh{position:relative;display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);border-radius:999px;padding:3px 9px;}.su-nh i{font-size:13px;color:var(--color-text-tertiary);}.su-nh select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;}.su-x{width:30px;height:30px;flex-shrink:0;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-tertiary);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;}.su-x:active{color:#D85A30;border-color:#D85A30;}.tw-addrow.su-add{padding:10px 0 11px;}.su-pct{width:84px;}.su-fixed{font-size:14px;color:var(--color-text-secondary);}.su-ad{display:flex;align-items:center;gap:10px;padding:11px 0;}.su-an{flex:1;min-width:0;font-size:15px;color:var(--color-text-primary);}.su-tag{font-size:12px;color:var(--color-text-secondary);}.su-subhd{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);padding:12px 0 2px;border-top:0.5px solid var(--color-border-tertiary);}.su-addb{height:32px;padding:0 14px;border-radius:10px;background:transparent;border:1px solid #1D9E75;color:#1D9E75;font:inherit;font-size:13px;font-weight:600;cursor:pointer;}.su-need{font-size:12px;color:var(--color-text-tertiary);padding:10px 0 12px;line-height:1.4;}#opt-panel-weekend>.gs-sec:first-child{margin-top:4px;}
 .gs-bstack{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;}
 .gs-amt-off{opacity:0.45;pointer-events:none;}
 .gs-dd.gs-ddw{flex:none;width:100%;}
@@ -2513,7 +2513,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.77';
+const APP_VERSION='v124.78';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -14198,7 +14198,8 @@ function renderWeekendPanel(){
   }
   const _fmt=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};
   // --- Trip details ---
-  let html=`<div class="section-card"><div class="section-hd">Trip details</div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Name</span><input class="inline-edit" value="${WK.name}" onchange="WK.name=this.value;document.getElementById('mainTitle').textContent=WK.name;autoSave();s2MarkDirty(['trip']);s2WriteActive()"/></div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Date</span><input class="inline-edit" type="date" value="${WK.date}" max="2099-12-31" onchange="WK.date=this.value;autoSave();s2MarkDirty(['trip']);s2WriteActive();const _f=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' \u00b7 '+_f(WK.date)):WK.region||_f(WK.date)||''"/></div><div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Region</span><input class="inline-edit" value="${WK.region||''}" placeholder="e.g. Pinehurst" onchange="WK.region=this.value;autoSave();s2MarkDirty(['trip']);s2WriteActive();const _f=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' \u00b7 '+_f(WK.date)):WK.region||_f(WK.date)||''"/></div></div>`;
+  const _isQ=!!WK.isQuickRound,_suCard=h=>'<div class="su-card">'+h+'</div>',_suSec=t=>'<div class="sec-hd gs-sec">'+t+'</div>';
+  let html=_suSec(_isQ?'Round':'Trip')+_suCard(_gsRow('Name','',`<input class="inline-edit su-in" value="${WK.name}" onchange="WK.name=this.value;document.getElementById('mainTitle').textContent=WK.name;autoSave();s2MarkDirty(['trip']);s2WriteActive()"/>`)+_gsRow('Date','',`<input class="inline-edit su-in" type="date" value="${WK.date}" max="2099-12-31" onchange="WK.date=this.value;autoSave();s2MarkDirty(['trip']);s2WriteActive();const _f=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' \u00b7 '+_f(WK.date)):WK.region||_f(WK.date)||''"/>`)+(_isQ?'':_gsRow('Region','',`<input class="inline-edit su-in" value="${WK.region||''}" placeholder="e.g. Pinehurst" onchange="WK.region=this.value;autoSave();s2MarkDirty(['trip']);s2WriteActive();const _f=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' \u00b7 '+_f(WK.date)):WK.region||_f(WK.date)||''"/>`)));
 
   // --- Rounds (unified: regular + E-rounds, with tee picker + Add Round) ---
   const _tripCourseNames=[...WK.rounds.filter(r=>r.courseName).map(r=>r.courseName),...(WK.stagedCourses||[])].filter((v,i,a)=>a.indexOf(v)===i);
@@ -14219,17 +14220,23 @@ function renderWeekendPanel(){
     const teeColor=teeName?_gcaTeeColor(teeName,allTees):'#9CA3AF';
     const teePill=teeOpts?`<span style="display:inline-flex;align-items:center;gap:4px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:999px;padding:3px 9px;font-size:12px;font-weight:500;position:relative;flex-shrink:0"><span style="width:8px;height:8px;border-radius:50%;background:${teeColor};display:inline-block;flex-shrink:0"></span>${teeName||'Select tee'}<span style="color:#1D9E75;font-size:11px">\u25be</span><select onchange="window._wkSetTee(${origI},this.value)" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer">${teeOpts}</select></span>`:'';
     const nineLabel=rd.nineHole==='front'?'Front 9':rd.nineHole==='back'?'Back 9':rd.nineHole?'9 holes':null;
-    let row=`<div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">${roundLabel(origI)}</span><select class="inline-edit" style="flex:1;min-width:0" onchange="window._wkSetCourse(${origI},this.value)">${rdOpts}</select>${teePill}${_delOk?`<button class="btn-danger" onclick="removeRound(${origI})" style="flex-shrink:0">\u2715</button>`:''}</div>`;
-    if(nineLabel)row+=`<div class="setup-row"><span style="font-size:12px;color:var(--color-text-secondary);width:46px;flex-shrink:0">Holes</span><select class="inline-edit" style="background:var(--color-background-primary);color:var(--color-text-primary)" onchange="WK.rounds[${origI}].nineHole=this.value==='18'?null:this.value;autoSave();renderWeekendPanel()"><option value="front"${rd.nineHole==='front'?' selected':''}>Front 9</option><option value="back"${rd.nineHole==='back'?' selected':''}>Back 9</option><option value="18"${!rd.nineHole?' selected':''}>18 holes</option></select></div>`;
+    const ninePill=nineLabel?`<span class="su-nh">${nineLabel}<i class="ti ti-chevron-down" aria-hidden="true"></i><select aria-label="Holes" onchange="WK.rounds[${origI}].nineHole=this.value==='18'?null:this.value;autoSave();renderWeekendPanel()"><option value="front"${rd.nineHole==='front'?' selected':''}>Front 9</option><option value="back"${rd.nineHole==='back'?' selected':''}>Back 9</option><option value="18"${!rd.nineHole?' selected':''}>18 holes</option></select></span>`:'';
+    let row=`<div class="su-rd">${_isQ&&WK.rounds.length===1?'':`<span class="su-rl">${roundLabel(origI)}</span>`}<select class="inline-edit su-sel" onchange="window._wkSetCourse(${origI},this.value)">${rdOpts}</select>${(teePill||ninePill)?`<span class="su-pills">${teePill}${ninePill}</span>`:''}${_delOk?`<button class="su-x" aria-label="Remove ${roundLabel(origI)}" onclick="removeRound(${origI})"><i class="ti ti-x" aria-hidden="true"></i></button>`:''}</div>`;
     return row;
   };
   const orderedRounds=WK.rounds.map((rd,i)=>({rd,i})).sort((a,b)=>{const ae=a.rd.isE9&&!a.rd.inStandings?1:0;const be=b.rd.isE9&&!b.rd.inStandings?1:0;return ae-be;}).map(x=>x.rd);
-  html+=`<div class="section-card"><div class="section-hd">Rounds</div>${orderedRounds.map(roundRow).join('')}<div class="tw-addrow"><button class="tw-addrd" onclick="launchE9()">+ Add round</button><div class="tw-addrow-n">Doesn&#39;t count toward standings? It&#39;s labeled E9 or E18.</div></div></div>`;
+  html+=_suSec(_isQ&&WK.rounds.length===1?'Course':'Rounds')+_suCard(`${orderedRounds.map(roundRow).join('')}<div class="tw-addrow su-add"><button class="tw-addrd" onclick="launchE9()">+ Add round</button><div class="tw-addrow-n">Doesn&#39;t count toward standings? It&#39;s labeled E9 or E18.</div></div>`);
 
   // --- Handicap ---
-  html+=`<div class="section-card" id="hdcpCard" style="margin-bottom:14px"><div class="section-hd">Handicap</div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net off low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffLow?'checked':''} onchange="STATE.netOffLow=this.checked;autoSave();s2WriteActive();renderWeekendPanel();renderScorecard();renderBanner()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-secondary)">Net games off foursome low man</span><label class="toggle"><input type="checkbox" ${STATE.netOffFlightLow?'checked':''} onchange="STATE.netOffFlightLow=this.checked;autoSave();s2WriteActive();renderScorecard();renderBanner();_gsRefreshAfterEdit()"><span class="toggle-slider"></span></label></div><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px"><span style="font-size:12px;color:var(--color-text-secondary)">Handicap adjustment</span><div style="display:flex;align-items:center;gap:4px"><select class="ie-sel" style="width:76px" onchange="WK.hdcpPct=parseInt(this.value)/100;autoSave();s2WriteActive();renderWeekendPanel();renderScorecard()">${(()=>{const _c=Math.round(WK.hdcpPct*100);const _o=[100,95,90,85,80,75,70,65,60,55,50];return(_o.includes(_c)?_o:[_c,..._o]).map(v=>`<option value="${v}"${v===_c?' selected':''}>${v}%</option>`).join('');})()}</select></div></div>`
-  +`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-primary)">Trip index<span style="display:block;font-size:11px;color:var(--color-text-secondary);margin-top:1px">One index per player for the whole trip. Changing it changes every round, finished ones included.</span></span><label class="toggle"><input type="checkbox" ${_hcpMode()!=='round'?'checked':''} onchange="window._setHcpMode('trip')"><span class="toggle-slider"></span></label></div>`
-  +`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-top:0.5px solid var(--color-border-tertiary)"><span style="font-size:12px;color:var(--color-text-primary)">Round index<span style="display:block;font-size:11px;color:var(--color-text-secondary);margin-top:1px">Each round plays off the index a player has when that round starts. Once played out, a round is frozen.</span></span><label class="toggle"><input type="checkbox" ${_hcpMode()==='round'?'checked':''} onchange="window._setHcpMode('round')"><span class="toggle-slider"></span></label></div></div>`;
+  const _tg=(on,js)=>`<label class="toggle"><input type="checkbox" ${on?'checked':''} onchange="${js}"><span class="toggle-slider"></span></label>`;
+  const _rdMode=_hcpMode()==='round';
+  html+=_suSec('Handicap')+'<div class="su-card" id="hdcpCard">'
+  +_gsRow('Net off low man','Low man plays off zero; everyone<br>else gets the difference',_tg(STATE.netOffLow,'STATE.netOffLow=this.checked;autoSave();s2WriteActive();renderWeekendPanel();renderScorecard();renderBanner()'))
+  +_gsRow('Games off foursome low man','Game strokes come off each<br>foursome&#39;s own low man',_tg(STATE.netOffFlightLow,'STATE.netOffFlightLow=this.checked;autoSave();s2WriteActive();renderScorecard();renderBanner();_gsRefreshAfterEdit()'))
+  +_gsRow('Allowance','Share of each course handicap',`<select class="ie-sel su-pct" aria-label="Allowance" onchange="WK.hdcpPct=parseInt(this.value)/100;autoSave();s2WriteActive();renderWeekendPanel();renderScorecard()">${(()=>{const _c=Math.round(WK.hdcpPct*100);const _o=[100,95,90,85,80,75,70,65,60,55,50];return(_o.includes(_c)?_o:[_c,..._o]).map(v=>`<option value="${v}"${v===_c?' selected':''}>${v}%</option>`).join('');})()}</select>`)
+  // Index Freeze (Kyle, 19 Oct): one pill in place of the Trip index / Round index switches; the line follows the pick.
+  +((!_isQ||WK.rounds.length>1)?_gsRow('Index Freeze',_rdMode?'Update an index in Settings &gt; Players before each round. Completed rounds stay frozen.':'One index for the whole trip. Changing it at any point will potentially adjust the scoring for all rounds in the trip.',_gsSeg([['trip','Trip'],['round','Round']],_rdMode?'round':'trip','window._setHcpMode(VAL)',true),true):'')
+  +'</div>';
 
   // --- Weekend bet ---
   // Pot tiebreak. Locked once the pot is settled: the rule that decided the money must not
@@ -14239,11 +14246,12 @@ function renderWeekendPanel(){
   const _tbLabel={countback:'Countback',split:'Split the pot',manual:'Decide it ourselves'}[_tbVal]||'Countback';
   const _tbOpts=[['countback','Countback'],['split','Split the pot'],['manual','Decide it ourselves']]
     .map(o=>`<option value="${o[0]}"${_tbVal===o[0]?' selected':''}>${o[1]}</option>`).join('');
+  const _tbLine={countback:'Lowest net on the final round,<br>then last 9, 6, 3, then the 18th',split:'Tied players share the pot evenly',manual:'The app shows the tie; you settle it'}[_tbVal]||'';
   const _tbCtl=_tbLocked
-    ?`<span style="font-size:13px;color:var(--color-text-tertiary)">${_tbLabel} (bet settled)</span>`
-    :`<select class="ie-sel" onchange="_setPotTiebreak(this.value)">${_tbOpts}</select>`;
-  const _tbRow=WK.isQuickRound?'':`<div class="setup-row" style="border-bottom:none"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">If players tie<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">Countback: lowest net on the final round, then last 9, 6, 3, then the 18th</div></span>${_tbCtl}</div>`;
-  html+=(WK.isQuickRound?'':(`<div class="section-card" style="margin-bottom:14px"><div class="section-hd">Weekend bet</div><div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Buy-in per player</span>$<input class="ie-num" type="number" value="${WK.buyIn}" style="width:90px" onchange="WK.buyIn=parseFloat(this.value);autoSave()"/></div><div class="setup-row"><span style="flex:1;font-size:13px;color:var(--color-text-secondary)">Weekend winner</span><span style="font-size:13px;color:var(--color-text-primary)">Net stroke play</span></div>${_tbRow}</div>`));
+    ?`<span class="su-fixed">${_tbLabel} (bet settled)</span>`
+    :_gsSeg([['countback','Countback'],['split','Split'],['manual','We decide']],_tbVal,'_setPotTiebreak(VAL)',true);
+  const _tbRow=WK.isQuickRound?'':_gsRow('If players tie',_tbLine,_tbCtl,!_tbLocked);
+  html+=(WK.isQuickRound?'':(_suSec('Weekend bet')+_suCard(_gsRow('Buy-in','Each player puts in',`<div class="gs-money"><button type="button" aria-label="Less" onclick="window._suBuyStep(this,-5)">\u2212</button><span>$</span><input class="ie-num" type="number" inputmode="decimal" value="${WK.buyIn}" onchange="WK.buyIn=parseFloat(this.value);autoSave()"/><button type="button" aria-label="More" onclick="window._suBuyStep(this,5)">+</button></div>`)+_gsRow('Weekend winner','Lowest net over the trip','<span class="su-fixed">Net stroke play</span>')+_tbRow)));
 
   // --- Trip admins (visible only to canManageRunners) ---
   if(canManageRunners()&&WK&&WK._groupId){
@@ -14258,15 +14266,11 @@ function renderWeekendPanel(){
     var _adminRows='';
     // shared row fragment builder (no onclick - just display)
     function _taStaticRow(ini,name,tag){
-      return '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'
-        +'<div style="width:28px;height:28px;border-radius:50%;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(ini||'').substring(0,2).toUpperCase()+'</div>'
-        +'<span style="flex:1;font-size:13px;color:var(--color-text-primary)">'+name+'</span>'
-        +'<span style="font-size:11px;color:var(--color-text-secondary);background:var(--color-background-secondary);padding:2px 7px;border-radius:999px">'+tag+'</span>'
-        +'</div>';
+      return '<div class="su-ad"><span class="su-an">'+name+'</span><span class="su-tag">'+tag+'</span></div>';
     }
     // group admin row(s) first - no remove button
     _grpAdmins.forEach(function(m){
-      var _tag=m.user_id===_creatorUid?'Group admin + Creator':'Group admin';
+      var _tag=m.user_id===_creatorUid?'Group admin \u00b7 Creator':'Group admin';
       _adminRows+=_taStaticRow(m.display_name||'Admin',m.display_name||'Admin',_tag);
     });
     // creator row only if not already shown as group admin
@@ -14282,12 +14286,7 @@ function renderWeekendPanel(){
       var _rname=_rm?(_rm.display_name||'Member'):'Member';
       var _rini=(_rname).substring(0,2).toUpperCase();
       var _safeUid=uid.replace(/'/g,'');
-      _adminRows+='<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'
-        +'<div style="width:28px;height:28px;border-radius:50%;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+_rini+'</div>'
-        +'<span style="flex:1;font-size:13px;color:var(--color-text-primary)">'+_rname+'</span>'
-        +'<span style="font-size:11px;color:var(--color-text-secondary);background:var(--color-background-secondary);padding:2px 7px;border-radius:999px">Trip admin</span>'
-        +'<button onclick="window._tripAdminRemove(\''+_safeUid+'\')" style="background:transparent;border:none;color:#E53935;font-size:18px;line-height:1;cursor:pointer;padding:0 2px;flex-shrink:0">&times;</button>'
-        +'</div>';
+      _adminRows+='<div class="su-ad"><span class="su-an">'+_rname+'</span><span class="su-tag">Trip admin</span><button class="su-x" aria-label="Remove '+_rname+'" onclick="window._tripAdminRemove(\''+_safeUid+'\')"><i class="ti ti-x" aria-hidden="true"></i></button></div>';
     });
     // picker: authenticated, not in any authority role
     var _excludeUids=_grpAdminUids.concat(_tripAdmins).concat(_creatorUid?[_creatorUid]:[]);
@@ -14299,27 +14298,16 @@ function renderWeekendPanel(){
     _tripAdminPickerMembers.forEach(function(m,i){
       var _pname=m.display_name||'Member';
       var _pini=(_pname).substring(0,2).toUpperCase();
-      _pickerRows+='<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary)">'
-        +'<div style="width:28px;height:28px;border-radius:50%;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+_pini+'</div>'
-        +'<span style="flex:1;font-size:13px;color:var(--color-text-primary)">'+_pname+'</span>'
-        +'<button onclick="window._tripAdminAdd('+i+')" style="background:transparent;border:0.5px solid #1D9E75;color:#1D9E75;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;cursor:pointer">Add</button>'
-        +'</div>';
+      _pickerRows+='<div class="su-ad"><span class="su-an">'+_pname+'</span><button class="su-addb" onclick="window._tripAdminAdd('+i+')">Add</button></div>';
     });
-    _managedMembers.forEach(function(m){
-      var _pname=m.display_name||'Guest';
-      var _pini=(_pname).substring(0,2).toUpperCase();
-      _pickerRows+='<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary);opacity:0.45">'
-        +'<div style="width:28px;height:28px;border-radius:50%;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+_pini+'</div>'
-        +'<div style="flex:1"><div style="font-size:13px;color:var(--color-text-primary)">'+_pname+'</div>'
-        +'<div style="font-size:11px;color:var(--color-text-secondary)">needs account to be a Trip admin</div></div>'
-        +'</div>';
-    });
-    var _addCard=(_pickerRows||_managedMembers.length)?
-      '<div class="section-card" style="margin-top:4px"><div class="section-hd">Add a Trip admin</div>'+_pickerRows+'</div>':'';
-    html+='<div class="section-card" style="margin-top:14px"><div class="section-hd">Trip admins</div>'+_adminRows+'</div>'+_addCard;
+    // Members without an account become one line (v124.78) instead of a greyed row each.
+    var _needNm=_managedMembers.map(function(m){return m.display_name||'Guest';});
+    var _need=_needNm.length?'<div class="su-need">'+_needNm.slice(0,2).join(', ')+(_needNm.length>2?' and '+(_needNm.length-2)+' more':'')+(_needNm.length===1?' needs':' need')+' an account before they can be '+(_needNm.length===1?'an admin':'admins')+'.</div>':'';
+    html+=_suSec(_isQ?'Round admins':'Trip admins')+_suCard(_adminRows+(_pickerRows?'<div class="su-subhd">Add an admin</div>'+_pickerRows:'')+_need);
   }
   document.getElementById('opt-panel-weekend').innerHTML=html;
 }
+window._suBuyStep=function(btn,d){if(!canEditTrip())return;var inp=btn.parentNode.querySelector('input');if(!inp)return;var v=Math.max(0,Math.round(((parseFloat(inp.value)||0)+d)*100)/100);inp.value=v;WK.buyIn=v;autoSave();};
 window._wkSetTee=function(ri,val){var _v=val.split('|');window._gcaSetTee(ri,_v[0],_v[1]);renderWeekendPanel();}
 window._wkSetCourse=function(ri,cn){
   const rd=WK.rounds[ri];if(!rd)return;
