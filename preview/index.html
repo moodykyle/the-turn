@@ -2513,7 +2513,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.84';
+const APP_VERSION='v124.85';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -13171,9 +13171,16 @@ function _fsPanelHtml(r,merged){
   if(editable)html+='<div class="pm-addf" onclick="window._fsAddFoursome('+r+')">+ Add foursome</div>';
   // Moves frozen (a foursome finished): the round can still take a player, as Players always could.
   else if(merged&&canEditTrip()&&nP<TW_MAX_PLAYERS)html+='<div class="tw-addrow su-add"><button class="tw-addrd" onclick="window._apOpen()">+ Add player</button></div>';
-  html+='<div class="pm-note">'
-    +(merged?'Tap a player to change their name or handicap, or to move or swap them. The arrows set the order in a foursome.'
-      :'Tap a player to move or swap them. Add player puts someone new straight into that foursome. Each round keeps its own foursomes.')+'</div>';
+  // v124.85: a trip's round with a finished foursome is locked; say so rather than offer taps that do nothing.
+  let _note='';
+  if(merged)_note='Tap a player to change their name or handicap, or to move or swap them. The arrows set the order in a foursome.';
+  else if(editable)_note='Tap a player to move or swap them. Add player puts someone new straight into that foursome. Each round keeps its own foursomes.';
+  else if(canEditTrip()&&isAnyFlightLocked(r)){
+    // isFlightLocked already reads a whole-round lock; no round-level helper here (fsroute A3).
+    const _all=fl.length>0&&fl.every(function(_,fi){return isFlightLocked(r,fi);});
+    _note=_all?roundLabel(r)+' is finished, so its foursomes are locked.':'A foursome in '+roundLabel(r)+' has finished, so '+roundLabel(r)+'&#39;s foursomes are locked.';
+  }
+  if(_note)html+='<div class="pm-note">'+_note+'</div>';
   return html;
 }
 // Every mutation goes through _flightsMutate, which normalizes afterwards. That is what
