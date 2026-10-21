@@ -2513,7 +2513,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.89';
+const APP_VERSION='v124.90';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -3897,7 +3897,7 @@ function sbRouteAfterAuth(){
   } else {
     sbCheckAndSetGroup().then(()=>{
       const crumb=_readActiveTripCrumb();
-      if(crumb){viewTrip(crumb.id);}
+      if(crumb){viewTrip(crumb.id,{resume:true});}
       else{showHome();}
     });
   }
@@ -6829,7 +6829,7 @@ function _viewTripToast(msg){
   document.body.appendChild(t);
   setTimeout(()=>t.remove(),3500);
 }
-function viewTrip(id){
+function viewTrip(id,opts){
   _writeActiveTripCrumb(id);
   // Step 3: try new schema first, fall back to blob
   s2ReadTrip(id).then(s2data=>{
@@ -6866,6 +6866,11 @@ function viewTrip(id){
       }
     }
     _s2RehydrateLoadedTrip();
+    // v124.90: a launch resumes only a round in play. Finished, untouched or between rounds: Home.
+    if(opts&&opts.resume){
+      const _rp=resumePosition(_resumeDims(WK.rounds),STATE.scores,STATE.roundFlights);
+      if(!_rp||!_rp.live){delete STATE._resumeAllDone;_clearActiveTripCrumb();showHome();dismissSplash();return;}
+    }
     isReadOnly=false;viewingTripId=id;
     const _allDone=STATE._resumeAllDone;delete STATE._resumeAllDone;launchMainApp();if(_allDone)setView('board');s2ValidateOnLoad();
     dismissSplash();
@@ -9138,7 +9143,7 @@ function resumePosition(dims,scores,flights){
     const d=dims[r];
     const h=_firstNeededHole(scores&&scores[r],d.off,d.full,specsFor(r));
     if(h<0)continue; // every group is square through its own end hole
-    if(started(r))return{r:r,h:h,allDone:false};
+    if(started(r))return{r:r,h:h,allDone:false,live:true}; // v124.90: live = a started round still owing holes
     if(firstOpen<0){firstOpen=r;firstOpenHole=h;}
   }
   // Nothing started and still owing. An untouched round is not a finished trip.
