@@ -2515,7 +2515,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.4';
+const APP_VERSION='v125.5';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -3165,6 +3165,7 @@ async function s2WriteActive(){
           ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),...(rd.mpUnique!=null&&{mpUnique:rd.mpUnique}),...(rd.hammerUnique!=null&&{hammerUnique:rd.hammerUnique}),...(rd.vegasUnique!=null&&{vegasUnique:rd.vegasUnique}),...(rd.skinsUnique!=null&&{skinsUnique:rd.skinsUnique}),
           ...(rd.hammerVal!=null&&{hammerVal:rd.hammerVal}),
           ...(rd.hammerSegs!=null&&{hammerSegs:rd.hammerSegs}),
+          ...(rd.mpCount!=null&&{mpCount:rd.mpCount}),
           ...(rd.hammerMode!=null&&{hammerMode:rd.hammerMode}),
           ...(rd.hammerMax!=null&&{hammerMax:rd.hammerMax}),
           ...(rd.hammerPayout!=null&&{hammerPayout:rd.hammerPayout}),
@@ -3581,6 +3582,7 @@ async function s2ReadTrip(tripId){
         ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),...(rd.mpUnique!=null&&{mpUnique:rd.mpUnique}),...(rd.hammerUnique!=null&&{hammerUnique:rd.hammerUnique}),...(rd.vegasUnique!=null&&{vegasUnique:rd.vegasUnique}),...(rd.skinsUnique!=null&&{skinsUnique:rd.skinsUnique}),
         ...(rd.hammerVal!=null&&{hammerVal:rd.hammerVal}),
         ...(rd.hammerSegs!=null&&{hammerSegs:rd.hammerSegs}),
+        ...(rd.mpCount!=null&&{mpCount:rd.mpCount}),
         ...(rd.hammerMode!=null&&{hammerMode:rd.hammerMode}),
         ...(rd.hammerMax!=null&&{hammerMax:rd.hammerMax}),
         ...(rd.hammerPayout!=null&&{hammerPayout:rd.hammerPayout}),
@@ -7269,7 +7271,8 @@ function _segFsVal(key,r,fi){
   const v=fs&&fs[key];
   return (typeof v==='number'&&v>0)?v:null;
 }
-function mpGamesForRound(r,fi){return _segFsVal('mpGames',r,fi)||WK.mpGamesPerRound[r]||WK.mpGamesDefault;}
+// v125.5: a cup round is one game of 18; otherwise the round's own count (saved on the round), then the trip's.
+function mpGamesForRound(r,fi){if(typeof _cupOwns==='function'&&_cupOwns(r))return 1;const rd=WK.rounds&&WK.rounds[r];return _segFsVal('mpGames',r,fi)||(rd&&rd.mpCount>0?rd.mpCount:0)||WK.mpGamesPerRound[r]||WK.mpGamesDefault;}
 function _mpPhase(ms){if(!ms)return'ns';if(ms.closed||ms.holesLeft===0)return'done';return'ip';}
 // A segment that BEGAN before this foursome's end hole and would have run past it.
 // _segNotPlayed covers the segment lying wholly beyond the end; this covers the one
@@ -12045,6 +12048,7 @@ function _segWriteCount(key,arrName,r,v){
     if(!Array.isArray(WK[arrName]))WK[arrName]=WK.rounds.map(()=>0);
     WK[arrName][r]=v;
     if(key==='hammerSegs')WK.rounds[r].hammerSegs=v;
+    if(key==='mpGames'){if(v>0&&v!==WK.mpGamesDefault)WK.rounds[r].mpCount=v;else delete WK.rounds[r].mpCount;}
   }else{
     const fs=_gsEnsureFs(r)[fi];
     if(v>0)fs[key]=v; else delete fs[key];
@@ -14416,7 +14420,7 @@ function _cupApply(r){
   if(rd.gameVal==null)rd.gameVal=0;if(rd.pressesOn==null)rd.pressesOn=false;if(rd.autoPressOn==null)rd.autoPressOn=false;
   if(L.fmt==='sg')rd.mpFormat='headsup';else delete rd.mpFormat;
   if(!Array.isArray(WK.mpGamesPerRound))WK.mpGamesPerRound=[];
-  WK.mpGamesPerRound[r]=1;
+  WK.mpGamesPerRound[r]=1;rd.mpCount=1;
   if(Array.isArray(rd.fsGames))rd.fsGames.forEach(function(g){if(g&&typeof g==='object'){delete g.mpGames;if(rd.independentGames)g.mpOn=true;}});
   if(!STATE.mpTeams)STATE.mpTeams=WK.rounds.map(function(){return [];});
   STATE.mpTeams[r]=STATE.roundFlights[r].map(function(_,fi){return tm[fi]||null;});
