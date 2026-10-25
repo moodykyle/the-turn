@@ -1319,6 +1319,13 @@ body.force-light .sec-hd.gs-sec{color:#13795B;}
 .cup-seg button+button{border-left:0.5px solid var(--color-border-secondary);}
 .cup-seg button.on{background:var(--color-background-secondary);color:var(--color-text-primary);}
 .cup-seg button[disabled]{opacity:.4;cursor:default;}
+/* v125.10: cup money */
+.cup-pot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 2px 6px;}
+.cup-pot b{color:var(--color-text-primary);}
+.cup-pot-ok{color:#1D9E75;font-weight:600;}.cup-pot-warn{color:#D97706;font-weight:600;}.cup-pot-over{color:#D85A30;font-weight:600;}
+.cup-payrow .cup-amt{margin-left:auto;padding-left:10px;font-size:15px;font-weight:600;color:var(--color-text-primary);white-space:nowrap;}
+.cup-winbtn{font:inherit;font-size:14px;font-weight:600;padding:8px 12px;border-radius:10px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);cursor:pointer;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#cupPaySheet .grp-sheet-inner{max-height:92vh;overflow-y:auto;overscroll-behavior:contain;}
 /* v125.9: a cup trip's look, Ryder Cup: navy picks, red section bars, navy headings by day */
 html body.cup-trip .qrw-seg .qrw-pill{background:#1F3A6B;}
 @media(prefers-color-scheme:dark){html body.cup-trip:not(.force-light) .qrw-seg .qrw-pill{background:#2C4F8F;}}
@@ -2543,7 +2550,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.9';
+const APP_VERSION='v125.11';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -14422,7 +14429,7 @@ function _cupDirty(){autoSave();s2MarkDirty(['trip']);s2WriteActive();}
 function _cupMenuSub(){
   const c=WK&&WK.cup;
   if(!c||!c.on)return 'Two teams play for points';
-  return _gtEsc((c.teams[0]&&c.teams[0].name)||'')+' vs '+_gtEsc((c.teams[1]&&c.teams[1].name)||'')+(c.stake?' · '+_m0(c.stake):'');
+  return _gtEsc((c.teams[0]&&c.teams[0].name)||'')+' vs '+_gtEsc((c.teams[1]&&c.teams[1].name)||'')+(c.entry?' · '+_m0(c.entry)+' entry':'');
 }
 function _m0(v){return '$'+(Math.round(v*100)%100?Number(v).toFixed(2):String(Math.round(v)));}
 function _cupCountsMp(){return !!(WK&&WK.cup&&WK.cup.mp!==false);}
@@ -14698,10 +14705,192 @@ function _cupSetupHtml(){
     h+='<button type="button" class="su-rdb cup-lurow" onclick="window._cupLuOpen('+r+')"><span class="su-rt"><b>'+roundLabel(r)+(rd&&rd.courseName?' · '+_gtEsc(courseDisp(rd.courseName)):'')+'</b><small>'+sub+'</small></span><span class="su-ch" aria-hidden="true">›</span></button>';
   });
   h+='</div><div class="pm-note">A match is worth 1 point, a halve ½ each. Each round\'s lineup sets who plays whom.</div>';
-  h+='<div class="sec-hd gs-sec">Money</div><div class="su-card">';
-  h+=_gsRow('Stake','Each loser pays it<br>to the winners','<div class="gs-money"><button type="button" aria-label="Less"'+dis+' onclick="window._cupStakeStep(this,-25)">−</button><span>$</span><input class="ie-num" type="number" inputmode="decimal" min="0" value="'+(c.stake||0)+'"'+dis+' onchange="window._cupSet(\'stake\',this.value)"/><button type="button" aria-label="More"'+dis+' onclick="window._cupStakeStep(this,25)">+</button></div>');
-  return h+'</div>';
+  return h+_cupMoneyHtml(ed);
 }
+// v125.10: cup money. The cup's Entry (each player puts in) funds a payout table the organizer builds; an ace or
+// albatross is paid outside the pot. WK.cup.entry (number), WK.cup.pay = [{id,kind,r,who,sc,amt,name,win}],
+// WK.cup.ace (number, 0 off). kind: 'cup' (winning team), 'ln' (low net: who 'pair' or 'player'), 'sk' (skins: sc
+// 'g' or 'n'), 'pick' (the organizer picks the winner: win = pids). r: a round id, or 'all'.
+// Money: a payout counts once it is decided. Its winners take it, split evenly on a tie, and everyone pays an even
+// share of it, so the books always balance and a payout not decided (or a skins round with no skin) costs nobody.
+// When every payout is decided, each player has paid his whole entry, less any part of the pot left unassigned.
+// v125.11: whole dollars with a thousands comma ($6,000), cents only when there are any.
+function _cupM(v){const r=Math.round((+v||0)*100)/100,a=Math.abs(r),w=Math.floor(a),c=Math.round((a-w)*100);return (r<0?'-':'')+'$'+String(w).replace(/\B(?=(\d{3})+(?!\d))/g,',')+(c?'.'+String(c).padStart(2,'0'):'');}
+function _cupPayList(){const c=WK&&WK.cup;return (c&&c.on&&Array.isArray(c.pay))?c.pay:[];}
+function _cupRi(rid){if(rid==='all')return 'all';for(let r=0;r<(WK.rounds||[]).length;r++){if(_cupRid(r)===String(rid))return r;}return null;}
+function _cupPayLabel(p){
+  if(p.kind==='cup')return 'Cup winners';
+  if(p.kind==='sk')return 'Skins';
+  if(p.kind==='pick')return (p.name&&String(p.name).trim())||'Picked winner';
+  if(p.who==='pair')return 'Two-man low net';
+  return p.r==='all'?'Overall low net':'Low net';
+}
+function _cupPaySub(p){
+  const ri=_cupRi(p.r),rl=ri==='all'?'All rounds':(ri!=null&&WK.rounds[ri]?roundLabel(ri):'No round');
+  if(p.kind==='cup'){const n=_cupCount(0)||_cupCount(1)?Math.max(_cupCount(0),_cupCount(1)):0;return 'Winning team'+(n&&p.amt?' · '+_cupM(p.amt/n)+' each':'');}
+  if(p.kind==='sk')return rl+' · '+(p.sc==='n'?'net':'gross')+' · split by skins';
+  if(p.kind==='pick'){const w=(p.win||[]).map(function(pid){const q=_cupPl(pid);return q?_cupShort(q):null;}).filter(Boolean);return rl+' · '+(w.length?w.join(', '):'winner not picked');}
+  return rl+' · '+(p.who==='pair'?'best ball pairs':'net stroke play');
+}
+function _cupPot(){const c=WK&&WK.cup;return (c&&c.on?(+c.entry||0):0)*((WK.players||[]).length);}
+function _cupPaid(){return _cupPayList().reduce(function(t,p){return t+(+p.amt||0);},0);}
+function _cupRdDone(r){
+  const off=holeOffset(r),n=roundHoleCount(r),sc=STATE.scores&&STATE.scores[r];if(!sc)return false;
+  for(let h=off;h<off+n;h++){for(let pi=0;pi<WK.players.length;pi++){if(!sc[h]||sc[h][pi]==null)return false;}}
+  return true;
+}
+function _cupPiOf(pid){return (WK.players||[]).findIndex(function(p){return p.pid===pid;});}
+// Winners of one payout: [{pis:[...], share}] where shares add to 1; null while undecided; [] when nobody wins.
+function _cupPayWinners(p){
+  const ri=_cupRi(p.r),N=WK.players.length;
+  if(p.kind==='pick'){const pis=(p.win||[]).map(_cupPiOf).filter(function(i){return i>=0;});return pis.length?pis.map(function(i){return {pis:[i],share:1/pis.length};}):null;}
+  if(p.kind==='cup'){
+    const T=_cupTotals();if(!T.n||T.done<T.n)return null;
+    if(T.pts[0]===T.pts[1]){const all=WK.players.map(function(_,i){return i;});return [{pis:all,share:1}];}
+    const sd=T.pts[0]>T.pts[1]?0:1;return [{pis:WK.players.map(function(_,i){return i;}).filter(function(i){return _cupSideOf(WK.players[i].pid)===sd;}),share:1}];
+  }
+  const rs=ri==='all'?WK.rounds.map(function(_,r){return r;}).filter(function(r){return inStandingsRound(r);}):(ri==null||!WK.rounds[ri]?[]:[ri]);
+  if(!rs.length||!rs.every(_cupRdDone))return null;
+  if(p.kind==='sk'){
+    if(ri==='all')return null;
+    const r=ri,off=holeOffset(r),n=roundHoleCount(r),won=WK.players.map(function(){return 0;});let S=0;
+    for(let h=off;h<off+n;h++){
+      const v=WK.players.map(function(_,pi){return p.sc==='n'?getNet(pi,h,r):STATE.scores[r][h][pi];});
+      const lo=Math.min.apply(null,v),who=v.map(function(x,i){return x===lo?i:-1;}).filter(function(i){return i>=0;});
+      if(who.length===1){won[who[0]]++;S++;}
+    }
+    if(!S)return [];
+    return won.map(function(k,i){return k?{pis:[i],share:k/S}:null;}).filter(Boolean);
+  }
+  // low net
+  if(p.who==='pair'){
+    if(ri==='all')return null;
+    const L=_cupLuGet(ri);if(L.fmt!=='bb')return [];
+    const off=holeOffset(ri),n=roundHoleCount(ri),pairs=[];
+    L.m.forEach(function(x){[0,1].forEach(function(sd){const pis=x[sd].map(_cupPiOf);if(pis.length===2&&pis.every(function(i){return i>=0;}))pairs.push(pis);});});
+    if(!pairs.length)return [];
+    const tot=pairs.map(function(pr){let t=0;for(let h=off;h<off+n;h++)t+=Math.min(getNet(pr[0],h,ri),getNet(pr[1],h,ri));return t;});
+    const lo=Math.min.apply(null,tot),best=pairs.filter(function(_,k){return tot[k]===lo;});
+    return best.map(function(pr){return {pis:pr,share:1/best.length};});
+  }
+  const tot=WK.players.map(function(_,pi){let t=0;rs.forEach(function(r){const off=holeOffset(r),n=roundHoleCount(r);for(let h=off;h<off+n;h++)t+=getNet(pi,h,r);});return t;});
+  const lo=Math.min.apply(null,tot),best=tot.map(function(x,i){return x===lo?i:-1;}).filter(function(i){return i>=0;});
+  return best.map(function(i){return {pis:[i],share:1/best.length};});
+}
+// Aces and albatrosses: every one counts, each other player pays the ace amount.
+function _cupAces(){
+  const c=WK&&WK.cup,amt=c&&c.on?(+c.ace||0):0,out=[];if(!amt)return out;
+  WK.rounds.forEach(function(rd,r){const off=holeOffset(r),n=roundHoleCount(r),sc=STATE.scores&&STATE.scores[r];if(!sc)return;
+    for(let h=off;h<off+n;h++){const par=(rd.course&&rd.course.holes&&rd.course.holes[h]&&rd.course.holes[h].par)||4;
+      WK.players.forEach(function(_,pi){const g=sc[h]&&sc[h][pi];if(g==null)return;if(g===1||g<=par-3)out.push({pi:pi,r:r,h:h,g:g,par:par});});}});
+  return out;
+}
+// Per player: rows {l,d,v} and a total. Entry shows as one line: his share of every payout decided so far.
+function _cupMoney(){
+  const N=(WK.players||[]).length,rows=WK.players.map(function(){return [];}),tot=WK.players.map(function(){return 0;});
+  const c=WK&&WK.cup;if(!c||!c.on||!N)return {rows:rows,tot:tot,decided:0,all:0};
+  let spent=0,decided=0;const list=_cupPayList();
+  list.forEach(function(p){
+    const amt=+p.amt||0;if(!amt)return;const w=_cupPayWinners(p);if(w===null)return;decided++;
+    if(!w.length)return;/* no winner (a skins round with no skin): nobody pays it */
+    spent+=amt;
+    w.forEach(function(g){const each=amt*g.share/g.pis.length;g.pis.forEach(function(pi){rows[pi].push({l:_cupPayLabel(p),d:_cupPaySub(p).replace(/ · split by skins$/,''),v:each});tot[pi]+=each;});});
+  });
+  if(spent){const sh=spent/N;WK.players.forEach(function(_,pi){rows[pi].push({l:'Entry',d:decided<list.filter(function(p){return +p.amt;}).length?'paid out so far':_cupM(+c.entry||0)+' each',v:-sh});tot[pi]-=sh;});}
+  const ace=+c.ace||0;
+  _cupAces().forEach(function(a){
+    const lbl=(a.g===1?'Ace':'Albatross')+', '+roundLabel(a.r)+' hole '+(a.h+1);
+    WK.players.forEach(function(_,pi){const v=pi===a.pi?ace*(N-1):-ace;rows[pi].push({l:pi===a.pi?'Your '+(a.g===1?'ace':'albatross'):(a.g===1?'Ace':'Albatross'),d:pi===a.pi?lbl:_cupShort(WK.players[a.pi])+', '+roundLabel(a.r)+' hole '+(a.h+1),v:v});tot[pi]+=v;});
+  });
+  return {rows:rows,tot:tot,decided:decided,all:list.length};
+}
+// ---- Settings: Money on the Team Cup screen ----
+function _cupMoneyHtml(ed){
+  const c=WK.cup,dis=ed?'':' disabled',N=(WK.players||[]).length,pot=_cupPot(),paid=_cupPaid(),left=pot-paid;
+  let h='<div class="sec-hd gs-sec">Money</div><div class="su-card">';
+  h+=_gsRow('Entry','Each player puts in','<div class="gs-money"><button type="button" aria-label="Less"'+dis+' onclick="window._cupEntryStep(this,-25)">−</button><span>$</span><input class="ie-num" type="number" inputmode="decimal" min="0" value="'+(+c.entry||0)+'"'+dis+' onchange="window._cupSet(\'entry\',this.value)"/><button type="button" aria-label="More"'+dis+' onclick="window._cupEntryStep(this,25)">+</button></div>');
+  h+='</div><div class="pm-meta cup-pot"><span>'+N+' players · <b>'+_cupM(pot)+'</b> in the pot</span>'
+    +(!pot&&!paid?'':left===0?'<span class="cup-pot-ok">All paid out ✓</span>':left>0?'<span class="cup-pot-warn">'+_cupM(left)+' not paid out</span>':'<span class="cup-pot-over">'+_cupM(-left)+' over the pot</span>')+'</div>';
+  h+='<div class="pm-hd hw-grp"><div class="sec-hd gs-sec">Payouts</div>'+(ed?'<span class="pm-meta co-addl" onclick="window._cupPayAdd()">+ Add</span>':'')+'</div><div class="su-card">';
+  const L=_cupPayList();
+  if(!L.length)h+='<div class="pm-empty">No payouts yet. Add the cup, low net, skins or a prize you pick.</div>';
+  L.forEach(function(p,i){h+='<button type="button" class="su-rdb cup-payrow" onclick="window._cupPayOpen('+i+')"><span class="su-rt"><b>'+_gtEsc(_cupPayLabel(p))+'</b><small>'+_cupPaySub(p)+'</small></span><span class="cup-amt">'+_cupM(+p.amt||0)+'</span><span class="su-ch" aria-hidden="true">›</span></button>';});
+  h+='</div><div class="sec-hd gs-sec">Outside the pot</div><div class="su-card">';
+  h+=_gsRow('Ace or albatross','Each other player pays,<br>every one counts','<div class="gs-money"><button type="button" aria-label="Less"'+dis+' onclick="window._cupAceStep(this,-25)">−</button><span>$</span><input class="ie-num" type="number" inputmode="decimal" min="0" value="'+(+c.ace||0)+'"'+dis+' onchange="window._cupSet(\'ace\',this.value)"/><button type="button" aria-label="More"'+dis+' onclick="window._cupAceStep(this,25)">+</button></div>');
+  h+='</div><div class="pm-note">A tie splits a payout. A tied cup splits the cup payout among everyone. Money counts once a payout is decided.</div>';
+  return h;
+}
+window._cupEntryStep=function(btn,d){if(!canEditTrip()||!WK.cup)return;const inp=btn.parentNode.querySelector('input');const v=Math.max(0,Math.round(((parseFloat(inp&&inp.value)||0)+d)*100)/100);WK.cup.entry=v;_cupDirty();_cupRefresh();};
+window._cupAceStep=function(btn,d){if(!canEditTrip()||!WK.cup)return;const inp=btn.parentNode.querySelector('input');const v=Math.max(0,Math.round(((parseFloat(inp&&inp.value)||0)+d)*100)/100);WK.cup.ace=v;_cupDirty();_cupRefresh();};
+window._cupPayAdd=function(){
+  if(!canEditTrip()||!WK.cup)return;
+  if(!Array.isArray(WK.cup.pay))WK.cup.pay=[];
+  const rs=_cupRounds();
+  WK.cup.pay.push({id:'p'+Date.now().toString(36)+WK.cup.pay.length,kind:'sk',r:rs.length?_cupRid(rs[0]):'all',who:'player',sc:'g',amt:0,name:'',win:[]});
+  _cupDirty();_cupRefresh();window._cupPayOpen(WK.cup.pay.length-1);
+};
+window._cupPayClose=function(){const ov=document.getElementById('cupPaySheet');if(ov)ov.remove();_cupRefresh();};
+window._cupPaySet=function(i,k,v){
+  if(!canEditTrip()||!WK.cup||!WK.cup.pay||!WK.cup.pay[i])return;const p=WK.cup.pay[i];
+  if(k==='amt')p.amt=Math.max(0,Math.round((parseFloat(v)||0)*100)/100);
+  else if(k==='name')p.name=String(v||'').trim().slice(0,40);
+  else if(k==='kind'){if(['cup','ln','sk','pick'].indexOf(v)<0)return;p.kind=v;}
+  else if(k==='r')p.r=String(v);
+  else if(k==='who')p.who=v==='pair'?'pair':'player';
+  else if(k==='sc')p.sc=v==='n'?'n':'g';
+  _cupDirty();
+  if(k!=='amt'&&k!=='name')window._cupPayOpen(i);
+};
+window._cupPayAmtStep=function(i,btn,d){const inp=btn.parentNode.querySelector('input');const v=Math.max(0,(parseFloat(inp&&inp.value)||0)+d);if(inp)inp.value=v;window._cupPaySet(i,'amt',v);};
+window._cupPayRemove=function(i){
+  if(!canEditTrip()||!WK.cup||!WK.cup.pay||!WK.cup.pay[i])return;
+  const p=WK.cup.pay[i];
+  _confirmSheet({icon:'ti-trash',title:'Remove '+_cupPayLabel(p)+'?',danger:true,body:'This payout comes off the list.',okLabel:'Remove',onOk:function(){WK.cup.pay.splice(i,1);_cupDirty();window._cupPayClose();}});
+};
+window._cupPayOpen=function(i){
+  const c=WK.cup,p=c&&c.pay&&c.pay[i];if(!p)return;
+  let ov=document.getElementById('cupPaySheet');
+  if(!ov){ov=document.createElement('div');ov.id='cupPaySheet';ov.className='grp-sheet-overlay';ov.onclick=function(e){if(e.target===ov)window._cupPayClose();};document.body.appendChild(ov);}
+  const ed=canEditTrip(),dis=ed?'':' disabled',rs=_cupRounds();
+  const seg=function(opts,cur,k){return ed?_gsSeg(opts,cur,'window._cupPaySet('+i+',\''+k+'\',VAL)',false):'<span class="su-fixed">'+((opts.find(function(o){return String(o[0])===String(cur);})||[0,''])[1])+'</span>';};
+  const rOpts=rs.map(function(r){return [_cupRid(r),roundLabel(r)];}).concat([['all','All']]);
+  const one=p.kind==='sk'||(p.kind==='ln'&&p.who==='pair');
+  let h='<div class="grp-sheet-inner su-sh"><div class="grp-sheet-pill"></div><div class="grp-sheet-title">'+_gtEsc(_cupPayLabel(p))+'</div><div class="su-card">';
+  h+=_gsRow('Prize','',seg([['cup','Cup'],['ln','Low net'],['sk','Skins'],['pick','Pick']],p.kind,'kind'),true);
+  h+=_gsRow('Round','',p.kind==='cup'?'':seg(rOpts,p.r,'r'),true,p.kind==='cup','The whole cup');
+  h+=_gsRow('Players',p.who==='pair'?'Best ball, a pair per team':'Each player alone',p.kind==='ln'?seg([['pair','Pairs'],['player','Players']],p.who,'who'):'',false,p.kind!=='ln','Low net only');
+  h+=_gsRow('Scoring',p.sc==='n'?'Net skins':'Gross skins',p.kind==='sk'?seg([['g','Gross'],['n','Net']],p.sc,'sc'):'',false,p.kind!=='sk','Skins only');
+  h+=_gsRow('Name','Closest to the pin, longest drive…',p.kind==='pick'?'<input class="inline-edit su-in" value="'+_gtEsc(p.name||'')+'" placeholder="Closest to the pin"'+dis+' onchange="window._cupPaySet('+i+',\'name\',this.value)"/>':'',false,p.kind!=='pick','Pick only');
+  h+=_gsRow('Winner','You pick who won',p.kind==='pick'?'<button type="button" class="cup-winbtn"'+dis+' onclick="window._cupPayWinOpen('+i+')">'+((p.win||[]).length?(p.win||[]).map(function(pid){const q=_cupPl(pid);return q?_cupShort(q):'';}).filter(Boolean).join(', '):'Pick')+' ›</button>':'',false,p.kind!=='pick','From the scores');
+  h+=_gsRow('Amount',p.kind==='cup'?'Split by the winning team':p.kind==='sk'?'Split by the skins won':'Split on a tie','<div class="gs-money"><button type="button" aria-label="Less"'+dis+' onclick="window._cupPayAmtStep('+i+',this,-25)">−</button><span>$</span><input class="ie-num" type="number" inputmode="decimal" min="0" value="'+(+p.amt||0)+'"'+dis+' onchange="window._cupPaySet('+i+',\'amt\',this.value)"/><button type="button" aria-label="More"'+dis+' onclick="window._cupPayAmtStep('+i+',this,25)">+</button></div>');
+  h+='</div>';
+  const note=p.kind==='sk'?'A skin is a hole one player wins outright across the whole field. No carryovers. A round with no skin pays nobody.'
+    :p.kind==='cup'?'The team with more points takes it, split evenly. A tied cup splits it among everyone.'
+    :p.kind==='ln'?(p.who==='pair'?'The pair with the lowest best-ball net in the round\'s lineup.':'Lowest net total for the round, or for every round with All.')
+    :'For a prize the scores can\'t settle. Split if you pick more than one.';
+  h+='<div class="pm-note">'+note+(one&&p.r==='all'?' <span class="lu-warn">Pick one round.</span>':'')+'</div>';
+  if(ed)h+='<button type="button" class="su-shrm" onclick="window._cupPayRemove('+i+')">Remove payout</button>';
+  h+='<button type="button" class="su-shdone" onclick="window._cupPayClose()">Done</button></div>';
+  ov.innerHTML=h;ov.style.display='flex';
+};
+window._cupPayWinOpen=function(i){
+  const p=WK.cup&&WK.cup.pay&&WK.cup.pay[i];if(!p||!canEditTrip())return;
+  let ov=document.getElementById('cupPickSheet');
+  if(!ov){ov=document.createElement('div');ov.id='cupPickSheet';ov.className='grp-sheet-overlay';ov.onclick=function(e){if(e.target===ov)window._cupPayWinClose(i);};document.body.appendChild(ov);}
+  const on={};(p.win||[]).forEach(function(pid){on[pid]=1;});
+  const rows=(WK.players||[]).slice().sort(function(a,b){return _plFullName(a).localeCompare(_plFullName(b),undefined,{sensitivity:'base'});}).map(function(q){const pid=String(q.pid).replace(/'/g,'');
+    return '<button type="button" class="lu-pk'+(on[q.pid]?' on':'')+'" onclick="window._cupPayWinTog('+i+',\''+pid+'\')"><span class="n">'+_gtEsc(_plFullName(q))+'</span><span class="i">'+sbHcpDisplay(q.idx)+'</span><span class="w">'+(on[q.pid]?'Winner':'')+'</span></button>';}).join('');
+  ov.innerHTML='<div class="grp-sheet-inner su-sh"><div class="grp-sheet-pill"></div><div class="grp-sheet-title">'+_gtEsc(_cupPayLabel(p))+'</div><div class="pm-note lu-pkn">Tap who won. Pick two or more to split it.</div><div class="su-card cup-list">'+rows+'</div><button type="button" class="su-shdone" onclick="window._cupPayWinClose('+i+')">Done</button></div>';
+  ov.style.display='flex';
+};
+window._cupPayWinTog=function(i,pid){
+  const p=WK.cup&&WK.cup.pay&&WK.cup.pay[i];if(!p||!canEditTrip())return;
+  const q=(WK.players||[]).find(function(x){return String(x.pid)===String(pid);});if(!q)return;
+  if(!Array.isArray(p.win))p.win=[];
+  const k=p.win.indexOf(q.pid);if(k>=0)p.win.splice(k,1);else p.win.push(q.pid);
+  _cupDirty();window._cupPayWinOpen(i);
+};
+window._cupPayWinClose=function(i){const ov=document.getElementById('cupPickSheet');if(ov)ov.remove();window._cupPayOpen(i);};
 // v125.0: cup scoring. A side is a cup team only when every player on it is on that team.
 function _cupLive(){const c=WK&&WK.cup;return !!(c&&c.on&&_cupCount(0)>0&&_cupCount(1)>0);}
 function _cupSideOfPis(pis){let s=-2;for(let k=0;k<pis.length;k++){const p=WK.players[pis[k]];if(!p)return -1;const v=_cupSideOf(p.pid);if(v<0)return -1;if(s===-2)s=v;else if(s!==v)return -1;}return s<0?-1:s;}
@@ -14805,6 +14994,8 @@ window._cupSet=function(k,v){
   if(k==='name')WK.cup.name=String(v||'').trim();
   else if(k==='team0'||k==='team1'){const t=String(v||'').trim();if(t)WK.cup.teams[k==='team0'?0:1].name=t;}
   else if(k==='stake')WK.cup.stake=Math.max(0,Math.round((parseFloat(v)||0)*100)/100);
+  else if(k==='entry')WK.cup.entry=Math.max(0,Math.round((parseFloat(v)||0)*100)/100);
+  else if(k==='ace')WK.cup.ace=Math.max(0,Math.round((parseFloat(v)||0)*100)/100);
   else if(k==='mp')WK.cup.mp=!!v;
   _cupDirty();_cupRefresh();
 };
@@ -20243,7 +20434,7 @@ function _settleNums(){
   const _awardNote=potAwardNote(_award);
 
   // Build audit per player
-  const auditGolf=WK.players.map(()=>({pot:0,mp:[],vegas:[],skins:[],razzle:[],wolf:[],hammer:[],fourball:[],grinders:[],settled:[],twos:0,total:0}));
+  const auditGolf=WK.players.map(()=>({pot:0,mp:[],vegas:[],skins:[],razzle:[],wolf:[],hammer:[],fourball:[],grinders:[],settled:[],twos:0,cup:[],total:0}));
   const _psA=potSnap();
   if(allDone&&!WK.isQuickRound){potRankData.forEach((d)=>{auditGolf[d.pi].pot=_psA?_psA.snapNet[d.pi]:_award.amts[d.pi];});}
   WK.rounds.forEach((_,r)=>{
@@ -20359,6 +20550,8 @@ function _settleNums(){
     });
   }
   auditGolf.forEach((a,i)=>{a.total=a.pot+a.mp.reduce((s,x)=>s+x.val,0)+a.vegas.reduce((s,x)=>s+x.val,0)+a.skins.reduce((s,x)=>s+x.val,0)+a.razzle.reduce((s,x)=>s+x.val,0)+a.wolf.reduce((s,x)=>s+x.val,0)+a.hammer.reduce((s,x)=>s+x.val,0)+a.fourball.reduce((s,x)=>s+x.val,0)+a.grinders.reduce((s,x)=>s+x.val,0)+a.settled.reduce((s,x)=>s+x.val,0)+a.twos+snakeNet[i]+ninesNet[i];});
+  // v125.10: the cup's payouts, entry and aces.
+  if(typeof _cupMoney==='function'){const _cm=_cupMoney();auditGolf.forEach((a,i)=>{a.cup=_cm.rows[i];a.total+=_cm.tot[i];});}
 
   const expNet=calcExpNetPerPlayer();
   const totalNet=auditGolf.map((a,i)=>a.total+expNet[i]);
@@ -20449,6 +20642,8 @@ function renderSettle(){
       if(S.includes('pot'))set.push({l:'Weekend bet',d:'settled',v:a.pot});
       else gt.push({l:'Weekend bet',v:a.pot,rows:[{l:a.pot>0?'Won the pot':a.pot<0?'Buy-in':'No change',d:'',v:a.pot}]});
     }
+    // v125.10: the cup's payouts, entry and aces, one tile.
+    if(a.cup&&a.cup.length)gt.push({l:(WK.cup&&WK.cup.name)||'Team Cup',v:a.cup.reduce((t,x)=>t+x.v,0),rows:a.cup.map(x=>({l:x.l,d:x.d,v:x.v}))});
     const mine=_expLiveList().filter(e=>e.paidBy===pi||e.owes.some(o=>o.pi===pi));
     if(mine.length){
       if(S.includes('expenses'))set.push({l:'Expenses',d:'settled',v:expNet[pi]});
