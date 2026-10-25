@@ -1324,6 +1324,21 @@ body.force-light .sec-hd.gs-sec{color:#13795B;}
 .cup-pot b{color:var(--color-text-primary);}
 .cup-pot-ok{color:#1D9E75;font-weight:600;}.cup-pot-warn{color:#D97706;font-weight:600;}.cup-pot-over{color:#D85A30;font-weight:600;}
 .cup-payrow .cup-amt{margin-left:auto;padding-left:10px;font-size:15px;font-weight:600;color:var(--color-text-primary);white-space:nowrap;}
+/* v125.13: payouts on the Games tab */
+.cpv-note{margin:0 2px 10px;}
+.cpv-hd{display:flex;align-items:baseline;gap:8px;padding:14px 16px 10px;}.cpv-hd b{font-size:17px;}.cpv-hd span{font-size:13px;color:var(--color-text-secondary);}
+.cpv-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:0.5px solid var(--color-border-tertiary);cursor:pointer;}
+.cpv-row.lead{background:var(--color-background-secondary);}
+.cpv-rk{width:30px;height:30px;border-radius:50%;border:1px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
+.cpv-rk.lead{background:#1D9E75;border-color:#1D9E75;color:#FFFFFF;}
+.cpv-nm{flex:1;min-width:0;font-size:16px;line-height:1.35;}.cpv-nm small{display:block;font-size:12px;color:var(--color-text-secondary);}
+.cpv-nm .a{color:var(--cupA);}.cpv-nm .b{color:var(--cupB);}
+.cpv-sc{text-align:right;flex-shrink:0;}.cpv-sc b{display:block;font-size:20px;font-weight:700;}.cpv-sc b.u{color:#1D9E75;}.cpv-sc small{display:block;font-size:12px;color:var(--color-text-secondary);}
+.cpv-amt{font-style:normal;font-size:13px;font-weight:700;color:#1D9E75;white-space:nowrap;}
+.cpv-ft{display:flex;justify-content:space-between;gap:10px;padding:12px 16px;background:var(--color-background-secondary);font-size:15px;border-top:0.5px solid var(--color-border-tertiary);}
+.cpv-grid{overflow-x:auto;padding:6px 10px 10px;border-top:0.5px solid var(--color-border-tertiary);}
+.cpv-grid table{border-collapse:collapse;font-size:12px;}.cpv-grid th,.cpv-grid td{padding:4px 5px;text-align:center;white-space:nowrap;}.cpv-grid td:first-child,.cpv-grid th:first-child{text-align:left;font-weight:600;}
+.cpv-grid tr.par td{color:var(--color-text-secondary);}.cpv-grid td.c{color:#1D9E75;font-weight:700;}.cpv-key{font-size:12px;color:var(--color-text-secondary);padding:6px 4px 0;}
 .cup-winbtn{font:inherit;font-size:14px;font-weight:600;padding:8px 12px;border-radius:10px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);cursor:pointer;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 #cupPaySheet .grp-sheet-inner{max-height:92vh;overflow-y:auto;overscroll-behavior:contain;}
 /* v125.9: a cup trip's look, Ryder Cup: navy picks, red section bars, navy headings by day */
@@ -2558,7 +2573,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.12';
+const APP_VERSION='v125.13';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -14899,6 +14914,90 @@ window._cupPayWinTog=function(i,pid){
   _cupDirty();window._cupPayWinOpen(i);
 };
 window._cupPayWinClose=function(i){const ov=document.getElementById('cupPickSheet');if(ov)ov.remove();window._cupPayOpen(i);};
+// v125.13: payouts on the Games tab. A cup round's payouts (low net, skins, a picked prize) each get a tile in the
+// game strip, read-only, worked out from the scores as they come in: low net pairs as a leaderboard (Four-Ball's
+// shape), low net players likewise, skins as one list for the whole field, a pick as its winner.
+function _cupPayFor(r){
+  return _cupPayList().map(function(p,i){return {p:p,i:i};}).filter(function(x){const p=x.p,ri=_cupRi(p.r);
+    if(!(+p.amt))return false;
+    if(p.kind==='ln')return p.r==='all'?inStandingsRound(r):ri===r;
+    if(p.kind==='sk'||p.kind==='pick')return ri===r;
+    return false;});
+}
+function _cupPayKey(x){return 'pay:'+(x.p.id||('i'+x.i));}
+function _cupPayShort(p){
+  if(p.kind==='sk')return 'Skins';
+  if(p.kind==='pick'){const n=_cupPayLabel(p);return n.length>16?n.slice(0,15)+'…':n;}
+  return p.r==='all'?'Overall net':'Low net';
+}
+function _cupPayPills(r){
+  return _cupPayFor(r).map(function(x){const k=_cupPayKey(x);
+    return '<button class="game-pill'+(STATE.gamesViewGame===k?' active':'')+'" onclick="switchGamesGame(\''+k+'\')">'+_gtEsc(_cupPayShort(x.p))+' <span class="cup-tag">'+_cupM(+x.p.amt||0)+'</span></button>';}).join('');
+}
+function _cupPayByKey(r,k){return _cupPayFor(r).find(function(x){return _cupPayKey(x)===k;})||null;}
+function _cupTp(v){return v===0?'E':(v>0?'+'+v:String(v));}
+function _cupPar(r,h){const c=WK.rounds[r].course;return (c&&c.holes&&c.holes[h]&&c.holes[h].par)||4;}
+function _cupNmSpan(pi){const p=WK.players[pi];if(!p)return '';const sd=_cupSideOf(p.pid);return '<span class="'+(sd===0?'a':sd===1?'b':'')+'">'+_gtEsc(displayName(pi))+'</span>';}
+function _cupPayViewHtml(r,x){
+  const p=x.p,N=WK.players.length,off=holeOffset(r),n=roundHoleCount(r),open=STATE.cupPayOpen||{};
+  let h='<div class="pm-note cpv-note">';
+  h+=p.kind==='sk'?'Payout: '+_cupM(+p.amt)+' split by skins won across the whole field ('+(p.sc==='n'?'net':'gross')+'). No carryovers.'
+    :p.kind==='pick'?'Payout: '+_cupM(+p.amt)+' to the winner you pick in Settings, Team Cup.'
+    :p.who==='pair'?'Payout: '+_cupM(+p.amt)+' to the low best-ball pair, split on a tie. Worked out from the scores.'
+    :'Payout: '+_cupM(+p.amt)+' to the lowest net '+(p.r==='all'?'total across every round':'score this round')+', split on a tie.';
+  h+='</div><div class="section-card cpv">';
+  if(p.kind==='pick'){
+    const w=(p.win||[]).map(_cupPiOf).filter(function(i){return i>=0;});
+    h+='<div class="cpv-hd"><b>'+_gtEsc(_cupPayLabel(p))+'</b><span>'+roundLabel(r)+'</span></div>';
+    if(!w.length)h+='<div class="cpv-ft"><span>Not picked yet</span></div>';
+    else w.forEach(function(pi){h+='<div class="cpv-row"><span class="cpv-rk lead">1</span><span class="cpv-nm">'+_cupNmSpan(pi)+'</span><span class="cpv-amt">'+_cupM((+p.amt)/w.length)+'</span></div>';});
+    return h+'</div>';
+  }
+  if(p.kind==='sk'){
+    const won=WK.players.map(function(){return [];});let S=0,thru=0;
+    for(let hh=off;hh<off+n;hh++){
+      const v=WK.players.map(function(_,pi){return p.sc==='n'?getNet(pi,hh,r):STATE.scores[r][hh][pi];});
+      if(v.some(function(s){return s==null;}))continue;thru=hh-off+1;
+      const lo=Math.min.apply(null,v),who=v.map(function(s,i){return s===lo?i:-1;}).filter(function(i){return i>=0;});
+      if(who.length===1){won[who[0]].push(hh+1);S++;}
+    }
+    h+='<div class="cpv-hd"><b>Skins</b><span>'+roundLabel(r)+' · '+(p.sc==='n'?'net':'gross')+' · whole field</span></div>';
+    const rows=won.map(function(hs,pi){return {pi:pi,hs:hs};}).filter(function(o){return o.hs.length;}).sort(function(a,b){return b.hs.length-a.hs.length;});
+    rows.forEach(function(o){h+='<div class="cpv-row"><span class="cpv-rk">'+o.hs.length+'</span><span class="cpv-nm">'+_cupNmSpan(o.pi)+'<small>Hole'+(o.hs.length>1?'s ':' ')+o.hs.join(', ')+'</small></span><span class="cpv-amt">'+_cupM((+p.amt)*o.hs.length/S)+'</span></div>';});
+    h+='<div class="cpv-ft"><span>'+(S?S+(S===1?' skin':' skins'):'No skins yet')+(thru?' thru '+(thru+off):'')+'</span>'+(S?'<span>'+_cupM((+p.amt)/S)+' a skin</span>':'')+'</div>';
+    return h+'</div>';
+  }
+  // low net: pairs from the round's lineup, or players
+  let ents=[];
+  if(p.who==='pair'){
+    const L=_cupLuGet(r);
+    if(L.fmt==='bb')L.m.forEach(function(m){[0,1].forEach(function(sd){const pis=m[sd].map(_cupPiOf);if(pis.length===2&&pis.every(function(i){return i>=0;}))ents.push({pis:pis});});});
+    ents.forEach(function(e){let tp=0,th=0;for(let hh=off;hh<off+n;hh++){const a=getNet(e.pis[0],hh,r),b=getNet(e.pis[1],hh,r);const v=[a,b].filter(function(s){return s!=null;});if(!v.length)continue;tp+=Math.min.apply(null,v)-_cupPar(r,hh);th++;}e.tp=tp;e.th=th;});
+  }else{
+    const rs=p.r==='all'?WK.rounds.map(function(_,q){return q;}).filter(function(q){return inStandingsRound(q);}):[r];
+    ents=WK.players.map(function(_,pi){let tp=0,th=0;rs.forEach(function(q){const o=holeOffset(q),k=roundHoleCount(q);for(let hh=o;hh<o+k;hh++){const s=getNet(pi,hh,q);if(s==null)continue;tp+=s-_cupPar(q,hh);th++;}});return {pis:[pi],tp:tp,th:th};});
+  }
+  const live=ents.filter(function(e){return e.th>0;}).sort(function(a,b){return a.tp-b.tp||b.th-a.th;}).concat(ents.filter(function(e){return !e.th;}));
+  live.forEach(function(e,k){e.rank=k&&live[k-1].th&&e.th&&live[k-1].tp===e.tp?live[k-1].rank:k+1;});
+  live.forEach(function(e){e.tie=live.filter(function(o){return o.th&&o.rank===e.rank;}).length>1;});
+  const lead=live.filter(function(e){return e.th&&e.rank===1;});
+  h+='<div class="cpv-hd"><b>'+_gtEsc(_cupPayLabel(p))+'</b><span>'+(p.who==='pair'?live.length+' pairs · ':'')+(p.r==='all'?'All rounds':roundLabel(r))+'</span></div>';
+  if(!live.length)h+='<div class="cpv-ft"><span>'+(p.who==='pair'?'Set this round\'s best-ball lineup first.':'No players.')+'</span></div>';
+  const done=_cupPayWinners(p)!==null;
+  live.forEach(function(e,k){
+    const key=r+':'+(p.id||x.i)+':'+k,isOpen=!!open[key],isLead=e.th&&e.rank===1;
+    h+='<div class="cpv-row'+(isLead?' lead':'')+'" onclick="window._cupPayTog(\''+key+'\')"><span class="cpv-rk'+(isLead?' lead':'')+'">'+(e.th?(e.tie?'T':'')+e.rank:'–')+'</span><span class="cpv-nm">'+e.pis.map(_cupNmSpan).join('<br>')+'</span>'
+      +'<span class="cpv-sc"><b class="'+(e.th&&e.tp<0?'u':'')+'">'+(e.th?_cupTp(e.tp):'–')+'</b><small>'+(e.th?(e.th>=n&&p.r!=='all'?'F':'thru '+e.th):'not started')+'</small>'+(isLead?'<i class="cpv-amt">'+(done?'Won ':'')+_cupM((+p.amt)/lead.length)+'</i>':'')+'</span></div>';
+    if(isOpen&&p.who==='pair'){
+      let g='<div class="cpv-grid"><table><tr><th>Hole</th>';for(let hh=off;hh<off+n;hh++)g+='<th>'+(hh+1)+'</th>';g+='</tr><tr class="par"><td>Par</td>';for(let hh=off;hh<off+n;hh++)g+='<td>'+_cupPar(r,hh)+'</td>';g+='</tr>';
+      e.pis.forEach(function(pi,j){const o=e.pis[1-j];g+='<tr><td>'+_gtEsc(displayName(pi))+'</td>';for(let hh=off;hh<off+n;hh++){const a=getNet(pi,hh,r),b=getNet(o,hh,r);g+='<td'+(a!=null&&(b==null||a<=b)?' class="c"':'')+'>'+(a==null?'':a)+'</td>';}g+='</tr>';});
+      g+='</table><div class="cpv-key">Net scores. Green is the score that counts.</div></div>';h+=g;
+    }
+  });
+  if(lead.length&&live.length>1){const nx=live.find(function(e){return e.th&&e.rank>1;});if(nx)h+='<div class="cpv-ft"><span>'+(lead.length>1?lead.length+' tied for the lead':'Leads by '+(nx.tp-lead[0].tp))+'</span><span>'+_cupM(+p.amt)+'</span></div>';}
+  return h+'</div>';
+}
+window._cupPayTog=function(key){if(!STATE.cupPayOpen)STATE.cupPayOpen={};STATE.cupPayOpen[key]=!STATE.cupPayOpen[key];renderGamesContent();};
 // v125.0: cup scoring. A side is a cup team only when every player on it is on that team.
 function _cupLive(){const c=WK&&WK.cup;return !!(c&&c.on&&_cupCount(0)>0&&_cupCount(1)>0);}
 function _cupSideOfPis(pis){let s=-2;for(let k=0;k<pis.length;k++){const p=WK.players[pis[k]];if(!p)return -1;const v=_cupSideOf(p.pid);if(v<0)return -1;if(s===-2)s=v;else if(s!==v)return -1;}return s<0?-1:s;}
@@ -18289,6 +18388,8 @@ function renderGamesTab(){
   const gameSel=document.getElementById('gamesGameSel');
   _cupStrip(gameSel);
   if(activeGames.length===0){
+    // v125.13: a round with no games still shows its payouts.
+    if(typeof _cupPayFor==='function'&&WK.cup&&WK.cup.on&&_cupPayFor(r).length){if(!_cupPayByKey(r,STATE.gamesViewGame))STATE.gamesViewGame=_cupPayKey(_cupPayFor(r)[0]);gameSel.innerHTML=_cupPayPills(r)+(canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+ Add Game</button>':'');renderGamesContent();return;}
     gameSel.innerHTML=canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+ Add Game</button>':'';
     // "No games yet for this round" is false whenever another lane HAS games: F1 could be playing
     // Wolf and F2 Skins, and the shared lane would still say the round had none. Say what is true,
@@ -18315,9 +18416,9 @@ function renderGamesTab(){
     return;
   }
   if(!STATE.gamesViewGame||!activeGames.find(g=>g.id===STATE.gamesViewGame)){
-    STATE.gamesViewGame=activeGames[0].id;
+    if(!(typeof _cupPayByKey==='function'&&_cupPayByKey(r,STATE.gamesViewGame)))STATE.gamesViewGame=activeGames[0].id;
   }
-  gameSel.innerHTML=activeGames.map(def=>`<button class="game-pill${def.id===STATE.gamesViewGame?' active':''}" onclick="switchGamesGame('${def.id}')">${def.label}${(def.id==='mp'&&_cupLive()&&_cupCountsMp()&&inStandingsRound(r))?' <span class="cup-tag">Cup</span>':''}${(_curLane!=='both'&&_gsIsShared(def,r))?' <span class=\"gp-all\">ALL</span>':''}</button>`).join('')+(canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+ Add</button>':'');
+  gameSel.innerHTML=activeGames.map(def=>`<button class="game-pill${def.id===STATE.gamesViewGame?' active':''}" onclick="switchGamesGame('${def.id}')">${def.label}${(def.id==='mp'&&_cupLive()&&_cupCountsMp()&&inStandingsRound(r))?' <span class="cup-tag">Cup</span>':''}${(_curLane!=='both'&&_gsIsShared(def,r))?' <span class=\"gp-all\">ALL</span>':''}</button>`).join('')+(typeof _cupPayPills==='function'&&WK.cup&&WK.cup.on?_cupPayPills(r):'')+(canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+ Add</button>':'');
   renderGamesContent();
 }
 // Four-Ball was the eighth game and the only one with no view key, so its round render
@@ -18344,6 +18445,8 @@ function renderGamesContent(){
   const g=STATE.gamesViewGame;
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
   const def=GAME_DEFS.find(d=>d.id===g);
+  // v125.13: a payout's own view.
+  if(typeof g==='string'&&g.indexOf('pay:')===0&&typeof _cupPayByKey==='function'){const _px=_cupPayByKey(r,g);if(_px){const _nn0=document.getElementById('gamesNetNote');if(_nn0)_nn0.innerHTML='';document.getElementById('gamesContent').innerHTML=_cupPayViewHtml(r,_px);return;}}
   // The stroke baseline for THE GAME YOU ARE LOOKING AT. It has to be per game: a foursome
   // running Wolf and a cross-group Four-Ball has two different low men live at once, so a
   // single line at the top of the lane would be a lie. See gameNetNote.
