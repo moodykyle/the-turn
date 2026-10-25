@@ -749,6 +749,12 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
 #gamesGameWrap.more #gamesGameSel{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 72px),transparent 100%);mask-image:linear-gradient(to right,#000 calc(100% - 72px),transparent 100%);padding-right:44px!important;}
 .gs-more{display:none;position:absolute;right:0;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font:inherit;font-size:20px;line-height:1;padding:0 0 2px 1px;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:pointer;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
 #gamesGameWrap.more .gs-more{display:flex;}
+/* v125.15: the arrow back, at the left edge, once the tiles are scrolled */
+.gs-more.gs-back{right:auto;left:0;padding:0 1px 2px 0;}
+#gamesGameWrap .gs-more.gs-back{display:none;}
+#gamesGameWrap.back .gs-more.gs-back{display:flex;}
+#gamesGameWrap.back #gamesGameSel{-webkit-mask-image:linear-gradient(to right,transparent 0,#000 72px,#000 calc(100% - 22px),transparent 100%);mask-image:linear-gradient(to right,transparent 0,#000 72px,#000 calc(100% - 22px),transparent 100%);}
+#gamesGameWrap.back.more #gamesGameSel{-webkit-mask-image:linear-gradient(to right,transparent 0,#000 72px,#000 calc(100% - 72px),transparent 100%);mask-image:linear-gradient(to right,transparent 0,#000 72px,#000 calc(100% - 72px),transparent 100%);}
 /* v125.14: a foursome's cup rows */
 .mpk.cpl-hid{display:none;}
 .rc-row.cpl-open{margin-bottom:0;border-radius:10px 10px 0 0;}
@@ -2289,7 +2295,7 @@ body.force-light .lp-view,body.force-light .lp-you{color:#13795B;}body.force-lig
     <div id="view-games" style="display:none" class="view">
       <div id="gamesRdSel" class="rd-sel" style="display:none"></div>
       <div id="gamesLaneBar" style="margin-bottom:0.6rem"></div>
-      <div id="gamesGameWrap"><div id="gamesGameSel" style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-right:14px"></div><button type="button" id="gamesGameMore" class="gs-more" aria-label="More games" onclick="window._gsStripMore()">›</button></div>
+      <div id="gamesGameWrap"><div id="gamesGameSel" style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-right:14px"></div><button type="button" id="gamesGameBack" class="gs-more gs-back" aria-label="Earlier games" onclick="window._gsStripBack()">‹</button><button type="button" id="gamesGameMore" class="gs-more" aria-label="More games" onclick="window._gsStripMore()">›</button></div>
       <div id="gamesNetNote"></div>
 <div id="gamesContent"></div>
     </div>
@@ -2584,7 +2590,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.14';
+const APP_VERSION='v125.15';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -15050,8 +15056,10 @@ window._cupLaneTog=function(key){if(!STATE.cupLaneOpen)STATE.cupLaneOpen={};STAT
 function _gsStripSync(){
   const s=document.getElementById('gamesGameSel'),w=document.getElementById('gamesGameWrap');if(!s||!w)return;
   w.classList.toggle('more',s.scrollWidth-s.clientWidth-s.scrollLeft>4);
+  w.classList.toggle('back',s.scrollLeft>4);
   if(!s.dataset.sync){s.dataset.sync='1';s.addEventListener('scroll',_gsStripSync,{passive:true});window.addEventListener('resize',_gsStripSync);}
 }
+window._gsStripBack=function(){const s=document.getElementById('gamesGameSel');if(!s)return;try{s.scrollBy({left:-Math.max(120,s.clientWidth*0.7),behavior:'smooth'});}catch(e){s.scrollLeft-=Math.max(120,s.clientWidth*0.7);}setTimeout(_gsStripSync,350);};
 window._gsStripMore=function(){const s=document.getElementById('gamesGameSel');if(!s)return;try{s.scrollBy({left:Math.max(120,s.clientWidth*0.7),behavior:'smooth'});}catch(e){s.scrollLeft+=Math.max(120,s.clientWidth*0.7);}setTimeout(_gsStripSync,350);};
 // v125.0: cup scoring. A side is a cup team only when every player on it is on that team.
 function _cupLive(){const c=WK&&WK.cup;return !!(c&&c.on&&_cupCount(0)>0&&_cupCount(1)>0);}
