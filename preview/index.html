@@ -743,6 +743,17 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
 }
 .game-pill.add-pill:active{background:#0F6E56;}
 #gamesGameSel::-webkit-scrollbar{display:none;}
+/* v125.14: the strip's arrow, centred on the tiles, over a fade, only while more sit to the right */
+#gamesGameWrap{position:relative;margin-bottom:0.75rem;}
+#gamesGameSel{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 22px),transparent 100%);mask-image:linear-gradient(to right,#000 calc(100% - 22px),transparent 100%);}
+#gamesGameWrap.more #gamesGameSel{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 72px),transparent 100%);mask-image:linear-gradient(to right,#000 calc(100% - 72px),transparent 100%);padding-right:44px!important;}
+.gs-more{display:none;position:absolute;right:0;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font:inherit;font-size:20px;line-height:1;padding:0 0 2px 1px;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:pointer;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
+#gamesGameWrap.more .gs-more{display:flex;}
+/* v125.14: a foursome's cup rows */
+.mpk.cpl-hid{display:none;}
+.rc-row.cpl-open{margin-bottom:0;border-radius:10px 10px 0 0;}
+.mpk.cpl-holes{margin-top:0;border-top:0;border-radius:0 0 10px 10px;margin-bottom:8px;}
+.cpl-a{color:var(--cupA);font-weight:600;}.cpl-b{color:var(--cupB);font-weight:600;}
 #gamesGameSel .game-pill{flex:1 0 auto;min-width:0;}
 #gamesGameSel .game-pill.add-pill{flex:0 0 auto;}
 
@@ -2278,7 +2289,7 @@ body.force-light .lp-view,body.force-light .lp-you{color:#13795B;}body.force-lig
     <div id="view-games" style="display:none" class="view">
       <div id="gamesRdSel" class="rd-sel" style="display:none"></div>
       <div id="gamesLaneBar" style="margin-bottom:0.6rem"></div>
-      <div id="gamesGameSel" style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-right:14px;-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 22px),transparent 100%);mask-image:linear-gradient(to right,#000 calc(100% - 22px),transparent 100%);margin-bottom:0.75rem"></div>
+      <div id="gamesGameWrap"><div id="gamesGameSel" style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-right:14px"></div><button type="button" id="gamesGameMore" class="gs-more" aria-label="More games" onclick="window._gsStripMore()">›</button></div>
       <div id="gamesNetNote"></div>
 <div id="gamesContent"></div>
     </div>
@@ -2573,7 +2584,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.13';
+const APP_VERSION='v125.14';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -14621,6 +14632,7 @@ function _cupDressGames(){
     if(m){fi=+m[1];k=0;continue;}
     if(c.classList&&c.classList.contains('mpk')){_cupDress(c,_cupNames(r,fi),{box:false,fi:fi,k:k,r:r,hu:isHeadsUp(r)});k++;}
   }
+  if(!_all&&typeof _cupLaneDress==='function')_cupLaneDress(el,r,(STATE.mpViewFlight!=null&&STATE.mpViewFlight>=0)?STATE.mpViewFlight:0);
   if(_cupLive()&&_all){const T=_cupTotals(),L=_cupLuGet(r),d=document.createElement('div');d.innerHTML=_cupBandHtml(T,L.fmt==='sg'?'Singles':'Best ball',T.n?_cupPts(T.toWin)+'<br>to win':'')+_cupProjHtml(T);while(d.lastChild)el.insertBefore(d.lastChild,el.firstChild);}
 }
 function _cupLuFull(L){return L.m.every(function(x){return x[0].concat(x[1]).every(function(v){return v!=null;});});}
@@ -14998,6 +15010,49 @@ function _cupPayViewHtml(r,x){
   return h+'</div>';
 }
 window._cupPayTog=function(key){if(!STATE.cupPayOpen)STATE.cupPayOpen={};STATE.cupPayOpen[key]=!STATE.cupPayOpen[key];renderGamesContent();};
+// v125.14: a foursome's tab in a cup round shows its matches as the cup rows All shows (Kyle, 25 Oct: "why can't the
+// F2 view be the same as the All tab? Showing just that foursome with the same tile that you can click?"). A row opens
+// its holes underneath. Only when no match on the tab carries money (stake or presses); otherwise the cards stay.
+function _cupLaneMoney(r,fi,m){const st=+roundValFs('gameVal',r,fi,WK.gameVal)||0;let pr=0;try{pr=getPresses(r,fi,m.si,isHeadsUp(r)?m.mi:undefined).length;}catch(e){}return st>0||pr>0;}
+function _cupLaneHoles(r,fi,m){
+  const hu=isHeadsUp(r),seg=getSegments(mpGamesForRound(r,fi),roundHoleCount(r))[m.si],off=holeOffset(r),end=Math.max(seg.start,Math.min(seg.end,fsHoleCount(r,fi)));
+  const tn=function(sd){return _gtEsc((WK.cup.teams[sd]||{}).name||'');},tc=function(sd){return sd===0?'a':'b';};
+  let pA=0,pB=0,closed=false,h='';
+  for(let x=seg.start;x<seg.end;x++){
+    if(!closed&&Math.abs(pA-pB)>end-x)closed=true;
+    const res=x<end?(hu?calcMPHU(x+off,r,fi,m.mi):calcMP(x+off,r,fi)):null;
+    if(!res){h+='<div class="mpk-hr"><span class="hn">'+(x+off+1)+'</span><span>-</span><span></span><span></span></div>';continue;}
+    let w;
+    if(closed)w='<span class="q">'+(res.halved?'Halved':(res.aWins?tn(m.sa):tn(m.sb)))+'</span>';
+    else{if(res.aWins)pA++;else if(res.halved){pA+=0.5;pB+=0.5;}else pB++;
+      w=res.halved?'<span class="q">Halved</span>':'<span class="cpl-'+(res.aWins?tc(m.sa):tc(m.sb))+'">'+(res.aWins?tn(m.sa):tn(m.sb))+'</span>';}
+    const up=pA-pB,st=closed?'<span class="q">closed out</span>':up===0?'<span style="color:var(--color-text-secondary)">All square</span>':'<span class="cpl-'+(up>0?tc(m.sa):tc(m.sb))+'">'+(up>0?tn(m.sa):tn(m.sb))+' '+Math.abs(up)+' up</span>';
+    h+='<div class="mpk-hr"><span class="hn">'+(x+off+1)+'</span><span>'+res.bestA+' vs '+res.bestB+'</span><span>'+st+'</span><span class="w">'+w+'</span></div>';
+  }
+  return h;
+}
+function _cupLaneDress(el,r,fi){
+  const ms=_cupMatches(r).filter(function(m){return m.fi===fi;});
+  if(!ms.length||ms.some(function(m){return _cupLaneMoney(r,fi,m);}))return false;
+  const cards=[...el.querySelectorAll('.mpk')];if(!cards.length)return false;
+  const open=STATE.cupLaneOpen||{};
+  let h='<div class="cpl">';
+  ms.forEach(function(m){const key=r+':'+fi+':'+m.si+':'+(m.mi==null?0:m.mi),o=!!open[key];
+    h+=_cupRowHtml(m,"window._cupLaneTog('"+key+"')").replace('class="rc-row','class="rc-row'+(o?' cpl-open':''));
+    if(o)h+='<div class="section-card mpk cpl-holes"><div class="mpk-bet cup-holes">'+_cupLaneHoles(r,fi,m)+'</div></div>';});
+  h+='<div class="pm-note rc-note">Tap '+(ms.length>1?'a':'the')+' match for its holes.</div></div>';
+  const d=document.createElement('div');d.innerHTML=h;cards[0].parentNode.insertBefore(d.firstChild,cards[0]);
+  cards.forEach(function(c){c.classList.add('cpl-hid');});
+  return true;
+}
+window._cupLaneTog=function(key){if(!STATE.cupLaneOpen)STATE.cupLaneOpen={};STATE.cupLaneOpen[key]=!STATE.cupLaneOpen[key];renderGamesContent();};
+// v125.14: the game strip's arrow. Shown while more tiles sit off to the right; a tap scrolls on.
+function _gsStripSync(){
+  const s=document.getElementById('gamesGameSel'),w=document.getElementById('gamesGameWrap');if(!s||!w)return;
+  w.classList.toggle('more',s.scrollWidth-s.clientWidth-s.scrollLeft>4);
+  if(!s.dataset.sync){s.dataset.sync='1';s.addEventListener('scroll',_gsStripSync,{passive:true});window.addEventListener('resize',_gsStripSync);}
+}
+window._gsStripMore=function(){const s=document.getElementById('gamesGameSel');if(!s)return;try{s.scrollBy({left:Math.max(120,s.clientWidth*0.7),behavior:'smooth'});}catch(e){s.scrollLeft+=Math.max(120,s.clientWidth*0.7);}setTimeout(_gsStripSync,350);};
 // v125.0: cup scoring. A side is a cup team only when every player on it is on that team.
 function _cupLive(){const c=WK&&WK.cup;return !!(c&&c.on&&_cupCount(0)>0&&_cupCount(1)>0);}
 function _cupSideOfPis(pis){let s=-2;for(let k=0;k<pis.length;k++){const p=WK.players[pis[k]];if(!p)return -1;const v=_cupSideOf(p.pid);if(v<0)return -1;if(s===-2)s=v;else if(s!==v)return -1;}return s<0?-1:s;}
@@ -15056,14 +15111,14 @@ function _cupBoardHtml(){
   const won=T.pts[0]>=T.toWin?0:T.pts[1]>=T.toWin?1:-1,left=T.n-T.done;
   const _live=T.per.some(function(x){return x.ms.some(function(m){return m.st!=='notstarted';});});
   const meta=won>=0?'Team '+tn(won)+' wins the cup':(_live?left+' to play':(T.n?'Not started':''));
-  let h='<div class="pm-hd"><div class="sec-hd gs-sec">'+_gtEsc(c.name||WK.name||'Team Cup')+'</div><span class="pm-meta">'+meta+'</span></div>';
+  let h='<div class="pm-hd"><div class="sec-hd">'+_gtEsc(c.name||WK.name||'Team Cup')+'</div><span class="pm-meta">'+meta+'</span></div>';
   h+=_cupBandHtml(T,T.n?'of '+T.n:'',T.n?_cupPts(T.toWin)+'<br>to win':'');
   h+=_cupProjHtml(T);
   if(!T.n)return h+'<div class="pm-note">Matches count once the lineups are set in Settings, Team Cup.</div>';
   let pick=STATE.cupRd;
   const has=T.per.filter(function(x){return x.ms.length;});
   if(!has.some(function(x){return x.r===pick;})){const live=has.filter(function(x){return x.ms.some(function(m){return m.st!=='notstarted';});});pick=(live.length?live[live.length-1]:has[0]).r;}
-  h+='<div class="pm-hd hw-grp"><div class="sec-hd gs-sec">By round</div></div><div class="su-card">';
+  h+='<div class="pm-hd hw-grp"><div class="sec-hd">By round</div></div><div class="su-card">';
   T.per.forEach(function(x){
     const rd=WK.rounds[x.r],nm=x.ms.length,started=x.ms.some(function(m){return m.st!=='notstarted';});
     const fmt=isHeadsUp(x.r)?'Singles':'Best ball';
@@ -15074,7 +15129,7 @@ function _cupBoardHtml(){
   h+='</div>';
   const P=T.per.find(function(x){return x.r===pick;});
   if(P&&P.ms.length){
-    h+='<div class="pm-hd hw-grp"><div class="sec-hd gs-sec">'+roundLabel(pick)+' matches</div></div>';
+    h+='<div class="pm-hd hw-grp"><div class="sec-hd">'+roundLabel(pick)+' matches</div></div>';
     P.ms.forEach(function(m){h+=_cupRowHtml(m,'');});
   }
   return h+'<div class="pm-hd hw-grp"></div>';
@@ -15085,7 +15140,7 @@ function _cupStrip(sel){
   let b=document.getElementById('cupStrip');
   const _gr=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
   if(!_cupLive()||_cupOwns(_gr)){if(b)b.remove();return;}
-  if(!b){b=document.createElement('button');b.type='button';b.id='cupStrip';b.className='cup-strip';b.onclick=function(){window.scrollTo(0,0);setView('board');};sel.parentNode.insertBefore(b,sel);}
+  if(!b){b=document.createElement('button');b.type='button';b.id='cupStrip';b.className='cup-strip';b.onclick=function(){window.scrollTo(0,0);setView('board');};const _an=(sel.parentNode&&sel.parentNode.id==='gamesGameWrap')?sel.parentNode:sel;_an.parentNode.insertBefore(b,_an);}
   const c=WK.cup,T=_cupTotals();
   b.innerHTML='<i class="ti ti-trophy" aria-hidden="true"></i><span class="n">'+_gtEsc(c.name||WK.name||'Team Cup')+'</span><span class="sc"><b class="a">'+_gtEsc(c.teams[0].name)+' '+_cupPts(T.pts[0])+'</b><b class="b">'+_gtEsc(c.teams[1].name)+' '+_cupPts(T.pts[1])+'</b></span><span class="ch" aria-hidden="true">›</span>';
 }
@@ -18420,6 +18475,7 @@ function renderGamesTab(){
   }
   gameSel.innerHTML=activeGames.map(def=>`<button class="game-pill${def.id===STATE.gamesViewGame?' active':''}" onclick="switchGamesGame('${def.id}')">${def.label}${(def.id==='mp'&&_cupLive()&&_cupCountsMp()&&inStandingsRound(r))?' <span class="cup-tag">Cup</span>':''}${(_curLane!=='both'&&_gsIsShared(def,r))?' <span class=\"gp-all\">ALL</span>':''}</button>`).join('')+(typeof _cupPayPills==='function'&&WK.cup&&WK.cup.on?_cupPayPills(r):'')+(canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+ Add</button>':'');
   renderGamesContent();
+  if(typeof _gsStripSync==='function')_gsStripSync();
 }
 // Four-Ball was the eighth game and the only one with no view key, so its round render
 // showed every pot on every lane while the strokes banner directly above it was already
