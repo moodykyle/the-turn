@@ -1390,6 +1390,27 @@ body.force-dark .stroke-tag.stroke-yes{background:#1D9E75;color:#04241A;}
 html body.cup-trip.force-light .stroke-tag.stroke-yes{background:#1F3A6B;color:#FFFFFF;}
 @media(prefers-color-scheme:dark){html body.cup-trip:not(.force-light) .stroke-tag.stroke-yes{background:#9DB7EA;color:#0B1220;}}
 html body.cup-trip.force-dark .stroke-tag.stroke-yes{background:#9DB7EA;color:#0B1220;}
+/* v125.20: the main buttons are solid (Kyle: "more distinguishable"), green, navy on a cup trip */
+.act-save{background:#13795B;border-color:#13795B;color:#FFFFFF;font-weight:700;}
+.fs-launch-pad .lp-start.lp-primary.lp-off{background:transparent;border:1px dashed var(--color-border-secondary);color:var(--color-text-tertiary);font-size:14px;font-weight:500;}
+@media(prefers-color-scheme:light){html body.cup-trip:not(.force-dark) .act-save,html body.cup-trip:not(.force-dark) .fs-launch-pad .lp-primary:not(.lp-off){background:#1F3A6B;border-color:#1F3A6B;color:#FFFFFF;}}
+html body.cup-trip.force-light .act-save,html body.cup-trip.force-light .fs-launch-pad .lp-primary:not(.lp-off){background:#1F3A6B;border-color:#1F3A6B;color:#FFFFFF;}
+@media(prefers-color-scheme:dark){html body.cup-trip:not(.force-light) .act-save,html body.cup-trip:not(.force-light) .fs-launch-pad .lp-primary:not(.lp-off){background:#2C4F8F;border-color:#2C4F8F;color:#FFFFFF;}}
+html body.cup-trip.force-dark .act-save,html body.cup-trip.force-dark .fs-launch-pad .lp-primary:not(.lp-off){background:#2C4F8F;border-color:#2C4F8F;color:#FFFFFF;}
+@media(prefers-color-scheme:light){html body.cup-trip:not(.force-dark) .fs-launch-pad .lp-fs.lp-sel{border-color:#1F3A6B;background:rgba(31,58,107,0.10);}}
+html body.cup-trip.force-light .fs-launch-pad .lp-fs.lp-sel{border-color:#1F3A6B;background:rgba(31,58,107,0.10);}
+@media(prefers-color-scheme:dark){html body.cup-trip:not(.force-light) .fs-launch-pad .lp-fs.lp-sel{border-color:#9DB7EA;background:rgba(157,183,234,0.14);}}
+html body.cup-trip.force-dark .fs-launch-pad .lp-fs.lp-sel{border-color:#9DB7EA;background:rgba(157,183,234,0.14);}
+@media(prefers-color-scheme:light){html body.cup-trip:not(.force-dark) .lp-sel .lp-dot{border-color:#1F3A6B;}}
+html body.cup-trip.force-light .lp-sel .lp-dot{border-color:#1F3A6B;}
+@media(prefers-color-scheme:dark){html body.cup-trip:not(.force-light) .lp-sel .lp-dot{border-color:#9DB7EA;}}
+html body.cup-trip.force-dark .lp-sel .lp-dot{border-color:#9DB7EA;}
+@media(prefers-color-scheme:light){html body.cup-trip:not(.force-dark) .lp-sel .lp-dot::after{background:#1F3A6B;}}
+html body.cup-trip.force-light .lp-sel .lp-dot::after{background:#1F3A6B;}
+@media(prefers-color-scheme:dark){html body.cup-trip:not(.force-light) .lp-sel .lp-dot::after{background:#9DB7EA;}}
+html body.cup-trip.force-dark .lp-sel .lp-dot::after{background:#9DB7EA;}
+/* v125.20: TEAM over each name on the cup band */
+.rc-t span .rc-tl{display:block;font-style:normal;font-size:9px;font-weight:600;letter-spacing:.12em;opacity:.75;margin-bottom:1px;}
 /* v125.18: a picked prize's row on its Games tile */
 .cpv-pk{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;border-top:0.5px solid var(--color-border-tertiary);font-size:15px;color:var(--color-text-secondary);cursor:pointer;}
 .cpv-pk b{font-weight:600;color:#1F3A6B;white-space:nowrap;}
@@ -2646,7 +2667,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.19';
+const APP_VERSION='v125.20';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -12047,7 +12068,9 @@ function _launchPadHtml(r){
   // One button, the same place for one foursome or several. Several name the foursome.
   var nm=multi&&fi>=0?' Foursome '+(fi+1):'';
   if(fi<0){
-    h+='<div class="lp-start fs-pick-opt lp-primary lp-off">'+pen+'Start scoring</div>';
+    // v125.20: say what the button will do. A finished round has nothing left to score.
+    var _allDone=fl.length>0&&fl.every(function(_,g){return isFlightLocked(r,g)||_fsAllScored(r,g);});
+    h+='<div class="lp-start fs-pick-opt lp-primary lp-off">'+(_allDone?'Pick a foursome to view its card':'Pick a foursome to start scoring')+'</div>';
   } else if(mode==='score'||mode==='mine'){
     h+='<div class="lp-start fs-pick-opt lp-primary" onclick="window._lpGo('+fi+',\'score\')">'+pen+'Start scoring'+nm+'</div>';
     if(mode==='score'&&_pencilActive())h+='<div class="lp-view" onclick="window._lpGo('+fi+',\'view\')">Just view the card</div>';
@@ -14672,9 +14695,9 @@ function _cupRowHtml(m,click){
 }
 function _cupBandHtml(T,small,big){
   const c=WK.cup;
-  return '<div class="rc-band"><div class="rc-t a"><span>'+_gtEsc(c.teams[0].name)+'</span><b>'+_cupPts(T.pts[0])+'</b></div>'
+  return '<div class="rc-band"><div class="rc-t a"><span><i class="rc-tl">Team</i>'+_gtEsc(c.teams[0].name)+'</span><b>'+_cupPts(T.pts[0])+'</b></div>'
     +'<div class="rc-mid"><small>'+small+'</small><span>'+big+'</span></div>'
-    +'<div class="rc-t b"><b>'+_cupPts(T.pts[1])+'</b><span>'+_gtEsc(c.teams[1].name)+'</span></div></div>';
+    +'<div class="rc-t b"><b>'+_cupPts(T.pts[1])+'</b><span><i class="rc-tl">Team</i>'+_gtEsc(c.teams[1].name)+'</span></div></div>';
 }
 // Projected: points won, plus a point to each live match's leader and a half each for one all square.
 function _cupProj(T){
