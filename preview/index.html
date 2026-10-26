@@ -1356,6 +1356,20 @@ body.force-light .sec-hd.gs-sec{color:#13795B;}
 .cpv-grid{overflow-x:auto;padding:6px 10px 10px;border-top:0.5px solid var(--color-border-tertiary);}
 .cpv-grid table{border-collapse:collapse;font-size:12px;}.cpv-grid th,.cpv-grid td{padding:4px 5px;text-align:center;white-space:nowrap;}.cpv-grid td:first-child,.cpv-grid th:first-child{text-align:left;font-weight:600;}
 .cpv-grid tr.par td{color:var(--color-text-secondary);}.cpv-grid td.c{color:#1D9E75;font-weight:700;}.cpv-key{font-size:12px;color:var(--color-text-secondary);padding:6px 4px 0;}
+/* v125.16: a Recap tile's amount was hard white (.rc-t), unseen on a light card */
+.mn-rh .rc-t{color:var(--color-text-primary);}
+/* v125.16: Money on a cup trip */
+.cpm-top{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:14px;padding:14px 16px;margin-bottom:12px;}
+.cpm-k{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-secondary);}
+.cpm-n{font-size:30px;font-weight:500;font-family:inherit;line-height:normal;margin:4px 0 0;}/* colour from .mn-top-v: green by day, gold at night */.cpm-n span{font-size:16px;color:var(--color-text-secondary);}
+.cpm-bar{height:8px;border-radius:4px;background:var(--color-background-secondary);margin:10px 0 8px;overflow:hidden;}.cpm-bar i{display:block;height:100%;background:#1D9E75;}
+.cpm-s{font-size:13px;color:var(--color-text-secondary);line-height:1.45;}
+.cpm-r{display:flex;align-items:center;gap:10px;padding:12px 14px;border-top:0.5px solid var(--color-border-tertiary);cursor:pointer;}.cpm-r:first-child{border-top:0;}
+.cpm-r .t{flex:1;min-width:0;}.cpm-r .t b{display:block;font-size:15px;font-weight:600;color:var(--color-text-primary);}.cpm-r .t small{display:block;font-size:12px;color:var(--color-text-secondary);margin-top:2px;line-height:1.4;}
+.cpm-r .v{text-align:right;font-size:15px;font-weight:700;white-space:nowrap;color:var(--color-text-primary);}.cpm-r .v.g{color:#1D9E75;}.cpm-r .v.q{color:var(--color-text-tertiary);}.cpm-r .v small{display:block;font-size:11px;font-weight:600;color:var(--color-text-secondary);}
+html body.cup-trip .money-sub-pill{background:#1F3A6B;}
+@media(prefers-color-scheme:dark){html body.cup-trip:not(.force-light) .money-sub-pill{background:#2C4F8F;}}
+html body.cup-trip.force-dark .money-sub-pill{background:#2C4F8F;}
 .cup-winbtn{font:inherit;font-size:14px;font-weight:600;padding:8px 12px;border-radius:10px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);cursor:pointer;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 #cupPaySheet .grp-sheet-inner{max-height:92vh;overflow-y:auto;overscroll-behavior:contain;}
 /* v125.9: a cup trip's look, Ryder Cup: navy picks, red section bars, navy headings by day */
@@ -2590,7 +2604,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.15';
+const APP_VERSION='v125.16';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -15061,6 +15075,55 @@ function _gsStripSync(){
 }
 window._gsStripBack=function(){const s=document.getElementById('gamesGameSel');if(!s)return;try{s.scrollBy({left:-Math.max(120,s.clientWidth*0.7),behavior:'smooth'});}catch(e){s.scrollLeft-=Math.max(120,s.clientWidth*0.7);}setTimeout(_gsStripSync,350);};
 window._gsStripMore=function(){const s=document.getElementById('gamesGameSel');if(!s)return;try{s.scrollBy({left:Math.max(120,s.clientWidth*0.7),behavior:'smooth'});}catch(e){s.scrollLeft+=Math.max(120,s.clientWidth*0.7);}setTimeout(_gsStripSync,350);};
+// v125.16: Money on a cup trip (Kyle, 25 Oct: "we need to figure out the money tab"; mock approved). Bets becomes
+// Payouts: the pot paid out so far, then every payout grouped by round (whole trip, outside the pot last) with its
+// status (won and by whom, the leader, not started, winner not picked), each opening its board. Recap's top card says
+// what has paid out until the trip is complete; who pays whom shows then.
+function _cupMoneyOn(){return !!(WK&&WK.cup&&WK.cup.on&&_cupPayList().length);}
+function _cupPaidSoFar(){const L=_cupPayList();let paid=0,dec=0,n=0;L.forEach(function(p){if(!(+p.amt))return;n++;const w=_cupPayWinners(p);if(w===null)return;dec++;if(w.length)paid+=+p.amt;});return {paid:paid,dec:dec,n:n,pot:_cupPot()};}
+function _cupSoFarHtml(head,note){const s=_cupPaidSoFar(),pc=s.pot?Math.max(0,Math.min(100,Math.round(s.paid/s.pot*100))):0;
+  return '<div class="mn-top cpm-top"><div class="cpm-k">'+head+'</div><div class="cpm-n mn-top-v">'+_cupM(s.paid)+' <span>of '+_cupM(s.pot)+' paid out</span></div><div class="cpm-bar"><i style="width:'+pc+'%"></i></div><div class="cpm-s">'+note.replace('{d}',s.dec).replace('{n}',s.n)+'</div></div>';}
+function _cupNmT(pi){const p=WK.players[pi];if(!p)return '';const sd=_cupSideOf(p.pid);return '<span class="'+(sd===0?'cpl-a':sd===1?'cpl-b':'')+'">'+_gtEsc(displayName(pi))+'</span>';}
+function _cupPayStatus(p){
+  const ri=_cupRi(p.r),w=_cupPayWinners(p),amt=+p.amt||0;
+  if(p.kind==='cup'){const T=_cupTotals(),c=WK.cup;const sc='<span class="cpl-a">'+_gtEsc(c.teams[0].name)+' '+_cupPts(T.pts[0])+'</span> · <span class="cpl-b">'+_gtEsc(c.teams[1].name)+' '+_cupPts(T.pts[1])+'</span>';
+    if(w!==null)return {t:(T.pts[0]===T.pts[1]?'Tied · split by everyone · ':'Won · ')+sc,won:true};return {t:sc+(T.n?' · '+(T.n-T.done)+' to play':''),won:false};}
+  if(p.kind==='pick'){if(w===null)return {t:'Winner not picked',won:false};return {t:'Won · '+w.map(function(g){return g.pis.map(_cupNmT).join(' / ');}).join(', '),won:true};}
+  if(w!==null){if(!w.length)return {t:'No winner · pays nobody',won:false,none:true};
+    if(p.kind==='sk')return {t:'Won · '+w.map(function(g){return _cupNmT(g.pis[0])+' '+_cupM(amt*g.share);}).join(', '),won:true};
+    return {t:'Won · '+w.map(function(g){return g.pis.map(_cupNmT).join(' / ');}).join(', '),won:true};}
+  // not decided: started?
+  const rs=ri==='all'?WK.rounds.map(function(_,q){return q;}).filter(function(q){return inStandingsRound(q);}):(ri==null?[]:[ri]);
+  const any=rs.some(function(q){const o=holeOffset(q),k=roundHoleCount(q),sc=STATE.scores&&STATE.scores[q];if(!sc)return false;for(let h=o;h<o+k;h++){if(sc[h]&&sc[h].some(function(v){return v!=null;}))return true;}return false;});
+  if(!any)return {t:'Not started',won:false};
+  if(p.kind==='sk')return {t:'In progress',won:false};
+  // low net leader, as the board works it out
+  let ents=[];
+  if(p.who==='pair'&&ri!=='all'){const L=_cupLuGet(ri);if(L.fmt==='bb')L.m.forEach(function(m){[0,1].forEach(function(sd){const pis=m[sd].map(_cupPiOf);if(pis.length===2&&pis.every(function(i){return i>=0;}))ents.push(pis);});});
+    ents=ents.map(function(pis){let tp=0,th=0;const o=holeOffset(ri),k=roundHoleCount(ri);for(let h=o;h<o+k;h++){const v=pis.map(function(pi){return getNet(pi,h,ri);}).filter(function(s){return s!=null;});if(!v.length)continue;tp+=Math.min.apply(null,v)-_cupPar(ri,h);th++;}return {pis:pis,tp:tp,th:th};});}
+  else ents=WK.players.map(function(_,pi){let tp=0,th=0;rs.forEach(function(q){const o=holeOffset(q),k=roundHoleCount(q);for(let h=o;h<o+k;h++){const s=getNet(pi,h,q);if(s==null)continue;tp+=s-_cupPar(q,h);th++;}});return {pis:[pi],tp:tp,th:th};});
+  ents=ents.filter(function(e){return e.th;}).sort(function(x,y){return x.tp-y.tp||y.th-x.th;});
+  if(!ents.length)return {t:'Not started',won:false};
+  const top=ents.filter(function(e){return e.tp===ents[0].tp;});
+  return {t:(top.length>1?'Tied · ':'Leader · ')+top.map(function(e){return e.pis.map(_cupNmT).join(' / ');}).join(', ')+' '+_cupTp(ents[0].tp)+' thru '+ents[0].th,won:false};
+}
+function _cupPayOpenJs(p){const ri=_cupRi(p.r);if(p.kind==='cup')return "window.scrollTo(0,0);setView('board')";const k='pay:'+(p.id||'');
+  const r=ri==='all'?(typeof STATE.currentRound==='number'?STATE.currentRound:0):ri;return "_mnOpenGame("+r+",'"+k.replace(/'/g,'')+"')";}
+function _cupMoneyBetsHtml(){
+  const c=WK.cup,L=_cupPayList();
+  let h=_cupSoFarHtml(_gtEsc(c.name||WK.name||'Team Cup')+' · Entry '+_cupM(+c.entry||0),'{d} of {n} payouts decided. Money counts once a payout is decided.');
+  const groups=[];
+  WK.rounds.forEach(function(rd,r){const ps=L.filter(function(p){return (+p.amt)&&p.kind!=='cup'&&_cupRi(p.r)===r;});if(ps.length)groups.push({t:roundLabel(r)+(rd.courseName?' · '+_gtEsc(courseDisp(rd.courseName)):''),ps:ps});});
+  const all=L.filter(function(p){return (+p.amt)&&(p.kind==='cup'||_cupRi(p.r)==='all');});if(all.length)groups.push({t:'Whole trip',ps:all});
+  groups.forEach(function(g){h+='<div class="sec-hd mn-exsec">'+g.t+'</div><div class="mn-row cpm-card">';
+    g.ps.forEach(function(p){const st=_cupPayStatus(p),amt=+p.amt||0;let sub='';
+      if(p.kind==='cup'){const n=Math.max(_cupCount(0),_cupCount(1));if(n)sub=_cupM(amt/n)+' each';}
+      h+='<div class="cpm-r" onclick="'+_cupPayOpenJs(p)+'"><div class="t"><b>'+_gtEsc(_cupPayLabel(p))+(p.kind==='sk'&&p.sc==='n'?' (net)':'')+'</b><small>'+st.t+'</small></div><div class="v'+(st.won?' g':st.none?' q':'')+'">'+_cupM(amt)+(sub?'<small>'+sub+'</small>':'')+'</div><span class="mn-chev">›</span></div>';});
+    h+='</div>';});
+  const ace=+c.ace||0;
+  if(ace){const A=_cupAces();h+='<div class="sec-hd mn-exsec">Outside the pot</div><div class="mn-row cpm-card"><div class="cpm-r"><div class="t"><b>Ace or albatross</b><small>'+(A.length?A.map(function(a){return _cupNmT(a.pi)+' · '+roundLabel(a.r)+' hole '+(a.h+1);}).join(', '):'None yet')+' · '+_cupM(ace)+' from each other player</small></div><div class="v">'+_cupM(ace)+'</div></div></div>';}
+  return h;
+}
 // v125.0: cup scoring. A side is a cup team only when every player on it is on that team.
 function _cupLive(){const c=WK&&WK.cup;return !!(c&&c.on&&_cupCount(0)>0&&_cupCount(1)>0);}
 function _cupSideOfPis(pis){let s=-2;for(let k=0;k<pis.length;k++){const p=WK.players[pis[k]];if(!p)return -1;const v=_cupSideOf(p.pid);if(v<0)return -1;if(s===-2)s=v;else if(s!==v)return -1;}return s<0?-1:s;}
@@ -19257,6 +19320,8 @@ function _settleOpenKeys(){
   return k;
 }
 function _mnTopCard(){
+  // v125.16: a cup trip shows what has paid out until the trip is complete; who pays whom shows then.
+  if(typeof _cupMoneyOn==='function'&&_cupMoneyOn()&&!_tripComplete())return _cupSoFarHtml('So far','Settle up opens when every round is complete. Who pays whom shows then, in the fewest payments.');
   const S=STATE.settledRounds||[],done=_tripComplete(),open=_settleOpenKeys(),one=WK.rounds.length===1;
   const _m=function(v){return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
   const pays=function(t){return t.map(function(x){return '<div class="mn-pay"><span>'+_gtEsc(displayName(x.from))+' <em>pays</em> '+_gtEsc(displayName(x.to))+'</span><b>'+_m(x.amt)+'</b></div>';}).join('');};
@@ -19393,7 +19458,8 @@ function renderMoney(){
   });
 
   // ---- Weekend bet ----
-  if(!WK.isQuickRound){
+  // v125.16: a cup trip with no buy-in has no weekend bet to show.
+  if(!WK.isQuickRound&&!(typeof _cupMoneyOn==='function'&&_cupMoneyOn()&&!WK.buyIn)){
     const potSettled=_st.includes('pot');
     const _w=_award.winners||[];
     const _wn=_w.map(i=>displayName(i));
@@ -19431,6 +19497,9 @@ function renderMoney(){
   }
   html+=`<div class="mn-exnote">Who pays whom is on Recap.</div>`;
 
+  // v125.16: on a cup trip the payouts lead, the round rows follow under Games.
+  if(typeof _cupMoneyOn==='function'&&_cupMoneyOn())html=_cupMoneyBetsHtml()+html;
+  {const _mb=document.getElementById('msub-golf');const _lb=(typeof _cupMoneyOn==='function'&&_cupMoneyOn())?'Payouts':'Bets';if(_mb&&_mb.textContent!==_lb){_mb.textContent=_lb;if(typeof _moneyPillTo==='function')_moneyPillTo(STATE.moneyTab||'golf');}}
   document.getElementById('moneyContent').innerHTML=html;
 }
 
@@ -20853,7 +20922,8 @@ function renderSettle(){
   const C=v=>v>0.004?'money-pos':v<-0.004?'money-neg':'money-nil';
   tiles.sort((x,y)=>totalNet[y.pi]-totalNet[x.pi]||x.pi-y.pi).forEach(t=>{
     const pi=t.pi,tot=totalNet[pi];
-    const sub=['Golf '+A(t.a.total)].concat(t.exp?['Expenses '+A(expNet[pi])]:[]).map(x=>'<span class="rc-nw">'+x+'</span>').join(' · ');
+    const _cupOnly=t.a.cup&&t.a.cup.length&&Math.abs(t.a.total-t.a.cup.reduce((q,x)=>q+x.v,0))<0.005;
+    const sub=[(_cupOnly?'Cup ':'Golf ')+A(t.a.total)].concat(t.exp?['Expenses '+A(expNet[pi])]:[]).map(x=>'<span class="rc-nw">'+x+'</span>').join(' · ');
     let b='';
     t.gt.forEach(g=>{
       // v124.73 (Kyle: "Each one of these should be collapsible"): closed until its band is tapped.
