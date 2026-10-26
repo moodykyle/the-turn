@@ -2604,7 +2604,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.16';
+const APP_VERSION='v125.17';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -3486,10 +3486,9 @@ async function s2ValidateOnLoad(){
     // strokes=not.is.null: a CLEARED cell is now stored as a real row with a null stroke
     // (that is what stops s2ReadTrip resurrecting it). The blob count only counts posted
     // scores, so counting the null rows here would report a permanent false mismatch.
-    const sr=await fetch(SB_URL+'/rest/v1/scores?round_id=like.'+encodeURIComponent(tripId+':round:%')+'&strokes=not.is.null&select=score_id',{
+    const scoreRows=(await _sbAllRows(SB_URL+'/rest/v1/scores?round_id=like.'+encodeURIComponent(tripId+':round:%')+'&strokes=not.is.null&select=score_id&order=score_id.asc',{
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}
-    });
-    const scoreRows=sr.ok?await sr.json():[];
+    }))||[];
 
     // Fetch expense count
     const er=await fetch(SB_URL+'/rest/v1/expenses?trip_id=eq.'+encodeURIComponent(tripId)+'&status=eq.active&select=expense_id',{
@@ -3526,6 +3525,20 @@ async function s2ValidateOnLoad(){
 // only for confirmed-absent; it returns null for every transient case. Callers that
 // prune must act on S2_ABSENT, never on null - a flaky signal must not read as a delete.
 const S2_ABSENT={__s2absent:true};
+// v125.17: the server returns at most 1,000 rows a request (Supabase's max rows). A 20-man, three-round trip has
+// 1,080 score rows, so one request dropped some at random. Page until a page comes back empty (a lower server cap
+// still reads everything); the URL carries its own order so pages do not overlap. Any failed page fails the read.
+async function _sbAllRows(url,opts,fx){
+  fx=fx||fetch;const out=[],sep=url.indexOf('?')<0?'?':'&';
+  for(let off=0,n=0;n<100;n++){
+    const r=await fx(url+sep+'limit=1000&offset='+off,opts);
+    if(!r||!r.ok)return null;
+    const pg=await r.json();if(!Array.isArray(pg))return null;
+    if(!pg.length)return out;
+    for(let i=0;i<pg.length;i++)out.push(pg[i]);off+=pg.length;
+  }
+  return null;
+}
 async function s2ReadTrip(tripId){
   try{
     // Fetch trip row
@@ -3561,10 +3574,11 @@ async function s2ReadTrip(tripId){
     // Allow empty players (shouldn't happen but don't abort)
 
     // Fetch scores
-    const sr=await fetch(SB_URL+'/rest/v1/scores?round_id=like.'+encodeURIComponent(tripId+':round:%'),{
+    // v125.17: every row, in pages. A failed read keeps the trip as it is rather than blanking every score.
+    const scoreRows=await _sbAllRows(SB_URL+'/rest/v1/scores?round_id=like.'+encodeURIComponent(tripId+':round:%')+'&order=score_id.asc',{
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}
     });
-    const scoreRows=sr.ok?await sr.json():[];
+    if(!scoreRows){console.warn('[s2ReadTrip] scores fetch failed');return null;}
 
     // Fetch expenses
     const er=await fetch(SB_URL+'/rest/v1/expenses?trip_id=eq.'+encodeURIComponent(tripId),{
@@ -14177,11 +14191,11 @@ async function _syncApplyScoreDelta(tripId){
   if(!WK||!STATE)return;
   const wm=_syncScoreWatermark||'1970-01-01T00:00:00Z';
   try{
-    const res=await sbApiFetch(SB_URL+'/rest/v1/scores?round_id=like.'+encodeURIComponent(tripId+':round:%')+'&updated_at=gt.'+encodeURIComponent(wm)+'&order=updated_at.asc',{
+    // v125.17: in pages. One capped request could end inside a hole's batch (one updated_at) and the watermark
+    // would then skip the rest of that batch for good.
+    const rows=await _sbAllRows(SB_URL+'/rest/v1/scores?round_id=like.'+encodeURIComponent(tripId+':round:%')+'&updated_at=gt.'+encodeURIComponent(wm)+'&order=updated_at.asc,score_id.asc',{
       headers:{'apikey':SB_KEY}
-    });
-    if(!res.ok)return;
-    const rows=await res.json();
+    },sbApiFetch);
     if(!rows||!rows.length)return;
     // LB-7b guard 1 (coarse): a local save is mid-POST. s2WriteActive dequeues its keys
     // from _s2Dirty.scores BEFORE its await, so the per-hole check below cannot see the
