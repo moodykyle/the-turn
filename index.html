@@ -743,6 +743,23 @@ body.force-light,:root:has(body.force-light){--color-text-primary:#111111;--colo
 }
 .game-pill.add-pill:active{background:#0F6E56;}
 #gamesGameSel::-webkit-scrollbar{display:none;}
+/* v125.14: the strip's arrow, centred on the tiles, over a fade, only while more sit to the right */
+#gamesGameWrap{position:relative;margin-bottom:0.75rem;}
+#gamesGameSel{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 22px),transparent 100%);mask-image:linear-gradient(to right,#000 calc(100% - 22px),transparent 100%);}
+#gamesGameWrap.more #gamesGameSel{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 72px),transparent 100%);mask-image:linear-gradient(to right,#000 calc(100% - 72px),transparent 100%);padding-right:44px!important;}
+.gs-more{display:none;position:absolute;right:0;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font:inherit;font-size:20px;line-height:1;padding:0 0 2px 1px;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:pointer;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
+#gamesGameWrap.more .gs-more{display:flex;}
+/* v125.15: the arrow back, at the left edge, once the tiles are scrolled */
+.gs-more.gs-back{right:auto;left:0;padding:0 1px 2px 0;}
+#gamesGameWrap .gs-more.gs-back{display:none;}
+#gamesGameWrap.back .gs-more.gs-back{display:flex;}
+#gamesGameWrap.back #gamesGameSel{-webkit-mask-image:linear-gradient(to right,transparent 0,#000 72px,#000 calc(100% - 22px),transparent 100%);mask-image:linear-gradient(to right,transparent 0,#000 72px,#000 calc(100% - 22px),transparent 100%);}
+#gamesGameWrap.back.more #gamesGameSel{-webkit-mask-image:linear-gradient(to right,transparent 0,#000 72px,#000 calc(100% - 72px),transparent 100%);mask-image:linear-gradient(to right,transparent 0,#000 72px,#000 calc(100% - 72px),transparent 100%);}
+/* v125.14: a foursome's cup rows */
+.mpk.cpl-hid{display:none;}
+.rc-row.cpl-open{margin-bottom:0;border-radius:10px 10px 0 0;}
+.mpk.cpl-holes{margin-top:0;border-top:0;border-radius:0 0 10px 10px;margin-bottom:8px;}
+.cpl-a{color:var(--cupA);font-weight:600;}.cpl-b{color:var(--cupB);font-weight:600;}
 #gamesGameSel .game-pill{flex:1 0 auto;min-width:0;}
 #gamesGameSel .game-pill.add-pill{flex:0 0 auto;}
 
@@ -1308,7 +1325,72 @@ body.force-light .sec-hd.gs-sec{color:#13795B;}
 .setup-row.gs-row:not(.gs-wide)>.qrw-seg.gs-seg{width:200px;box-sizing:border-box;}
 .setup-row.gs-row:not(.gs-wide)>.qrw-seg.gs-seg button{padding:0 6px;}
 .setup-row.gs-row.gs-bonus{align-items:flex-start;}
-.gs-bonus .gs-lbl{padding-top:3px;}.su-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:2px 14px;margin-bottom:6px;}.su-card .gs-row{padding:10px 0;}.su-card .gs-row+.gs-row,.su-card .su-rd+.su-rd,.su-card .su-rd+.su-add,.su-card .su-ad+.su-ad,.su-card .su-ad+.su-subhd,.su-card .su-ad+.su-need{border-top:0.5px solid var(--color-border-tertiary);}.su-card .gs-lbl{flex:1;min-width:0;}.su-card .gs-lbl b{font-size:15px;font-weight:500;color:var(--color-text-primary);}.su-card .gs-lbl small{display:block;font-size:12px;color:var(--color-text-secondary);margin-top:2px;line-height:1.35;}.su-card .gs-wide .gs-seg{width:100%;}.su-in{flex:1 1 auto;width:auto;max-width:none;min-width:0;padding:0;text-align:left;font-size:15px;background:transparent;border:none;color:var(--color-text-primary);}.su-in::-webkit-date-and-time-value{text-align:left;}.su-card .gs-row:has(.su-in){gap:8px;}.su-card .gs-row:has(.su-in) .gs-lbl{flex:0 0 52px;}.su-card .gs-row:has(.su-in) .gs-lbl b{font-size:13px;font-weight:400;color:var(--color-text-secondary);}.pm-hd{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 12px;}.me-row.me-ap{flex-direction:column;align-items:stretch;gap:10px;cursor:default;}.me-aphd{display:flex;align-items:center;gap:12px;}.me-aphd .rval{margin-left:auto;}.me-ap .gs-seg{width:100%;}.hw-row{display:flex;align-items:center;justify-content:space-between;width:100%;padding:13px 0;border:none;background:none;font:inherit;font-size:15px;font-weight:500;color:var(--color-text-primary);cursor:pointer;text-align:left;}.su-card .hw-row+.hw-row,.su-card .hw-body+.hw-row{border-top:0.5px solid var(--color-border-tertiary);}.hw-ch{font-size:18px;line-height:1;color:var(--color-text-tertiary);transition:transform .15s;}.hw-row.open .hw-ch{transform:rotate(90deg);}.hw-body{padding:0 0 14px;}.pm-hd.hw-grp{margin-top:18px;}.pf-ver{font-size:14px;color:var(--color-text-secondary);font-variant-numeric:tabular-nums;}.su-card.pf-vcard{margin-top:10px;}.co-addl{font-size:13px;font-weight:600;color:var(--brand);text-decoration:none;}.section-card.co-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;margin-bottom:10px;overflow:visible;}.co-card>.section-hd{background:none;border-bottom:none;padding:12px 14px 2px;}.co-card>.section-hd>div:first-child>div:first-child{font-size:15px!important;}.co-card>.section-hd>div:first-child>div:nth-child(2){font-size:12px!important;color:var(--color-text-secondary)!important;}.co-stats{padding:4px 14px 10px;font-size:12px;color:var(--color-text-secondary);}.co-stats b{font-weight:500;color:var(--color-text-primary);}.co-hd{display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 14px;border:none;border-top:0.5px solid var(--color-border-tertiary);background:none;font:inherit;font-size:13px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;text-align:left;}.co-ch{font-size:18px;line-height:1;color:var(--color-text-tertiary);transition:transform .15s;}.co-hd.open .co-ch{transform:rotate(90deg);}.co-grid{padding:0 14px 12px;}.co-add{margin-top:18px;}.tw-addrow.su-add.co-man{padding:0 2px 10px;}.pm-hd .sec-hd{margin:0;}.pm-meta{font-size:12px;color:var(--color-text-secondary);display:flex;align-items:center;gap:2px;}.pm-rm{color:#D85A30;cursor:pointer;}.pm-row{display:flex;align-items:center;gap:10px;width:100%;padding:12px 0;background:none;border:none;text-align:left;font:inherit;color:inherit;cursor:pointer;}.su-card .pm-row+.pm-row,.su-card .pl-body+.pm-row,.su-card .pm-row+.pl-body,.su-card .pm-row+.su-add,.su-card .pl-body+.su-add,.su-card .pm-warn+.pm-row,.su-card .pm-empty+.su-add{border-top:0.5px solid var(--color-border-tertiary);}.pm-nm{flex:1;min-width:0;font-size:15px;font-weight:500;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.pm-ix{font-size:15px;font-weight:500;color:var(--color-text-primary);min-width:36px;text-align:right;font-variant-numeric:tabular-nums;}.pm-ix small{display:block;font-size:10px;font-weight:600;letter-spacing:.04em;color:#C99A2E;}.pm-ch{width:16px;text-align:center;font-size:18px;line-height:1;color:var(--color-text-tertiary);transition:transform .15s;}.pm-ch.open{transform:rotate(90deg);}.su-card .pl-body{padding:4px 0 14px;background:none;border-bottom:none;}.su-card .pl-body .pl-fld,.su-card .pl-body .pl-line,.su-card .pl-body .pl-sub,.su-card .pl-body .pl-blabel,.su-card .pl-body .pl-rd{padding-left:0;padding-right:0;}.su-card .pl-body .pl-btns,.su-card .pl-body .pl-chk{margin-left:0;margin-right:0;}.su-card .pl-body .pl-remove{margin-left:0;margin-right:0;width:100%;}.pm-fs .sec-hd::before{background:var(--fsc)!important;}.pm-fs{margin-bottom:6px;}.pm-nudge{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;color:var(--color-text-secondary);font-size:17px;border-radius:8px;cursor:pointer;}.pm-nudge.off{opacity:.25;cursor:default;}.pm-top{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 16px;font-size:12px;color:var(--color-text-secondary);}.pm-top b{color:var(--color-text-primary);}.pm-warn{margin:10px 0 2px;padding:8px 10px;border-radius:8px;font-size:11.5px;line-height:1.45;color:#D85A30;background:rgba(216,90,48,0.08);}.pm-empty{padding:16px 0;text-align:center;font-size:12px;line-height:1.5;color:var(--color-text-tertiary);}.pm-addf{display:block;text-align:center;font-size:15px;font-weight:600;color:var(--brand);padding:6px 0 4px;cursor:pointer;}.pm-note{font-size:11.5px;color:var(--color-text-tertiary);line-height:1.5;margin:14px 2px 2px;}.su-rd{display:flex;align-items:center;gap:8px;padding:10px 0;}.su-rl{width:52px;flex-shrink:0;font-size:13px;color:var(--color-text-secondary);}.su-card .su-sel{flex:1 1 0;width:auto;min-width:0;font-size:15px;text-overflow:ellipsis;}.su-pills{display:flex;gap:6px;flex-shrink:0;}.su-nh{position:relative;display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);border-radius:999px;padding:3px 9px;}.su-nh i{font-size:13px;color:var(--color-text-tertiary);}.su-nh select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;}.su-x{width:30px;height:30px;flex-shrink:0;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-tertiary);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;}.su-x:active{color:#D85A30;border-color:#D85A30;}.su-rdb{display:flex;align-items:center;gap:8px;width:100%;padding:11px 0;background:none;border:none;text-align:left;font:inherit;color:inherit;cursor:pointer;}.su-card .su-rdb+.su-rdb,.su-card .su-rdb+.su-add{border-top:0.5px solid var(--color-border-tertiary);}.su-rt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}.su-rt b{font-size:15px;font-weight:500;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.su-rt small{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--color-text-secondary);}.su-ch{font-size:18px;line-height:1;color:var(--color-text-tertiary);}.su-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;}.su-sh .su-card{margin:4px 0 12px;}.su-sh .gs-seg{width:200px;}.su-nhc{max-width:190px;font-size:13px;color:var(--color-text-primary);}.su-shrm{width:100%;height:44px;border-radius:12px;background:transparent;border:1px solid #D85A30;color:#D85A30;font:inherit;font-size:15px;font-weight:600;margin-bottom:10px;cursor:pointer;}.su-shdone{width:100%;height:46px;border-radius:12px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);color:var(--color-text-primary);font:inherit;font-size:15px;font-weight:600;cursor:pointer;}.tw-addrow.su-add{padding:10px 0 11px;}.su-pct{width:84px;}.su-fixed{font-size:14px;color:var(--color-text-secondary);}.su-ad{display:flex;align-items:center;gap:10px;padding:11px 0;}.su-an{flex:1;min-width:0;font-size:15px;color:var(--color-text-primary);}.su-tag{font-size:12px;color:var(--color-text-secondary);}.su-subhd{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);padding:12px 0 2px;border-top:0.5px solid var(--color-border-tertiary);}.su-addb{height:32px;padding:0 14px;border-radius:10px;background:transparent;border:1px solid #1D9E75;color:#1D9E75;font:inherit;font-size:13px;font-weight:600;cursor:pointer;}.su-need{font-size:12px;color:var(--color-text-tertiary);padding:10px 0 12px;line-height:1.4;}#opt-panel-weekend>.gs-sec:first-child{margin-top:4px;}
+.gs-bonus .gs-lbl{padding-top:3px;}.su-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:2px 14px;margin-bottom:6px;}.su-card .gs-row{padding:10px 0;}.su-card .gs-row+.gs-row,.su-card .su-rd+.su-rd,.su-card .su-rd+.su-add,.su-card .su-ad+.su-ad,.su-card .su-ad+.su-subhd,.su-card .su-ad+.su-need{border-top:0.5px solid var(--color-border-tertiary);}.su-card .gs-lbl{flex:1;min-width:0;}.su-card .gs-lbl b{font-size:15px;font-weight:500;color:var(--color-text-primary);}.su-card .gs-lbl small{display:block;font-size:12px;color:var(--color-text-secondary);margin-top:2px;line-height:1.35;}.su-card .gs-wide .gs-seg{width:100%;}.su-in{flex:1 1 auto;width:auto;max-width:none;min-width:0;padding:0;text-align:left;font-size:15px;background:transparent;border:none;color:var(--color-text-primary);}.su-in::-webkit-date-and-time-value{text-align:left;}.su-card .gs-row:has(.su-in){gap:8px;}.su-card .gs-row:has(.su-in) .gs-lbl{flex:0 0 52px;}.su-card .gs-row:has(.su-in) .gs-lbl b{font-size:13px;font-weight:400;color:var(--color-text-secondary);}.pm-hd{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 12px;}:root{--cupA:#B3261E;--cupB:#1F3A6B;--cupInk:#fff;}body.force-dark{--cupA:#E5534B;--cupB:#6E9BEA;--cupInk:#0A1222;}@media (prefers-color-scheme:dark){body:not(.force-light){--cupA:#E5534B;--cupB:#6E9BEA;--cupInk:#0A1222;}}:root{--cupFA:#B3261E;--cupFB:#1F3A6B;}body.force-dark{--cupFA:#A8322B;--cupFB:#2E5BA8;}@media (prefers-color-scheme:dark){body:not(.force-light){--cupFA:#A8322B;--cupFB:#2E5BA8;}}.cup-hero{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:14px 14px 12px;margin-bottom:10px;}.cup-score{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:8px;}.cup-side{display:flex;flex-direction:column;gap:2px;min-width:0;}.cup-side.b{text-align:right;align-items:flex-end;}.cup-tn{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}.cup-side.a .cup-tn{color:var(--cupA);}.cup-side.b .cup-tn{color:var(--cupB);}.cup-pts{font-family:'Bebas Neue',sans-serif;font-size:46px;line-height:.9;color:var(--color-text-primary);}.cup-mid{font-size:12px;color:var(--color-text-tertiary);padding-bottom:8px;}.cup-bar{position:relative;display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--color-background-secondary);margin:12px 0 6px;}.cup-bar i{display:block;height:100%;}.cup-bar .a{background:var(--cupA);}.cup-bar .b{background:var(--cupB);margin-left:auto;}.cup-bar .mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:var(--color-text-tertiary);opacity:.6;}.cup-note{font-size:12px;color:var(--color-text-secondary);display:flex;justify-content:space-between;gap:8px;}.cup-rd{display:flex;align-items:center;gap:10px;width:100%;padding:11px 0;background:none;border:none;font:inherit;color:inherit;text-align:left;cursor:pointer;}.su-card .cup-rd+.cup-rd{border-top:0.5px solid var(--color-border-tertiary);}.cup-rd .l{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}.cup-rd .l b{font-size:15px;font-weight:500;color:var(--color-text-primary);}.cup-rd.on .l b{color:var(--brand);}.cup-rd .l small{font-size:12px;color:var(--color-text-secondary);}.cup-rd .s{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;}.cup-rd .s .a{color:var(--cupA);}.cup-rd .s .b{color:var(--cupB);}.cup-rd .s .d{color:var(--color-text-tertiary);font-weight:400;margin:0 4px;}.cup-m{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:10px 0;}.su-card .cup-m+.cup-m{border-top:0.5px solid var(--color-border-tertiary);}.cup-m .p{font-size:14px;color:var(--color-text-primary);line-height:1.3;min-width:0;}.cup-m .p.b{text-align:right;}.cup-m .p.w{font-weight:600;}.cup-m .p.a.w{color:var(--cupA);}.cup-m .p.b.w{color:var(--cupB);}.cup-m .r{font-size:12px;font-weight:600;padding:3px 8px;border-radius:999px;white-space:nowrap;text-align:center;}.cup-m .r.a{background:var(--cupA);color:var(--cupInk);}.cup-m .r.b{background:var(--cupB);color:var(--cupInk);}.cup-m .r.h{background:var(--color-background-secondary);color:var(--color-text-secondary);}.cup-m .r.l{border:1px solid var(--color-border-secondary);color:var(--color-text-secondary);font-weight:500;}.cup-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle;}.cup-dot.cup-a{background:var(--cupA);}.cup-dot.cup-b{background:var(--cupB);}.su-card .cup-trow{border-top:0.5px solid var(--color-border-tertiary);}.su-card .cup-trow+.gs-row{border-top:0.5px solid var(--color-border-tertiary);}.cup-pk{display:flex;align-items:center;gap:10px;padding:10px 0;}.su-card .cup-pk+.cup-pk{border-top:0.5px solid var(--color-border-tertiary);}.cup-pk .n{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;align-items:flex-start;background:none;border:none;padding:0;font:inherit;font-size:15px;font-weight:500;color:var(--color-text-primary);text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.cup-pk .i{font-size:13px;color:var(--color-text-secondary);min-width:32px;text-align:right;font-variant-numeric:tabular-nums;}.cup-ab{display:inline-flex;flex-shrink:0;border:0.5px solid var(--color-border-secondary);border-radius:8px;overflow:hidden;}.cup-ab button{font:inherit;font-size:12px;font-weight:600;padding:6px 10px;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:none;border:none;color:var(--color-text-secondary);cursor:pointer;}.cup-ab .a.on{background:var(--cupA);color:var(--cupInk);}.cup-ab .b.on{background:var(--cupB);color:var(--cupInk);}.cup-cap{font-size:10px;font-weight:700;letter-spacing:.05em;color:#C99A2E;}.pm-meta.cup-cnt{margin:10px 2px 8px;}.su-card.cup-list{max-height:52vh;overflow-y:auto;margin-bottom:10px;}
+/* v125.7: the cup sheets move only their list; the page behind never scrolls */
+#cupSheet,#cupPickSheet{touch-action:none;overscroll-behavior:contain;}
+#cupSheet .cup-list,#cupPickSheet .cup-list{touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
+/* v125.8: a small outlined pair (Cup teams Sort; the lineup's Fill by handicap and Clear) */
+.cup-cnt{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.cup-seg{display:inline-flex;flex-shrink:0;border:0.5px solid var(--color-border-secondary);border-radius:8px;overflow:hidden;}
+.cup-seg button{font:inherit;font-size:12px;font-weight:600;line-height:1.2;padding:5px 10px;background:transparent;border:0;color:var(--color-text-secondary);cursor:pointer;}
+.cup-seg button+button{border-left:0.5px solid var(--color-border-secondary);}
+.cup-seg button.on{background:var(--color-background-secondary);color:var(--color-text-primary);}
+.cup-seg button[disabled]{opacity:.4;cursor:default;}
+/* v125.10: cup money */
+.cup-pot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 2px 6px;}
+.cup-pot b{color:var(--color-text-primary);}
+.cup-pot-ok{color:#1D9E75;font-weight:600;}.cup-pot-warn{color:#D97706;font-weight:600;}.cup-pot-over{color:#D85A30;font-weight:600;}
+.cup-payrow .cup-amt{margin-left:auto;padding-left:10px;font-size:15px;font-weight:600;color:var(--color-text-primary);white-space:nowrap;}
+/* v125.13: payouts on the Games tab */
+.cpv-note{margin:0 2px 10px;}
+.cpv-hd{display:flex;align-items:baseline;gap:8px;padding:14px 16px 10px;}.cpv-hd b{font-size:17px;}.cpv-hd span{font-size:13px;color:var(--color-text-secondary);}
+.cpv-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:0.5px solid var(--color-border-tertiary);cursor:pointer;}
+.cpv-row.lead{background:var(--color-background-secondary);}
+.cpv-rk{width:30px;height:30px;border-radius:50%;border:1px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
+.cpv-rk.lead{background:#1D9E75;border-color:#1D9E75;color:#FFFFFF;}
+.cpv-nm{flex:1;min-width:0;font-size:16px;line-height:1.35;}.cpv-nm small{display:block;font-size:12px;color:var(--color-text-secondary);}
+.cpv-nm .a{color:var(--cupA);}.cpv-nm .b{color:var(--cupB);}
+.cpv-sc{text-align:right;flex-shrink:0;}.cpv-sc b{display:block;font-size:20px;font-weight:700;}.cpv-sc b.u{color:#1D9E75;}.cpv-sc small{display:block;font-size:12px;color:var(--color-text-secondary);}
+.cpv-amt{font-style:normal;font-size:13px;font-weight:700;color:#1D9E75;white-space:nowrap;}
+/* v125.18: a picked prize's row on its Games tile */
+.cpv-pk{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;border-top:0.5px solid var(--color-border-tertiary);font-size:15px;color:var(--color-text-secondary);cursor:pointer;}
+.cpv-pk b{font-weight:600;color:#1F3A6B;white-space:nowrap;}
+@media (prefers-color-scheme:dark){body:not(.force-light) .cpv-pk b{color:#9DB6E8;}}body.force-dark .cpv-pk b{color:#9DB6E8;}
+.cpv-ft{display:flex;justify-content:space-between;gap:10px;padding:12px 16px;background:var(--color-background-secondary);font-size:15px;border-top:0.5px solid var(--color-border-tertiary);}
+.cpv-grid{overflow-x:auto;padding:6px 10px 10px;border-top:0.5px solid var(--color-border-tertiary);}
+.cpv-grid table{border-collapse:collapse;font-size:12px;}.cpv-grid th,.cpv-grid td{padding:4px 5px;text-align:center;white-space:nowrap;}.cpv-grid td:first-child,.cpv-grid th:first-child{text-align:left;font-weight:600;}
+.cpv-grid tr.par td{color:var(--color-text-secondary);}.cpv-grid td.c{color:#1D9E75;font-weight:700;}.cpv-key{font-size:12px;color:var(--color-text-secondary);padding:6px 4px 0;}
+/* v125.16: a Recap tile's amount was hard white (.rc-t), unseen on a light card */
+.mn-rh .rc-t{color:var(--color-text-primary);}
+/* v125.16: Money on a cup trip */
+.cpm-top{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:14px;padding:14px 16px;margin-bottom:12px;}
+.cpm-k{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-secondary);}
+.cpm-n{font-size:30px;font-weight:500;font-family:inherit;line-height:normal;margin:4px 0 0;}/* colour from .mn-top-v: green by day, gold at night */.cpm-n span{font-size:16px;color:var(--color-text-secondary);}
+.cpm-bar{height:8px;border-radius:4px;background:var(--color-background-secondary);margin:10px 0 8px;overflow:hidden;}.cpm-bar i{display:block;height:100%;background:#1D9E75;}
+.cpm-s{font-size:13px;color:var(--color-text-secondary);line-height:1.45;}
+.cpm-r{display:flex;align-items:center;gap:10px;padding:12px 14px;border-top:0.5px solid var(--color-border-tertiary);cursor:pointer;}.cpm-r:first-child{border-top:0;}
+.cpm-r .t{flex:1;min-width:0;}.cpm-r .t b{display:block;font-size:15px;font-weight:600;color:var(--color-text-primary);}.cpm-r .t small{display:block;font-size:12px;color:var(--color-text-secondary);margin-top:2px;line-height:1.4;}
+.cpm-r .v{text-align:right;font-size:15px;font-weight:700;white-space:nowrap;color:var(--color-text-primary);}.cpm-r .v.g{color:#1D9E75;}.cpm-r .v.q{color:var(--color-text-tertiary);}.cpm-r .v small{display:block;font-size:11px;font-weight:600;color:var(--color-text-secondary);}
+html body.cup-trip .money-sub-pill{background:#1F3A6B;}
+@media(prefers-color-scheme:dark){html body.cup-trip:not(.force-light) .money-sub-pill{background:#2C4F8F;}}
+html body.cup-trip.force-dark .money-sub-pill{background:#2C4F8F;}
+.cup-winbtn{font:inherit;font-size:14px;font-weight:600;padding:8px 12px;border-radius:10px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);cursor:pointer;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#cupPaySheet .grp-sheet-inner{max-height:92vh;overflow-y:auto;overscroll-behavior:contain;}
+/* v125.9: a cup trip's look, Ryder Cup: navy picks, red section bars, navy headings by day */
+html body.cup-trip .qrw-seg .qrw-pill{background:#1F3A6B;}
+@media(prefers-color-scheme:dark){html body.cup-trip:not(.force-light) .qrw-seg .qrw-pill{background:#2C4F8F;}}
+html body.cup-trip.force-dark .qrw-seg .qrw-pill{background:#2C4F8F;}
+html body.cup-trip .sec-hd::before{background:var(--cupA);}
+@media(prefers-color-scheme:light){html body.cup-trip:not(.force-dark) .sec-hd{color:#1F3A6B;}}
+html body.cup-trip.force-light .sec-hd{color:#1F3A6B;}
+/* v125.12: the Games tab's filter pill, chosen game and + Add */
+html body.cup-trip .gf-filter .gf-pill{background:#1F3A6B;}
+html body.cup-trip .game-pill.active{--tint:#E4EAF5;--tint-tx:#1F3A6B;--tint-bd:#B7C5E0;}
+html body.cup-trip .game-pill.add-pill{background:#1F3A6B;border-color:#1F3A6B;color:#FFFFFF;}
+@media(prefers-color-scheme:dark){html body.cup-trip:not(.force-light) .gf-filter .gf-pill{background:#2C4F8F;}html body.cup-trip:not(.force-light) .game-pill.active{--tint:#1B2A47;--tint-tx:#9DB7EA;--tint-bd:#34507F;}html body.cup-trip:not(.force-light) .game-pill.add-pill{background:#2C4F8F;border-color:#2C4F8F;}}
+html body.cup-trip.force-dark .gf-filter .gf-pill{background:#2C4F8F;}
+html body.cup-trip.force-dark .game-pill.active{--tint:#1B2A47;--tint-tx:#9DB7EA;--tint-bd:#34507F;}
+html body.cup-trip.force-dark .game-pill.add-pill{background:#2C4F8F;border-color:#2C4F8F;}.me-row.me-ap{flex-direction:column;align-items:stretch;gap:10px;cursor:default;}.me-aphd{display:flex;align-items:center;gap:12px;}.me-aphd .rval{margin-left:auto;}.me-ap .gs-seg{width:100%;}.hw-row{display:flex;align-items:center;justify-content:space-between;width:100%;padding:13px 0;border:none;background:none;font:inherit;font-size:15px;font-weight:500;color:var(--color-text-primary);cursor:pointer;text-align:left;}.su-card .hw-row+.hw-row,.su-card .hw-body+.hw-row{border-top:0.5px solid var(--color-border-tertiary);}.hw-ch{font-size:18px;line-height:1;color:var(--color-text-tertiary);transition:transform .15s;}.hw-row.open .hw-ch{transform:rotate(90deg);}.hw-body{padding:0 0 14px;}.pm-hd.hw-grp{margin-top:18px;}.pf-ver{font-size:14px;color:var(--color-text-secondary);font-variant-numeric:tabular-nums;}.su-card.pf-vcard{margin-top:10px;}.co-addl{font-size:13px;font-weight:600;color:var(--brand);text-decoration:none;}.section-card.co-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;margin-bottom:10px;overflow:visible;}.co-card>.section-hd{background:none;border-bottom:none;padding:12px 14px 2px;}.co-card>.section-hd>div:first-child>div:first-child{font-size:15px!important;}.co-card>.section-hd>div:first-child>div:nth-child(2){font-size:12px!important;color:var(--color-text-secondary)!important;}.co-stats{padding:4px 14px 10px;font-size:12px;color:var(--color-text-secondary);}.co-stats b{font-weight:500;color:var(--color-text-primary);}.co-hd{display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 14px;border:none;border-top:0.5px solid var(--color-border-tertiary);background:none;font:inherit;font-size:13px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;text-align:left;}.co-ch{font-size:18px;line-height:1;color:var(--color-text-tertiary);transition:transform .15s;}.co-hd.open .co-ch{transform:rotate(90deg);}.co-grid{padding:0 14px 12px;}.co-add{margin-top:18px;}.tw-addrow.su-add.co-man{padding:0 2px 10px;}.pm-hd .sec-hd{margin:0;}.pm-meta{font-size:12px;color:var(--color-text-secondary);display:flex;align-items:center;gap:2px;}.pm-rm{color:#D85A30;cursor:pointer;}.pm-row{display:flex;align-items:center;gap:10px;width:100%;padding:12px 0;background:none;border:none;text-align:left;font:inherit;color:inherit;cursor:pointer;}.su-card .pm-row+.pm-row,.su-card .pl-body+.pm-row,.su-card .pm-row+.pl-body,.su-card .pm-row+.su-add,.su-card .pl-body+.su-add,.su-card .pm-warn+.pm-row,.su-card .pm-empty+.su-add{border-top:0.5px solid var(--color-border-tertiary);}.pm-nm{flex:1;min-width:0;font-size:15px;font-weight:500;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.pm-ix{font-size:15px;font-weight:500;color:var(--color-text-primary);min-width:36px;text-align:right;font-variant-numeric:tabular-nums;}.pm-ix small{display:block;font-size:10px;font-weight:600;letter-spacing:.04em;color:#C99A2E;}.pm-ch{width:16px;text-align:center;font-size:18px;line-height:1;color:var(--color-text-tertiary);transition:transform .15s;}.pm-ch.open{transform:rotate(90deg);}.su-card .pl-body{padding:4px 0 14px;background:none;border-bottom:none;}.su-card .pl-body .pl-fld,.su-card .pl-body .pl-line,.su-card .pl-body .pl-sub,.su-card .pl-body .pl-blabel,.su-card .pl-body .pl-rd{padding-left:0;padding-right:0;}.su-card .pl-body .pl-btns,.su-card .pl-body .pl-chk{margin-left:0;margin-right:0;}.su-card .pl-body .pl-remove{margin-left:0;margin-right:0;width:100%;}.pm-fs .sec-hd::before{background:var(--fsc)!important;}.pm-fs{margin-bottom:6px;}.pm-nudge{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;color:var(--color-text-secondary);font-size:17px;border-radius:8px;cursor:pointer;}.pm-nudge.off{opacity:.25;cursor:default;}.pm-top{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 16px;font-size:12px;color:var(--color-text-secondary);}.pm-top b{color:var(--color-text-primary);}.pm-warn{margin:10px 0 2px;padding:8px 10px;border-radius:8px;font-size:11.5px;line-height:1.45;color:#D85A30;background:rgba(216,90,48,0.08);}.pm-empty{padding:16px 0;text-align:center;font-size:12px;line-height:1.5;color:var(--color-text-tertiary);}.pm-addf{display:block;text-align:center;font-size:15px;font-weight:600;color:var(--brand);padding:6px 0 4px;cursor:pointer;}.pm-note{font-size:11.5px;color:var(--color-text-tertiary);line-height:1.5;margin:14px 2px 2px;}.su-rd{display:flex;align-items:center;gap:8px;padding:10px 0;}.su-rl{width:52px;flex-shrink:0;font-size:13px;color:var(--color-text-secondary);}.su-card .su-sel{flex:1 1 0;width:auto;min-width:0;font-size:15px;text-overflow:ellipsis;}.su-pills{display:flex;gap:6px;flex-shrink:0;}.su-nh{position:relative;display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);border-radius:999px;padding:3px 9px;}.su-nh i{font-size:13px;color:var(--color-text-tertiary);}.su-nh select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;}.su-x{width:30px;height:30px;flex-shrink:0;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-tertiary);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;}.su-x:active{color:#D85A30;border-color:#D85A30;}.su-rdb{display:flex;align-items:center;gap:8px;width:100%;padding:11px 0;background:none;border:none;text-align:left;font:inherit;color:inherit;cursor:pointer;}.su-card .su-rdb+.su-rdb,.su-card .su-rdb+.su-add{border-top:0.5px solid var(--color-border-tertiary);}.su-rt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}.su-rt b{font-size:15px;font-weight:500;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.su-rt small{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--color-text-secondary);}.su-ch{font-size:18px;line-height:1;color:var(--color-text-tertiary);}.su-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;}.su-sh .su-card{margin:4px 0 12px;}.su-sh .gs-seg{width:200px;}.su-nhc{max-width:190px;font-size:13px;color:var(--color-text-primary);}.su-shrm{width:100%;height:44px;border-radius:12px;background:transparent;border:1px solid #D85A30;color:#D85A30;font:inherit;font-size:15px;font-weight:600;margin-bottom:10px;cursor:pointer;}.su-shdone{width:100%;height:46px;border-radius:12px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);color:var(--color-text-primary);font:inherit;font-size:15px;font-weight:600;cursor:pointer;}.tw-addrow.su-add{padding:10px 0 11px;}.su-pct{width:84px;}.su-fixed{font-size:14px;color:var(--color-text-secondary);}.su-ad{display:flex;align-items:center;gap:10px;padding:11px 0;}.su-an{flex:1;min-width:0;font-size:15px;color:var(--color-text-primary);}.su-tag{font-size:12px;color:var(--color-text-secondary);}.su-subhd{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);padding:12px 0 2px;border-top:0.5px solid var(--color-border-tertiary);}.su-addb{height:32px;padding:0 14px;border-radius:10px;background:transparent;border:1px solid #1D9E75;color:#1D9E75;font:inherit;font-size:13px;font-weight:600;cursor:pointer;}.su-need{font-size:12px;color:var(--color-text-tertiary);padding:10px 0 12px;line-height:1.4;}#opt-panel-weekend>.gs-sec:first-child,#opt-panel-cup>.gs-sec:first-child{margin-top:4px;}.su-card .cup-trow:first-child{border-top:0;}.su-card .cup-lurow+.cup-lurow{border-top:0.5px solid var(--color-border-tertiary);}.lu-warn{color:#C99A2E;}.pm-warn.lu-lock{margin:0 0 12px;}.lu-pk.used .n,.lu-pk.used .i{opacity:.45;}.pm-nm .pl-real{display:block;font-size:12px;font-weight:400;color:var(--color-text-tertiary);margin-top:1px;}.pm-note.lu-pkn{margin:-4px 2px 10px;}.rc-band{display:grid;grid-template-columns:1fr 74px 1fr;align-items:stretch;border-radius:12px;overflow:hidden;margin:4px 0 6px;}.rc-t{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:10px 10px;color:#fff;min-width:0;}.rc-t.a{background:var(--cupFA);}.rc-t.b{background:var(--cupFB);}.rc-t span{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}.rc-t b{font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;font-weight:400;}.rc-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 8px;background:var(--color-background-secondary);gap:2px;}.rc-mid small{font-size:9px;color:var(--color-text-tertiary);letter-spacing:.04em;text-transform:uppercase;text-align:center;}.rc-mid span{font-size:12px;font-weight:600;color:var(--color-text-primary);text-align:center;line-height:1.2;}.rc-proj{font-size:12px;color:var(--color-text-secondary);text-align:center;margin:0 0 12px;}.rc-proj .a{color:var(--cupA);}.rc-proj .b{color:var(--cupB);}.rc-row{display:grid;grid-template-columns:1fr 78px 1fr;align-items:stretch;border-radius:10px;overflow:hidden;margin-bottom:6px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);}.rc-row[onclick]{cursor:pointer;}.rc-s{display:flex;flex-direction:column;justify-content:center;padding:8px 12px;font-size:14px;font-weight:500;color:var(--color-text-primary);line-height:1.3;min-width:0;}.rc-s span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.rc-s.b{text-align:right;}.rc-box{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:var(--color-background-secondary);color:var(--color-text-secondary);}.rc-box b{font-size:15px;font-weight:700;color:var(--color-text-primary);}.rc-box small{font-size:10px;letter-spacing:.04em;text-transform:uppercase;line-height:1.2;}.rc-row.la .rc-s.a{background:color-mix(in srgb,var(--cupFA) 30%,transparent);}.rc-row.lb .rc-s.b{background:color-mix(in srgb,var(--cupFB) 34%,transparent);}.rc-row.la .rc-box{background:var(--cupFA);color:#fff;}.rc-row.lb .rc-box{background:var(--cupFB);color:#fff;}.rc-row.la .rc-box b,.rc-row.lb .rc-box b{color:#fff;}.rc-row.fin.la .rc-s.a{background:var(--cupFA);color:#fff;}.rc-row.fin.lb .rc-s.b{background:var(--cupFB);color:#fff;}.pm-note.rc-note{margin:10px 2px 14px;}.cup-mp .mp-team-block.cupx{border-left:3px solid var(--mpA);}.cup-mp .mp-team-block.cupx.b{border-left-color:var(--mpB);}.cup-mp .cupx-l{display:none;}.cup-mp .cupx-t{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mpA);margin-bottom:2px;}.cup-mp .cupx.b .cupx-t{color:var(--mpB);}.cup-mp .mpk-tm .lt.cupx-lt{font-size:0;width:4px;justify-self:center;border-radius:2px;background:var(--mpA);}.cup-mp .mpk-tm .lt.cupx-lt.cb{background:var(--mpB);}.su-card.cup-fsnote{margin-bottom:14px;}.pm-note.lu-note{margin:-2px 2px 14px;}.su-card.lu-m{padding:10px 14px 12px;margin-bottom:8px;}.lu-hd{display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:8px;}.lu-hd span{font-weight:400;color:var(--color-text-tertiary);font-size:12px;}.lu-row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;}.lu-s{display:flex;flex-direction:column;gap:6px;min-width:0;}.lu-p{display:flex;justify-content:space-between;align-items:baseline;gap:6px;width:100%;box-sizing:border-box;padding:7px 10px;border-radius:9px;border:none;border-left:3px solid transparent;font:inherit;font-size:14px;font-weight:500;color:var(--color-text-primary);background:var(--color-background-secondary);white-space:nowrap;overflow:hidden;text-align:left;cursor:pointer;min-width:0;}.lu-p small{font-size:11px;font-weight:400;color:var(--color-text-tertiary);}.lu-p.a{border-left-color:var(--cupA);}.lu-p.b{border-left-color:var(--cupB);}.lu-p.add{justify-content:center;background:none;border:1px dashed var(--color-border-secondary);color:var(--brand);font-weight:600;}.lu-vs{font-size:11px;color:var(--color-text-tertiary);}.lu-sg{display:grid;grid-template-columns:14px 1fr auto 1fr;gap:6px;align-items:center;padding:4px 0;}.lu-sg .n{font-size:12px;color:var(--color-text-tertiary);}.lu-sg .lu-p{font-size:13px;padding:7px 8px;}.lu-ta{color:var(--cupA);}.lu-tb{color:var(--cupB);}.lu-pk{display:flex;align-items:center;gap:10px;width:100%;padding:11px 0;background:none;border:none;font:inherit;color:inherit;text-align:left;cursor:pointer;}.su-card .lu-pk+.lu-pk{border-top:0.5px solid var(--color-border-tertiary);}.lu-pk .n{flex:1;min-width:0;font-size:15px;font-weight:500;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.lu-pk.on .n{color:var(--brand);}.lu-pk .i{font-size:13px;color:var(--color-text-secondary);min-width:32px;text-align:right;font-variant-numeric:tabular-nums;}.lu-pk .w{font-size:12px;color:var(--color-text-tertiary);min-width:58px;text-align:right;}.cup-strip{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;margin:0 0 10px;padding:10px 14px;border-radius:12px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font:inherit;font-size:14px;text-align:left;cursor:pointer;}.cup-strip .ti{color:#C99A2E;font-size:17px;}.cup-strip .n{font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.cup-strip .sc{display:flex;gap:10px;font-size:13px;white-space:nowrap;}.cup-strip .sc .a{color:var(--cupA);font-weight:600;}.cup-strip .sc .b{color:var(--cupB);font-weight:600;}.cup-strip .ch{color:var(--color-text-tertiary);font-size:18px;line-height:1;}.cup-tag{display:inline-block;margin-left:5px;padding:0 5px;border-radius:5px;border:1px solid currentColor;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#C99A2E;vertical-align:1px;line-height:15px;}
 .gs-bstack{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;}
 .gs-amt-off{opacity:0.45;pointer-events:none;}
 .gs-dd.gs-ddw{flex:none;width:100%;}
@@ -1979,6 +2061,8 @@ body.force-light .lp-view,body.force-light .lp-you{color:#13795B;}body.force-lig
         <div id="editProfError" class="login-error" style="display:none"></div>
         <label class="prof-label">Name <span class="req">*</span></label>
         <input id="editProfName" class="prof-input" type="text" autocapitalize="words"/>
+        <label class="prof-label">Goes by <span class="opt">(optional)</span></label>
+        <input id="editProfNick" class="prof-input" type="text" autocapitalize="words" maxlength="24" placeholder="A nickname, shown in place of your name"/>
         <label class="prof-label">Phone <span class="opt">(optional)</span></label>
         <input id="editProfPhone" class="prof-input" type="tel" placeholder="(xxx) xxx-xxxx" oninput="window.fmtPhone(this)"/>
         <label class="prof-label">Venmo <span class="opt">(optional)</span></label>
@@ -2229,7 +2313,7 @@ body.force-light .lp-view,body.force-light .lp-you{color:#13795B;}body.force-lig
     <div id="view-games" style="display:none" class="view">
       <div id="gamesRdSel" class="rd-sel" style="display:none"></div>
       <div id="gamesLaneBar" style="margin-bottom:0.6rem"></div>
-      <div id="gamesGameSel" style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-right:14px;-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 22px),transparent 100%);mask-image:linear-gradient(to right,#000 calc(100% - 22px),transparent 100%);margin-bottom:0.75rem"></div>
+      <div id="gamesGameWrap"><div id="gamesGameSel" style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-right:14px"></div><button type="button" id="gamesGameBack" class="gs-more gs-back" aria-label="Earlier games" onclick="window._gsStripBack()">‹</button><button type="button" id="gamesGameMore" class="gs-more" aria-label="More games" onclick="window._gsStripMore()">›</button></div>
       <div id="gamesNetNote"></div>
 <div id="gamesContent"></div>
     </div>
@@ -2272,12 +2356,14 @@ body.force-light .lp-view,body.force-light .lp-you{color:#13795B;}body.force-lig
       <div class="money-sub-panel" id="mpanel-settle"><div id="settleContent"></div></div>
     </div>
     <div id="view-setup" style="display:none" class="view">
-      <div class="opt-back" id="opt-back" style="display:none" onclick="setOptPanel('menu')"><i class="ti ti-chevron-left"></i><span id="opt-back-title"></span></div>
+      <div class="opt-back" id="opt-back" style="display:none" onclick="setOptPanel(STATE&&STATE.optPanel==='cupround'?'cup':'menu')"><i class="ti ti-chevron-left"></i><span id="opt-back-title"></span></div>
       <div class="sec-hd gs-sec" id="opt-menu-title">Settings</div>
       <div id="opt-panel-menu" class="opt-panel"></div>
       <div id="opt-panel-players" class="opt-panel"></div>
       <div id="opt-panel-flights" class="opt-panel"></div>
       <div id="opt-panel-weekend" class="opt-panel"></div>
+      <div id="opt-panel-cup" class="opt-panel"></div>
+      <div id="opt-panel-cupround" class="opt-panel"></div>
       <div id="opt-panel-courses" class="opt-panel"></div>
       <div id="opt-panel-info" class="opt-panel"></div>
       <div id="opt-panel-htp" class="opt-panel"></div>
@@ -2300,10 +2386,18 @@ function parseName(nameStr){
 }
 
 // Display name logic: last name by default, first initial + last on conflict, first only if no last
+// v125.6: a player's Goes by: the trip's, else his account's (from the group roster), else ''.
+function _plNick(p){
+  if(!p)return '';
+  if(p.nick&&String(p.nick).trim())return String(p.nick).trim();
+  try{const g=(typeof WK!=='undefined'&&WK&&WK._groupId&&typeof _groupCache!=='undefined'&&_groupCache)?_groupCache[WK._groupId]:null;const ms=g&&g._members;if(p.member_id&&Array.isArray(ms)){const m=ms.find(function(x){return x&&x.member_id===p.member_id;});if(m&&m.nickname&&String(m.nickname).trim())return String(m.nickname).trim();}}catch(e){}
+  return '';
+}
 function displayName(playerIndex,players){
   const roster=players||WK?.players||[];
   const p=roster[playerIndex];
   if(!p)return'?';
+  const _nk=(typeof _plNick==='function')?_plNick(p):'';if(_nk)return _nk;
   // Prefer explicit first/last fields
   if(p.first&&p.last){
     return`${p.first[0]}. ${p.last}`;
@@ -2317,7 +2411,8 @@ function displayName(playerIndex,players){
   // Single word — treat as last name, use ini for initial
   const lastName=nameParts[0]||'?';
   const ini=(p.ini||'')[0]||'';
-  return ini?`${ini}. ${lastName}`:lastName;
+  // v125.6: one name is the name; an initial in front of it was invented.
+  return lastName;
 }
 
 // Library display name (for picker / library UI, not in-game)
@@ -2513,13 +2608,13 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v124.90';
+const APP_VERSION='v125.18';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
 // The membership fetch (by user_id, with the groups(...) join) is deliberately NOT
 // on this list: it answers "which groups am I in" and never writes _members.
-const GM_COLS='member_id,display_name,hcp_index,venmo,role,user_id,ghin_number,hcp_source,hcp_updated_at';
+const GM_COLS='member_id,display_name,hcp_index,venmo,role,user_id,ghin_number,hcp_source,hcp_updated_at,nickname';
 
 // Settlement reads the handle THROUGH this, never off the player directly.
 // The trip snapshots venmo onto the player when the player is seated, so a trip seated
@@ -3139,6 +3234,8 @@ async function s2WriteActive(){
         net_off_low:!!STATE.netOffLow,
         game_net_off_flight_low:!!STATE.netOffFlightLow,
         staged_courses:(WK.stagedCourses||[]).map(n=>({name:n,defaultTee:(WK.stagedCourseTees||{})[n]||null}))||null,
+        // v124.91: only a trip with a cup sends the column, so the rest save unchanged even before it exists.
+        ...(WK.cup?{cup:WK.cup}:{}),
         rounds_data:WK.rounds.map(rd=>({
           ...(rd.rid&&{rid:rd.rid}),
           courseName:rd.courseName,
@@ -3161,6 +3258,7 @@ async function s2WriteActive(){
           ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),...(rd.mpUnique!=null&&{mpUnique:rd.mpUnique}),...(rd.hammerUnique!=null&&{hammerUnique:rd.hammerUnique}),...(rd.vegasUnique!=null&&{vegasUnique:rd.vegasUnique}),...(rd.skinsUnique!=null&&{skinsUnique:rd.skinsUnique}),
           ...(rd.hammerVal!=null&&{hammerVal:rd.hammerVal}),
           ...(rd.hammerSegs!=null&&{hammerSegs:rd.hammerSegs}),
+          ...(rd.mpCount!=null&&{mpCount:rd.mpCount}),
           ...(rd.hammerMode!=null&&{hammerMode:rd.hammerMode}),
           ...(rd.hammerMax!=null&&{hammerMax:rd.hammerMax}),
           ...(rd.hammerPayout!=null&&{hammerPayout:rd.hammerPayout}),
@@ -3266,6 +3364,8 @@ async function s2WriteActive(){
         player_index:pi,
         library_id:p.lid||null,
         member_id:p.member_id||null,
+        // v125.6: Goes by (players.nick, migration 2026-10-23_goes_by.sql).
+        nick:p.nick||null,
         // v123.10: false means this player follows their own index. true means a
         // number was typed on this trip and deliberately detached from it. Nothing
         // sets it yet; this build only proves it survives a round trip.
@@ -3390,10 +3490,9 @@ async function s2ValidateOnLoad(){
     // strokes=not.is.null: a CLEARED cell is now stored as a real row with a null stroke
     // (that is what stops s2ReadTrip resurrecting it). The blob count only counts posted
     // scores, so counting the null rows here would report a permanent false mismatch.
-    const sr=await fetch(SB_URL+'/rest/v1/scores?round_id=like.'+encodeURIComponent(tripId+':round:%')+'&strokes=not.is.null&select=score_id',{
+    const scoreRows=(await _sbAllRows(SB_URL+'/rest/v1/scores?round_id=like.'+encodeURIComponent(tripId+':round:%')+'&strokes=not.is.null&select=score_id&order=score_id.asc',{
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}
-    });
-    const scoreRows=sr.ok?await sr.json():[];
+    }))||[];
 
     // Fetch expense count
     const er=await fetch(SB_URL+'/rest/v1/expenses?trip_id=eq.'+encodeURIComponent(tripId)+'&status=eq.active&select=expense_id',{
@@ -3430,6 +3529,20 @@ async function s2ValidateOnLoad(){
 // only for confirmed-absent; it returns null for every transient case. Callers that
 // prune must act on S2_ABSENT, never on null - a flaky signal must not read as a delete.
 const S2_ABSENT={__s2absent:true};
+// v125.17: the server returns at most 1,000 rows a request (Supabase's max rows). A 20-man, three-round trip has
+// 1,080 score rows, so one request dropped some at random. Page until a page comes back empty (a lower server cap
+// still reads everything); the URL carries its own order so pages do not overlap. Any failed page fails the read.
+async function _sbAllRows(url,opts,fx){
+  fx=fx||fetch;const out=[],sep=url.indexOf('?')<0?'?':'&';
+  for(let off=0,n=0;n<100;n++){
+    const r=await fx(url+sep+'limit=1000&offset='+off,opts);
+    if(!r||!r.ok)return null;
+    const pg=await r.json();if(!Array.isArray(pg))return null;
+    if(!pg.length)return out;
+    for(let i=0;i<pg.length;i++)out.push(pg[i]);off+=pg.length;
+  }
+  return null;
+}
 async function s2ReadTrip(tripId){
   try{
     // Fetch trip row
@@ -3465,10 +3578,11 @@ async function s2ReadTrip(tripId){
     // Allow empty players (shouldn't happen but don't abort)
 
     // Fetch scores
-    const sr=await fetch(SB_URL+'/rest/v1/scores?round_id=like.'+encodeURIComponent(tripId+':round:%'),{
+    // v125.17: every row, in pages. A failed read keeps the trip as it is rather than blanking every score.
+    const scoreRows=await _sbAllRows(SB_URL+'/rest/v1/scores?round_id=like.'+encodeURIComponent(tripId+':round:%')+'&order=score_id.asc',{
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}
     });
-    const scoreRows=sr.ok?await sr.json():[];
+    if(!scoreRows){console.warn('[s2ReadTrip] scores fetch failed');return null;}
 
     // Fetch expenses
     const er=await fetch(SB_URL+'/rest/v1/expenses?trip_id=eq.'+encodeURIComponent(tripId),{
@@ -3544,6 +3658,7 @@ async function s2ReadTrip(tripId){
         fg:p.fg_color||'#ffffff',
         ini:p.ini||'?',
         member_id:p.member_id||null,
+        ...(p.nick?{nick:p.nick}:{}),
         // v123.10: null or absent means following, which is why this is !! and not a
         // bare read. See idx_set_here in the players upsert.
         idxSetHere:!!p.idx_set_here,
@@ -3577,6 +3692,7 @@ async function s2ReadTrip(tripId){
         ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),...(rd.mpUnique!=null&&{mpUnique:rd.mpUnique}),...(rd.hammerUnique!=null&&{hammerUnique:rd.hammerUnique}),...(rd.vegasUnique!=null&&{vegasUnique:rd.vegasUnique}),...(rd.skinsUnique!=null&&{skinsUnique:rd.skinsUnique}),
         ...(rd.hammerVal!=null&&{hammerVal:rd.hammerVal}),
         ...(rd.hammerSegs!=null&&{hammerSegs:rd.hammerSegs}),
+        ...(rd.mpCount!=null&&{mpCount:rd.mpCount}),
         ...(rd.hammerMode!=null&&{hammerMode:rd.hammerMode}),
         ...(rd.hammerMax!=null&&{hammerMax:rd.hammerMax}),
         ...(rd.hammerPayout!=null&&{hammerPayout:rd.hammerPayout}),
@@ -3641,6 +3757,7 @@ async function s2ReadTrip(tripId){
     newWK.stagedCourses=_sc.map(x=>typeof x==='string'?x:(x.name||'')).filter(Boolean);
     newWK.stagedCourseTees={};
     _sc.forEach(x=>{if(x&&typeof x==='object'&&x.name&&x.defaultTee)newWK.stagedCourseTees[x.name]=x.defaultTee;});
+    newWK.cup=(t.cup&&typeof t.cup==='object')?t.cup:null;
 
     // Re-resolve each round's course from its defaultTee against CATALOG.
     // This corrects slope/rating/holes when a non-default tee was selected —
@@ -4129,6 +4246,7 @@ window.sbOpenEditProfile = function(){
   document.getElementById('editProfAv').textContent = sbInitialsFrom(meta.full_name, user.email);
   document.getElementById('editProfEmail').textContent = user.email || '';
   document.getElementById('editProfName').value = meta.full_name || '';
+  var _nkEl=document.getElementById('editProfNick');if(_nkEl)_nkEl.value=meta.nickname||'';
   document.getElementById('editProfPhone').value = window.fmtPhoneVal(meta.phone || '');
   document.getElementById('editProfVenmo').value = (meta.venmo||'').replace(/^@+/,'');
   var _srcHcp = _myHcpIndex();
@@ -4144,6 +4262,7 @@ window.sbCloseEditProfile = function(){
 
 window.sbSaveEditProfile = async function(){
   const name = document.getElementById('editProfName').value.trim();
+  const nick = (document.getElementById('editProfNick')?document.getElementById('editProfNick').value:'').trim().slice(0,24);
   const phone = document.getElementById('editProfPhone').value.trim();
   const venmo = document.getElementById('editProfVenmo').value.trim().replace(/^@+/,'');
   const hcpRaw = document.getElementById('editProfHcp').value;
@@ -4165,8 +4284,8 @@ window.sbSaveEditProfile = async function(){
   const btn = document.getElementById('editProfBtn');
   btn.disabled = true; btn.textContent = 'Saving...';
   try {
-    await sbUpdateUser({ full_name: name, phone, venmo, hcp: hcpParsed.value, ghin: ghin });
-    try{const _pu=sbCurrentUser();if(_pu){const _pt=_sbSession?.access_token||SB_KEY;await fetch(SB_URL+'/rest/v1/group_members?user_id=eq.'+encodeURIComponent(_pu.id),{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+_pt,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({display_name:name,venmo:venmo,hcp_index:hcpParsed.value!=null?hcpParsed.value:null,hcp_source:'manual'})});Object.keys(_groupCache).forEach(gid=>{if(_groupCache[gid]._members){const _mi=_groupCache[gid]._members.findIndex(m=>m.user_id===_pu.id);if(_mi>=0){_groupCache[gid]._members[_mi].display_name=name;_groupCache[gid]._members[_mi].venmo=venmo;_groupCache[gid]._members[_mi].hcp_index=hcpParsed.value!=null?hcpParsed.value:null;}}});}}catch(_pe){}
+    await sbUpdateUser({ full_name: name, nickname: nick, phone, venmo, hcp: hcpParsed.value, ghin: ghin });
+    try{const _pu=sbCurrentUser();if(_pu){const _pt=_sbSession?.access_token||SB_KEY;await fetch(SB_URL+'/rest/v1/group_members?user_id=eq.'+encodeURIComponent(_pu.id),{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+_pt,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({display_name:name,nickname:nick||null,venmo:venmo,hcp_index:hcpParsed.value!=null?hcpParsed.value:null,hcp_source:'manual'})});Object.keys(_groupCache).forEach(gid=>{if(_groupCache[gid]._members){const _mi=_groupCache[gid]._members.findIndex(m=>m.user_id===_pu.id);if(_mi>=0){_groupCache[gid]._members[_mi].display_name=name;_groupCache[gid]._members[_mi].venmo=venmo;_groupCache[gid]._members[_mi].hcp_index=hcpParsed.value!=null?hcpParsed.value:null;}}});}}catch(_pe){}
     document.getElementById('editProfOverlay').style.display = 'none';
     sbUpdateAvatar();
     try{var _ms=document.getElementById('meScreen');if(_ms&&_ms.style.display!=='none'&&window.renderMeScreen)window.renderMeScreen();}catch(e){}
@@ -5235,6 +5354,7 @@ function flashTo(elId,delay){
 function _gsNetJump(){setView('setup');setOptPanel('weekend');flashTo('hdcpCard',80);}
 function showSaveToast(){const el=document.getElementById('saveIndicator');el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1500);}
 function showHome(){
+  if(typeof _cupLookOff==='function')_cupLookOff();
   dismissSplash();
   document.getElementById('homeScreen').style.display='block';
   document.getElementById('wizardScreen').style.display='none';
@@ -7264,7 +7384,8 @@ function _segFsVal(key,r,fi){
   const v=fs&&fs[key];
   return (typeof v==='number'&&v>0)?v:null;
 }
-function mpGamesForRound(r,fi){return _segFsVal('mpGames',r,fi)||WK.mpGamesPerRound[r]||WK.mpGamesDefault;}
+// v125.5: a cup round is one game of 18; otherwise the round's own count (saved on the round), then the trip's.
+function mpGamesForRound(r,fi){if(typeof _cupOwns==='function'&&_cupOwns(r))return 1;const rd=WK.rounds&&WK.rounds[r];return _segFsVal('mpGames',r,fi)||(rd&&rd.mpCount>0?rd.mpCount:0)||WK.mpGamesPerRound[r]||WK.mpGamesDefault;}
 function _mpPhase(ms){if(!ms)return'ns';if(ms.closed||ms.holesLeft===0)return'done';return'ip';}
 // A segment that BEGAN before this foursome's end hole and would have run past it.
 // _segNotPlayed covers the segment lying wholly beyond the end; this covers the one
@@ -8308,6 +8429,7 @@ function _twLaunch(){
 // Resolve in-game display names for a roster array: last name by default, first initial + last on conflict
 function resolveDisplayNames(players){
   players.forEach((p,i)=>{
+    if(p.nick&&String(p.nick).trim()){p.name=String(p.nick).trim();const _f=(p.first||'')[0]||'',_l=(p.last||'')[0]||'';p.ini=(_f&&_l?_f+_l:(_f||_l||p.name.substring(0,2))).toUpperCase();return;}
     const first=p.first||'';
     const last=p.last||'';
     if(!last){p.name=first||p.name;}
@@ -8536,7 +8658,7 @@ const nR=WK.rounds.length,nP=WK.players.length;
   // removePlayer / the flight editor. initState was the only creation path without one.
   WK.rounds.forEach((_,r)=>{sanitizeTeams(r);reconcileWolfOrder(r);reconcileSnakeHolders(r);reconcileMPTeams(r);reconcileVegasTeams(r);reconcileHammerTeams(r);reconcileSkinsTeams(r);reconcileRazzleOrder(r);reconcileFBTeams(r);});
 }
-function launchMainApp(){homeNavHide();window._qrNineHole=null;_isQuickRoundWizard=false;document.getElementById('wizardScreen')?.classList.remove('qr-mode');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';['homeGroupScreen','groupSetupScreen','groupCreateScreen','groupJoinScreen','groupPickerScreen','roundsScreen','meScreen','groupsScreen'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;const _fmtDate=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' · '+_fmtDate(WK.date)):WK.region||_fmtDate(WK.date)||'';updateTabDimming();setView('scores');document.getElementById('mainTabBar')?.classList.add('visible');_syncStart();}
+function launchMainApp(){if(window.__cupWrap)window.__cupWrap();homeNavHide();window._qrNineHole=null;_isQuickRoundWizard=false;document.getElementById('wizardScreen')?.classList.remove('qr-mode');document.getElementById('homeScreen').style.display='none';document.getElementById('wizardScreen').style.display='none';['homeGroupScreen','groupSetupScreen','groupCreateScreen','groupJoinScreen','groupPickerScreen','roundsScreen','meScreen','groupsScreen'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('mainScreen').style.display='block';document.getElementById('mainTitle').textContent=WK.name;const _fmtDate=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' · '+_fmtDate(WK.date)):WK.region||_fmtDate(WK.date)||'';updateTabDimming();setView('scores');document.getElementById('mainTabBar')?.classList.add('visible');_syncStart();}
 // Stage 2: Scores tab view mode
 let _scViewMode='hole';
 
@@ -8748,8 +8870,12 @@ function _gsCollapseAll(){
   STATE.mpExpanded={};STATE.vegasExpanded={};STATE.skinsExpanded={};STATE.hammerExpanded={};
   STATE.razzleExpanded={};STATE.ninesExpanded={};STATE.gamesSetupOpen={};STATE.fbCard=null;
 }
+// v125.9: a trip with the Team Cup on wears the cup's look (body.cup-trip); Home never does.
+function _cupLookSync(){try{if(document&&document.body&&document.body.classList)document.body.classList.toggle('cup-trip',!!(typeof WK!=='undefined'&&WK&&WK.cup&&WK.cup.on));}catch(e){}}
+function _cupLookOff(){try{if(document&&document.body&&document.body.classList)document.body.classList.remove('cup-trip');}catch(e){}}
 function setView(v){
   if(_fsP)window._fsPromptClose();
+  if(typeof _cupLookSync==='function')_cupLookSync();
   document.body.classList.remove('sc-cv'); // v124.45: any tab change leaves the grid view
   // v124.17: arriving on Games from anywhere else starts collapsed.
   if(v==='games'){const _gv=document.getElementById('view-games');if(!_gv||_gv.style.display!=='block')_gsCollapseAll();}
@@ -8822,9 +8948,9 @@ const _RZ5MODES=[
 ];
 function roundValFs(key,r,fi,tripDefault){const rd=WK.rounds&&WK.rounds[r];if(rd&&rd.independentGames&&fi!=null&&Array.isArray(rd.fsGames)&&rd.fsGames[fi]&&rd.fsGames[fi][key]!==undefined)return rd.fsGames[fi][key];return roundVal(key,r,tripDefault);}
 function _fsOff(game,r,fi){const rd=WK.rounds&&WK.rounds[r];return !!(rd&&rd.independentGames&&!gameOnFs(game,r,fi));}
-const OPT_PANELS=['menu','weekend','players','flights','courses','info','htp'];
+const OPT_PANELS=['menu','weekend','players','flights','courses','info','htp','cup','cupround'];
 function setOptPanel(p){if(p==='flights'&&_plMerged())p='players';if(_fsP)window._fsPromptClose();STATE.optPanel=p;OPT_PANELS.forEach(n=>{const panel=document.getElementById('opt-panel-'+n);if(panel){panel.classList.remove('active');if(n===p)panel.classList.add('active');}});const back=document.getElementById('opt-back'),backT=document.getElementById('opt-back-title'),menuT=document.getElementById('opt-menu-title');if(p==='players'&&typeof _plOpen!=='undefined')_plOpen={};
-  const titles={weekend:'Settings',players:'Settings',flights:'Settings',courses:'Settings',info:'Settings',htp:'Settings'};if(p==='menu'){if(back)back.style.display='none';if(menuT)menuT.style.display='';}else{if(back)back.style.display='';if(backT)backT.textContent=titles[p]||'';if(menuT)menuT.style.display='none';}renderOptPanel(p);_wireSimLongPress();}
+  const titles={weekend:'Settings',players:'Settings',flights:'Settings',courses:'Settings',info:'Settings',htp:'Settings',cup:'Settings',cupround:'Team Cup'};if(p==='menu'){if(back)back.style.display='none';if(menuT)menuT.style.display='';}else{if(back)back.style.display='';if(backT)backT.textContent=titles[p]||'';if(menuT)menuT.style.display='none';}renderOptPanel(p);_wireSimLongPress();}
 function renderOptions(){setOptPanel('menu');}
 function _toggleSimMember(){
   if(!WK){return;}
@@ -8874,6 +9000,7 @@ function renderOptMenu(){
     +row('ti-calendar-event',setupTitle,setupSub,"setOptPanel('weekend')")
     +row('ti-users','Players',nP+' player'+(nP===1?'':'s')+(isQ?' \u00b7 foursomes and handicaps':''),"setOptPanel('players')")
     +(isQ?'':row('ti-users-group','Foursomes','Split rounds into groups',"setOptPanel('flights')"))
+    +(isQ?'':row('ti-trophy','Team Cup',_cupMenuSub(),"setOptPanel('cup')"))
     +row('ti-map-pin','Courses','Course library',"setOptPanel('courses')")
     +row('ti-adjustments-horizontal','Preferences','Appearance, version',"setOptPanel('info')")
     +'</div><div class="opt-menu-gap"></div><div class="opt-menu-card">'
@@ -8892,10 +9019,10 @@ function renderOptPanel(p){
     if(el)el.innerHTML=readonlyNotice;
     return;
   }
-  if(!canEditTrip()&&(p==='weekend'||p==='players'||p==='flights'||p==='courses')){if(p==='weekend')renderWeekendPanel();else if(p==='players')renderPlayersPanel();else if(p==='flights')renderFlightsPanel();else if(p==='courses')renderCoursesPanel();var _cet_el=document.getElementById('opt-panel-'+p);if(_cet_el){var _cet_banner='<div style=\"display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:2px\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"color:var(--color-text-secondary);flex-shrink:0\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" y1=\"16\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"8\" x2=\"12.01\" y2=\"8\"/></svg><span style=\"font-size:12px;color:var(--color-text-secondary);line-height:1.4\">No edit access for this trip. You can still enter scores.</span></div>';_cet_el.innerHTML=_cet_banner+'<div style="opacity:0.55;pointer-events:none">'+_cet_el.innerHTML+'</div>';}return;}
+  if(!canEditTrip()&&(p==='weekend'||p==='players'||p==='flights'||p==='courses'||p==='cup'||p==='cupround')){if(p==='weekend')renderWeekendPanel();else if(p==='players')renderPlayersPanel();else if(p==='flights')renderFlightsPanel();else if(p==='courses')renderCoursesPanel();else if(p==='cup')renderCupPanel();else if(p==='cupround')renderCupRoundPanel();var _cet_el=document.getElementById('opt-panel-'+p);if(_cet_el){var _cet_banner='<div style=\"display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:2px\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"color:var(--color-text-secondary);flex-shrink:0\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" y1=\"16\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"8\" x2=\"12.01\" y2=\"8\"/></svg><span style=\"font-size:12px;color:var(--color-text-secondary);line-height:1.4\">No edit access for this trip. You can still enter scores.</span></div>';_cet_el.innerHTML=_cet_banner+'<div style="opacity:0.55;pointer-events:none">'+_cet_el.innerHTML+'</div>';}return;}
   // v123.11: on OPEN, not on redraw. renderPlayersPanel runs on every edit.
   if(p==='players')_plFollowSyncSafe('panelOpen');
-  if(p==='menu')renderOptMenu();if(p==='htp')renderHtpPanel();if(p==='teams')renderTeamsPanel();if(p==='players')renderPlayersPanel();if(p==='flights')renderFlightsPanel();if(p==='weekend')renderWeekendPanel();if(p==='courses')renderCoursesPanel();if(p==='info')renderInfoPanel();
+  if(p==='menu')renderOptMenu();if(p==='htp')renderHtpPanel();if(p==='teams')renderTeamsPanel();if(p==='players')renderPlayersPanel();if(p==='flights')renderFlightsPanel();if(p==='weekend')renderWeekendPanel();if(p==='cup')renderCupPanel();if(p==='cupround')renderCupRoundPanel();if(p==='courses')renderCoursesPanel();if(p==='info')renderInfoPanel();
 }
 function renderInfoPanel(){
   // v124.86: one pick for the three appearances, and the version in a card of its own.
@@ -11723,7 +11850,7 @@ window._lbOpenCard=function(r){
   STATE.scGridFlightSel=-1;
   if(_scViewMode!=='card')_actToggleView();
 };
-function renderBoard(){let html='';const _potMethod=WK.potMethod||'netstroke';
+function renderBoard(){let html='';html+=_cupBoardHtml();/* v125.0: the Team Cup first */const _potMethod=WK.potMethod||'netstroke';
   if(_potMethod==='matchplay'&&gameOnAny('mp')){const mpData=calcAllMP().sort((a,b)=>b.total-a.total);html+=`<div class="sec-hd">Match play points</div><div class="bd-sub">Weekend winner</div><div class="section-card" style="margin-bottom:1.25rem">`;mpData.forEach((d,rank)=>{const p=WK.players[d.pi];const pills=d.byRound.map((pts,r)=>`<span class="game-pill${pts>0?' win':''}">${roundLabel(r)}: ${pts}</span>`).join('');html+=`<div class="mp-board-row"><div class="mp-rank">${rank+1}</div><div style="flex:1"><div class="mp-board-name">${p.name}</div><div class="mp-game-pills">${pills}</div></div><div class="mp-board-pts">${d.total.toFixed(1)}</div></div>`;});html+=`</div>`;}
   const _rs=tripRoundStatus();
   {const _sub=(_potMethod==='matchplay'?[]:['Weekend winner']).concat(_rs.label?[_rs.label]:[]).join(' \u00b7 ');
@@ -11921,8 +12048,8 @@ function setWolfOrder(r,pos,newPi,fi){
   autoSave();s2WriteActive();
   _gsRefreshAfterEdit();
 }
-function setDrop(gameIdx,slot,pIdx,roundIdx,isVegas,fi){fi=fi||0;if(isReadOnly)return;if(_pencilViewerLocked(roundIdx,fi))return;const teams=isVegas?STATE.vegTeams[roundIdx][fi][gameIdx]:STATE.mpTeams[roundIdx][fi][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderScorecard();}
-function setDropHU(si,teamIdx,playerIdx,pIdx,r,fi){fi=fi||0;if(isReadOnly)return;const teams=STATE.mpTeams[r][fi][si];const old=teams[teamIdx][playerIdx];for(let t=0;t<2;t++)for(let p=0;p<2;p++){if(teams[t][p]===pIdx&&!(t===teamIdx&&p===playerIdx)){teams[t][p]=old;break;}}teams[teamIdx][playerIdx]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderMPHoleBox();}
+function setDrop(gameIdx,slot,pIdx,roundIdx,isVegas,fi){fi=fi||0;if(isReadOnly)return;if(!isVegas&&_cupOwns(roundIdx))return;if(_pencilViewerLocked(roundIdx,fi))return;const teams=isVegas?STATE.vegTeams[roundIdx][fi][gameIdx]:STATE.mpTeams[roundIdx][fi][gameIdx];const tIdx=slot[0]==='a'?0:1,pos=parseInt(slot[1]);const oldPi=teams[tIdx][pos];if(oldPi===pIdx)return;for(let t=0;t<2;t++)for(let s=0;s<2;s++){if(teams[t][s]===pIdx){teams[t][s]=oldPi;break;}}teams[tIdx][pos]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderScorecard();}
+function setDropHU(si,teamIdx,playerIdx,pIdx,r,fi){fi=fi||0;if(isReadOnly)return;if(_cupOwns(r))return;const teams=STATE.mpTeams[r][fi][si];const old=teams[teamIdx][playerIdx];for(let t=0;t<2;t++)for(let p=0;p<2;p++){if(teams[t][p]===pIdx&&!(t===teamIdx&&p===playerIdx)){teams[t][p]=old;break;}}teams[teamIdx][playerIdx]=pIdx;autoSave();s2WriteActive();_gsRefreshAfterEdit();renderBanner();renderMPHoleBox();}
 function setHammerDrop(si,slot,pIdx,r,fi){
   fi=fi||0;
   if(isReadOnly)return;
@@ -11994,7 +12121,7 @@ function _gsRiskTail(pc,sc,what){
   return '';
 }
 function _setMPFormat(r,fmt){
-  if(!canEditTrip())return;
+  if(!canEditTrip()||_cupOwns(r))return;
   var cur=(WK.rounds[r]&&WK.rounds[r].mpFormat==='headsup')?'headsup':'team';
   if(cur===fmt)return; // re-selecting the format already showing is not a change
   var pc=_gsPressCount(r),sc=_gsRoundHasScores(r);
@@ -12039,6 +12166,7 @@ function _segWriteCount(key,arrName,r,v){
     if(!Array.isArray(WK[arrName]))WK[arrName]=WK.rounds.map(()=>0);
     WK[arrName][r]=v;
     if(key==='hammerSegs')WK.rounds[r].hammerSegs=v;
+    if(key==='mpGames'){if(v>0&&v!==WK.mpGamesDefault)WK.rounds[r].mpCount=v;else delete WK.rounds[r].mpCount;}
   }else{
     const fs=_gsEnsureFs(r)[fi];
     if(v>0)fs[key]=v; else delete fs[key];
@@ -12728,6 +12856,18 @@ window._setHcpMode=function(m){
   _plFollowSyncSafe('modeSwitch');
   autoSave();s2WriteActive();renderWeekendPanel();renderScorecard();renderBanner();
 };
+window._plSetNick=function(i,v){
+  if(!canEditTrip())return;
+  const p=WK.players[i];if(!p)return;
+  const t=String(v||'').trim().slice(0,24);
+  if(t)p.nick=t;else delete p.nick;
+  resolveDisplayNames([p]);
+  const _nm=document.getElementById('plnm_'+(p.pid||('i'+i)));
+  if(_nm){const fn=_plFullName(p),nk=_plNick(p);_nm.innerHTML=nk?_gtEsc(nk)+'<small class="pl-real">'+_gtEsc(fn)+'</small>':_gtEsc(fn);}
+  if(typeof s2MarkDirty==='function')s2MarkDirty(['players']);
+  if(_plNameT)clearTimeout(_plNameT);
+  _plNameT=setTimeout(function(){_plNameT=null;renderScorecard();renderBanner();autoSave();s2WriteActive();},600);
+};
 window._plSetName=function(i,v){
   window._plSetNameInner(i,v);
   // Reported, not swallowed. If this throws, the tickbox silently stops offering to
@@ -13042,6 +13182,10 @@ function _plBodyHtml(i,o){
       // that read as text, so nobody knew it was editable.
       if(canEd)html+=`<div class="pl-fld"><label class="pl-flbl">Name</label>`
         +`<input class="pl-fin" value="${fullName}" oninput="window._plSetName(${i},this.value)"/></div>`;
+      // v125.6: Goes by, under the name. Blank uses his name (or his account's Goes by).
+      if(canEd){const _ak=(function(){const q=Object.assign({},p);delete q.nick;return _plNick(q);})();
+        html+=`<div class="pl-fld"><label class="pl-flbl">Goes by</label><input class="pl-fin" value="${_gtEsc(p.nick||'')}" placeholder="${_gtEsc(_ak||'Optional nickname')}" oninput="window._plSetNick(${i},this.value)"/></div>`
+        +`<div class="pl-line pl-note">Shown everywhere instead of ${_gtEsc((function(){const q=Object.assign({},p);delete q.nick;q.member_id=null;return displayName(0,[q]);})())}. Leave it blank to use ${_ak?'his account\'s, '+_gtEsc(_ak):'his name'}.</div>`;}
       // Editable ONLY here. In the collapsed row it was an input in a line that
       // otherwise reads as a display, so it was changed by people who never opened
       // anything and never saw what the change did.
@@ -13118,7 +13262,7 @@ function renderPlayersPanel(){
     // Built from first and last rather than p.name, so the row holds the real full name. plnm_ is the id
     // _plSetName repaints while the name is typed.
     const fullName=((p.first||'')+(p.last?' '+p.last:'')).trim()||p.name||'';
-    html+='<button type="button" class="pm-row" onclick="window._plToggle(\''+pid+'\')"><span class="pm-nm" id="plnm_'+pid+'">'+fullName+'</span><span class="pm-ix">'+sbHcpDisplay(p.idx)+((followMode&&p.idxSetHere)?'<small>TRIP ONLY</small>':'')+'</span><span class="pm-ch'+(open?' open':'')+'" aria-hidden="true">›</span></button>';
+    html+='<button type="button" class="pm-row" onclick="window._plToggle(\''+pid+'\')"><span class="pm-nm" id="plnm_'+pid+'">'+(_plNick(p)?_gtEsc(_plNick(p))+'<small class="pl-real">'+fullName+'</small>':fullName)+'</span><span class="pm-ix">'+sbHcpDisplay(p.idx)+((followMode&&p.idxSetHere)?'<small>TRIP ONLY</small>':'')+'</span><span class="pm-ch'+(open?' open':'')+'" aria-hidden="true">›</span></button>';
     if(open)html+=_plBodyHtml(i);
   });
   if(WK.players.length<TW_MAX_PLAYERS&&canEd)html+='<div class="tw-addrow su-add"><button class="tw-addrd" onclick="window._apOpen()">+ Add player</button></div>';
@@ -13164,9 +13308,10 @@ function renderFlightsPanel(){
 function _fsPanelHtml(r,merged){
   const nP=WK.players.length;
   const fl=_fsNormalize(STATE.roundFlights[r]||defaultFlights(nP),nP);
-  const editable=canEditTrip()&&!isAnyFlightLocked(r);
+  const _cupR=(typeof _cupOwns==='function')&&_cupOwns(r),editable=canEditTrip()&&!isAnyFlightLocked(r)&&!_cupR;
   const tappable=merged?canEditTrip():editable;
   let html=merged?'':'<div id="flightsRdSel"></div>';
+  if(_cupR)html+='<div class="su-card cup-fsnote"><button type="button" class="su-rdb" onclick="window._cupLuOpen('+r+')"><span class="su-rt"><b>Set by the Team Cup lineup</b><small>'+roundLabel(r)+' foursomes come from its matches</small></span><span class="su-ch" aria-hidden="true">›</span></button></div>';
   html+='<div class="pm-top"><span><b>'+nP+' player'+(nP===1?'':'s')+'</b> · '+fl.length+' foursome'+(fl.length===1?'':'s')
     +(merged?' · '+(_hcpMode()==='round'?'Round index':'Trip index')+'<button class="pl-q" onclick="window._snapshotInfo()" aria-label="About these handicaps">?</button>':'')+'</span>'
     +(editable?'<button class="btn-sm" style="color:#1D9E75" onclick="window._fsAutoSplit('+r+')">Auto-split</button>':'')
@@ -13645,6 +13790,7 @@ window._fsPromptApply=function(){
   var o=P.opts[P.sel];
   P.R.forEach(function(r){
     if(typeof isAnyFlightLocked==='function'&&isAnyFlightLocked(r))return;
+    if(typeof _cupOwns==='function'&&_cupOwns(r))return;
     var fl=STATE.roundFlights&&STATE.roundFlights[r];if(!Array.isArray(fl))return;
     var nx=o.run(JSON.parse(JSON.stringify(fl)),r);
     if(nx)STATE.roundFlights[r]=_fsNormalize(nx,WK.players.length);
@@ -14049,11 +14195,11 @@ async function _syncApplyScoreDelta(tripId){
   if(!WK||!STATE)return;
   const wm=_syncScoreWatermark||'1970-01-01T00:00:00Z';
   try{
-    const res=await sbApiFetch(SB_URL+'/rest/v1/scores?round_id=like.'+encodeURIComponent(tripId+':round:%')+'&updated_at=gt.'+encodeURIComponent(wm)+'&order=updated_at.asc',{
+    // v125.17: in pages. One capped request could end inside a hole's batch (one updated_at) and the watermark
+    // would then skip the rest of that batch for good.
+    const rows=await _sbAllRows(SB_URL+'/rest/v1/scores?round_id=like.'+encodeURIComponent(tripId+':round:%')+'&updated_at=gt.'+encodeURIComponent(wm)+'&order=updated_at.asc,score_id.asc',{
       headers:{'apikey':SB_KEY}
-    });
-    if(!res.ok)return;
-    const rows=await res.json();
+    },sbApiFetch);
     if(!rows||!rows.length)return;
     // LB-7b guard 1 (coarse): a local save is mid-POST. s2WriteActive dequeues its keys
     // from _s2Dirty.scores BEFORE its await, so the per-hole check below cannot see the
@@ -14238,6 +14384,7 @@ function renderWeekendPanel(){
   // --- Handicap ---
   const _tg=(on,js)=>`<label class="toggle"><input type="checkbox" ${on?'checked':''} onchange="${js}"><span class="toggle-slider"></span></label>`;
   const _rdMode=_hcpMode()==='round';
+  // v124.91: Team Cup (trips only).
   html+=_suSec('Handicap')+'<div class="su-card" id="hdcpCard">'
   +_gsRow('Net off low man','Low man plays off zero; everyone<br>else gets the difference',_tg(STATE.netOffLow,'STATE.netOffLow=this.checked;autoSave();s2WriteActive();renderWeekendPanel();renderScorecard();renderBanner()'))
   +_gsRow('Games off foursome low man','Game strokes come off each<br>foursome&#39;s own low man',_tg(STATE.netOffFlightLow,'STATE.netOffFlightLow=this.checked;autoSave();s2WriteActive();renderScorecard();renderBanner();_gsRefreshAfterEdit()'))
@@ -14347,6 +14494,816 @@ window._suRdSet=function(ri,k,v){
   else if(k==='nine'){WK.rounds[ri].nineHole=v==='18'?null:v;autoSave();renderWeekendPanel();}
   if(document.getElementById('suRdSheet'))window._suRdOpen(ri);
 };
+// v124.91: the Team Cup. Two trip teams; Match Play matches between them score cup points (v124.92).
+function _cupSideOf(pid){const c=WK&&WK.cup;if(!c||!c.side)return -1;const v=c.side[pid];return (v===0||v===1)?v:-1;}
+function _cupCount(s){return (WK.players||[]).filter(p=>_cupSideOf(p.pid)===s).length;}
+function _cupDirty(){autoSave();s2MarkDirty(['trip']);s2WriteActive();}
+function _cupMenuSub(){
+  const c=WK&&WK.cup;
+  if(!c||!c.on)return 'Two teams play for points';
+  return _gtEsc((c.teams[0]&&c.teams[0].name)||'')+' vs '+_gtEsc((c.teams[1]&&c.teams[1].name)||'')+(c.entry?' · '+_m0(c.entry)+' entry':'');
+}
+function _m0(v){return '$'+(Math.round(v*100)%100?Number(v).toFixed(2):String(Math.round(v)));}
+function _cupCountsMp(){return !!(WK&&WK.cup&&WK.cup.mp!==false);}
+function renderCupPanel(){
+  const el=document.getElementById('opt-panel-cup');if(!el||!WK)return;
+  el.innerHTML=_cupSetupHtml();
+}
+function _cupRefresh(){if(STATE&&STATE.optPanel==='cup')renderCupPanel();if(STATE&&STATE.optPanel==='cupround')renderCupRoundPanel();}
+// v125.1: a round's lineup. WK.cup.lu[rid] = {fmt:'bb'|'sg'|'off', m:[[slotsA,slotsB],...]}, slots are pids or null,
+// two a side for best ball, one for singles. Read through _cupLuGet, which never writes: it sizes the matches to the
+// teams and empties a slot whose player is no longer on that side. Writes go through _cupLuPut.
+function _cupRounds(){return (WK.rounds||[]).map(function(_,r){return r;}).filter(function(r){return !WK.rounds[r].isE9;});}
+function _cupRid(r){const rd=WK.rounds[r];return rd&&rd.rid?String(rd.rid):'r'+r;}
+function _cupTeam(sd){return (WK.players||[]).filter(function(p){return _cupSideOf(p.pid)===sd;}).sort(function(a,b){const x=(a.idx==null?99:a.idx),y=(b.idx==null?99:b.idx);return x-y;});}
+function _cupLuN(fmt){if(fmt==='off')return 0;const a=_cupCount(0),b=_cupCount(1),m=Math.min(a,b);return fmt==='sg'?m:Math.floor(m/2);}
+function _cupLuGet(r){
+  const c=WK.cup||{},raw=(c.lu&&c.lu[_cupRid(r)])||{},fmt=(raw.fmt==='sg'||raw.fmt==='off')?raw.fmt:'bb';
+  const n=_cupLuN(fmt),k=fmt==='sg'?1:2,src=Array.isArray(raw.m)?raw.m:[],m=[];
+  for(let i=0;i<n;i++){
+    const row=Array.isArray(src[i])?src[i]:[];
+    m.push([0,1].map(function(sd){const sl=Array.isArray(row[sd])?row[sd]:[];const o=[];for(let j=0;j<k;j++){const v=sl[j];o.push(v!=null&&_cupSideOf(v)===sd?v:null);}return o;}));
+  }
+  return {fmt:fmt,m:m};
+}
+function _cupLuPut(r,L){const c=WK.cup;if(!c)return;if(!c.lu||typeof c.lu!=='object')c.lu={};c.lu[_cupRid(r)]={fmt:L.fmt,m:L.m};_cupApply(r);_cupDirty();}
+// v125.2: the lineup runs the round. A cup round is one the cup is on for, not Off, with matches to play.
+function _cupOwns(r){if(!WK||!WK.cup||!WK.cup.on||!WK.rounds||!WK.rounds[r]||WK.rounds[r].isE9)return false;const L=_cupLuGet(r);return L.fmt!=='off'&&L.m.length>0;}
+function _cupLuLocked(r){return (STATE.settledRounds||[]).includes(r)||isRoundLocked(r)||_gsRoundHasScores(r);}
+function _cupApply(r){
+  if(!_cupOwns(r)||_cupLuLocked(r))return false;
+  const L=_cupLuGet(r),nP=WK.players.length,rd=WK.rounds[r];
+  const ix=function(pid){return pid==null?-1:WK.players.findIndex(function(p){return p.pid===pid;});};
+  const fl=[],tm=[],used={};
+  if(L.fmt==='bb'){
+    L.m.forEach(function(x){const a=x[0].map(ix),b=x[1].map(ix);if(a.concat(b).some(function(i){return i<0;}))return;a.concat(b).forEach(function(i){used[i]=1;});fl.push(a.concat(b));tm.push([[a,b]]);});
+  }else{
+    const full=L.m.filter(function(x){return ix(x[0][0])>=0&&ix(x[1][0])>=0;});
+    for(let i=0;i<full.length;i+=2){
+      const ms=full.slice(i,i+2),a=ms.map(function(x){return ix(x[0][0]);}),b=ms.map(function(x){return ix(x[1][0]);});
+      a.concat(b).forEach(function(k){used[k]=1;});
+      fl.push(ms.length===2?[a[0],b[0],a[1],b[1]]:[a[0],b[0]]);tm.push([[a,b]]);
+    }
+  }
+  const rest=[];for(let i=0;i<nP;i++)if(!used[i])rest.push(i);
+  for(let i=0;i<rest.length;i+=4)fl.push(rest.slice(i,i+4));
+  if(!fl.length)return false;
+  if(!STATE.roundFlights)STATE.roundFlights=WK.rounds.map(function(){return defaultFlights(nP);});
+  STATE.roundFlights[r]=_fsNormalize(fl,nP);
+  rd.mpOn=true;
+  if(rd.gameVal==null)rd.gameVal=0;if(rd.pressesOn==null)rd.pressesOn=false;if(rd.autoPressOn==null)rd.autoPressOn=false;
+  if(L.fmt==='sg')rd.mpFormat='headsup';else delete rd.mpFormat;
+  if(!Array.isArray(WK.mpGamesPerRound))WK.mpGamesPerRound=[];
+  WK.mpGamesPerRound[r]=1;rd.mpCount=1;
+  if(Array.isArray(rd.fsGames))rd.fsGames.forEach(function(g){if(g&&typeof g==='object'){delete g.mpGames;if(rd.independentGames)g.mpOn=true;}});
+  if(!STATE.mpTeams)STATE.mpTeams=WK.rounds.map(function(){return [];});
+  STATE.mpTeams[r]=STATE.roundFlights[r].map(function(_,fi){return tm[fi]||null;});
+  if(!STATE.pressState)STATE.pressState=WK.rounds.map(function(){return [];});
+  STATE.pressState[r]=STATE.roundFlights[r].map(function(){return [];});
+  _rosterReconcileAll();
+  return true;
+}
+function _cupApplyAll(){(WK.rounds||[]).forEach(function(_,r){_cupApply(r);});}
+// v125.3: a cup round's Match Play in the cup's names and colours. N: the team names of match sides A and B and their
+// cup sides, or null when the foursome's match is not one cup team against the other.
+function _cupNames(r,fi){
+  if(!_cupOwns(r)||!_cupLive())return null;
+  const g=STATE.mpTeams&&STATE.mpTeams[r]&&STATE.mpTeams[r][fi]&&STATE.mpTeams[r][fi][0];
+  if(!g||!Array.isArray(g[0])||!Array.isArray(g[1]))return null;
+  const sa=_cupSideOfPis(g[0]),sb=_cupSideOfPis(g[1]);
+  if(sa<0||sb<0||sa===sb)return null;
+  return {A:WK.cup.teams[sa].name||'',B:WK.cup.teams[sb].name||'',sa:sa,sb:sb};
+}
+function _cupDress(el,N,title){
+  if(!el||!N||el.classList.contains('cup-mp'))return;
+  el.classList.add('cup-mp');
+  el.style.setProperty('--mpA','var(--cup'+(N.sa?'B':'A')+')');el.style.setProperty('--mpB','var(--cup'+(N.sb?'B':'A')+')');
+  el.querySelectorAll('.mp-team-letter').forEach(function(l){
+    const side=l.textContent.trim();if(side!=='A'&&side!=='B')return;
+    const blk=l.parentNode,pl=blk&&blk.querySelector('.mp-team-players');if(!pl)return;
+    const t=document.createElement('div');t.className='cupx-t';t.textContent=side==='A'?N.A:N.B;pl.insertBefore(t,pl.firstChild);
+    blk.classList.add('cupx',side==='A'?'a':'b');l.classList.add('cupx-l');l.textContent='';
+  });
+  el.querySelectorAll('.mpk-tm .lt').forEach(function(l){const t=l.textContent.trim();if(t==='A'||t==='B'){l.textContent='';l.classList.add('cupx-lt');}});
+  const skip=function(n){for(let p=n.parentNode;p&&p!==el;p=p.parentNode){if(p.classList&&(p.classList.contains('mp-player-name')||p.classList.contains('nm')||p.classList.contains('cupx-t')))return true;}return false;};
+  const walk=function(n){
+    if(n.nodeType===3){if(!skip(n))n.nodeValue=n.nodeValue.replace(/(^|[\s(])A(?=[\s:]|$)/g,function(_,p){return p+N.A;}).replace(/(^|[\s(])B(?=[\s:]|$)/g,function(_,p){return p+N.B;});return;}
+    for(let c=n.firstChild;c;c=c.nextSibling)walk(c);
+  };
+  walk(el);
+  // the cup's match numbers: best ball, a match a foursome; singles, two a foursome
+  const fi=title&&title.fi||0,hu=title&&title.hu;
+  if(title&&title.box){const h=el.querySelector('.calc-hd span');if(h&&/^Match Play/.test(h.textContent))h.textContent=hu?'Team Cup · Singles':'Team Cup · Match '+(fi+1);}
+  if(title&&!title.box){const h=el.querySelector('.mpk-hd b');if(h&&/^Match \d+$/.test(h.textContent))h.textContent='Match '+(hu?fi*2+(title.k||0)+1:fi+1);}
+  // a heads-up card names its leader by initial; in the cup, by team, read off the money pill's side
+  if(title&&!title.box&&hu){
+    const pill=el.querySelector('.mpk-ft .mpc'),ft=el.querySelector('.mpk-ft span');
+    const _cm=(_cupMatches(title.r!=null?title.r:STATE.gamesViewRound)||[]).find(function(x){return x.fi===fi&&x.mi===(title.k||0);});
+    const lead=_cm?(_cm.up>0?N.A:_cm.up<0?N.B:null):(pill&&pill.classList.contains('al')?N.A:pill&&pill.classList.contains('bl')?N.B:null);
+    if(lead)[ft,pill].forEach(function(x){if(x&&x.firstChild&&x.firstChild.nodeType===3)x.firstChild.nodeValue=x.firstChild.nodeValue.replace(/^\S+ /,lead+' ');});
+  }
+  if(title&&!title.box&&Number(roundVal('gameVal',title.r!=null?title.r:STATE.gamesViewRound,WK.gameVal))===0)el.querySelectorAll('.mpk-ft .mpc').forEach(function(p){p.remove();});
+  if(hu&&title.box){
+    el.querySelectorAll('.mp-result-bar').forEach(function(bar,k){
+      const m=bar.parentNode;if(!m)return;
+      const hd=m.querySelector('.calc-hd span');if(hd&&/^Match \d+$/.test(hd.textContent))hd.textContent='Match '+(fi*2+k+1);
+      const nm=[].slice.call(m.querySelectorAll('div[style*="flex:1"] > div > span:first-child'));
+      if(nm[0])nm[0].style.color='var(--mpA)';if(nm[1])nm[1].style.color='var(--mpB)';
+      const st=bar.querySelector('.mp-result-text:last-child'),t=st?st.textContent:'';
+      if(st&&nm[0]&&t.indexOf(nm[0].textContent)===0)st.style.color='var(--mpA)';else if(st&&nm[1]&&t.indexOf(nm[1].textContent)===0)st.style.color='var(--mpB)';
+    });
+  }
+}
+function _cupDressBox(){
+  if(!WK||!STATE)return;
+  const r=STATE.currentRound,fi=isMultiFlight(r)?(getFlightPick(r)||0):0,N=_cupNames(r,fi);
+  const w=document.getElementById('mpBoxWrap'),b=w&&w.querySelector?w.querySelector('.calc-box'):null;
+  if(N&&b)_cupDress(b,N,{box:true,fi:fi,hu:isHeadsUp(r)});
+}
+// v125.4: the leaderboard. Team 0 always on the left.
+// A last name, or an initial and the last name when two players share it.
+function _cupNm(pis){return pis.map(function(pi){const p=WK.players[pi];if(!p)return '<span>?</span>';const _nk=_plNick(p);if(_nk)return '<span>'+_gtEsc(_nk)+'</span>';const ln=p.last||_plFullName(p),dup=(WK.players||[]).some(function(q){return q!==p&&!_plNick(q)&&(q.last||_plFullName(q))===ln;});return '<span>'+_gtEsc(dup&&p.first?p.first[0]+'. '+ln:ln)+'</span>';}).join('');}
+function _cupRowHtml(m,click){
+  const L=m.sa===0?m.A:m.B,R=m.sa===0?m.B:m.A,lead=m.up>0?m.sa:m.up<0?m.sb:-1,n=Math.abs(m.up);
+  let box;
+  if(m.st==='notstarted')box='<small>Not<br>started</small>';
+  else if(m.st==='final')box=lead<0?'<b>Halved</b><small>Final</small>':'<b>'+(m.left>0?n+'&amp;'+m.left:n+' UP')+'</b><small>Final</small>';
+  else box=(lead<0?'<b>A/S</b>':'<b>'+n+' UP</b>')+'<small>Thru '+m.played+'</small>';
+  const cls='rc-row'+(lead===0?' la':lead===1?' lb':'')+(m.st==='final'&&lead>=0?' fin':'');
+  return '<div class="'+cls+'"'+(click?' onclick="'+click+'"':'')+'><div class="rc-s a">'+_cupNm(L)+'</div><div class="rc-box">'+box+'</div><div class="rc-s b">'+_cupNm(R)+'</div></div>';
+}
+function _cupBandHtml(T,small,big){
+  const c=WK.cup;
+  return '<div class="rc-band"><div class="rc-t a"><span>'+_gtEsc(c.teams[0].name)+'</span><b>'+_cupPts(T.pts[0])+'</b></div>'
+    +'<div class="rc-mid"><small>'+small+'</small><span>'+big+'</span></div>'
+    +'<div class="rc-t b"><b>'+_cupPts(T.pts[1])+'</b><span>'+_gtEsc(c.teams[1].name)+'</span></div></div>';
+}
+// Projected: points won, plus a point to each live match's leader and a half each for one all square.
+function _cupProj(T){
+  const p=[T.pts[0],T.pts[1]];let live=0;
+  T.per.forEach(function(x){x.ms.forEach(function(m){if(m.st!=='live')return;live++;if(m.up>0)p[m.sa]+=1;else if(m.up<0)p[m.sb]+=1;else{p[0]+=0.5;p[1]+=0.5;}});});
+  return live?p:null;
+}
+function _cupProjHtml(T){const p=_cupProj(T);return p?'<div class="rc-proj">Projected <b class="a">'+_cupPts(p[0])+'</b> – <b class="b">'+_cupPts(p[1])+'</b></div>':'';}
+function _cupLbHtml(r){
+  const T=_cupTotals(),x=T.per.find(function(y){return y.r===r;}),ms=x?x.ms:[],L=_cupLuGet(r);
+  let h=_cupBandHtml(T,L.fmt==='sg'?'Singles':'Best ball',T.n?_cupPts(T.toWin)+'<br>to win':'');
+  h+=_cupProjHtml(T);
+  const multi=flightsForRound(r).length>1;
+  ms.forEach(function(m){h+=_cupRowHtml(m,multi?'switchGamesLane('+m.fi+')':'');});
+  if(!ms.length)h+='<div class="pm-empty">No cup matches yet. Set this round\'s lineup in Settings, Team Cup.</div>';
+  else if(multi)h+='<div class="pm-note rc-note">Tap a match for its holes.</div>';
+  return h;
+}
+function _cupDressGames(){
+  if(!WK||!STATE)return;
+  const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
+  if(!_cupOwns(r))return;
+  const el=document.getElementById('gamesContent');if(!el||!el.children)return;
+  // All on a round of several foursomes is the leaderboard; one foursome keeps its cards, under the band.
+  const _all=!(STATE.mpViewFlight!=null&&STATE.mpViewFlight>=0);
+  if(_cupLive()&&_all&&flightsForRound(r).length>1){el.innerHTML=_cupLbHtml(r);return;}
+  el.querySelectorAll('.mpk-ghd').forEach(function(g){g.remove();});
+  let fi=(STATE.mpViewFlight!=null&&STATE.mpViewFlight>=0)?STATE.mpViewFlight:0,k=0;
+  for(let i=0;i<el.children.length;i++){
+    const c=el.children[i],oc=c.getAttribute&&c.getAttribute('onclick')||'',m=oc.match(/switchGamesLane\((\d+)\)/);
+    if(m){fi=+m[1];k=0;continue;}
+    if(c.classList&&c.classList.contains('mpk')){_cupDress(c,_cupNames(r,fi),{box:false,fi:fi,k:k,r:r,hu:isHeadsUp(r)});k++;}
+  }
+  if(!_all&&typeof _cupLaneDress==='function')_cupLaneDress(el,r,(STATE.mpViewFlight!=null&&STATE.mpViewFlight>=0)?STATE.mpViewFlight:0);
+  if(_cupLive()&&_all){const T=_cupTotals(),L=_cupLuGet(r),d=document.createElement('div');d.innerHTML=_cupBandHtml(T,L.fmt==='sg'?'Singles':'Best ball',T.n?_cupPts(T.toWin)+'<br>to win':'')+_cupProjHtml(T);while(d.lastChild)el.insertBefore(d.lastChild,el.firstChild);}
+}
+function _cupLuFull(L){return L.m.every(function(x){return x[0].concat(x[1]).every(function(v){return v!=null;});});}
+function _cupLuAny(L){return L.m.some(function(x){return x[0].concat(x[1]).some(function(v){return v!=null;});});}
+function _cupLuTotal(){return _cupRounds().reduce(function(t,r){return t+_cupLuN(_cupLuGet(r).fmt);},0);}
+function _cupPl(pid){return (WK.players||[]).find(function(p){return p.pid===pid;})||null;}
+function _cupShort(p){return p?_gtEsc((p.first?p.first[0]+'. ':'')+(p.last||_plFullName(p))):'';}
+function renderCupRoundPanel(){
+  const el=document.getElementById('opt-panel-cupround');if(!el||!WK)return;
+  const c=WK.cup,r=STATE.cupLuR;
+  if(!c||!c.on||r==null||!WK.rounds[r]){el.innerHTML='<div class="pm-empty">Turn the Team Cup on first.</div>';return;}
+  const lk=_cupLuLocked(r),ed=canEditTrip()&&!lk,L=_cupLuGet(r),n=L.m.length,rd=WK.rounds[r];
+  let h=(lk?'<div class="pm-warn lu-lock">'+roundLabel(r)+' has scores, so its lineup is set.</div>':'')+'<div class="sec-hd gs-sec">'+roundLabel(r)+(rd.courseName?' · '+_gtEsc(courseDisp(rd.courseName)):'')+'</div><div class="su-card">';
+  h+=_gsRow('Format','',ed?_gsSeg([['bb','Best ball'],['sg','Singles'],['off','Off']],L.fmt,'window._cupLuFmt(VAL)',false):'<span class="su-fixed">'+(L.fmt==='sg'?'Singles':L.fmt==='off'?'Off':'Best ball')+'</span>',true);
+  h+='</div><div class="pm-note lu-note">'+(L.fmt==='off'?'This round is not part of the cup.':!n?'Put players on both teams first.':n+' match'+(n===1?'':'es')+', 1 point each. '+(L.fmt==='sg'?'Two matches to a foursome.':'Each match is its own foursome.')+' The lineup sets this round\'s foursomes and Match Play.')+'</div>';
+  if(!n){el.innerHTML=h;return;}
+  h+='<div class="pm-hd hw-grp"><div class="sec-hd gs-sec">Lineup</div>'+(ed?'<span class="cup-seg"><button type="button" onclick="window._cupLuFill()">Fill by handicap</button><button type="button"'+(_cupLuAny(L)?'':' disabled')+' onclick="window._cupLuClear()">Clear</button></span>':'')+'</div>';
+  const slot=function(mi,sd,k){const pid=L.m[mi][sd][k],p=pid!=null?_cupPl(pid):null;const on=ed?' onclick="window._cupLuPick('+mi+','+sd+','+k+')"':'';
+    return p?'<button type="button" class="lu-p '+(sd?'b':'a')+'"'+on+'>'+_cupShort(p)+'<small>'+sbHcpDisplay(p.idx)+'</small></button>':'<button type="button" class="lu-p add"'+on+'>+ Pick</button>';};
+  if(L.fmt==='bb'){
+    L.m.forEach(function(_,mi){h+='<div class="su-card lu-m"><div class="lu-hd">Match '+(mi+1)+'<span>Foursome '+(mi+1)+'</span></div><div class="lu-row"><div class="lu-s">'+slot(mi,0,0)+slot(mi,0,1)+'</div><span class="lu-vs">vs</span><div class="lu-s">'+slot(mi,1,0)+slot(mi,1,1)+'</div></div></div>';});
+  }else{
+    for(let f=0;f*2<n;f++){h+='<div class="su-card lu-m"><div class="lu-hd">Foursome '+(f+1)+'</div>';
+      for(let mi=f*2;mi<Math.min(n,f*2+2);mi++)h+='<div class="lu-sg"><span class="n">'+(mi+1)+'</span>'+slot(mi,0,0)+'<span class="lu-vs">vs</span>'+slot(mi,1,0)+'</div>';
+      h+='</div>';}
+  }
+  const placed={};L.m.forEach(function(x){x[0].concat(x[1]).forEach(function(v){if(v!=null)placed[v]=1;});});
+  const left=[0,1].map(function(sd){return _cupTeam(sd).filter(function(p){return !placed[p.pid];});});
+  if(left[0].length||left[1].length)h+='<div class="pm-note">'+(_cupLuFull(L)?'Sitting out: ':'To place: ')+[0,1].filter(function(sd){return left[sd].length;}).map(function(sd){return '<b class="lu-t'+(sd?'b':'a')+'">'+_gtEsc(c.teams[sd].name)+'</b> '+left[sd].map(function(p){return _cupShort(p);}).join(', ');}).join(' · ')+'</div>';
+  el.innerHTML=h;
+}
+window._cupLuOpen=function(r){STATE.cupLuR=r;setOptPanel('cupround');};
+window._cupLuFmt=function(v){
+  if(!canEditTrip()||!WK.cup||_cupLuLocked(STATE.cupLuR))return;
+  const r=STATE.cupLuR,L=_cupLuGet(r);if(v===L.fmt)return;
+  const go=function(){_cupLuPut(r,{fmt:v,m:[]});_cupRefresh();};
+  if(_cupLuAny(L))_confirmSheet({icon:'ti-alert-triangle',warn:true,title:'Switch to '+(v==='sg'?'Singles':v==='off'?'Off':'Best ball')+'?',body:'The lineup for this round is cleared.',okLabel:'Switch',onOk:go,onCancel:_cupRefresh});
+  else go();
+};
+window._cupLuFill=function(){
+  if(!canEditTrip()||!WK.cup||_cupLuLocked(STATE.cupLuR))return;
+  const r=STATE.cupLuR,L=_cupLuGet(r),n=L.m.length;if(!n)return;
+  const go=function(){
+    const A=_cupTeam(0).map(function(p){return p.pid;}),B=_cupTeam(1).map(function(p){return p.pid;}),m=[];
+    for(let i=0;i<n;i++){
+      if(L.fmt==='sg')m.push([[A[i]],[B[i]]]);
+      else m.push([[A[i],A[2*n-1-i]],[B[i],B[2*n-1-i]]]);
+    }
+    _cupLuPut(r,{fmt:L.fmt,m:m});_cupRefresh();
+  };
+  if(_cupLuAny(L))_confirmSheet({icon:'ti-arrows-shuffle',warn:true,title:'Fill by handicap?',body:'The picks already made for this round are replaced.',okLabel:'Fill',onOk:go});
+  else go();
+};
+// v125.7: Clear empties every spot in this round's lineup, after asking.
+window._cupLuClear=function(){
+  if(!canEditTrip()||!WK.cup||_cupLuLocked(STATE.cupLuR))return;
+  const r=STATE.cupLuR,L=_cupLuGet(r);if(!_cupLuAny(L))return;
+  _confirmSheet({icon:'ti-eraser',warn:true,title:'Clear the lineup?',body:'Every pick for '+roundLabel(r)+' is removed.',okLabel:'Clear',onOk:function(){_cupLuPut(r,{fmt:L.fmt,m:[]});_cupRefresh();}});
+};
+window._cupLuPick=function(mi,sd,k){
+  if(!canEditTrip()||!WK.cup||_cupLuLocked(STATE.cupLuR))return;
+  const r=STATE.cupLuR,L=_cupLuGet(r);if(!L.m[mi])return;
+  const where={};L.m.forEach(function(x,i){x[sd].forEach(function(v){if(v!=null)where[v]=i;});});
+  const _tm=_cupTeam(sd),_free=_tm.filter(function(p){return where[p.pid]==null||p.pid===L.m[mi][sd][k];}),_used=_tm.filter(function(p){return !(where[p.pid]==null||p.pid===L.m[mi][sd][k]);});
+  const cur=L.m[mi][sd][k];
+  let ov=document.getElementById('cupPickSheet');
+  if(!ov){ov=document.createElement('div');ov.id='cupPickSheet';ov.className='grp-sheet-overlay';ov.onclick=function(e){if(e.target===ov)window._cupLuPickClose();};document.body.appendChild(ov);}
+  const rows=_free.concat(_used).map(function(p){const pid=String(p.pid).replace(/'/g,'');const w=where[p.pid];
+    return '<button type="button" class="lu-pk'+(p.pid===cur?' on':w!=null?' used':'')+'" onclick="window._cupLuSet('+mi+','+sd+','+k+',\''+pid+'\')"><span class="n">'+_gtEsc(_plFullName(p))+'</span><span class="i">'+sbHcpDisplay(p.idx)+'</span><span class="w">'+(w!=null&&p.pid!==cur?'In Match '+(w+1):'')+'</span></button>';}).join('');
+  ov.innerHTML='<div class="grp-sheet-inner su-sh"><div class="grp-sheet-pill"></div><div class="grp-sheet-title">Match '+(mi+1)+' · Team '+_gtEsc(WK.cup.teams[sd].name)+'</div>'
+    +'<div class="pm-note lu-pkn">'+(cur!=null?'Picking a player who is already placed swaps the two.':'Picking a player who is already placed moves him here.')+'</div>'
+    +'<div class="su-card cup-list">'+rows+'</div>'
+    +(cur!=null?'<button type="button" class="su-shrm" onclick="window._cupLuSet('+mi+','+sd+','+k+',null)">Leave this spot empty</button>':'')
+    +'<button type="button" class="su-shdone" onclick="window._cupLuPickClose()">Cancel</button></div>';
+  ov.style.display='flex';
+};
+window._cupLuPickClose=function(){const ov=document.getElementById('cupPickSheet');if(ov)ov.remove();};
+// A player is in one spot per round. Picking one already placed swaps him with this spot's player (v125.3).
+window._cupLuSet=function(mi,sd,k,pid){
+  if(!canEditTrip()||!WK.cup||_cupLuLocked(STATE.cupLuR))return;
+  const r=STATE.cupLuR,L=_cupLuGet(r);if(!L.m[mi])return;
+  if(pid!=null){const p=(WK.players||[]).find(function(x){return String(x.pid)===String(pid);});if(!p||_cupSideOf(p.pid)!==sd)return;pid=p.pid;
+    const was=L.m[mi][sd][k];L.m.forEach(function(x){x[sd]=x[sd].map(function(v){return v===pid?was:v;});});}
+  L.m[mi][sd][k]=pid;
+  _cupLuPut(r,L);window._cupLuPickClose();_cupRefresh();
+};
+function _cupSetupHtml(){
+  const c=(WK.cup&&WK.cup.on)?WK.cup:null,ed=canEditTrip(),dis=ed?'':' disabled';
+  const tg=function(on,js){return '<label class="toggle"><input type="checkbox" '+(on?'checked':'')+dis+' onchange="'+js+'"><span class="toggle-slider"></span></label>';};
+  let h='<div class="sec-hd gs-sec">The cup</div><div class="su-card" id="cupCard">';
+  h+=_gsRow('Team Cup','Two teams play for points',tg(!!c,'window._cupOn(this.checked)'));
+  if(!c)return h+'</div>';
+  h+=_gsRow('Name','','<input class="inline-edit su-in" value="'+_gtEsc(c.name||'')+'" placeholder="'+_gtEsc(WK.name||'The Cup')+'"'+dis+' onchange="window._cupSet(\'name\',this.value)"/>');
+  h+='</div><div class="sec-hd gs-sec">Teams</div><div class="su-card">';
+  [0,1].forEach(function(sd){
+    const t=c.teams[sd]||{},cap=(WK.players||[]).find(p=>p.pid===t.cap),n=_cupCount(sd);
+    h+='<button type="button" class="su-rdb cup-trow" onclick="window._cupOpen()"><span class="su-rt"><b><span class="cup-dot cup-'+(sd?'b':'a')+'"></span>Team '+_gtEsc(t.name||'')+'</b><small>'+(cap?'Captain '+_gtEsc(_plFullName(cap))+' · ':'')+n+' player'+(n===1?'':'s')+'</small></span><span class="su-ch" aria-hidden="true">›</span></button>';
+  });
+  const rs=_cupRounds(),tot=_cupLuTotal();
+  h+='</div><div class="pm-hd hw-grp"><div class="sec-hd gs-sec">Matches</div><span class="pm-meta">'+(tot?tot+' point'+(tot===1?'':'s')+' · '+_cupPts(tot/2+0.5)+' wins':'')+'</span></div><div class="su-card">';
+  if(!rs.length)h+='<div class="pm-empty">Add a round to the trip first.</div>';
+  rs.forEach(function(r){
+    const L=_cupLuGet(r),n=_cupLuN(L.fmt),rd=WK.rounds[r];
+    const sub=L.fmt==='off'?'Not in the cup':(L.fmt==='sg'?'Singles':'Best ball')+' · '+n+' match'+(n===1?'':'es')+(n&&!_cupLuFull(L)?' · <span class="lu-warn">lineup not set</span>':'');
+    h+='<button type="button" class="su-rdb cup-lurow" onclick="window._cupLuOpen('+r+')"><span class="su-rt"><b>'+roundLabel(r)+(rd&&rd.courseName?' · '+_gtEsc(courseDisp(rd.courseName)):'')+'</b><small>'+sub+'</small></span><span class="su-ch" aria-hidden="true">›</span></button>';
+  });
+  h+='</div><div class="pm-note">A match is worth 1 point, a halve ½ each. Each round\'s lineup sets who plays whom.</div>';
+  return h+_cupMoneyHtml(ed);
+}
+// v125.10: cup money. The cup's Entry (each player puts in) funds a payout table the organizer builds; an ace or
+// albatross is paid outside the pot. WK.cup.entry (number), WK.cup.pay = [{id,kind,r,who,sc,amt,name,win}],
+// WK.cup.ace (number, 0 off). kind: 'cup' (winning team), 'ln' (low net: who 'pair' or 'player'), 'sk' (skins: sc
+// 'g' or 'n'), 'pick' (the organizer picks the winner: win = pids). r: a round id, or 'all'.
+// Money: a payout counts once it is decided. Its winners take it, split evenly on a tie, and everyone pays an even
+// share of it, so the books always balance and a payout not decided (or a skins round with no skin) costs nobody.
+// When every payout is decided, each player has paid his whole entry, less any part of the pot left unassigned.
+// v125.11: whole dollars with a thousands comma ($6,000), cents only when there are any.
+function _cupM(v){const r=Math.round((+v||0)*100)/100,a=Math.abs(r),w=Math.floor(a),c=Math.round((a-w)*100);return (r<0?'-':'')+'$'+String(w).replace(/\B(?=(\d{3})+(?!\d))/g,',')+(c?'.'+String(c).padStart(2,'0'):'');}
+function _cupPayList(){const c=WK&&WK.cup;return (c&&c.on&&Array.isArray(c.pay))?c.pay:[];}
+function _cupRi(rid){if(rid==='all')return 'all';for(let r=0;r<(WK.rounds||[]).length;r++){if(_cupRid(r)===String(rid))return r;}return null;}
+function _cupPayLabel(p){
+  if(p.kind==='cup')return 'Cup winners';
+  if(p.kind==='sk')return 'Skins';
+  if(p.kind==='pick')return (p.name&&String(p.name).trim())||'Picked winner';
+  if(p.who==='pair')return 'Two-man low net';
+  return p.r==='all'?'Overall low net':'Low net';
+}
+function _cupPaySub(p){
+  const ri=_cupRi(p.r),rl=ri==='all'?'All rounds':(ri!=null&&WK.rounds[ri]?roundLabel(ri):'No round');
+  if(p.kind==='cup'){const n=_cupCount(0)||_cupCount(1)?Math.max(_cupCount(0),_cupCount(1)):0;return 'Winning team'+(n&&p.amt?' · '+_cupM(p.amt/n)+' each':'');}
+  if(p.kind==='sk')return rl+' · '+(p.sc==='n'?'net':'gross')+' · split by skins';
+  if(p.kind==='pick'){const w=(p.win||[]).map(function(pid){const q=_cupPl(pid);return q?_cupShort(q):null;}).filter(Boolean);return rl+' · '+(w.length?w.join(', '):'winner not picked');}
+  return rl+' · '+(p.who==='pair'?'best ball pairs':'net stroke play');
+}
+function _cupPot(){const c=WK&&WK.cup;return (c&&c.on?(+c.entry||0):0)*((WK.players||[]).length);}
+function _cupPaid(){return _cupPayList().reduce(function(t,p){return t+(+p.amt||0);},0);}
+function _cupRdDone(r){
+  const off=holeOffset(r),n=roundHoleCount(r),sc=STATE.scores&&STATE.scores[r];if(!sc)return false;
+  for(let h=off;h<off+n;h++){for(let pi=0;pi<WK.players.length;pi++){if(!sc[h]||sc[h][pi]==null)return false;}}
+  return true;
+}
+function _cupPiOf(pid){return (WK.players||[]).findIndex(function(p){return p.pid===pid;});}
+// Winners of one payout: [{pis:[...], share}] where shares add to 1; null while undecided; [] when nobody wins.
+function _cupPayWinners(p){
+  const ri=_cupRi(p.r),N=WK.players.length;
+  if(p.kind==='pick'){const pis=(p.win||[]).map(_cupPiOf).filter(function(i){return i>=0;});return pis.length?pis.map(function(i){return {pis:[i],share:1/pis.length};}):null;}
+  if(p.kind==='cup'){
+    const T=_cupTotals();if(!T.n||T.done<T.n)return null;
+    if(T.pts[0]===T.pts[1]){const all=WK.players.map(function(_,i){return i;});return [{pis:all,share:1}];}
+    const sd=T.pts[0]>T.pts[1]?0:1;return [{pis:WK.players.map(function(_,i){return i;}).filter(function(i){return _cupSideOf(WK.players[i].pid)===sd;}),share:1}];
+  }
+  const rs=ri==='all'?WK.rounds.map(function(_,r){return r;}).filter(function(r){return inStandingsRound(r);}):(ri==null||!WK.rounds[ri]?[]:[ri]);
+  if(!rs.length||!rs.every(_cupRdDone))return null;
+  if(p.kind==='sk'){
+    if(ri==='all')return null;
+    const r=ri,off=holeOffset(r),n=roundHoleCount(r),won=WK.players.map(function(){return 0;});let S=0;
+    for(let h=off;h<off+n;h++){
+      const v=WK.players.map(function(_,pi){return p.sc==='n'?getNet(pi,h,r):STATE.scores[r][h][pi];});
+      const lo=Math.min.apply(null,v),who=v.map(function(x,i){return x===lo?i:-1;}).filter(function(i){return i>=0;});
+      if(who.length===1){won[who[0]]++;S++;}
+    }
+    if(!S)return [];
+    return won.map(function(k,i){return k?{pis:[i],share:k/S}:null;}).filter(Boolean);
+  }
+  // low net
+  if(p.who==='pair'){
+    if(ri==='all')return null;
+    const L=_cupLuGet(ri);if(L.fmt!=='bb')return [];
+    const off=holeOffset(ri),n=roundHoleCount(ri),pairs=[];
+    L.m.forEach(function(x){[0,1].forEach(function(sd){const pis=x[sd].map(_cupPiOf);if(pis.length===2&&pis.every(function(i){return i>=0;}))pairs.push(pis);});});
+    if(!pairs.length)return [];
+    const tot=pairs.map(function(pr){let t=0;for(let h=off;h<off+n;h++)t+=Math.min(getNet(pr[0],h,ri),getNet(pr[1],h,ri));return t;});
+    const lo=Math.min.apply(null,tot),best=pairs.filter(function(_,k){return tot[k]===lo;});
+    return best.map(function(pr){return {pis:pr,share:1/best.length};});
+  }
+  const tot=WK.players.map(function(_,pi){let t=0;rs.forEach(function(r){const off=holeOffset(r),n=roundHoleCount(r);for(let h=off;h<off+n;h++)t+=getNet(pi,h,r);});return t;});
+  const lo=Math.min.apply(null,tot),best=tot.map(function(x,i){return x===lo?i:-1;}).filter(function(i){return i>=0;});
+  return best.map(function(i){return {pis:[i],share:1/best.length};});
+}
+// Aces and albatrosses: every one counts, each other player pays the ace amount.
+function _cupAces(){
+  const c=WK&&WK.cup,amt=c&&c.on?(+c.ace||0):0,out=[];if(!amt)return out;
+  WK.rounds.forEach(function(rd,r){const off=holeOffset(r),n=roundHoleCount(r),sc=STATE.scores&&STATE.scores[r];if(!sc)return;
+    for(let h=off;h<off+n;h++){const par=(rd.course&&rd.course.holes&&rd.course.holes[h]&&rd.course.holes[h].par)||4;
+      WK.players.forEach(function(_,pi){const g=sc[h]&&sc[h][pi];if(g==null)return;if(g===1||g<=par-3)out.push({pi:pi,r:r,h:h,g:g,par:par});});}});
+  return out;
+}
+// Per player: rows {l,d,v} and a total. Entry shows as one line: his share of every payout decided so far.
+function _cupMoney(){
+  const N=(WK.players||[]).length,rows=WK.players.map(function(){return [];}),tot=WK.players.map(function(){return 0;});
+  const c=WK&&WK.cup;if(!c||!c.on||!N)return {rows:rows,tot:tot,decided:0,all:0};
+  let spent=0,decided=0;const list=_cupPayList();
+  list.forEach(function(p){
+    const amt=+p.amt||0;if(!amt)return;const w=_cupPayWinners(p);if(w===null)return;decided++;
+    if(!w.length)return;/* no winner (a skins round with no skin): nobody pays it */
+    spent+=amt;
+    w.forEach(function(g){const each=amt*g.share/g.pis.length;g.pis.forEach(function(pi){rows[pi].push({l:_cupPayLabel(p),d:_cupPaySub(p).replace(/ · split by skins$/,''),v:each});tot[pi]+=each;});});
+  });
+  if(spent){const sh=spent/N;WK.players.forEach(function(_,pi){rows[pi].push({l:'Entry',d:decided<list.filter(function(p){return +p.amt;}).length?'paid out so far':_cupM(+c.entry||0)+' each',v:-sh});tot[pi]-=sh;});}
+  const ace=+c.ace||0;
+  _cupAces().forEach(function(a){
+    const lbl=(a.g===1?'Ace':'Albatross')+', '+roundLabel(a.r)+' hole '+(a.h+1);
+    WK.players.forEach(function(_,pi){const v=pi===a.pi?ace*(N-1):-ace;rows[pi].push({l:pi===a.pi?'Your '+(a.g===1?'ace':'albatross'):(a.g===1?'Ace':'Albatross'),d:pi===a.pi?lbl:_cupShort(WK.players[a.pi])+', '+roundLabel(a.r)+' hole '+(a.h+1),v:v});tot[pi]+=v;});
+  });
+  return {rows:rows,tot:tot,decided:decided,all:list.length};
+}
+// ---- Settings: Money on the Team Cup screen ----
+function _cupMoneyHtml(ed){
+  const c=WK.cup,dis=ed?'':' disabled',N=(WK.players||[]).length,pot=_cupPot(),paid=_cupPaid(),left=pot-paid;
+  let h='<div class="sec-hd gs-sec">Money</div><div class="su-card">';
+  h+=_gsRow('Entry','Each player puts in','<div class="gs-money"><button type="button" aria-label="Less"'+dis+' onclick="window._cupEntryStep(this,-25)">−</button><span>$</span><input class="ie-num" type="number" inputmode="decimal" min="0" value="'+(+c.entry||0)+'"'+dis+' onchange="window._cupSet(\'entry\',this.value)"/><button type="button" aria-label="More"'+dis+' onclick="window._cupEntryStep(this,25)">+</button></div>');
+  h+='</div><div class="pm-meta cup-pot"><span>'+N+' players · <b>'+_cupM(pot)+'</b> in the pot</span>'
+    +(!pot&&!paid?'':left===0?'<span class="cup-pot-ok">All paid out ✓</span>':left>0?'<span class="cup-pot-warn">'+_cupM(left)+' not paid out</span>':'<span class="cup-pot-over">'+_cupM(-left)+' over the pot</span>')+'</div>';
+  h+='<div class="pm-hd hw-grp"><div class="sec-hd gs-sec">Payouts</div>'+(ed?'<span class="pm-meta co-addl" onclick="window._cupPayAdd()">+ Add</span>':'')+'</div><div class="su-card">';
+  const L=_cupPayList();
+  if(!L.length)h+='<div class="pm-empty">No payouts yet. Add the cup, low net, skins or a prize you pick.</div>';
+  L.forEach(function(p,i){h+='<button type="button" class="su-rdb cup-payrow" onclick="window._cupPayOpen('+i+')"><span class="su-rt"><b>'+_gtEsc(_cupPayLabel(p))+'</b><small>'+_cupPaySub(p)+'</small></span><span class="cup-amt">'+_cupM(+p.amt||0)+'</span><span class="su-ch" aria-hidden="true">›</span></button>';});
+  h+='</div><div class="sec-hd gs-sec">Outside the pot</div><div class="su-card">';
+  h+=_gsRow('Ace or albatross','Each other player pays,<br>every one counts','<div class="gs-money"><button type="button" aria-label="Less"'+dis+' onclick="window._cupAceStep(this,-25)">−</button><span>$</span><input class="ie-num" type="number" inputmode="decimal" min="0" value="'+(+c.ace||0)+'"'+dis+' onchange="window._cupSet(\'ace\',this.value)"/><button type="button" aria-label="More"'+dis+' onclick="window._cupAceStep(this,25)">+</button></div>');
+  h+='</div><div class="pm-note">A tie splits a payout. A tied cup splits the cup payout among everyone. Money counts once a payout is decided.</div>';
+  return h;
+}
+window._cupEntryStep=function(btn,d){if(!canEditTrip()||!WK.cup)return;const inp=btn.parentNode.querySelector('input');const v=Math.max(0,Math.round(((parseFloat(inp&&inp.value)||0)+d)*100)/100);WK.cup.entry=v;_cupDirty();_cupRefresh();};
+window._cupAceStep=function(btn,d){if(!canEditTrip()||!WK.cup)return;const inp=btn.parentNode.querySelector('input');const v=Math.max(0,Math.round(((parseFloat(inp&&inp.value)||0)+d)*100)/100);WK.cup.ace=v;_cupDirty();_cupRefresh();};
+window._cupPayAdd=function(){
+  if(!canEditTrip()||!WK.cup)return;
+  if(!Array.isArray(WK.cup.pay))WK.cup.pay=[];
+  const rs=_cupRounds();
+  WK.cup.pay.push({id:'p'+Date.now().toString(36)+WK.cup.pay.length,kind:'sk',r:rs.length?_cupRid(rs[0]):'all',who:'player',sc:'g',amt:0,name:'',win:[]});
+  _cupDirty();_cupRefresh();window._cupPayOpen(WK.cup.pay.length-1);
+};
+window._cupPayClose=function(){const ov=document.getElementById('cupPaySheet');if(ov)ov.remove();_cupRefresh();};
+window._cupPaySet=function(i,k,v){
+  if(!canEditTrip()||!WK.cup||!WK.cup.pay||!WK.cup.pay[i])return;const p=WK.cup.pay[i];
+  if(k==='amt')p.amt=Math.max(0,Math.round((parseFloat(v)||0)*100)/100);
+  else if(k==='name')p.name=String(v||'').trim().slice(0,40);
+  else if(k==='kind'){if(['cup','ln','sk','pick'].indexOf(v)<0)return;p.kind=v;}
+  else if(k==='r')p.r=String(v);
+  else if(k==='who')p.who=v==='pair'?'pair':'player';
+  else if(k==='sc')p.sc=v==='n'?'n':'g';
+  _cupDirty();
+  if(k!=='amt'&&k!=='name')window._cupPayOpen(i);
+};
+window._cupPayAmtStep=function(i,btn,d){const inp=btn.parentNode.querySelector('input');const v=Math.max(0,(parseFloat(inp&&inp.value)||0)+d);if(inp)inp.value=v;window._cupPaySet(i,'amt',v);};
+window._cupPayRemove=function(i){
+  if(!canEditTrip()||!WK.cup||!WK.cup.pay||!WK.cup.pay[i])return;
+  const p=WK.cup.pay[i];
+  _confirmSheet({icon:'ti-trash',title:'Remove '+_cupPayLabel(p)+'?',danger:true,body:'This payout comes off the list.',okLabel:'Remove',onOk:function(){WK.cup.pay.splice(i,1);_cupDirty();window._cupPayClose();}});
+};
+window._cupPayOpen=function(i){
+  const c=WK.cup,p=c&&c.pay&&c.pay[i];if(!p)return;
+  let ov=document.getElementById('cupPaySheet');
+  if(!ov){ov=document.createElement('div');ov.id='cupPaySheet';ov.className='grp-sheet-overlay';ov.onclick=function(e){if(e.target===ov)window._cupPayClose();};document.body.appendChild(ov);}
+  const ed=canEditTrip(),dis=ed?'':' disabled',rs=_cupRounds();
+  const seg=function(opts,cur,k){return ed?_gsSeg(opts,cur,'window._cupPaySet('+i+',\''+k+'\',VAL)',false):'<span class="su-fixed">'+((opts.find(function(o){return String(o[0])===String(cur);})||[0,''])[1])+'</span>';};
+  const rOpts=rs.map(function(r){return [_cupRid(r),roundLabel(r)];}).concat([['all','All']]);
+  const one=p.kind==='sk'||(p.kind==='ln'&&p.who==='pair');
+  let h='<div class="grp-sheet-inner su-sh"><div class="grp-sheet-pill"></div><div class="grp-sheet-title">'+_gtEsc(_cupPayLabel(p))+'</div><div class="su-card">';
+  h+=_gsRow('Prize','',seg([['cup','Cup'],['ln','Low net'],['sk','Skins'],['pick','Pick']],p.kind,'kind'),true);
+  h+=_gsRow('Round','',p.kind==='cup'?'':seg(rOpts,p.r,'r'),true,p.kind==='cup','The whole cup');
+  h+=_gsRow('Players',p.who==='pair'?'Best ball, a pair per team':'Each player alone',p.kind==='ln'?seg([['pair','Pairs'],['player','Players']],p.who,'who'):'',false,p.kind!=='ln','Low net only');
+  h+=_gsRow('Scoring',p.sc==='n'?'Net skins':'Gross skins',p.kind==='sk'?seg([['g','Gross'],['n','Net']],p.sc,'sc'):'',false,p.kind!=='sk','Skins only');
+  h+=_gsRow('Name','Closest to the pin, longest drive…',p.kind==='pick'?'<input class="inline-edit su-in" value="'+_gtEsc(p.name||'')+'" placeholder="Closest to the pin"'+dis+' onchange="window._cupPaySet('+i+',\'name\',this.value)"/>':'',false,p.kind!=='pick','Pick only');
+  h+=_gsRow('Winner','You pick who won',p.kind==='pick'?'<button type="button" class="cup-winbtn"'+dis+' onclick="window._cupPayWinOpen('+i+')">'+((p.win||[]).length?(p.win||[]).map(function(pid){const q=_cupPl(pid);return q?_cupShort(q):'';}).filter(Boolean).join(', '):'Pick')+' ›</button>':'',false,p.kind!=='pick','From the scores');
+  h+=_gsRow('Amount',p.kind==='cup'?'Split by the winning team':p.kind==='sk'?'Split by the skins won':'Split on a tie','<div class="gs-money"><button type="button" aria-label="Less"'+dis+' onclick="window._cupPayAmtStep('+i+',this,-25)">−</button><span>$</span><input class="ie-num" type="number" inputmode="decimal" min="0" value="'+(+p.amt||0)+'"'+dis+' onchange="window._cupPaySet('+i+',\'amt\',this.value)"/><button type="button" aria-label="More"'+dis+' onclick="window._cupPayAmtStep('+i+',this,25)">+</button></div>');
+  h+='</div>';
+  const note=p.kind==='sk'?'A skin is a hole one player wins outright across the whole field. No carryovers. A round with no skin pays nobody.'
+    :p.kind==='cup'?'The team with more points takes it, split evenly. A tied cup splits it among everyone.'
+    :p.kind==='ln'?(p.who==='pair'?'The pair with the lowest best-ball net in the round\'s lineup.':'Lowest net total for the round, or for every round with All.')
+    :'For a prize the scores can\'t settle. Split if you pick more than one.';
+  h+='<div class="pm-note">'+note+(one&&p.r==='all'?' <span class="lu-warn">Pick one round.</span>':'')+'</div>';
+  if(ed)h+='<button type="button" class="su-shrm" onclick="window._cupPayRemove('+i+')">Remove payout</button>';
+  h+='<button type="button" class="su-shdone" onclick="window._cupPayClose()">Done</button></div>';
+  ov.innerHTML=h;ov.style.display='flex';
+};
+window._cupPayWinOpen=function(i,from){
+  const p=WK.cup&&WK.cup.pay&&WK.cup.pay[i];if(!p||!canEditTrip())return;
+  let ov=document.getElementById('cupPickSheet');
+  if(!ov){ov=document.createElement('div');ov.id='cupPickSheet';ov.className='grp-sheet-overlay';ov.onclick=function(e){if(e.target===ov)window._cupPayWinClose(i);};document.body.appendChild(ov);}
+  if(from)ov._from=from; // v125.18: opened from a Games tile, Done goes back there
+  const on={};(p.win||[]).forEach(function(pid){on[pid]=1;});
+  const rows=(WK.players||[]).slice().sort(function(a,b){return _plFullName(a).localeCompare(_plFullName(b),undefined,{sensitivity:'base'});}).map(function(q){const pid=String(q.pid).replace(/'/g,'');
+    return '<button type="button" class="lu-pk'+(on[q.pid]?' on':'')+'" onclick="window._cupPayWinTog('+i+',\''+pid+'\')"><span class="n">'+_gtEsc(_plFullName(q))+'</span><span class="i">'+sbHcpDisplay(q.idx)+'</span><span class="w">'+(on[q.pid]?'Winner':'')+'</span></button>';}).join('');
+  ov.innerHTML='<div class="grp-sheet-inner su-sh"><div class="grp-sheet-pill"></div><div class="grp-sheet-title">'+_gtEsc(_cupPayLabel(p))+'</div><div class="pm-note lu-pkn">Tap who won. Pick two or more to split it.</div><div class="su-card cup-list">'+rows+'</div><button type="button" class="su-shdone" onclick="window._cupPayWinClose('+i+')">Done</button></div>';
+  ov.style.display='flex';
+};
+window._cupPayWinTog=function(i,pid){
+  const p=WK.cup&&WK.cup.pay&&WK.cup.pay[i];if(!p||!canEditTrip())return;
+  const q=(WK.players||[]).find(function(x){return String(x.pid)===String(pid);});if(!q)return;
+  if(!Array.isArray(p.win))p.win=[];
+  const k=p.win.indexOf(q.pid);if(k>=0)p.win.splice(k,1);else p.win.push(q.pid);
+  _cupDirty();window._cupPayWinOpen(i);
+};
+window._cupPayWinClose=function(i){const ov=document.getElementById('cupPickSheet');const fr=ov&&ov._from;if(ov)ov.remove();if(fr==='games'){renderGamesContent();return;}window._cupPayOpen(i);};
+// v125.13: payouts on the Games tab. A cup round's payouts (low net, skins, a picked prize) each get a tile in the
+// game strip, read-only, worked out from the scores as they come in: low net pairs as a leaderboard (Four-Ball's
+// shape), low net players likewise, skins as one list for the whole field, a pick as its winner.
+function _cupPayFor(r){
+  return _cupPayList().map(function(p,i){return {p:p,i:i};}).filter(function(x){const p=x.p,ri=_cupRi(p.r);
+    if(!(+p.amt))return false;
+    if(p.kind==='ln')return p.r==='all'?inStandingsRound(r):ri===r;
+    if(p.kind==='sk'||p.kind==='pick')return ri===r;
+    return false;});
+}
+function _cupPayKey(x){return 'pay:'+(x.p.id||('i'+x.i));}
+function _cupPayShort(p){
+  if(p.kind==='sk')return 'Skins';
+  if(p.kind==='pick'){const n=_cupPayLabel(p);return n.length>16?n.slice(0,15)+'…':n;}
+  return p.r==='all'?'Overall net':'Low net';
+}
+function _cupPayPills(r){
+  return _cupPayFor(r).map(function(x){const k=_cupPayKey(x);
+    return '<button class="game-pill'+(STATE.gamesViewGame===k?' active':'')+'" onclick="switchGamesGame(\''+k+'\')">'+_gtEsc(_cupPayShort(x.p))+' <span class="cup-tag">'+_cupM(+x.p.amt||0)+'</span></button>';}).join('');
+}
+function _cupPayByKey(r,k){return _cupPayFor(r).find(function(x){return _cupPayKey(x)===k;})||null;}
+function _cupTp(v){return v===0?'E':(v>0?'+'+v:String(v));}
+function _cupPar(r,h){const c=WK.rounds[r].course;return (c&&c.holes&&c.holes[h]&&c.holes[h].par)||4;}
+function _cupNmSpan(pi){const p=WK.players[pi];if(!p)return '';const sd=_cupSideOf(p.pid);return '<span class="'+(sd===0?'a':sd===1?'b':'')+'">'+_gtEsc(displayName(pi))+'</span>';}
+function _cupPayViewHtml(r,x){
+  const p=x.p,N=WK.players.length,off=holeOffset(r),n=roundHoleCount(r),open=STATE.cupPayOpen||{};
+  let h='<div class="pm-note cpv-note">';
+  h+=p.kind==='sk'?'Payout: '+_cupM(+p.amt)+' split by skins won across the whole field ('+(p.sc==='n'?'net':'gross')+'). No carryovers.'
+    :p.kind==='pick'?'Payout: '+_cupM(+p.amt)+(canEditTrip()?' to the winner. Tap Pick to choose who won; pick two or more to split it.':' to the winner the organizer picks.')
+    :p.who==='pair'?'Payout: '+_cupM(+p.amt)+' to the low best-ball pair, split on a tie. Worked out from the scores.'
+    :'Payout: '+_cupM(+p.amt)+' to the lowest net '+(p.r==='all'?'total across every round':'score this round')+', split on a tie.';
+  h+='</div><div class="section-card cpv">';
+  if(p.kind==='pick'){
+    const w=(p.win||[]).map(_cupPiOf).filter(function(i){return i>=0;});
+    h+='<div class="cpv-hd"><b>'+_gtEsc(_cupPayLabel(p))+'</b><span>'+roundLabel(r)+'</span></div>';
+    // v125.18: an editor picks the winner right here; the sheet comes back to Games.
+    const _ed=canEditTrip(),_go=' onclick="window._cupPayWinOpen('+x.i+',\'games\')"';
+    if(!w.length)h+=_ed?'<div class="cpv-pk"'+_go+'><span>Not picked yet</span><b>Pick ›</b></div>':'<div class="cpv-ft"><span>Not picked yet</span></div>';
+    else{w.forEach(function(pi){h+='<div class="cpv-row"><span class="cpv-rk lead">1</span><span class="cpv-nm">'+_cupNmSpan(pi)+'</span><span class="cpv-amt">'+_cupM((+p.amt)/w.length)+'</span></div>';});
+      if(_ed)h+='<div class="cpv-pk"'+_go+'><span>Picked by the organizer</span><b>Change ›</b></div>';}
+    return h+'</div>';
+  }
+  if(p.kind==='sk'){
+    const won=WK.players.map(function(){return [];});let S=0,thru=0;
+    for(let hh=off;hh<off+n;hh++){
+      const v=WK.players.map(function(_,pi){return p.sc==='n'?getNet(pi,hh,r):STATE.scores[r][hh][pi];});
+      if(v.some(function(s){return s==null;}))continue;thru=hh-off+1;
+      const lo=Math.min.apply(null,v),who=v.map(function(s,i){return s===lo?i:-1;}).filter(function(i){return i>=0;});
+      if(who.length===1){won[who[0]].push(hh+1);S++;}
+    }
+    h+='<div class="cpv-hd"><b>Skins</b><span>'+roundLabel(r)+' · '+(p.sc==='n'?'net':'gross')+' · whole field</span></div>';
+    const rows=won.map(function(hs,pi){return {pi:pi,hs:hs};}).filter(function(o){return o.hs.length;}).sort(function(a,b){return b.hs.length-a.hs.length;});
+    rows.forEach(function(o){h+='<div class="cpv-row"><span class="cpv-rk">'+o.hs.length+'</span><span class="cpv-nm">'+_cupNmSpan(o.pi)+'<small>Hole'+(o.hs.length>1?'s ':' ')+o.hs.join(', ')+'</small></span><span class="cpv-amt">'+_cupM((+p.amt)*o.hs.length/S)+'</span></div>';});
+    h+='<div class="cpv-ft"><span>'+(S?S+(S===1?' skin':' skins'):'No skins yet')+(thru?' thru '+(thru+off):'')+'</span>'+(S?'<span>'+_cupM((+p.amt)/S)+' a skin</span>':'')+'</div>';
+    return h+'</div>';
+  }
+  // low net: pairs from the round's lineup, or players
+  let ents=[];
+  if(p.who==='pair'){
+    const L=_cupLuGet(r);
+    if(L.fmt==='bb')L.m.forEach(function(m){[0,1].forEach(function(sd){const pis=m[sd].map(_cupPiOf);if(pis.length===2&&pis.every(function(i){return i>=0;}))ents.push({pis:pis});});});
+    ents.forEach(function(e){let tp=0,th=0;for(let hh=off;hh<off+n;hh++){const a=getNet(e.pis[0],hh,r),b=getNet(e.pis[1],hh,r);const v=[a,b].filter(function(s){return s!=null;});if(!v.length)continue;tp+=Math.min.apply(null,v)-_cupPar(r,hh);th++;}e.tp=tp;e.th=th;});
+  }else{
+    const rs=p.r==='all'?WK.rounds.map(function(_,q){return q;}).filter(function(q){return inStandingsRound(q);}):[r];
+    ents=WK.players.map(function(_,pi){let tp=0,th=0;rs.forEach(function(q){const o=holeOffset(q),k=roundHoleCount(q);for(let hh=o;hh<o+k;hh++){const s=getNet(pi,hh,q);if(s==null)continue;tp+=s-_cupPar(q,hh);th++;}});return {pis:[pi],tp:tp,th:th};});
+  }
+  const live=ents.filter(function(e){return e.th>0;}).sort(function(a,b){return a.tp-b.tp||b.th-a.th;}).concat(ents.filter(function(e){return !e.th;}));
+  live.forEach(function(e,k){e.rank=k&&live[k-1].th&&e.th&&live[k-1].tp===e.tp?live[k-1].rank:k+1;});
+  live.forEach(function(e){e.tie=live.filter(function(o){return o.th&&o.rank===e.rank;}).length>1;});
+  const lead=live.filter(function(e){return e.th&&e.rank===1;});
+  h+='<div class="cpv-hd"><b>'+_gtEsc(_cupPayLabel(p))+'</b><span>'+(p.who==='pair'?live.length+' pairs · ':'')+(p.r==='all'?'All rounds':roundLabel(r))+'</span></div>';
+  if(!live.length)h+='<div class="cpv-ft"><span>'+(p.who==='pair'?'Set this round\'s best-ball lineup first.':'No players.')+'</span></div>';
+  const done=_cupPayWinners(p)!==null;
+  live.forEach(function(e,k){
+    const key=r+':'+(p.id||x.i)+':'+k,isOpen=!!open[key],isLead=e.th&&e.rank===1;
+    h+='<div class="cpv-row'+(isLead?' lead':'')+'" onclick="window._cupPayTog(\''+key+'\')"><span class="cpv-rk'+(isLead?' lead':'')+'">'+(e.th?(e.tie?'T':'')+e.rank:'–')+'</span><span class="cpv-nm">'+e.pis.map(_cupNmSpan).join('<br>')+'</span>'
+      +'<span class="cpv-sc"><b class="'+(e.th&&e.tp<0?'u':'')+'">'+(e.th?_cupTp(e.tp):'–')+'</b><small>'+(e.th?(e.th>=n&&p.r!=='all'?'F':'thru '+e.th):'not started')+'</small>'+(isLead?'<i class="cpv-amt">'+(done?'Won ':'')+_cupM((+p.amt)/lead.length)+'</i>':'')+'</span></div>';
+    if(isOpen&&p.who==='pair'){
+      let g='<div class="cpv-grid"><table><tr><th>Hole</th>';for(let hh=off;hh<off+n;hh++)g+='<th>'+(hh+1)+'</th>';g+='</tr><tr class="par"><td>Par</td>';for(let hh=off;hh<off+n;hh++)g+='<td>'+_cupPar(r,hh)+'</td>';g+='</tr>';
+      e.pis.forEach(function(pi,j){const o=e.pis[1-j];g+='<tr><td>'+_gtEsc(displayName(pi))+'</td>';for(let hh=off;hh<off+n;hh++){const a=getNet(pi,hh,r),b=getNet(o,hh,r);g+='<td'+(a!=null&&(b==null||a<=b)?' class="c"':'')+'>'+(a==null?'':a)+'</td>';}g+='</tr>';});
+      g+='</table><div class="cpv-key">Net scores. Green is the score that counts.</div></div>';h+=g;
+    }
+  });
+  if(lead.length&&live.length>1){const nx=live.find(function(e){return e.th&&e.rank>1;});if(nx)h+='<div class="cpv-ft"><span>'+(lead.length>1?lead.length+' tied for the lead':'Leads by '+(nx.tp-lead[0].tp))+'</span><span>'+_cupM(+p.amt)+'</span></div>';}
+  return h+'</div>';
+}
+window._cupPayTog=function(key){if(!STATE.cupPayOpen)STATE.cupPayOpen={};STATE.cupPayOpen[key]=!STATE.cupPayOpen[key];renderGamesContent();};
+// v125.14: a foursome's tab in a cup round shows its matches as the cup rows All shows (Kyle, 25 Oct: "why can't the
+// F2 view be the same as the All tab? Showing just that foursome with the same tile that you can click?"). A row opens
+// its holes underneath. Only when no match on the tab carries money (stake or presses); otherwise the cards stay.
+function _cupLaneMoney(r,fi,m){const st=+roundValFs('gameVal',r,fi,WK.gameVal)||0;let pr=0;try{pr=getPresses(r,fi,m.si,isHeadsUp(r)?m.mi:undefined).length;}catch(e){}return st>0||pr>0;}
+function _cupLaneHoles(r,fi,m){
+  const hu=isHeadsUp(r),seg=getSegments(mpGamesForRound(r,fi),roundHoleCount(r))[m.si],off=holeOffset(r),end=Math.max(seg.start,Math.min(seg.end,fsHoleCount(r,fi)));
+  const tn=function(sd){return _gtEsc((WK.cup.teams[sd]||{}).name||'');},tc=function(sd){return sd===0?'a':'b';};
+  let pA=0,pB=0,closed=false,h='';
+  for(let x=seg.start;x<seg.end;x++){
+    if(!closed&&Math.abs(pA-pB)>end-x)closed=true;
+    const res=x<end?(hu?calcMPHU(x+off,r,fi,m.mi):calcMP(x+off,r,fi)):null;
+    if(!res){h+='<div class="mpk-hr"><span class="hn">'+(x+off+1)+'</span><span>-</span><span></span><span></span></div>';continue;}
+    let w;
+    if(closed)w='<span class="q">'+(res.halved?'Halved':(res.aWins?tn(m.sa):tn(m.sb)))+'</span>';
+    else{if(res.aWins)pA++;else if(res.halved){pA+=0.5;pB+=0.5;}else pB++;
+      w=res.halved?'<span class="q">Halved</span>':'<span class="cpl-'+(res.aWins?tc(m.sa):tc(m.sb))+'">'+(res.aWins?tn(m.sa):tn(m.sb))+'</span>';}
+    const up=pA-pB,st=closed?'<span class="q">closed out</span>':up===0?'<span style="color:var(--color-text-secondary)">All square</span>':'<span class="cpl-'+(up>0?tc(m.sa):tc(m.sb))+'">'+(up>0?tn(m.sa):tn(m.sb))+' '+Math.abs(up)+' up</span>';
+    h+='<div class="mpk-hr"><span class="hn">'+(x+off+1)+'</span><span>'+res.bestA+' vs '+res.bestB+'</span><span>'+st+'</span><span class="w">'+w+'</span></div>';
+  }
+  return h;
+}
+function _cupLaneDress(el,r,fi){
+  const ms=_cupMatches(r).filter(function(m){return m.fi===fi;});
+  if(!ms.length||ms.some(function(m){return _cupLaneMoney(r,fi,m);}))return false;
+  const cards=[...el.querySelectorAll('.mpk')];if(!cards.length)return false;
+  const open=STATE.cupLaneOpen||{};
+  let h='<div class="cpl">';
+  ms.forEach(function(m){const key=r+':'+fi+':'+m.si+':'+(m.mi==null?0:m.mi),o=!!open[key];
+    h+=_cupRowHtml(m,"window._cupLaneTog('"+key+"')").replace('class="rc-row','class="rc-row'+(o?' cpl-open':''));
+    if(o)h+='<div class="section-card mpk cpl-holes"><div class="mpk-bet cup-holes">'+_cupLaneHoles(r,fi,m)+'</div></div>';});
+  h+='<div class="pm-note rc-note">Tap '+(ms.length>1?'a':'the')+' match for its holes.</div></div>';
+  const d=document.createElement('div');d.innerHTML=h;cards[0].parentNode.insertBefore(d.firstChild,cards[0]);
+  cards.forEach(function(c){c.classList.add('cpl-hid');});
+  return true;
+}
+window._cupLaneTog=function(key){if(!STATE.cupLaneOpen)STATE.cupLaneOpen={};STATE.cupLaneOpen[key]=!STATE.cupLaneOpen[key];renderGamesContent();};
+// v125.14: the game strip's arrow. Shown while more tiles sit off to the right; a tap scrolls on.
+function _gsStripSync(){
+  const s=document.getElementById('gamesGameSel'),w=document.getElementById('gamesGameWrap');if(!s||!w)return;
+  w.classList.toggle('more',s.scrollWidth-s.clientWidth-s.scrollLeft>4);
+  w.classList.toggle('back',s.scrollLeft>4);
+  if(!s.dataset.sync){s.dataset.sync='1';s.addEventListener('scroll',_gsStripSync,{passive:true});window.addEventListener('resize',_gsStripSync);}
+}
+window._gsStripBack=function(){const s=document.getElementById('gamesGameSel');if(!s)return;try{s.scrollBy({left:-Math.max(120,s.clientWidth*0.7),behavior:'smooth'});}catch(e){s.scrollLeft-=Math.max(120,s.clientWidth*0.7);}setTimeout(_gsStripSync,350);};
+window._gsStripMore=function(){const s=document.getElementById('gamesGameSel');if(!s)return;try{s.scrollBy({left:Math.max(120,s.clientWidth*0.7),behavior:'smooth'});}catch(e){s.scrollLeft+=Math.max(120,s.clientWidth*0.7);}setTimeout(_gsStripSync,350);};
+// v125.16: Money on a cup trip (Kyle, 25 Oct: "we need to figure out the money tab"; mock approved). Bets becomes
+// Payouts: the pot paid out so far, then every payout grouped by round (whole trip, outside the pot last) with its
+// status (won and by whom, the leader, not started, winner not picked), each opening its board. Recap's top card says
+// what has paid out until the trip is complete; who pays whom shows then.
+function _cupMoneyOn(){return !!(WK&&WK.cup&&WK.cup.on&&_cupPayList().length);}
+function _cupPaidSoFar(){const L=_cupPayList();let paid=0,dec=0,n=0;L.forEach(function(p){if(!(+p.amt))return;n++;const w=_cupPayWinners(p);if(w===null)return;dec++;if(w.length)paid+=+p.amt;});return {paid:paid,dec:dec,n:n,pot:_cupPot()};}
+function _cupSoFarHtml(head,note){const s=_cupPaidSoFar(),pc=s.pot?Math.max(0,Math.min(100,Math.round(s.paid/s.pot*100))):0;
+  return '<div class="mn-top cpm-top"><div class="cpm-k">'+head+'</div><div class="cpm-n mn-top-v">'+_cupM(s.paid)+' <span>of '+_cupM(s.pot)+' paid out</span></div><div class="cpm-bar"><i style="width:'+pc+'%"></i></div><div class="cpm-s">'+note.replace('{d}',s.dec).replace('{n}',s.n)+'</div></div>';}
+function _cupNmT(pi){const p=WK.players[pi];if(!p)return '';const sd=_cupSideOf(p.pid);return '<span class="'+(sd===0?'cpl-a':sd===1?'cpl-b':'')+'">'+_gtEsc(displayName(pi))+'</span>';}
+function _cupPayStatus(p){
+  const ri=_cupRi(p.r),w=_cupPayWinners(p),amt=+p.amt||0;
+  if(p.kind==='cup'){const T=_cupTotals(),c=WK.cup;const sc='<span class="cpl-a">'+_gtEsc(c.teams[0].name)+' '+_cupPts(T.pts[0])+'</span> · <span class="cpl-b">'+_gtEsc(c.teams[1].name)+' '+_cupPts(T.pts[1])+'</span>';
+    if(w!==null)return {t:(T.pts[0]===T.pts[1]?'Tied · split by everyone · ':'Won · ')+sc,won:true};return {t:sc+(T.n?' · '+(T.n-T.done)+' to play':''),won:false};}
+  if(p.kind==='pick'){if(w===null)return {t:'Winner not picked',won:false};return {t:'Won · '+w.map(function(g){return g.pis.map(_cupNmT).join(' / ');}).join(', '),won:true};}
+  if(w!==null){if(!w.length)return {t:'No winner · pays nobody',won:false,none:true};
+    if(p.kind==='sk')return {t:'Won · '+w.map(function(g){return _cupNmT(g.pis[0])+' '+_cupM(amt*g.share);}).join(', '),won:true};
+    return {t:'Won · '+w.map(function(g){return g.pis.map(_cupNmT).join(' / ');}).join(', '),won:true};}
+  // not decided: started?
+  const rs=ri==='all'?WK.rounds.map(function(_,q){return q;}).filter(function(q){return inStandingsRound(q);}):(ri==null?[]:[ri]);
+  const any=rs.some(function(q){const o=holeOffset(q),k=roundHoleCount(q),sc=STATE.scores&&STATE.scores[q];if(!sc)return false;for(let h=o;h<o+k;h++){if(sc[h]&&sc[h].some(function(v){return v!=null;}))return true;}return false;});
+  if(!any)return {t:'Not started',won:false};
+  if(p.kind==='sk')return {t:'In progress',won:false};
+  // low net leader, as the board works it out
+  let ents=[];
+  if(p.who==='pair'&&ri!=='all'){const L=_cupLuGet(ri);if(L.fmt==='bb')L.m.forEach(function(m){[0,1].forEach(function(sd){const pis=m[sd].map(_cupPiOf);if(pis.length===2&&pis.every(function(i){return i>=0;}))ents.push(pis);});});
+    ents=ents.map(function(pis){let tp=0,th=0;const o=holeOffset(ri),k=roundHoleCount(ri);for(let h=o;h<o+k;h++){const v=pis.map(function(pi){return getNet(pi,h,ri);}).filter(function(s){return s!=null;});if(!v.length)continue;tp+=Math.min.apply(null,v)-_cupPar(ri,h);th++;}return {pis:pis,tp:tp,th:th};});}
+  else ents=WK.players.map(function(_,pi){let tp=0,th=0;rs.forEach(function(q){const o=holeOffset(q),k=roundHoleCount(q);for(let h=o;h<o+k;h++){const s=getNet(pi,h,q);if(s==null)continue;tp+=s-_cupPar(q,h);th++;}});return {pis:[pi],tp:tp,th:th};});
+  ents=ents.filter(function(e){return e.th;}).sort(function(x,y){return x.tp-y.tp||y.th-x.th;});
+  if(!ents.length)return {t:'Not started',won:false};
+  const top=ents.filter(function(e){return e.tp===ents[0].tp;});
+  return {t:(top.length>1?'Tied · ':'Leader · ')+top.map(function(e){return e.pis.map(_cupNmT).join(' / ');}).join(', ')+' '+_cupTp(ents[0].tp)+' thru '+ents[0].th,won:false};
+}
+function _cupPayOpenJs(p){const ri=_cupRi(p.r);if(p.kind==='cup')return "window.scrollTo(0,0);setView('board')";const k='pay:'+(p.id||'');
+  const r=ri==='all'?(typeof STATE.currentRound==='number'?STATE.currentRound:0):ri;return "_mnOpenGame("+r+",'"+k.replace(/'/g,'')+"')";}
+function _cupMoneyBetsHtml(){
+  const c=WK.cup,L=_cupPayList();
+  let h=_cupSoFarHtml(_gtEsc(c.name||WK.name||'Team Cup')+' · Entry '+_cupM(+c.entry||0),'{d} of {n} payouts decided. Money counts once a payout is decided.');
+  const groups=[];
+  WK.rounds.forEach(function(rd,r){const ps=L.filter(function(p){return (+p.amt)&&p.kind!=='cup'&&_cupRi(p.r)===r;});if(ps.length)groups.push({t:roundLabel(r)+(rd.courseName?' · '+_gtEsc(courseDisp(rd.courseName)):''),ps:ps});});
+  const all=L.filter(function(p){return (+p.amt)&&(p.kind==='cup'||_cupRi(p.r)==='all');});if(all.length)groups.push({t:'Whole trip',ps:all});
+  groups.forEach(function(g){h+='<div class="sec-hd mn-exsec">'+g.t+'</div><div class="mn-row cpm-card">';
+    g.ps.forEach(function(p){const st=_cupPayStatus(p),amt=+p.amt||0;let sub='';
+      if(p.kind==='cup'){const n=Math.max(_cupCount(0),_cupCount(1));if(n)sub=_cupM(amt/n)+' each';}
+      h+='<div class="cpm-r" onclick="'+_cupPayOpenJs(p)+'"><div class="t"><b>'+_gtEsc(_cupPayLabel(p))+(p.kind==='sk'&&p.sc==='n'?' (net)':'')+'</b><small>'+st.t+'</small></div><div class="v'+(st.won?' g':st.none?' q':'')+'">'+_cupM(amt)+(sub?'<small>'+sub+'</small>':'')+'</div><span class="mn-chev">›</span></div>';});
+    h+='</div>';});
+  const ace=+c.ace||0;
+  if(ace){const A=_cupAces();h+='<div class="sec-hd mn-exsec">Outside the pot</div><div class="mn-row cpm-card"><div class="cpm-r"><div class="t"><b>Ace or albatross</b><small>'+(A.length?A.map(function(a){return _cupNmT(a.pi)+' · '+roundLabel(a.r)+' hole '+(a.h+1);}).join(', '):'None yet')+' · '+_cupM(ace)+' from each other player</small></div><div class="v">'+_cupM(ace)+'</div></div></div>';}
+  return h;
+}
+// v125.0: cup scoring. A side is a cup team only when every player on it is on that team.
+function _cupLive(){const c=WK&&WK.cup;return !!(c&&c.on&&_cupCount(0)>0&&_cupCount(1)>0);}
+function _cupSideOfPis(pis){let s=-2;for(let k=0;k<pis.length;k++){const p=WK.players[pis[k]];if(!p)return -1;const v=_cupSideOf(p.pid);if(v<0)return -1;if(s===-2)s=v;else if(s!==v)return -1;}return s<0?-1:s;}
+function _cupMatches(r){
+  const out=[],rd=WK.rounds&&WK.rounds[r];
+  if(!rd||!rd.mpOn||!_cupCountsMp()||!inStandingsRound(r)||!STATE.mpTeams||!STATE.mpTeams[r])return out;
+  const _th=roundHoleCount(r),_off=holeOffset(r),_hu=isHeadsUp(r),_fl=flightsForRound(r);
+  for(let fi=0;fi<_fl.length;fi++){
+    if(_fsOff('mp',r,fi))continue;
+    getSegments(mpGamesForRound(r,fi),_th).forEach(function(seg,si){
+      const tm=STATE.mpTeams[r]&&STATE.mpTeams[r][fi]&&STATE.mpTeams[r][fi][si];
+      if(!tm||!Array.isArray(tm[0])||!Array.isArray(tm[1]))return;
+      const end=Math.max(seg.start,Math.min(seg.end,fsHoleCount(r,fi)));
+      const pairs=_hu?tm[0].map(function(a,mi){return [[a],[tm[1][mi]],mi];}).filter(function(x){return typeof x[0][0]==='number'&&typeof x[1][0]==='number';}):[[tm[0],tm[1],null]];
+      pairs.forEach(function(pr){
+        const A=pr[0],B=pr[1],mi=pr[2],sa=_cupSideOfPis(A),sb=_cupSideOfPis(B);
+        if(sa<0||sb<0||sa===sb)return;
+        let pA=0,pB=0,played=0;
+        for(let h=seg.start;h<end;h++){
+          if(Math.abs(pA-pB)>end-h)break;/* closed out: holes after it do not count */
+          const res=_hu?calcMPHU(h+_off,r,fi,mi):calcMP(h+_off,r,fi);
+          if(!res)continue;played++;
+          if(res.aWins)pA++;else if(res.halved){pA+=0.5;pB+=0.5;}else pB++;
+        }
+        let up=pA-pB;const left=(end-seg.start)-played,locked=isFlightLocked(r,fi);
+        let st=played>0?'live':'notstarted';
+        if(played>0&&(Math.abs(up)>left||left<=0||locked))st='final';
+        if(st==='final'&&left>0&&Math.abs(up)<=left&&roundValFs('mpFinalSeg',r,fi,'leader')==='void')up=0;
+        const win=st!=='final'?null:(up>0?'A':up<0?'B':'halve');
+        const pts=[0,0];
+        if(win==='A')pts[sa]=1;else if(win==='B')pts[sb]=1;else if(win==='halve'){pts[0]=0.5;pts[1]=0.5;}
+        out.push({r:r,fi:fi,si:si,mi:mi,A:A,B:B,sa:sa,sb:sb,up:up,left:left,played:played,st:st,win:win,pts:pts});
+      });
+    });
+  }
+  return out;
+}
+function _cupLabel(m){
+  const c=WK.cup,tn=function(sd){return c.teams[sd].name;};
+  if(m.st==='notstarted')return 'Not started';
+  const lead=m.up>0?m.sa:m.up<0?m.sb:-1,n=Math.abs(m.up);
+  if(m.st==='final'){if(lead<0)return 'Halved';return tn(lead)+' '+(m.left>0?n+'&amp;'+m.left:n+' up');}
+  return (lead<0?'All square':tn(lead)+' '+n+' up')+' thru '+m.played;
+}
+function _cupTotals(){
+  const rs=(WK.rounds||[]).map(function(_,r){return r;}).filter(function(r){return inStandingsRound(r);});
+  const per=rs.map(function(r){const ms=_cupMatches(r);const p=[0,0];ms.forEach(function(m){p[0]+=m.pts[0];p[1]+=m.pts[1];});return {r:r,ms:ms,pts:p};});
+  const pts=[0,0];let n=0,done=0;
+  per.forEach(function(x){pts[0]+=x.pts[0];pts[1]+=x.pts[1];n+=x.ms.length;x.ms.forEach(function(m){if(m.st==='final')done++;});});
+  return {per:per,pts:pts,n:n,done:done,toWin:n/2+0.5};
+}
+function _cupPts(v){const w=Math.floor(v),h=v-w>0;return (w||!h?String(w):'')+(h?'½':'');}
+function _cupBoardHtml(){
+  if(!_cupLive())return '';
+  const c=WK.cup,T=_cupTotals(),tn=function(sd){return _gtEsc(c.teams[sd].name);};
+  const won=T.pts[0]>=T.toWin?0:T.pts[1]>=T.toWin?1:-1,left=T.n-T.done;
+  const _live=T.per.some(function(x){return x.ms.some(function(m){return m.st!=='notstarted';});});
+  const meta=won>=0?'Team '+tn(won)+' wins the cup':(_live?left+' to play':(T.n?'Not started':''));
+  let h='<div class="pm-hd"><div class="sec-hd">'+_gtEsc(c.name||WK.name||'Team Cup')+'</div><span class="pm-meta">'+meta+'</span></div>';
+  h+=_cupBandHtml(T,T.n?'of '+T.n:'',T.n?_cupPts(T.toWin)+'<br>to win':'');
+  h+=_cupProjHtml(T);
+  if(!T.n)return h+'<div class="pm-note">Matches count once the lineups are set in Settings, Team Cup.</div>';
+  let pick=STATE.cupRd;
+  const has=T.per.filter(function(x){return x.ms.length;});
+  if(!has.some(function(x){return x.r===pick;})){const live=has.filter(function(x){return x.ms.some(function(m){return m.st!=='notstarted';});});pick=(live.length?live[live.length-1]:has[0]).r;}
+  h+='<div class="pm-hd hw-grp"><div class="sec-hd">By round</div></div><div class="su-card">';
+  T.per.forEach(function(x){
+    const rd=WK.rounds[x.r],nm=x.ms.length,started=x.ms.some(function(m){return m.st!=='notstarted';});
+    const fmt=isHeadsUp(x.r)?'Singles':'Best ball';
+    const sub=nm?fmt+' · '+nm+' match'+(nm===1?'':'es'):'No cup matches yet';
+    h+='<button type="button" class="cup-rd'+(x.r===pick?' on':'')+'"'+(nm?' onclick="window._cupPick('+x.r+')"':'')+'><span class="l"><b>'+roundLabel(x.r)+(rd&&rd.courseName?' · '+_gtEsc(courseDisp(rd.courseName)):'')+'</b><small>'+sub+'</small></span>'
+      +'<span class="s">'+(started?'<span class="a">'+_cupPts(x.pts[0])+'</span><span class="d">·</span><span class="b">'+_cupPts(x.pts[1])+'</span>':'<span class="d">'+(nm?'not started':'')+'</span>')+'</span></button>';
+  });
+  h+='</div>';
+  const P=T.per.find(function(x){return x.r===pick;});
+  if(P&&P.ms.length){
+    h+='<div class="pm-hd hw-grp"><div class="sec-hd">'+roundLabel(pick)+' matches</div></div>';
+    P.ms.forEach(function(m){h+=_cupRowHtml(m,'');});
+  }
+  return h+'<div class="pm-hd hw-grp"></div>';
+}
+window._cupPick=function(r){STATE.cupRd=r;renderBoard();};
+function _cupStrip(sel){
+  if(!sel||!sel.parentNode)return;
+  let b=document.getElementById('cupStrip');
+  const _gr=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
+  if(!_cupLive()||_cupOwns(_gr)){if(b)b.remove();return;}
+  if(!b){b=document.createElement('button');b.type='button';b.id='cupStrip';b.className='cup-strip';b.onclick=function(){window.scrollTo(0,0);setView('board');};const _an=(sel.parentNode&&sel.parentNode.id==='gamesGameWrap')?sel.parentNode:sel;_an.parentNode.insertBefore(b,_an);}
+  const c=WK.cup,T=_cupTotals();
+  b.innerHTML='<i class="ti ti-trophy" aria-hidden="true"></i><span class="n">'+_gtEsc(c.name||WK.name||'Team Cup')+'</span><span class="sc"><b class="a">'+_gtEsc(c.teams[0].name)+' '+_cupPts(T.pts[0])+'</b><b class="b">'+_gtEsc(c.teams[1].name)+' '+_cupPts(T.pts[1])+'</b></span><span class="ch" aria-hidden="true">›</span>';
+}
+window._cupOn=function(on){
+  if(!canEditTrip())return;
+  if(!WK.cup)WK.cup={on:true,name:'',teams:[{name:'Red',cap:null},{name:'Blue',cap:null}],side:{},stake:0,tie:'none'};
+  else WK.cup.on=!!on;
+  if(typeof _cupLookSync==='function')_cupLookSync();
+  _cupDirty();_cupRefresh();
+};
+window._cupSet=function(k,v){
+  if(!canEditTrip()||!WK.cup)return;
+  if(k==='name')WK.cup.name=String(v||'').trim();
+  else if(k==='team0'||k==='team1'){const t=String(v||'').trim();if(t)WK.cup.teams[k==='team0'?0:1].name=t;}
+  else if(k==='stake')WK.cup.stake=Math.max(0,Math.round((parseFloat(v)||0)*100)/100);
+  else if(k==='entry')WK.cup.entry=Math.max(0,Math.round((parseFloat(v)||0)*100)/100);
+  else if(k==='ace')WK.cup.ace=Math.max(0,Math.round((parseFloat(v)||0)*100)/100);
+  else if(k==='mp')WK.cup.mp=!!v;
+  _cupDirty();_cupRefresh();
+};
+window._cupStakeStep=function(btn,d){
+  if(!canEditTrip()||!WK.cup)return;
+  const inp=btn.parentNode.querySelector('input');if(!inp)return;
+  const v=Math.max(0,Math.round(((parseFloat(inp.value)||0)+d)*100)/100);
+  inp.value=v;WK.cup.stake=v;_cupDirty();
+};
+window._cupSide=function(pid,sd){
+  if(!canEditTrip()||!WK.cup)return;
+  const c=WK.cup;if(!c.side)c.side={};
+  const was=_cupSideOf(pid);
+  if(was===sd)delete c.side[pid];else c.side[pid]=sd;
+  if(was>=0&&c.teams[was]&&c.teams[was].cap===pid)c.teams[was].cap=null;
+  _cupDirty();
+  if(document.getElementById('cupSheet'))window._cupOpen();
+};
+window._cupCap=function(pid){
+  if(!canEditTrip()||!WK.cup)return;
+  const sd=_cupSideOf(pid);if(sd<0)return;
+  const t=WK.cup.teams[sd];t.cap=(t.cap===pid)?null:pid;
+  _cupDirty();
+  if(document.getElementById('cupSheet'))window._cupOpen();
+};
+window._cupOpen=function(){
+  const c=WK.cup;if(!c)return;
+  let ov=document.getElementById('cupSheet');
+  if(!ov){ov=document.createElement('div');ov.id='cupSheet';ov.className='grp-sheet-overlay';ov.onclick=function(e){if(e.target===ov)window._cupClose();};document.body.appendChild(ov);}
+  const ro=!canEditTrip();
+  const na=_cupCount(0),nb=_cupCount(1),left=(WK.players||[]).length-na-nb;
+  const tn=function(sd){return '<div class="setup-row gs-row"><div class="gs-lbl"><b><span class="cup-dot cup-'+(sd?'b':'a')+'"></span>Team</b></div><input class="inline-edit su-in" value="'+_gtEsc(c.teams[sd].name||'')+'"'+(ro?' disabled':'')+' onchange="window._cupSet(\'team'+sd+'\',this.value)"/></div>';};
+  // v125.7: A to Z by the name shown; a redraw keeps the list where it was.
+  const _keep=ov.querySelector?ov.querySelector('.cup-list'):null,_top=_keep?_keep.scrollTop:0;
+  const _az=function(a,b){return _plFullName(a).localeCompare(_plFullName(b),undefined,{sensitivity:'base'});};
+  const _hc=function(a,b){const x=(a.idx==null?99:a.idx),y=(b.idx==null?99:b.idx);return x-y||_az(a,b);};
+  const rows=(WK.players||[]).slice().sort(STATE.cupSort==='hcp'?_hc:_az).map(function(p){
+    const sd=_cupSideOf(p.pid),isCap=sd>=0&&c.teams[sd].cap===p.pid,pid=String(p.pid).replace(/'/g,'');
+    return '<div class="cup-pk"><button type="button" class="n" onclick="window._cupCap(\''+pid+'\')">'+_gtEsc(_plFullName(p))+(isCap?'<small class="cup-cap">CAPTAIN</small>':'')+'</button>'
+      +'<span class="i">'+sbHcpDisplay(p.idx)+'</span>'
+      +'<span class="cup-ab"><button type="button" class="a'+(sd===0?' on':'')+'" onclick="window._cupSide(\''+pid+'\',0)">'+_gtEsc(c.teams[0].name||'')+'</button><button type="button" class="b'+(sd===1?' on':'')+'" onclick="window._cupSide(\''+pid+'\',1)">'+_gtEsc(c.teams[1].name||'')+'</button></span></div>';
+  }).join('');
+  ov.innerHTML='<div class="grp-sheet-inner su-sh"><div class="grp-sheet-pill"></div><div class="grp-sheet-title">Cup teams</div>'
+    +'<div class="su-card">'+tn(0)+tn(1)+'</div>'
+    +'<div class="pm-meta cup-cnt"><span>'+na+' · '+nb+' · '+(left?left+' to place':'tap a name for captain')+'</span>'+'<span class="cup-seg" role="radiogroup" aria-label="Sort"><button type="button" role="radio" aria-checked="'+(STATE.cupSort!=='hcp')+'" class="'+(STATE.cupSort!=='hcp'?'on':'')+'" onclick="window._cupSort(\'az\')">A to Z</button><button type="button" role="radio" aria-checked="'+(STATE.cupSort==='hcp')+'" class="'+(STATE.cupSort==='hcp'?'on':'')+'" onclick="window._cupSort(\'hcp\')">Hcp</button></span></div>'
+    +'<div class="su-card cup-list">'+rows+'</div>'
+    +'<button type="button" class="su-shdone" onclick="window._cupClose()">Done</button></div>';
+  ov.style.display='flex';
+  if(_top){const _l=ov.querySelector?ov.querySelector('.cup-list'):null;if(_l)_l.scrollTop=_top;}
+};
+// v125.7: Cup teams lists A to Z or by handicap; the choice lasts the session. A new order starts at the top.
+window._cupSort=function(v){STATE.cupSort=(v==='hcp')?'hcp':'az';const ov=document.getElementById('cupSheet');const l=ov&&ov.querySelector?ov.querySelector('.cup-list'):null;if(l)l.scrollTop=0;if(ov)window._cupOpen();};
+window._cupClose=function(){const ov=document.getElementById('cupSheet');if(ov)ov.remove();if(canEditTrip()&&WK.cup&&WK.cup.on){_cupApplyAll();autoSave();s2WriteActive();}_cupRefresh();};
 window._suBuyStep=function(btn,d){if(!canEditTrip())return;var inp=btn.parentNode.querySelector('input');if(!inp)return;var v=Math.max(0,Math.round(((parseFloat(inp.value)||0)+d)*100)/100);inp.value=v;WK.buyIn=v;autoSave();};
 window._wkSetTee=function(ri,val){var _v=val.split('|');window._gcaSetTee(ri,_v[0],_v[1]);renderWeekendPanel();}
 window._wkSetCourse=function(ri,cn){
@@ -17573,11 +18530,14 @@ function renderGamesTab(){
   renderRdPicker('ctxRdSel',r,'switchGamesRound',false);
   const _mf=isMultiFlight(r);
   const _laneBar=document.getElementById('gamesLaneBar');
-  if(_laneBar){if(_mf){const _fl=flightsForRound(r);let _lh='<div class="gf-filter">';_fl.forEach((_,fi)=>{_lh+='<button class="'+(_gsLane()===fi?'on':'')+'" onclick="switchGamesLane('+fi+')">Foursome '+(fi+1)+'</button>';});_lh+='<button class="'+(_gsLane()==='both'?'on':'')+'" onclick="switchGamesLane(\'both\')">All</button></div>';_laneBar.innerHTML=_lh;}else{_laneBar.innerHTML='';if(_gsLane()!=='both')STATE.gamesLane='both';}}
+  if(_laneBar){if(_mf){const _fl=flightsForRound(r);let _lh='<div class="gf-filter">';_fl.forEach((_,fi)=>{_lh+='<button class="'+(_gsLane()===fi?'on':'')+'" onclick="switchGamesLane('+fi+')">'+(_fl.length>3?'F':'Foursome ')+(fi+1)+'</button>';});_lh+='<button class="'+(_gsLane()==='both'?'on':'')+'" onclick="switchGamesLane(\'both\')">All</button></div>';_laneBar.innerHTML=_lh;}else{_laneBar.innerHTML='';if(_gsLane()!=='both')STATE.gamesLane='both';}}
   const _curLane=_mf?_gsLane():'both';
   const activeGames=GAME_DEFS.filter(def=>_gsLaneOn(def,r,_curLane));
   const gameSel=document.getElementById('gamesGameSel');
+  _cupStrip(gameSel);
   if(activeGames.length===0){
+    // v125.13: a round with no games still shows its payouts.
+    if(typeof _cupPayFor==='function'&&WK.cup&&WK.cup.on&&_cupPayFor(r).length){if(!_cupPayByKey(r,STATE.gamesViewGame))STATE.gamesViewGame=_cupPayKey(_cupPayFor(r)[0]);gameSel.innerHTML=_cupPayPills(r)+(canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+ Add Game</button>':'');renderGamesContent();return;}
     gameSel.innerHTML=canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+ Add Game</button>':'';
     // "No games yet for this round" is false whenever another lane HAS games: F1 could be playing
     // Wolf and F2 Skins, and the shared lane would still say the round had none. Say what is true,
@@ -17604,10 +18564,11 @@ function renderGamesTab(){
     return;
   }
   if(!STATE.gamesViewGame||!activeGames.find(g=>g.id===STATE.gamesViewGame)){
-    STATE.gamesViewGame=activeGames[0].id;
+    if(!(typeof _cupPayByKey==='function'&&_cupPayByKey(r,STATE.gamesViewGame)))STATE.gamesViewGame=activeGames[0].id;
   }
-  gameSel.innerHTML=activeGames.map(def=>`<button class="game-pill${def.id===STATE.gamesViewGame?' active':''}" onclick="switchGamesGame('${def.id}')">${def.label}${(_curLane!=='both'&&_gsIsShared(def,r))?' <span class=\"gp-all\">ALL</span>':''}</button>`).join('')+(canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+ Add</button>':'');
+  gameSel.innerHTML=activeGames.map(def=>`<button class="game-pill${def.id===STATE.gamesViewGame?' active':''}" onclick="switchGamesGame('${def.id}')">${def.label}${(def.id==='mp'&&_cupLive()&&_cupCountsMp()&&inStandingsRound(r))?' <span class="cup-tag">Cup</span>':''}${(_curLane!=='both'&&_gsIsShared(def,r))?' <span class=\"gp-all\">ALL</span>':''}</button>`).join('')+(typeof _cupPayPills==='function'&&WK.cup&&WK.cup.on?_cupPayPills(r):'')+(canEditTrip()?'<button class="game-pill add-pill" onclick="window._gsOpenAddPicker()">+ Add</button>':'');
   renderGamesContent();
+  if(typeof _gsStripSync==='function')_gsStripSync();
 }
 // Four-Ball was the eighth game and the only one with no view key, so its round render
 // showed every pot on every lane while the strokes banner directly above it was already
@@ -17633,6 +18594,8 @@ function renderGamesContent(){
   const g=STATE.gamesViewGame;
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
   const def=GAME_DEFS.find(d=>d.id===g);
+  // v125.13: a payout's own view.
+  if(typeof g==='string'&&g.indexOf('pay:')===0&&typeof _cupPayByKey==='function'){const _px=_cupPayByKey(r,g);if(_px){const _nn0=document.getElementById('gamesNetNote');if(_nn0)_nn0.innerHTML='';document.getElementById('gamesContent').innerHTML=_cupPayViewHtml(r,_px);return;}}
   // The stroke baseline for THE GAME YOU ARE LOOKING AT. It has to be per game: a foursome
   // running Wolf and a cross-group Four-Ball has two different low men live at once, so a
   // single line at the top of the lane would be a lie. See gameNetNote.
@@ -17705,6 +18668,9 @@ function renderGamesContent(){
     c.innerHTML+=setupHtml;
   }
 }
+(function(){if(typeof window==='undefined')return;window.__cupWrap=function(){if(window.__cupWrapped)return;window.__cupWrapped=true;const _b=renderMPHoleBox,_g=renderMPRound;
+  renderMPHoleBox=function(){const v=_b.apply(this,arguments);try{_cupDressBox();}catch(e){}return v;};
+  renderMPRound=function(){const v=_g.apply(this,arguments);try{_cupDressGames();}catch(e){}return v;};};})();
 function renderMPRound(){
   const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
   const el=document.getElementById('gamesContent');
@@ -17877,6 +18843,9 @@ function renderMPRound(){
     const _live=_phase(finalMs)==='ip'||anyPressLive;
     const _lead=pressNetA>0?'A':pressNetA<0?'B':null;
     // Bottom line: what the card is worth right now.
+    // v125.12: a cup match with no stake and no presses has no money to show: the band says the result and the card
+    // opens straight to its holes.
+    const _cupFree=typeof _cupOwns==='function'&&_cupOwns(r)&&!origVal&&!presses.length;
     let _ftL,_ftC='';
     if(_mpDead){_ftL='\u2014';}   // the no-value glyph, as before (segdead MP-2); the chip and note say why
     else if(!finalMs){_ftL='Not started';_ftC=_chip('ns',_m(origVal));}
@@ -17885,6 +18854,11 @@ function renderMPRound(){
       _ftL=!_s?'All square':(finalMs.closed?_s.l+' won '+_s.t:_s.l+' '+_s.t)+(finalMs.closed?'':' thru '+(seg.start+finalMs.holesPlayed+_ofs));
       if(!_s&&!finalMs.closed)_ftL+=' thru '+(seg.start+finalMs.holesPlayed+_ofs);
       _ftC=_lead?_chip(_lead==='A'?'al':'bl',_lead+' +'+_m(pressNetA)+' so far'):_chip('ns','Even');
+    }
+    else if(_cupFree){
+      // v125.12: a cup match with no money says its result on the band.
+      const _s=_sc(finalMs.scoreStr);
+      _ftL=_mpVoided?'No winner':(_s?_s.l+' won '+_s.t:'Halved');
     }
     else{
       _ftL=presses.length?'Net result':'Result';
@@ -17937,8 +18911,11 @@ function renderMPRound(){
       else if(_mpVoided)_mc=_chip('ns','No winner');
       else if(!_mpLeadS)_mc=_chip('ns','Halved');
       else{const _s=_sc(finalMs.scoreStr);_mc=_chip(_mpLeadS==='A'?'a':'b',_mpLeadS+(_s?' '+_s.t:' won'));}
+      if(_cupFree)html+=`<div class="mpk-bet cup-holes">`+buildHoleRows(seg.start,seg.end,h=>calcMPMatchScore(r,_fi,si,h),false);
+      else{
       html+=`<div class="mpk-bet"><div class="mpk-bh" onclick="STATE.mpExpanded['${betKey}']=!STATE.mpExpanded['${betKey}'];_gsRefreshAfterEdit()"><b>Match</b><span class="st">${_m(origVal)}</span>${_mc}<i class="${betExp?'open':''}">\u203a</i></div>`;
       if(betExp)html+=buildHoleRows(seg.start,seg.end,h=>calcMPMatchScore(r,_fi,si,h),false);
+      }
       html+=`</div>`;
       // Each press: its own row, its own chip.
       presses.forEach((p,pi)=>{
@@ -18365,6 +19342,8 @@ function _settleOpenKeys(){
   return k;
 }
 function _mnTopCard(){
+  // v125.16: a cup trip shows what has paid out until the trip is complete; who pays whom shows then.
+  if(typeof _cupMoneyOn==='function'&&_cupMoneyOn()&&!_tripComplete())return _cupSoFarHtml('So far','Settle up opens when every round is complete. Who pays whom shows then, in the fewest payments.');
   const S=STATE.settledRounds||[],done=_tripComplete(),open=_settleOpenKeys(),one=WK.rounds.length===1;
   const _m=function(v){return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
   const pays=function(t){return t.map(function(x){return '<div class="mn-pay"><span>'+_gtEsc(displayName(x.from))+' <em>pays</em> '+_gtEsc(displayName(x.to))+'</span><b>'+_m(x.amt)+'</b></div>';}).join('');};
@@ -18501,7 +19480,8 @@ function renderMoney(){
   });
 
   // ---- Weekend bet ----
-  if(!WK.isQuickRound){
+  // v125.16: a cup trip with no buy-in has no weekend bet to show.
+  if(!WK.isQuickRound&&!(typeof _cupMoneyOn==='function'&&_cupMoneyOn()&&!WK.buyIn)){
     const potSettled=_st.includes('pot');
     const _w=_award.winners||[];
     const _wn=_w.map(i=>displayName(i));
@@ -18539,6 +19519,9 @@ function renderMoney(){
   }
   html+=`<div class="mn-exnote">Who pays whom is on Recap.</div>`;
 
+  // v125.16: on a cup trip the payouts lead, the round rows follow under Games.
+  if(typeof _cupMoneyOn==='function'&&_cupMoneyOn())html=_cupMoneyBetsHtml()+html;
+  {const _mb=document.getElementById('msub-golf');const _lb=(typeof _cupMoneyOn==='function'&&_cupMoneyOn())?'Payouts':'Bets';if(_mb&&_mb.textContent!==_lb){_mb.textContent=_lb;if(typeof _moneyPillTo==='function')_moneyPillTo(STATE.moneyTab||'golf');}}
   document.getElementById('moneyContent').innerHTML=html;
 }
 
@@ -19728,7 +20711,7 @@ function _settleNums(){
   const _awardNote=potAwardNote(_award);
 
   // Build audit per player
-  const auditGolf=WK.players.map(()=>({pot:0,mp:[],vegas:[],skins:[],razzle:[],wolf:[],hammer:[],fourball:[],grinders:[],settled:[],twos:0,total:0}));
+  const auditGolf=WK.players.map(()=>({pot:0,mp:[],vegas:[],skins:[],razzle:[],wolf:[],hammer:[],fourball:[],grinders:[],settled:[],twos:0,cup:[],total:0}));
   const _psA=potSnap();
   if(allDone&&!WK.isQuickRound){potRankData.forEach((d)=>{auditGolf[d.pi].pot=_psA?_psA.snapNet[d.pi]:_award.amts[d.pi];});}
   WK.rounds.forEach((_,r)=>{
@@ -19844,6 +20827,8 @@ function _settleNums(){
     });
   }
   auditGolf.forEach((a,i)=>{a.total=a.pot+a.mp.reduce((s,x)=>s+x.val,0)+a.vegas.reduce((s,x)=>s+x.val,0)+a.skins.reduce((s,x)=>s+x.val,0)+a.razzle.reduce((s,x)=>s+x.val,0)+a.wolf.reduce((s,x)=>s+x.val,0)+a.hammer.reduce((s,x)=>s+x.val,0)+a.fourball.reduce((s,x)=>s+x.val,0)+a.grinders.reduce((s,x)=>s+x.val,0)+a.settled.reduce((s,x)=>s+x.val,0)+a.twos+snakeNet[i]+ninesNet[i];});
+  // v125.10: the cup's payouts, entry and aces.
+  if(typeof _cupMoney==='function'){const _cm=_cupMoney();auditGolf.forEach((a,i)=>{a.cup=_cm.rows[i];a.total+=_cm.tot[i];});}
 
   const expNet=calcExpNetPerPlayer();
   const totalNet=auditGolf.map((a,i)=>a.total+expNet[i]);
@@ -19934,6 +20919,8 @@ function renderSettle(){
       if(S.includes('pot'))set.push({l:'Weekend bet',d:'settled',v:a.pot});
       else gt.push({l:'Weekend bet',v:a.pot,rows:[{l:a.pot>0?'Won the pot':a.pot<0?'Buy-in':'No change',d:'',v:a.pot}]});
     }
+    // v125.10: the cup's payouts, entry and aces, one tile.
+    if(a.cup&&a.cup.length)gt.push({l:(WK.cup&&WK.cup.name)||'Team Cup',v:a.cup.reduce((t,x)=>t+x.v,0),rows:a.cup.map(x=>({l:x.l,d:x.d,v:x.v}))});
     const mine=_expLiveList().filter(e=>e.paidBy===pi||e.owes.some(o=>o.pi===pi));
     if(mine.length){
       if(S.includes('expenses'))set.push({l:'Expenses',d:'settled',v:expNet[pi]});
@@ -19957,7 +20944,8 @@ function renderSettle(){
   const C=v=>v>0.004?'money-pos':v<-0.004?'money-neg':'money-nil';
   tiles.sort((x,y)=>totalNet[y.pi]-totalNet[x.pi]||x.pi-y.pi).forEach(t=>{
     const pi=t.pi,tot=totalNet[pi];
-    const sub=['Golf '+A(t.a.total)].concat(t.exp?['Expenses '+A(expNet[pi])]:[]).map(x=>'<span class="rc-nw">'+x+'</span>').join(' · ');
+    const _cupOnly=t.a.cup&&t.a.cup.length&&Math.abs(t.a.total-t.a.cup.reduce((q,x)=>q+x.v,0))<0.005;
+    const sub=[(_cupOnly?'Cup ':'Golf ')+A(t.a.total)].concat(t.exp?['Expenses '+A(expNet[pi])]:[]).map(x=>'<span class="rc-nw">'+x+'</span>').join(' · ');
     let b='';
     t.gt.forEach(g=>{
       // v124.73 (Kyle: "Each one of these should be collapsible"): closed until its band is tapped.
