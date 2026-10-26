@@ -1352,6 +1352,10 @@ body.force-light .sec-hd.gs-sec{color:#13795B;}
 .cpv-nm .a{color:var(--cupA);}.cpv-nm .b{color:var(--cupB);}
 .cpv-sc{text-align:right;flex-shrink:0;}.cpv-sc b{display:block;font-size:20px;font-weight:700;}.cpv-sc b.u{color:#1D9E75;}.cpv-sc small{display:block;font-size:12px;color:var(--color-text-secondary);}
 .cpv-amt{font-style:normal;font-size:13px;font-weight:700;color:#1D9E75;white-space:nowrap;}
+/* v125.18: a picked prize's row on its Games tile */
+.cpv-pk{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;border-top:0.5px solid var(--color-border-tertiary);font-size:15px;color:var(--color-text-secondary);cursor:pointer;}
+.cpv-pk b{font-weight:600;color:#1F3A6B;white-space:nowrap;}
+@media (prefers-color-scheme:dark){body:not(.force-light) .cpv-pk b{color:#9DB6E8;}}body.force-dark .cpv-pk b{color:#9DB6E8;}
 .cpv-ft{display:flex;justify-content:space-between;gap:10px;padding:12px 16px;background:var(--color-background-secondary);font-size:15px;border-top:0.5px solid var(--color-border-tertiary);}
 .cpv-grid{overflow-x:auto;padding:6px 10px 10px;border-top:0.5px solid var(--color-border-tertiary);}
 .cpv-grid table{border-collapse:collapse;font-size:12px;}.cpv-grid th,.cpv-grid td{padding:4px 5px;text-align:center;white-space:nowrap;}.cpv-grid td:first-child,.cpv-grid th:first-child{text-align:left;font-weight:600;}
@@ -2604,7 +2608,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.17';
+const APP_VERSION='v125.18';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -14942,10 +14946,11 @@ window._cupPayOpen=function(i){
   h+='<button type="button" class="su-shdone" onclick="window._cupPayClose()">Done</button></div>';
   ov.innerHTML=h;ov.style.display='flex';
 };
-window._cupPayWinOpen=function(i){
+window._cupPayWinOpen=function(i,from){
   const p=WK.cup&&WK.cup.pay&&WK.cup.pay[i];if(!p||!canEditTrip())return;
   let ov=document.getElementById('cupPickSheet');
   if(!ov){ov=document.createElement('div');ov.id='cupPickSheet';ov.className='grp-sheet-overlay';ov.onclick=function(e){if(e.target===ov)window._cupPayWinClose(i);};document.body.appendChild(ov);}
+  if(from)ov._from=from; // v125.18: opened from a Games tile, Done goes back there
   const on={};(p.win||[]).forEach(function(pid){on[pid]=1;});
   const rows=(WK.players||[]).slice().sort(function(a,b){return _plFullName(a).localeCompare(_plFullName(b),undefined,{sensitivity:'base'});}).map(function(q){const pid=String(q.pid).replace(/'/g,'');
     return '<button type="button" class="lu-pk'+(on[q.pid]?' on':'')+'" onclick="window._cupPayWinTog('+i+',\''+pid+'\')"><span class="n">'+_gtEsc(_plFullName(q))+'</span><span class="i">'+sbHcpDisplay(q.idx)+'</span><span class="w">'+(on[q.pid]?'Winner':'')+'</span></button>';}).join('');
@@ -14959,7 +14964,7 @@ window._cupPayWinTog=function(i,pid){
   const k=p.win.indexOf(q.pid);if(k>=0)p.win.splice(k,1);else p.win.push(q.pid);
   _cupDirty();window._cupPayWinOpen(i);
 };
-window._cupPayWinClose=function(i){const ov=document.getElementById('cupPickSheet');if(ov)ov.remove();window._cupPayOpen(i);};
+window._cupPayWinClose=function(i){const ov=document.getElementById('cupPickSheet');const fr=ov&&ov._from;if(ov)ov.remove();if(fr==='games'){renderGamesContent();return;}window._cupPayOpen(i);};
 // v125.13: payouts on the Games tab. A cup round's payouts (low net, skins, a picked prize) each get a tile in the
 // game strip, read-only, worked out from the scores as they come in: low net pairs as a leaderboard (Four-Ball's
 // shape), low net players likewise, skins as one list for the whole field, a pick as its winner.
@@ -14988,15 +14993,18 @@ function _cupPayViewHtml(r,x){
   const p=x.p,N=WK.players.length,off=holeOffset(r),n=roundHoleCount(r),open=STATE.cupPayOpen||{};
   let h='<div class="pm-note cpv-note">';
   h+=p.kind==='sk'?'Payout: '+_cupM(+p.amt)+' split by skins won across the whole field ('+(p.sc==='n'?'net':'gross')+'). No carryovers.'
-    :p.kind==='pick'?'Payout: '+_cupM(+p.amt)+' to the winner you pick in Settings, Team Cup.'
+    :p.kind==='pick'?'Payout: '+_cupM(+p.amt)+(canEditTrip()?' to the winner. Tap Pick to choose who won; pick two or more to split it.':' to the winner the organizer picks.')
     :p.who==='pair'?'Payout: '+_cupM(+p.amt)+' to the low best-ball pair, split on a tie. Worked out from the scores.'
     :'Payout: '+_cupM(+p.amt)+' to the lowest net '+(p.r==='all'?'total across every round':'score this round')+', split on a tie.';
   h+='</div><div class="section-card cpv">';
   if(p.kind==='pick'){
     const w=(p.win||[]).map(_cupPiOf).filter(function(i){return i>=0;});
     h+='<div class="cpv-hd"><b>'+_gtEsc(_cupPayLabel(p))+'</b><span>'+roundLabel(r)+'</span></div>';
-    if(!w.length)h+='<div class="cpv-ft"><span>Not picked yet</span></div>';
-    else w.forEach(function(pi){h+='<div class="cpv-row"><span class="cpv-rk lead">1</span><span class="cpv-nm">'+_cupNmSpan(pi)+'</span><span class="cpv-amt">'+_cupM((+p.amt)/w.length)+'</span></div>';});
+    // v125.18: an editor picks the winner right here; the sheet comes back to Games.
+    const _ed=canEditTrip(),_go=' onclick="window._cupPayWinOpen('+x.i+',\'games\')"';
+    if(!w.length)h+=_ed?'<div class="cpv-pk"'+_go+'><span>Not picked yet</span><b>Pick ›</b></div>':'<div class="cpv-ft"><span>Not picked yet</span></div>';
+    else{w.forEach(function(pi){h+='<div class="cpv-row"><span class="cpv-rk lead">1</span><span class="cpv-nm">'+_cupNmSpan(pi)+'</span><span class="cpv-amt">'+_cupM((+p.amt)/w.length)+'</span></div>';});
+      if(_ed)h+='<div class="cpv-pk"'+_go+'><span>Picked by the organizer</span><b>Change ›</b></div>';}
     return h+'</div>';
   }
   if(p.kind==='sk'){
