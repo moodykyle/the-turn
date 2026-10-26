@@ -2667,7 +2667,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.20';
+const APP_VERSION='v125.21';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -14894,7 +14894,8 @@ function _cupPayWinners(p){
       if(who.length===1){won[who[0]]++;S++;}
     }
     if(!S)return [];
-    return won.map(function(k,i){return k?{pis:[i],share:k/S}:null;}).filter(Boolean);
+    // v125.21: the number of skins rides along for the Payouts line (JSON and every share are unchanged).
+    const _o=won.map(function(k,i){return k?{pis:[i],share:k/S}:null;}).filter(Boolean);_o.S=S;return _o;
   }
   // low net
   if(p.who==='pair'){
@@ -15166,14 +15167,26 @@ function _cupMoneyOn(){return !!(WK&&WK.cup&&WK.cup.on&&_cupPayList().length);}
 function _cupPaidSoFar(){const L=_cupPayList();let paid=0,dec=0,n=0;L.forEach(function(p){if(!(+p.amt))return;n++;const w=_cupPayWinners(p);if(w===null)return;dec++;if(w.length)paid+=+p.amt;});return {paid:paid,dec:dec,n:n,pot:_cupPot()};}
 function _cupSoFarHtml(head,note){const s=_cupPaidSoFar(),pc=s.pot?Math.max(0,Math.min(100,Math.round(s.paid/s.pot*100))):0;
   return '<div class="mn-top cpm-top"><div class="cpm-k">'+head+'</div><div class="cpm-n mn-top-v">'+_cupM(s.paid)+' <span>of '+_cupM(s.pot)+' paid out</span></div><div class="cpm-bar"><i style="width:'+pc+'%"></i></div><div class="cpm-s">'+note.replace('{d}',s.dec).replace('{n}',s.n)+'</div></div>';}
-function _cupNmT(pi){const p=WK.players[pi];if(!p)return '';const sd=_cupSideOf(p.pid);return '<span class="'+(sd===0?'cpl-a':sd===1?'cpl-b':'')+'">'+_gtEsc(displayName(pi))+'</span>';}
+// v125.21: names on Payouts are plain; the team colours stay on Cup winners.
+function _cupNmT(pi){const p=WK.players[pi];if(!p)return '';return _gtEsc(displayName(pi));}
 function _cupPayStatus(p){
   const ri=_cupRi(p.r),w=_cupPayWinners(p),amt=+p.amt||0;
   if(p.kind==='cup'){const T=_cupTotals(),c=WK.cup;const sc='<span class="cpl-a">'+_gtEsc(c.teams[0].name)+' '+_cupPts(T.pts[0])+'</span> · <span class="cpl-b">'+_gtEsc(c.teams[1].name)+' '+_cupPts(T.pts[1])+'</span>';
-    if(w!==null)return {t:(T.pts[0]===T.pts[1]?'Tied · split by everyone · ':'Won · ')+sc,won:true};return {t:sc+(T.n?' · '+(T.n-T.done)+' to play':''),won:false};}
+    // v125.21: name the winner (Kyle: "we don't actually declare one here").
+    if(w!==null){if(T.pts[0]===T.pts[1])return {t:'Tied '+_cupPts(T.pts[0])+' to '+_cupPts(T.pts[1])+' · split by everyone',won:true};
+      const _ws=T.pts[0]>T.pts[1]?0:1;return {t:'Won · <span class="'+(_ws?'cpl-b':'cpl-a')+'">Team '+_gtEsc(c.teams[_ws].name)+'</span>, '+_cupPts(T.pts[_ws])+' to '+_cupPts(T.pts[1-_ws]),won:true};}return {t:sc+(T.n?' · '+(T.n-T.done)+' to play':''),won:false};}
   if(p.kind==='pick'){if(w===null)return {t:'Winner not picked',won:false};return {t:'Won · '+w.map(function(g){return g.pis.map(_cupNmT).join(' / ');}).join(', '),won:true};}
   if(w!==null){if(!w.length)return {t:'No winner · pays nobody',won:false,none:true};
-    if(p.kind==='sk')return {t:'Won · '+w.map(function(g){return _cupNmT(g.pis[0])+' '+_cupM(amt*g.share);}).join(', '),won:true};
+    if(p.kind==='sk'){
+      // v125.21: one line: how many skins and who won most; the full list is a tap away on Games.
+      const S=w.S||w.length,ks=w.map(function(g){return {pi:g.pis[0],k:Math.round(g.share*S)};}).sort(function(a,b){return b.k-a.k;});
+      const many=ks.filter(function(x){return x.k>1;}),ones=ks.filter(function(x){return x.k===1;});
+      let ln;
+      if(S===1)ln='1 skin · '+_cupNmT(ks[0].pi);
+      else if(!many.length)ln=S+' skins · '+ones.length+' players, 1 each';
+      else ln=S+' skins · '+many.map(function(x){return _cupNmT(x.pi)+' '+x.k;}).concat(ones.length===1?[_cupNmT(ones[0].pi)+' 1']:ones.length?['others 1']:[]).join(', ');
+      return {t:'Won · '+ln,won:true};}
+
     return {t:'Won · '+w.map(function(g){return g.pis.map(_cupNmT).join(' / ');}).join(', '),won:true};}
   // not decided: started?
   const rs=ri==='all'?WK.rounds.map(function(_,q){return q;}).filter(function(q){return inStandingsRound(q);}):(ri==null?[]:[ri]);
@@ -15201,6 +15214,7 @@ function _cupMoneyBetsHtml(){
   groups.forEach(function(g){h+='<div class="sec-hd mn-exsec">'+g.t+'</div><div class="mn-row cpm-card">';
     g.ps.forEach(function(p){const st=_cupPayStatus(p),amt=+p.amt||0;let sub='';
       if(p.kind==='cup'){const n=Math.max(_cupCount(0),_cupCount(1));if(n)sub=_cupM(amt/n)+' each';}
+      else if(p.kind==='sk'){const _w=_cupPayWinners(p);if(_w&&_w.S)sub=_cupM(amt/_w.S)+' a skin';}
       h+='<div class="cpm-r" onclick="'+_cupPayOpenJs(p)+'"><div class="t"><b>'+_gtEsc(_cupPayLabel(p))+(p.kind==='sk'&&p.sc==='n'?' (net)':'')+'</b><small>'+st.t+'</small></div><div class="v'+(st.won?' g':st.none?' q':'')+'">'+_cupM(amt)+(sub?'<small>'+sub+'</small>':'')+'</div><span class="mn-chev">›</span></div>';});
     h+='</div>';});
   const ace=+c.ace||0;
