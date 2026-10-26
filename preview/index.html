@@ -2667,7 +2667,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.21';
+const APP_VERSION='v125.22';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -19420,7 +19420,7 @@ function _mnTopCard(){
   // v125.16: a cup trip shows what has paid out until the trip is complete; who pays whom shows then.
   if(typeof _cupMoneyOn==='function'&&_cupMoneyOn()&&!_tripComplete())return _cupSoFarHtml('So far','Settle up opens when every round is complete. Who pays whom shows then, in the fewest payments.');
   const S=STATE.settledRounds||[],done=_tripComplete(),open=_settleOpenKeys(),one=WK.rounds.length===1;
-  const _m=function(v){return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
+  const _m=function(v){return '$'+_mnCm(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
   const pays=function(t){return t.map(function(x){return '<div class="mn-pay"><span>'+_gtEsc(displayName(x.from))+' <em>pays</em> '+_gtEsc(displayName(x.to))+'</span><b>'+_m(x.amt)+'</b></div>';}).join('');};
   if(done&&!open.length&&S.length){
     const at=Object.keys(STATE.roundSettleData||{}).map(function(k){const d=STATE.roundSettleData[k];return d&&d.settledAt;}).filter(Boolean).sort().pop();
@@ -20958,6 +20958,8 @@ function _rcNines(pi,r){
   const _nVal=roundValFs('ninesVal',r,_nfi,WK.ninesVal||1);
   return {v:(3*_nRoll.pts[_mi]-_nT)*_nVal,d:_nRoll.pts[_mi]+' of '+_nT+' pts'};
 }
+// v125.22: a thousands comma on a money string's whole part ("2185.71" -> "2,185.71"); Recap's tiles and payments.
+function _mnCm(t){const p=String(t).split('.');p[0]=p[0].replace(/\B(?=(\d{3})+$)/g,',');return p.join('.');}
 function renderSettle(){
   const {allDone,auditGolf,expNet,totalNet,outstandingNet,snakeNet,ninesNet}=_settleNums();
   const S=STATE.settledRounds||[];
@@ -21019,7 +21021,7 @@ function renderSettle(){
   // Whole dollars unless anything on the page has cents.
   const vals=[];tiles.forEach(t=>{vals.push(totalNet[t.pi],t.a.total,expNet[t.pi]);t.gt.forEach(g=>{vals.push(g.v);g.rows.forEach(x=>vals.push(x.v));});});
   const cents=vals.some(v=>Math.round(Math.abs(v||0)*100)%100!==0);
-  const M=v=>(cents?Math.abs(v).toFixed(2):String(Math.round(Math.abs(v))));
+  const M=v=>_mnCm(cents?Math.abs(v).toFixed(2):String(Math.round(Math.abs(v))));
   const A=v=>(v>0.004?'+$':v<-0.004?'-$':'$')+M(v);
   const C=v=>v>0.004?'money-pos':v<-0.004?'money-neg':'money-nil';
   tiles.sort((x,y)=>totalNet[y.pi]-totalNet[x.pi]||x.pi-y.pi).forEach(t=>{
