@@ -2667,7 +2667,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.22';
+const APP_VERSION='v125.23';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -9157,9 +9157,11 @@ function openRoundSheet(fnName,cur){
 }
 function closeRoundSheet(){const s=document.getElementById('roundSheet');if(s)s.remove();}
 function renderRdSel(cid,cur,fn){const el=document.getElementById(cid);if(!el)return;const isEntry=cid==='entryRdSel'||cid==='ctxRdSel';el.innerHTML=WK.rounds.map((rd,i)=>{const done=isRoundComplete(i);const detailsLink=isEntry&&i===cur?`<div onclick="event.stopPropagation();showRoundDetails()" style="position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,0.5);color:rgba(255,255,255,0.8);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1">i</div>`:'';return`<div class="rd-btn${i===cur?' active':''}${done?' done':''}" onclick="${fn}(${i})">${roundLabel(i)}<br><span style="font-size:9px;opacity:0.75">${rdLabel(i)}</span>${detailsLink}</div>`;}).join('');}
-function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=_flightResumeHole(r,(getFlightPick(r)||0));STATE.razzleToastOk=false;if(!STATE.razzleHWM)STATE.razzleHWM={};const _seRfi=getFlightPick(r)||0;if(!STATE.razzleHWM[r]||typeof STATE.razzleHWM[r]!=='object')STATE.razzleHWM[r]={};const _roundComplete=isRoundComplete(r);const _maxH=holeOffset(r)+fsHoleCount(r,_seRfi)-1;if(STATE.razzleHWM[r][_seRfi]===undefined)STATE.razzleHWM[r][_seRfi]=_roundComplete?_maxH:-1;renderRdSel('entryRdSel',r,'switchEntryRound');_renderCtxRdSel('scores');STATE.scRound=r;updateHoleUI();if(_scViewMode==='card')renderSCGrid();}
+// v125.23: one round for Scores and Games. _rdSet moves the round without drawing Scores; both tabs call it.
+function _rdSet(r){STATE.currentRound=r;STATE.currentHole=_flightResumeHole(r,(getFlightPick(r)||0));STATE.razzleToastOk=false;if(!STATE.razzleHWM)STATE.razzleHWM={};const _seRfi=getFlightPick(r)||0;if(!STATE.razzleHWM[r]||typeof STATE.razzleHWM[r]!=='object')STATE.razzleHWM[r]={};const _roundComplete=isRoundComplete(r);const _maxH=holeOffset(r)+fsHoleCount(r,_seRfi)-1;if(STATE.razzleHWM[r][_seRfi]===undefined)STATE.razzleHWM[r][_seRfi]=_roundComplete?_maxH:-1;STATE.scRound=r;}
+function switchEntryRound(r){_rdSet(r);renderRdSel('entryRdSel',r,'switchEntryRound');_renderCtxRdSel('scores');updateHoleUI();if(_scViewMode==='card')renderSCGrid();}
 function switchCardRound(r){STATE.scRound=r;renderRdSel('cardRdSel',r,'switchCardRound');STATE.scGridFlightSel=-1;renderSCGrid();}
-function switchGamesRound(r){if(STATE.gamesViewRound!==r)_gsCollapseAll();STATE.gamesViewRound=r;renderGamesTab();}
+function switchGamesRound(r){if(STATE.gamesViewRound!==r)_gsCollapseAll();if(r!==STATE.currentRound)_rdSet(r);STATE.gamesViewRound=r;renderGamesTab();}
 function switchGamesGame(g){if(STATE.gamesViewGame!==g)_gsCollapseAll();STATE.gamesViewGame=g;renderGamesTab();}
 function switchTeamsRound(r){STATE.teamsRound=r;renderTeamsPanel();}
 function _vpi(pi){return Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];}
@@ -18600,7 +18602,8 @@ window._gsSnakeIncStep=function(btn,d){
 
 function renderGamesTab(){
   if(!WK)return;
-  const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
+  // v125.23: Games shows the round Scores is on (one round for both tabs).
+  const r=STATE.currentRound;
   STATE.gamesViewRound=r;
   renderRdPicker('ctxRdSel',r,'switchGamesRound',false);
   const _mf=isMultiFlight(r);
@@ -21250,7 +21253,7 @@ function _mnChipFit(o){
 }
 function renderMoneyGolf(){renderMoney();}
 // v124.62: a game tile on Bets opens that round and game on the Games tab.
-function _mnOpenGame(r,g){STATE.gamesViewRound=r;STATE.gamesViewGame=g;
+function _mnOpenGame(r,g){if(r!==STATE.currentRound)_rdSet(r);STATE.gamesViewRound=r;STATE.gamesViewGame=g;
   // v124.63 (Kyle 18 Oct): a game only some foursomes play lives on that foursome's lane, not on All.
   const fl=flightsForRound(r),on=fl.map((_,fi)=>fi).filter(fi=>!_fsOff(g,r,fi));
   STATE.gamesLane=(fl.length>1&&on.length&&on.length<fl.length)?on[0]:'both';
