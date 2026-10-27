@@ -143,6 +143,47 @@ body{background:#F4F1E8;color:#111;font-family:-apple-system,BlinkMacSystemFont,
 .opt-menu-ico .ti{font-size:18px;}
 .opt-menu-text{flex:1;min-width:0;}
 .opt-menu-title{font-weight:600;font-size:15px;color:var(--color-text-primary);}
+/* v125.25: the trip setup checklist. Green titles by day, gold at night; cup colours on a cup trip.
+   v125.26: green is the base and gold lives only in dark rules (the darkpass rule). */
+#setupCard{margin-bottom:14px;}
+#setupCard .stp-hd{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;padding:14px 14px 12px;border-bottom:0.5px solid var(--color-border-tertiary);}
+#setupCard .stp-t{font-weight:600;font-size:15px;color:#13795B;}
+#setupCard .stp-n{font-size:12px;color:var(--color-text-secondary);}
+#setupCard .stp-hide,#setupCard .stp-rev{background:none;border:0;padding:0;font-family:inherit;font-size:inherit;font-weight:600;cursor:pointer;color:#13795B;}
+#setupCard .stp-rev{font-size:13px;flex-shrink:0;}
+#setupCard .stp-bar{flex-basis:100%;height:6px;border-radius:3px;background:var(--color-background-primary);margin-top:10px;overflow:hidden;}
+#setupCard .stp-fill{height:100%;border-radius:3px;background:#13795B;}
+#setupCard .opt-menu-ico.stp-ok{background:#13795B;color:#fff;}
+#setupCard .opt-menu-ico.stp-warn{color:#D97706;}
+#setupCard .opt-menu-ico.stp-todo{background:transparent;border:1.5px solid var(--color-border-secondary);box-sizing:border-box;}
+#setupCard .stp-row[data-st="warn"] .opt-menu-sub{color:#D97706;}
+#setupCard .stp-opt{font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-left:4px;}
+#setupCard .stp-chev{color:var(--color-text-secondary);font-size:18px;}
+#setupCard .stp-fold,#setupCard .stp-row:last-child{border-bottom:0;}
+@media(prefers-color-scheme:dark){body:not(.force-light) #setupCard .stp-t,body:not(.force-light) #setupCard .stp-hide,body:not(.force-light) #setupCard .stp-rev{color:#EFC456;}
+body:not(.force-light) #setupCard .stp-fill,body:not(.force-light) #setupCard .opt-menu-ico.stp-ok{background:#1D9E75;}}
+body.force-dark #setupCard .stp-t,body.force-dark #setupCard .stp-hide,body.force-dark #setupCard .stp-rev{color:#EFC456;}
+body.force-dark #setupCard .stp-fill,body.force-dark #setupCard .opt-menu-ico.stp-ok{background:#1D9E75;}
+html body.cup-trip #setupCard .stp-t,html body.cup-trip #setupCard .stp-hide,html body.cup-trip #setupCard .stp-rev{color:#1F3A6B;}
+html body.cup-trip #setupCard .stp-fill,html body.cup-trip #setupCard .opt-menu-ico.stp-ok{background:#1F3A6B;}
+@media(prefers-color-scheme:dark){html body.cup-trip:not(.force-light) #setupCard .stp-t,html body.cup-trip:not(.force-light) #setupCard .stp-hide,html body.cup-trip:not(.force-light) #setupCard .stp-rev{color:#9DB7EA;}
+html body.cup-trip:not(.force-light) #setupCard .stp-fill,html body.cup-trip:not(.force-light) #setupCard .opt-menu-ico.stp-ok{background:#2C4F8F;}}
+html body.cup-trip.force-dark #setupCard .stp-t,html body.cup-trip.force-dark #setupCard .stp-hide,html body.cup-trip.force-dark #setupCard .stp-rev{color:#9DB7EA;}
+html body.cup-trip.force-dark #setupCard .stp-fill,html body.cup-trip.force-dark #setupCard .opt-menu-ico.stp-ok{background:#2C4F8F;}
+.opt-menu-sub{color:#D97706;}
+#setupCard .stp-opt{font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-left:4px;}
+#setupCard .stp-chev{color:var(--color-text-secondary);font-size:18px;}
+#setupCard .stp-fold,#setupCard .stp-row:last-child{border-bottom:0;}
+@media(prefers-color-scheme:light){html body:not(.force-dark) #setupCard .stp-t,html body:not(.force-dark) #setupCard .stp-hide,html body:not(.force-dark) #setupCard .stp-rev{color:#13795B;}
+html body:not(.force-dark) #setupCard .stp-fill,html body:not(.force-dark) #setupCard .opt-menu-ico.stp-ok{background:#13795B;}}
+html body.force-light #setupCard .stp-t,html body.force-light #setupCard .stp-hide,html body.force-light #setupCard .stp-rev{color:#13795B;}
+html body.force-light #setupCard .stp-fill,html body.force-light #setupCard .opt-menu-ico.stp-ok{background:#13795B;}
+html body.cup-trip #setupCard .stp-t,html body.cup-trip #setupCard .stp-hide,html body.cup-trip #setupCard .stp-rev{color:#9DB7EA;}
+html body.cup-trip #setupCard .stp-fill,html body.cup-trip #setupCard .opt-menu-ico.stp-ok{background:#2C4F8F;}
+@media(prefers-color-scheme:light){html body.cup-trip:not(.force-dark) #setupCard .stp-t,html body.cup-trip:not(.force-dark) #setupCard .stp-hide,html body.cup-trip:not(.force-dark) #setupCard .stp-rev{color:#1F3A6B;}
+html body.cup-trip:not(.force-dark) #setupCard .stp-fill,html body.cup-trip:not(.force-dark) #setupCard .opt-menu-ico.stp-ok{background:#1F3A6B;}}
+html body.cup-trip.force-light #setupCard .stp-t,html body.cup-trip.force-light #setupCard .stp-hide,html body.cup-trip.force-light #setupCard .stp-rev{color:#1F3A6B;}
+html body.cup-trip.force-light #setupCard .stp-fill,html body.cup-trip.force-light #setupCard .opt-menu-ico.stp-ok{background:#1F3A6B;}
 .opt-menu-sub{font-size:12px;color:var(--color-text-secondary);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .opt-menu-chev{color:var(--color-text-tertiary);font-size:18px;}
 .wizard{padding:1rem;}
@@ -2667,7 +2708,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.23';
+const APP_VERSION='v125.27';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -6347,7 +6388,7 @@ function startNewWeekend(){
   // useless while the trip had already been dropped before Cancel was ever drawn.
   // v120.19.
   _twLastStep=null;
-  _twS={step:1,name:'',date:'',region:'',numRounds:4,selectedMembers:[],hdcpPct:100,netOffLow:false,courses:[],tees:[],games:{},buyIn:50,potTiebreak:'countback',potMethod:'netstroke'};
+  _twS={step:1,fmt:'ind',name:'',date:'',region:'',numRounds:4,selectedMembers:[],hdcpPct:100,netOffLow:false,courses:[],tees:[],games:{},buyIn:0,potTiebreak:'countback',potMethod:'netstroke'};
   const ws=document.getElementById('wizardScreen');
   ws.style.display='flex';
   _twRender();
@@ -7725,14 +7766,15 @@ function _twRender(){
 function _twNewLook(){return _twS.step>=1&&_twS.step<=5;}
 function _twTop(idx){
   var g=window._pendingGroupId&&_groupCache[window._pendingGroupId];
-  var ctx=(g&&g.name?_gtEsc(g.name)+' · ':'')+'New trip';
+  var ctx=(g&&g.name?_gtEsc(g.name)+' · ':'')+(_twS.edit==='players'?'Add players':_twS.edit==='courses'?'Courses':'New trip');
   var bar='';for(var i=0;i<_TW_TOTAL_STEPS;i++)bar+='<span'+(i<idx?' class="on"':'')+'></span>';
   return '<div class="qrw-top">'
-    +(idx===1?'<span class="qrw-ib"></span>':'<button type="button" class="qrw-ib" onclick="window.'+(idx===4&&_twS.pick!=null?'_twPickBack':'_twBack')+'()" aria-label="Back"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>')
+    +((idx===1||(_twS.edit&&_twS.pick==null))?'<span class="qrw-ib"></span>':'<button type="button" class="qrw-ib" onclick="window.'+(idx===4&&_twS.pick!=null?'_twPickBack':'_twBack')+'()" aria-label="Back"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>')
     +'<span class="qrw-ctx">'+ctx+'</span>'
     +'<button type="button" class="qrw-ib" onclick="window._twCancel()" aria-label="Cancel"><i class="ti ti-x" aria-hidden="true"></i></button></div>'
-    +'<div class="qrw-bar">'+bar+'</div>'
-    +'<div class="qrw-head"><div class="qrw-step">STEP '+idx+' OF '+_TW_TOTAL_STEPS+'</div>';
+    // v125.27: New trip is one screen and the checklist's lists stand alone: no step count.
+    +((idx===1||_twS.edit)?'<div class="qrw-head">':'<div class="qrw-bar">'+bar+'</div>'
+    +'<div class="qrw-head"><div class="qrw-step">STEP '+idx+' OF '+_TW_TOTAL_STEPS+'</div>');
 }
 function _twFoot(note,label,warn){return _wizFoot(note,label,warn,'window._twNext()');}
 var _TW_ICO={
@@ -7778,6 +7820,71 @@ function _twFooter(nextLabel,backLabel){
         `<button style="font-size:14px;color:var(--color-text-tertiary);background:none;border:none;cursor:pointer;" onclick="${bAction}">${bLbl}</button></div>`);
 }
 
+// v125.27: Format, Individual or Team Cup, on New trip. The line under it follows the pick.
+var _TW_FMT={ind:'Everyone plays for himself: the weekend bet, plus any games you add.',cup:"Two teams play match play for points. Each round's lineup sets its matches."};
+function _twFmtHtml(){
+  var c=_twS.fmt==='cup';
+  return '<div class="qrw-lbl">FORMAT</div><div class="qrw-seg" id="twFmtSeg" role="radiogroup" aria-label="Format"><span class="qrw-pill" style="width:calc((100% - 8px) / 2);transform:translateX('+(c?100:0)+'%)"></span>'
+    +[['ind','Individual'],['cup','Team Cup']].map(function(o){var on=(c?'cup':'ind')===o[0];
+      return '<button type="button" role="radio" aria-checked="'+on+'" class="'+(on?'on':'')+'" data-val="'+o[0]+'" onclick="window._twSetFmt(this)"><span>'+o[1]+'</span></button>';}).join('')
+    +'</div><div class="qrw-hint" id="twFmtHint">'+_TW_FMT[c?'cup':'ind']+'</div>';
+}
+// v125.27: the checklist's two lists, the wizard's own screens for a trip that exists.
+function _twMembers(){
+  var gid=window._pendingGroupId,grp=gid?_groupCache[gid]:null,ms=(grp&&grp._members)||[];
+  if(_twS.edit!=='players')return ms;
+  var ids={};_apAvailableMembers().forEach(function(m){ids[m.member_id]=1;});
+  return ms.filter(function(m){return ids[m.member_id];});
+}
+window._stpPlayers=function(){
+  if(!WK||!canEditTrip())return;
+  var gid=WK._groupId;if(!gid){setView('setup');setOptPanel('players');return;}
+  _twS={step:2,edit:'players',fmt:'ind',name:'',date:'',region:'',numRounds:WK.rounds.length,selectedMembers:[],courses:[],tees:[],games:{},pick:null};
+  _twLastStep=null;window._pendingGroupId=gid;
+  var go=function(){if(!_twS.edit)return;document.getElementById('wizardScreen').style.display='flex';_twRender();};
+  if(!_groupCache[gid]||!(_groupCache[gid]._members||[]).length){if(!_groupCache[gid])_groupCache[gid]={};_loadGroupMembersIntoTile(gid).then(go,go);}else go();
+};
+window._stpCourses=function(){
+  if(!WK||!canEditTrip())return;
+  _twS={step:4,edit:'courses',fmt:'ind',name:'',date:'',region:'',numRounds:WK.rounds.length,selectedMembers:[],games:{},pick:null,walk:false,teeOpen:'',
+    courses:WK.rounds.map(function(rd,r){return _rdNoCourse(r)?'':(rd.courseName||'');}),
+    tees:WK.rounds.map(function(rd){var t=rd.course&&rd.course.defaultTee;return t?{gender:t.gender,teeName:t.teeName}:{};})};
+  _twLastStep=null;window._pendingGroupId=WK._groupId||null;
+  document.getElementById('wizardScreen').style.display='flex';_twRender();
+};
+window._twEditAddPlayers=function(){
+  var S=(_twS.selectedMembers||[]).slice();if(!S.length)return;
+  window._apBatch=true;
+  try{S.forEach(function(m){
+    if(WK.players.length>=TW_MAX_PLAYERS)return;
+    var c=pickColor(),parts=(m.display_name||'').trim().split(/\s+/).filter(Boolean);
+    _seatPlayer({pid:s2NewTok(),name:m.display_name,first:parts[0]||'',last:parts.slice(1).join(' ')||'',venmo:m.venmo||'',member_id:m.member_id,
+      idx:(m.hcp_index==null||m.hcp_index==='')?0:+m.hcp_index,bg:c.bg,fg:c.fg,ini:''});
+  });}finally{window._apBatch=false;}
+  renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();renderMPHoleBox();renderVegasBoxWrap();
+  autoSave();s2WriteActive();
+  window._twEditClose();
+};
+window._twEditSaveCourses=function(){
+  for(var i=0;i<WK.rounds.length;i++){
+    if(_gsRoundHasScores(i))continue;
+    var cn=_twS.courses[i]||'';if(!cn)continue;
+    if(cn!==WK.rounds[i].courseName||_rdNoCourse(i))window._wkSetCourse(i,cn);
+    var t=_twS.tees[i]||{},cur=WK.rounds[i].course&&WK.rounds[i].course.defaultTee;
+    if(t.teeName&&!(cur&&cur.teeName===t.teeName&&cur.gender===t.gender))window._gcaSetTee(i,t.gender||'male',t.teeName);
+  }
+  window._twEditClose();
+};
+window._twEditClose=function(){
+  document.getElementById('wizardScreen').style.display='none';
+  window._pendingGroupId=null;_twS.edit=null;_twS.pick=null;
+  setView('setup');setOptPanel('menu');
+};
+window._twSetFmt=function(el){
+  var v=el&&el.dataset&&el.dataset.val;if(v!=='ind'&&v!=='cup')return;
+  _twS.fmt=v;var h=document.getElementById('twFmtHint');if(h)h.textContent=_TW_FMT[v];
+  if(!_wizSegTo(document.getElementById('twFmtSeg'),v)){_twStash();_twRender();}
+};
 function _twStepHtml(){
   if(_twS.step===1)return _twStep1Html();
   if(_twS.step===2)return _twStep2Html();
@@ -7802,9 +7909,9 @@ function _twStep1Html(){
     +'<div class="qrw-seg tw-rseg" id="twRoundsSeg" role="radiogroup" aria-label="Rounds"><span class="qrw-pill" style="width:calc((100% - 8px) / 6);transform:translateX('+(ri*100)+'%)"></span>'
     +[1,2,3,4,5,6].map(function(n){var on=n===nR;
       return '<button type="button" role="radio" aria-checked="'+on+'" class="'+(on?'on':'')+'" data-val="'+n+'" onclick="window._twSetRounds(this)"><span>'+n+'</span></button>';}).join('')+'</div>'
-    +'<div class="qrw-hint">More rounds can be added to the trip later.</div>';
+    +'<div class="qrw-hint">More rounds can be added to the trip later.</div>'+_twFmtHtml();
   return '<div class="qrw" data-tw-step="1">'+_twTop(1)+'<div class="qr-step-t qrw-title">Name your trip</div></div>'
-    +'<div class="qrw-body">'+h+'</div>'+_twFoot(_twS.nameErr?'Name the trip to continue.':'','Continue',!!_twS.nameErr)+'</div>';
+    +'<div class="qrw-body">'+h+'</div>'+_twFoot(_twS.nameErr?'Name the trip to continue.':'','Create trip',!!_twS.nameErr)+'</div>';
 }
 // The pill moves in place (typed text stays); with no switch on screen it redraws after a stash.
 window._twSetRounds=function(el){
@@ -7816,19 +7923,19 @@ window._twSetRounds=function(el){
 // Step 2: Players. v123.63: the round wizard's member rows. The handicap boxes keep their tw_hcp_ ids,
 // which _twToggleMember, _twSelectAll and _twNext read before anything redraws.
 function _twStep2Html(){
-  var gid=window._pendingGroupId,grp=gid?_groupCache[gid]:null,members=(grp&&grp._members)||[],me=sbCurrentUser();
+  var gid=window._pendingGroupId,grp=gid?_groupCache[gid]:null,members=_twMembers(),me=sbCurrentUser();
   var S=_twS.selectedMembers||[],h='';
   var all=members.length>0&&members.every(function(m){return S.some(function(s){return s.member_id===m.member_id;});});
   h+='<div id="tw_guestError" class="ts-danger" style="display:none;font-size:13px;font-weight:600;text-align:center"></div>';
   h+=_wizSelAllRow('tw',(grp&&grp.name)||'Group',members.length,all);
   if(members.length)h+='<div class="qrw-card">'+members.map(function(m,midx){
     return _wizMemberRow('tw',m,midx,S.find(function(x){return x.member_id===m.member_id;}),me);}).join('')+'</div>';
-  else h+='<div class="qrw-empty">No one in the group yet. Add a guest to start.</div>';
+  else h+='<div class="qrw-empty">'+(_twS.edit?'Everyone in the group is in this trip.':'No one in the group yet. Add a guest to start.')+'</div>';
   h+='<button type="button" class="qrw-add" onclick="window._twShowAddGuest()"><i class="ti ti-plus" aria-hidden="true"></i> Add guest</button>'
     +'<div class="qrw-hint c">Guests are saved to the group for future trips. Tap a handicap to change it for this trip.</div>';
   var n=S.length,note=_twS.plErr?'Pick at least 2 players.':(n===0?'None selected':n+' selected');
   return '<div class="qrw" data-tw-step="2">'+_twTop(2)+'<div class="qr-step-t qrw-title">Who&#39;s playing?</div></div>'
-    +'<div class="qrw-body">'+h+'</div>'+_twFoot(note,'Continue',!!_twS.plErr)+'</div>';
+    +'<div class="qrw-body">'+h+'</div>'+(_twS.edit?'<div class="qrw-foot"><button type="button" class="qrw-cta'+(n?'':' off')+'" onclick="window._twNext()">'+(n?'Add '+n+' player'+(n===1?'':'s'):'Add players')+'</button></div>':_twFoot(note,'Continue',!!_twS.plErr))+'</div>';
 }
 
 // Step 3: Handicaps. v123.63: the round wizard's stepper and switch.
@@ -7889,17 +7996,19 @@ function _twStep4Html(){
   var nR=_twS.numRounds,miss=0,h='';
   for(var i=0;i<nR;i++){
     var cn=_twS.courses[i]||'',t=cn?_twTeeOf(i):null;if(!cn)miss++;
+    var _lk=!!_twS.edit&&_gsRoundHasScores(i);
     var sub=cn?[_qrwPlace(cn),t?t.tee_name:'',t?_qrTeeYds(t):''].filter(Boolean).join(' · '):'Not picked yet';
-    h+='<button type="button" class="tw-rd'+(cn?'':' empty')+'" onclick="window._twOpenRound('+i+')">'
+    if(_lk)sub='Scores entered';
+    h+=(_lk?'<div class="tw-rd" aria-disabled="true">':'<button type="button" class="tw-rd'+(cn?'':' empty')+'" onclick="window._twOpenRound('+i+')">')
       +'<span class="tw-rdn"><small>RD</small>'+(i+1)+'</span>'
       +'<span class="qrw-rt"><span class="qrw-rn">'+(cn?_gtEsc(courseDisp(cn)):'Choose a course')+'</span><span class="qrw-rs">'+_gtEsc(sub)+'</span></span>'
-      +'<span class="qrw-change">'+(cn?'Change':'Choose')+'</span></button>';
+      +(_lk?'</div>':'<span class="qrw-change">'+(cn?'Change':'Choose')+'</span></button>');
   }
   var note=miss?miss+' of '+nR+' round'+(nR===1?'':'s')+' still need'+(miss===1?'s':'')+' a course':'';
   return '<div class="qrw" data-tw-step="4">'+_twTop(4)+'<div class="qr-step-t qrw-title">Where are you playing?</div><div class="qrw-sub">One course per round.</div></div>'
     +'<div class="qrw-body"><div class="tw-rds">'+h+'</div><div class="qrw-hint c">Tap a round to choose its course: search, Recent, or Courses near me. Tees are picked there too.</div></div>'
     +'<div class="qrw-foot">'+(note?'<div class="qrw-hint c">'+note+'</div>':'')
-    +'<button type="button" class="qrw-cta'+(miss?' off':'')+'" onclick="window._twNext()">Continue</button></div></div>';
+    +'<button type="button" class="qrw-cta'+(miss&&!_twS.edit?' off':'')+'" onclick="window._twNext()">'+(_twS.edit?'Save':'Continue')+'</button></div></div>';
 }
 function _twPickHtml(i){
   var gid=window._pendingGroupId||'',cn=_twS.courses[i]||'',h='';
@@ -7942,7 +8051,7 @@ function _twTeesHtml(i){
     return _qrChipHtml(t,sel.gender===g&&sel.teeName===t.tee_name,"window._twTeeChip("+i+",'"+g+"',"+k+")");}).join('');},
     {open:'_twTeeOpen',state:_twS.teeOpen});
 }
-window._twOpenRound=function(i){if(!(i>=0&&i<_twS.numRounds))return;_twS.walk=!_twS.courses[i];_twS.pick=i;_twS.teeOpen='';_twS.near=null;_twS.nearErr='';_twS.nearAsk=false;_twRender();};
+window._twOpenRound=function(i){if(!(i>=0&&i<_twS.numRounds))return;if(_twS.edit&&_gsRoundHasScores(i))return;_twS.walk=!_twS.courses[i];_twS.pick=i;_twS.teeOpen='';_twS.near=null;_twS.nearErr='';_twS.nearAsk=false;_twRender();};
 window._twPickBack=function(){_twS.pick=null;_twS.walk=false;_twS.teeOpen='';_twRender();};
 // v123.64: after a pick, the next empty round (from the one after, wrapping) when walking; else the list.
 function _twAfterPick(i){
@@ -8012,6 +8121,8 @@ window._twNext=function(){
     // Sync courses array length
     while(_twS.courses.length<_twS.numRounds)_twS.courses.push('');
     _twS.courses=_twS.courses.slice(0,_twS.numRounds);
+    // v125.27: Create trip. Players, courses and money are set from the checklist on Settings.
+    _twS.oneScreen=true;_twLaunch();return;
     // Fetch group members if not cached
     const gid=window._pendingGroupId;
     if(gid&&_groupCache[gid]&&!_groupCache[gid]._members){
@@ -8026,6 +8137,7 @@ window._twNext=function(){
       const el=document.getElementById('tw_hcp_'+m.member_id);
       if(el)m.hcp_index=idxFromInput(el.value,(m.hcp_index!=null?m.hcp_index:0));
     });
+    if(_twS.edit==='players'){window._twEditAddPlayers();return;}
     if(_twS.selectedMembers.length<2){_twS.plErr=true;_twRender();return;}
     if(_twS.selectedMembers.length>TW_MAX_PLAYERS){showMsg('Maximum '+TW_MAX_PLAYERS+' players for a trip.');return;}
     _twS.plErr=false;
@@ -8038,6 +8150,7 @@ window._twNext=function(){
   }
   if(_twS.step===4){
     if(_twS.pick!=null){window._twPickBack();return;}
+    if(_twS.edit==='courses'){window._twEditSaveCourses();return;}
     for(let i=0;i<_twS.numRounds;i++){
       if(!_twS.courses[i])return;   // the footer already counts what is missing
     }
@@ -8216,6 +8329,7 @@ window._twPickCourse=function(i,cn){
 window._twSetTee=function(i,gender,teeName){_twS.tees[i]={gender,teeName};};
 // v123.65: the X asks first once something is set up (Kyle lost a trip to a stray tap in a round's tees).
 window._twCancel=function(){
+  if(_twS&&_twS.edit){window._twEditClose();return;}
   if(_twS&&_twS.step===1)_twStash();
   var started=!!_twS&&(_twS.step>1||!!(_twS.name||'').trim());
   if(!started){window._twCancelNow();return;}
@@ -8233,7 +8347,7 @@ window._twCancelNow=function(){
 window._twToggleMember=function(memberId){
   const gid=window._pendingGroupId;
   const grp=gid?_groupCache[gid]:null;
-  const members=(grp?._members)||[];
+  const members=_twMembers();
   const m=members.find(x=>x.member_id===memberId);
   if(!m)return;
   // Capture any in-flight hcp edits before re-render
@@ -8263,7 +8377,7 @@ window._twToggleMember=function(memberId){
 window._twSelectAll=function(on){
   const gid=window._pendingGroupId;
   const grp=gid?_groupCache[gid]:null;
-  const members=(grp?._members)||[];
+  const members=_twMembers();
   _twS.selectedMembers.forEach(function(s){
     const el=document.getElementById('tw_hcp_'+s.member_id);
     if(el)s.hcp_index=idxFromInput(el.value,(s.hcp_index!=null?s.hcp_index:0));
@@ -8484,6 +8598,7 @@ function _twLaunch(){
   launchMainApp();
   autoSave();
   s2WriteActive();
+  if(s.oneScreen){if(s.fmt==='cup'&&typeof window._cupOn==='function')window._cupOn(true);setView('setup');setOptPanel('menu');}
 }
 // Resolve in-game display names for a roster array: last name by default, first initial + last on conflict
 function resolveDisplayNames(players){
@@ -8730,6 +8845,7 @@ function _updateActionRow(){
   // bar over Games/Money/etc. Mirrors the rule _updateTabBar already enforces on nav.
   if(!document.getElementById('tab-entry')?.classList.contains('active')){row.className='';return;}
   const r=STATE.currentRound,hi=STATE.currentHole;
+  if(typeof _rdNoCourse==='function'&&_rdNoCourse(r)){row.className='';row.style.gridTemplateColumns='';row.style.background='';row.innerHTML='';return;}
   // v123.71: the pad carries its own buttons. A bar under it was a second call to action.
   if(_launchPadPending(r)){row.className='';row.style.gridTemplateColumns='';row.style.background='';row.innerHTML='';return;}
   const isCard=_scViewMode==='card';
@@ -9043,6 +9159,58 @@ function _wireSimLongPress(){
   _el.addEventListener('mouseup',_cancel);
   _el.addEventListener('mouseleave',_cancel);
 }
+// v125.25: the trip setup checklist (Kyle, 27 Oct). One card at the top of Settings, in setup order, following the
+// trip's format. _setupLines reads the trip and never writes; _setupCardHtml draws it.
+function _stpRds(list){const n=list.map(function(r){return r+1;});return 'Rd '+(n.length===1?n[0]:n.slice(0,-1).join(', ')+' and '+n[n.length-1]);}
+function _stpPl(n,one,many){return n+' '+(n===1?one:many);}
+function _stpFs(rr){
+  const k=rr.map(function(r){return flightsForRound(r).filter(function(f){return (f||[]).some(function(pi){return typeof pi==='number'&&pi>=0;});}).length;});
+  if(!k.length)return 'No rounds yet';
+  if(k.every(function(v){return v===k[0];}))return _stpPl(k[0],'foursome','foursomes')+' a round';
+  return rr.map(function(r,i){return 'Rd '+(r+1)+': '+k[i];}).join(' · ');
+}
+function _setupLines(){
+  const P=WK.players||[],np=P.length,R=WK.rounds||[],cup=!!(WK.cup&&WK.cup.on),L=[];
+  const go=function(p,x){return "setView('setup');setOptPanel('"+p+"')"+(x||'');};
+  L.push({t:'Players',st:np>=2?'done':'todo',sub:np>=2?_stpPl(np,'player','players'):np===1?'1 player · a trip needs two':'Add the group or guests',go:'window._stpPlayers()'});
+  const z=P.filter(function(p){return !(+p.idx);}).length;
+  L.push({t:'Handicaps',st:!np?'todo':z?'warn':'done',sub:!np?'Add players first':z?_stpPl(z,'player','players')+' at 0.0':'Everyone has an index',go:go('players')});
+  const rr=R.map(function(_,r){return r;}).filter(function(r){return !R[r].isE9;});
+  const miss=rr.filter(function(r){return _rdNoCourse(r);});
+  const cn=rr.filter(function(r){return !_rdNoCourse(r);}).map(function(r){return _gtEsc(courseDisp(R[r].courseName));}).filter(function(v,i,a){return a.indexOf(v)===i;});
+  L.push({t:'Rounds and courses',st:rr.length&&!miss.length?'done':miss.length===rr.length?'todo':'warn',
+    sub:!rr.length?'No rounds yet':!miss.length?_stpPl(rr.length,'round','rounds')+' · '+cn.join(', '):miss.length===rr.length?_stpPl(rr.length,'round','rounds')+' · no courses yet':_stpRds(miss)+(miss.length===1?' has':' have')+' no course',go:'window._stpCourses()'});
+  if(!cup){
+    L.push({t:'Money',opt:1,st:WK.buyIn>0?'done':'todo',sub:WK.buyIn>0?_m0(WK.buyIn)+' buy-in · weekend bet':'No buy-in',go:go('weekend',";flashTo('suBetSec',80)")});
+    L.push({t:'Foursomes',opt:1,st:np?'done':'todo',sub:np?_stpFs(rr):'Add players first',go:go('flights')});
+  }else{
+    const c=WK.cup,a=_cupCount(0),b=_cupCount(1),un=np-a-b,live=a>0&&b>0;
+    L.push({t:'Teams',st:!np?'todo':un?'warn':live?'done':'todo',sub:!np?'Add players first':un?un+' not on a team':_gtEsc(c.teams[0].name)+' '+a+' · '+_gtEsc(c.teams[1].name)+' '+b,go:go('cup')});
+    const cr=_cupRounds(),off=[],need=[];
+    cr.forEach(function(r){const Lu=_cupLuGet(r);if(Lu.fmt==='off')off.push(r);else if(!(Lu.m.length&&_cupLuFull(Lu)))need.push(r);});
+    const set=cr.length-off.length-need.length;
+    L.push({t:'Lineups',st:!live?'todo':!need.length?'done':set?'warn':'todo',sub:!live?'Set the teams first':!need.length?_stpPl(set,'cup round','cup rounds')+' set':_stpRds(need)+' not set',
+      go:live&&need.length?"setView('setup');window._cupLuOpen("+need[0]+")":go('cup')});
+    off.forEach(function(r){L.push({t:'Foursomes',opt:1,st:'done',sub:'Rd '+(r+1)+' is not a cup round',go:"setView('setup');STATE.flightsViewRound="+r+";setOptPanel('flights')"});});
+    const pn=_cupPayList().length;
+    L.push({t:'Cup money',opt:1,st:c.entry>0?'done':'todo',sub:c.entry>0?_m0(c.entry)+' entry · '+_stpPl(pn,'payout','payouts'):'No entry',go:go('cup',";flashTo('cupMoneySec',80)")});
+  }
+  const gl=(typeof GAME_DEFS!=='undefined'?GAME_DEFS:[]).filter(function(d){return gameOnAny(d.id);}).map(function(d){return d.label;});
+  L.push({t:'Games',opt:1,st:gl.length?'done':'todo',sub:gl.length?gl.join(', '):cup?'None besides the cup':'None yet',go:"setView('games')"});
+  return L;
+}
+function _setupCardHtml(){
+  if(!WK||WK.isQuickRound||!canEditTrip())return '';
+  const L=_setupLines(),req=L.filter(function(l){return !l.opt;}),n=req.filter(function(l){return l.st==='done';}).length,of=req.length,all=n===of;
+  const mark=function(st){return st==='done'?'<div class="opt-menu-ico stp-ok"><i class="ti ti-check"></i></div>':st==='warn'?'<div class="opt-menu-ico stp-warn"><i class="ti ti-alert-triangle"></i></div>':'<div class="opt-menu-ico stp-todo"></div>';};
+  if(all&&!STATE.setupOpen)return '<div class="opt-menu-card" id="setupCard"><div class="opt-menu-row stp-fold">'+mark('done')+'<div class="opt-menu-text"><div class="opt-menu-title">Trip is set up</div><div class="opt-menu-sub">All '+of+' steps done</div></div><button type="button" class="stp-rev" onclick="window._stpOpen(true)">Review ›</button></div></div>';
+  let h='<div class="opt-menu-card" id="setupCard"><div class="stp-hd"><span class="stp-t">Set up this trip</span>'
+    +(all?'<span class="stp-n">All done · <button type="button" class="stp-hide" onclick="window._stpOpen(false)">Hide</button></span>':'<span class="stp-n">'+n+' of '+of+' done</span>')
+    +'<div class="stp-bar"><div class="stp-fill" style="width:'+Math.round(100*n/Math.max(1,of))+'%"></div></div></div>';
+  L.forEach(function(l){h+='<div class="opt-menu-row stp-row" data-st="'+l.st+'" onclick="'+l.go+'">'+mark(l.st)+'<div class="opt-menu-text"><div class="opt-menu-title">'+l.t+(l.opt?' <span class="stp-opt">Optional</span>':'')+'</div><div class="opt-menu-sub">'+l.sub+'</div></div><span class="stp-chev" aria-hidden="true">›</span></div>';});
+  return h+'</div>';
+}
+window._stpOpen=function(o){STATE.setupOpen=!!o;renderOptMenu();};
 function renderOptMenu(){
   const el=document.getElementById('opt-panel-menu');if(!el)return;
   const isQ=!!(WK&&WK.isQuickRound);
@@ -9055,7 +9223,7 @@ function renderOptMenu(){
   if(isQ){const cn=(WK.rounds&&WK.rounds[0])?courseDisp(WK.rounds[0].courseName):'';setupSub=[cn,scoring,pct].filter(Boolean).join(' · ');}
   else{setupSub=[nR+' rounds',scoring,pct].filter(Boolean).join(' · ');}
   const row=(icon,title,sub,onclick)=>`<div class="opt-menu-row" onclick="${onclick}"><div class="opt-menu-ico"><i class="ti ${icon}"></i></div><div class="opt-menu-text"><div class="opt-menu-title">${title}</div><div class="opt-menu-sub">${sub}</div></div><div class="opt-menu-chev">›</div></div>`;
-  el.innerHTML='<div class="opt-menu-card">'
+  el.innerHTML=_setupCardHtml()+'<div class="opt-menu-card">'
     +row('ti-calendar-event',setupTitle,setupSub,"setOptPanel('weekend')")
     +row('ti-users','Players',nP+' player'+(nP===1?'':'s')+(isQ?' \u00b7 foursomes and handicaps':''),"setOptPanel('players')")
     +(isQ?'':row('ti-users-group','Foursomes','Split rounds into groups',"setOptPanel('flights')"))
@@ -9123,7 +9291,9 @@ function _courseNameClash(cn,name){
     if(String(o).trim().toLowerCase()===k||(d&&String(d).trim().toLowerCase()===k))return o;}
   return null;
 }
-function rdLabel(i){const rd=WK.rounds[i];if(rd.isE9&&!rd.inStandings)return courseDisp(rd.courseName);const cn=rd.courseName,dn=courseDisp(cn),nonE9=WK.rounds.filter(r=>!r.isE9&&r.courseName===cn).length;if(nonE9>1){let o=0;for(let j=0;j<=i;j++)if(!WK.rounds[j].isE9&&WK.rounds[j].courseName===cn)o++;return dn+' ('+o+')';}return dn;}
+// v125.24: a round with no course yet says so (empty names had counted as one course).
+function _rdNoCourse(r){const rd=WK&&WK.rounds&&WK.rounds[r];return !!rd&&!rd.courseName&&!(rd.course&&rd.course.holes&&rd.course.holes.length);}
+function rdLabel(i){const rd=WK.rounds[i];if(_rdNoCourse(i))return 'No course yet';if(rd.isE9&&!rd.inStandings)return courseDisp(rd.courseName);const cn=rd.courseName,dn=courseDisp(cn),nonE9=WK.rounds.filter(r=>!r.isE9&&r.courseName===cn).length;if(nonE9>1){let o=0;for(let j=0;j<=i;j++)if(!WK.rounds[j].isE9&&WK.rounds[j].courseName===cn)o++;return dn+' ('+o+')';}return dn;}
 function renderRdPicker(cid,cur,fn,showInfo){
   const el=document.getElementById(cid);if(!el)return;
   const badge=roundLabel(cur);
@@ -11418,6 +11588,19 @@ function _fsPillPick(i){
   _fsPillRender();
   updateHoleUI();
 }
+// v125.24: Scores on a round with no course: a message and a way to Trip Setup in place of the hole screen.
+function _scNoCourse(r){
+  const hw=document.getElementById('holeDetailWrap');if(!hw||!hw.parentNode)return false;
+  let m=document.getElementById('scNoCourse');
+  if(!_rdNoCourse(r)){if(m)m.style.display='none';if(hw.dataset.nc){hw.style.display='';delete hw.dataset.nc;}return false;}
+  if(!m){m=document.createElement('div');m.id='scNoCourse';hw.parentNode.insertBefore(m,hw);}
+  m.style.display='';hw.style.display='none';hw.dataset.nc='1';if(typeof _updateActionRow==='function')_updateActionRow();
+  m.innerHTML='<div class="su-card" style="padding:18px 16px;margin:12px 14px"><div style="font-weight:600;font-size:16px;color:var(--color-text-primary)">'+roundLabel(r)+' has no course yet</div>'
+    +'<div style="font-size:13px;color:var(--color-text-secondary);margin-top:4px;line-height:1.4">Pick its course before scoring.</div>'
+    +'<button type="button" class="act-edit" style="margin-top:14px" onclick="window._scNoCourseGo('+r+')">Pick a course</button></div>';
+  return true;
+}
+window._scNoCourseGo=function(r){window._stpCourses();};
 function updateHoleUI(){_pinScroll(window.scrollY||0);
   if(!WK||!STATE||!WK.rounds||!WK.players)return;
   const r=STATE.currentRound,hi=STATE.currentHole;
@@ -11431,6 +11614,7 @@ function updateHoleUI(){_pinScroll(window.scrollY||0);
   }
   if(!STATE.razzleHWM)STATE.razzleHWM={};
   {const _uhFi=getFlightPick(r)||0;if(!STATE.razzleHWM[r]||typeof STATE.razzleHWM[r]!=='object')STATE.razzleHWM[r]={};if(STATE.razzleHWM[r][_uhFi]===undefined){const _rc=isRoundComplete(r);const _maxH2=holeOffset(r)+fsHoleCount(r,_uhFi)-1;STATE.razzleHWM[r][_uhFi]=_rc?_maxH2:-1;}}
+  if(typeof _scNoCourse==='function'&&_scNoCourse(r))return;
   if(!WK.rounds[r]||!WK.rounds[r].course){console.error('updateHoleUI: missing round/course for round',r);return;}
   const hole=WK.rounds[r].course.holes?.[hi]||{par:4,si:hi+1};
   document.getElementById('holeLabel').textContent='Hole '+(hi+1);
@@ -11896,7 +12080,7 @@ function calcPotRankings(){
     return{pi,total:-(net-parTot),byRound:[]};// negate so sort descending = lowest net wins
   }).sort((a,b)=>b.total-a.total);
 }
-function totalHolesPlayed(){return WK.rounds.reduce((a,_,r)=>{if(!inStandingsRound(r))return a;const n=standingsHoleCount(r);const off=holeOffset(r);let cnt=0;for(let hi=off;hi<off+n;hi++){if(STATE.scores[r][hi]&&STATE.scores[r][hi].every(s=>s!==null))cnt++;}return a+cnt;},0);}
+function totalHolesPlayed(){if(!WK.players||!WK.players.length)return 0;return WK.rounds.reduce((a,_,r)=>{if(!inStandingsRound(r))return a;const n=standingsHoleCount(r);const off=holeOffset(r);let cnt=0;for(let hi=off;hi<off+n;hi++){if(STATE.scores[r][hi]&&STATE.scores[r][hi].every(s=>s!==null))cnt++;}return a+cnt;},0);}
 function totalHoles(){return WK.rounds.reduce((a,_,r)=>{if(!inStandingsRound(r))return a;return a+standingsHoleCount(r);},0);}
 function calcRoundRankings(){const entries=[];WK.rounds.forEach((rd,r)=>{if(rd.nineHole)return;if(!inStandingsRound(r))return;const off=holeOffset(r),cnt=standingsHoleCount(r);const activeHoles=STATE.scores[r].slice(off,off+cnt);const anyComplete=activeHoles.some(h=>h.every(s=>s!==null));if(!anyComplete)return;WK.players.forEach((p,pi)=>{const roundComplete=activeHoles.every(h=>h[pi]!==null);if(!roundComplete)return;const gross=activeHoles.reduce((a,hole)=>a+(hole[pi]||0),0);const net=Array.from({length:cnt},(_,i)=>getNet(pi,off+i,r)).reduce((a,n)=>a+(n||0),0);const parTotal=rd.course.holes.slice(off,off+cnt).reduce((a,h)=>a+h.par,0);entries.push({pi,r,courseName:rd.courseName,gross,net,parTotal,relGross:gross-parTotal,relNet:net-parTotal});});});entries.sort((a,b)=>a.net-b.net);let rank=1;entries.forEach((e,i)=>{if(i>0&&entries[i].net===entries[i-1].net){e.rank=entries[i-1].rank;}else{e.rank=rank;}rank=i+2;});return entries;}
 function toggleRoundRankings(){STATE.roundRankOpen=!STATE.roundRankOpen;renderBoard();}
@@ -13560,6 +13744,7 @@ function _seatPlayer(newP){
   var _alone=_fsPlaceNewPlayer(WK.players.length-1);
   _rosterReconcileAll();
   if(WK.players.length>=4&&WK.skinsFmt==='individual'&&!WK._skinsFmtManual)WK.skinsFmt='team';
+  if(typeof window!=='undefined'&&window._apBatch)return true;   // v125.27: the caller seating several redraws and saves once
   renderPlayersPanel();_gsRefreshAfterEdit();renderScorecard();renderBanner();
   renderMPHoleBox();renderVegasBoxWrap();
   if(STATE.optPanel==='flights'&&typeof renderFlightsPanel==='function')renderFlightsPanel();
@@ -14469,7 +14654,7 @@ function renderWeekendPanel(){
     ?`<span class="su-fixed">${_tbLabel} (bet settled)</span>`
     :_gsSeg([['countback','Countback'],['split','Split'],['manual','We decide']],_tbVal,'_setPotTiebreak(VAL)',true);
   const _tbRow=WK.isQuickRound?'':_gsRow('If players tie',_tbLine,_tbCtl,!_tbLocked);
-  html+=(WK.isQuickRound?'':(_suSec('Weekend bet')+_suCard(_gsRow('Buy-in','Each player puts in',`<div class="gs-money"><button type="button" aria-label="Less" onclick="window._suBuyStep(this,-5)">\u2212</button><span>$</span><input class="ie-num" type="number" inputmode="decimal" value="${WK.buyIn}" onchange="WK.buyIn=parseFloat(this.value);autoSave()"/><button type="button" aria-label="More" onclick="window._suBuyStep(this,5)">+</button></div>`)+_gsRow('Weekend winner','Lowest net over the trip','<span class="su-fixed">Net stroke play</span>')+_tbRow)));
+  html+=(WK.isQuickRound?'':('<div id="suBetSec"></div>'+_suSec('Weekend bet')+_suCard(_gsRow('Buy-in','Each player puts in',`<div class="gs-money"><button type="button" aria-label="Less" onclick="window._suBuyStep(this,-5)">\u2212</button><span>$</span><input class="ie-num" type="number" inputmode="decimal" value="${WK.buyIn}" onchange="WK.buyIn=parseFloat(this.value);autoSave()"/><button type="button" aria-label="More" onclick="window._suBuyStep(this,5)">+</button></div>`)+_gsRow('Weekend winner','Lowest net over the trip','<span class="su-fixed">Net stroke play</span>')+_tbRow)));
 
   // --- Trip admins (visible only to canManageRunners) ---
   if(canManageRunners()&&WK&&WK._groupId){
@@ -14944,7 +15129,7 @@ function _cupMoney(){
 // ---- Settings: Money on the Team Cup screen ----
 function _cupMoneyHtml(ed){
   const c=WK.cup,dis=ed?'':' disabled',N=(WK.players||[]).length,pot=_cupPot(),paid=_cupPaid(),left=pot-paid;
-  let h='<div class="sec-hd gs-sec">Money</div><div class="su-card">';
+  let h='<div id="cupMoneySec"></div><div class="sec-hd gs-sec">Money</div><div class="su-card">';
   h+=_gsRow('Entry','Each player puts in','<div class="gs-money"><button type="button" aria-label="Less"'+dis+' onclick="window._cupEntryStep(this,-25)">−</button><span>$</span><input class="ie-num" type="number" inputmode="decimal" min="0" value="'+(+c.entry||0)+'"'+dis+' onchange="window._cupSet(\'entry\',this.value)"/><button type="button" aria-label="More"'+dis+' onclick="window._cupEntryStep(this,25)">+</button></div>');
   h+='</div><div class="pm-meta cup-pot"><span>'+N+' players · <b>'+_cupM(pot)+'</b> in the pot</span>'
     +(!pot&&!paid?'':left===0?'<span class="cup-pot-ok">All paid out ✓</span>':left>0?'<span class="cup-pot-warn">'+_cupM(left)+' not paid out</span>':'<span class="cup-pot-over">'+_cupM(-left)+' over the pot</span>')+'</div>';
@@ -19221,6 +19406,8 @@ function calcRoundTwos(r){
   return twos;
 }
 function isRoundComplete(r){
+  // v125.24: a round nobody is in is not complete (an empty roster read as every score in).
+  if(!WK.players||!WK.players.length)return false;
   const off=holeOffset(r);
   // Untouched v119.11 path. Byte for byte, so a trip with no ended round runs the
   // code it always ran rather than a rewrite that merely agrees.
