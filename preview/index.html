@@ -2708,7 +2708,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.27';
+const APP_VERSION='v125.28';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -6370,16 +6370,8 @@ function renderLibrarySection(){
   el.innerHTML=html;
 }
 
-// v123.69: asks in the app's sheet (was confirm()).
-function removeCourseFromPanel(name){
-  _confirmSheet({icon:'ti-trash',danger:true,title:'Remove '+_gtEsc(courseDisp(name))+'?',body:'It comes off the shared course list for everyone. This cannot be undone.',okLabel:'Remove',onOk:function(){_removeCourseNow(name);}});
-}
-async function _removeCourseNow(name){
-  delete CATALOG[name];
-  try{localStorage.setItem(LS_COURSES,JSON.stringify(CATALOG));}catch(e){}
-  try{await fetch(SB_URL+'/rest/v1/courses?name=eq.'+encodeURIComponent(name),{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});}catch(e){}
-  renderCoursesPanel();
-}
+// v125.28: the shared-list delete that stood here is gone. It removed a course for everyone, from inside a
+// trip; a round's course now comes off the round (_coRdClear).
 var _twFromGid=null; // v123.35: the Group page the wizard was opened from, if any
 function startNewWeekend(){
   _twFromGid=_gpOpenGid();
@@ -16337,9 +16329,14 @@ window._gcaToggleMenu=function(menuId,btn){
     });
   },0);
 };
-window._gcaRemove=function(eid){
-  const name=window._gcaNameByEid[eid];
-  if(name)removeCourseFromPanel(name);
+// v125.28: a round's course comes off the round, never out of the shared list.
+window._coRdClear=function(ri){
+  if(!WK||!WK.rounds||!WK.rounds[ri]||!canEditTrip())return;
+  const rd=WK.rounds[ri],cn=rd.courseName;
+  if(_gsRoundHasScores(ri)){showMsg(roundLabel(ri)+' has scores, so its course stays.');return;}
+  rd.courseName='';rd.course=null;
+  if(cn&&!WK.rounds.some(function(r){return r.courseName===cn;})){if(!WK.stagedCourses)WK.stagedCourses=[];if(WK.stagedCourses.indexOf(cn)<0)WK.stagedCourses.push(cn);}
+  s2MarkDirty(['trip']);autoSave();s2WriteActive();renderCoursesPanel();
 };
 window._gcaSaveEdit=function(eid){
   const name=window._gcaNameByEid[eid];
@@ -16619,7 +16616,7 @@ function _gcaTripCourseCard(rd,ri,c,eid){
   h+='<div id="'+_dmId+'" style="display:none">';
   if(isApi)h+='<button class="gca-menu-item" onclick="window._gcaToggleMenu(\''+_dmId+'\');window._gcaRefresh(\''+eid+'\',true)">Refresh from API</button>';
   h+='<button class="gca-menu-item" onclick="window._gcaToggleMenu(\''+_dmId+'\');window._gcaOpenEdit('+ri+',\''+eid+'\')" >Edit course</button>';
-  h+='<button class="gca-menu-item" style="color:#DC2626" onclick="window._gcaToggleMenu(\''+_dmId+'\');window._gcaRemove(\''+eid+'\')" >Remove</button>';
+  h+='<button class="gca-menu-item" style="color:#DC2626" onclick="window._gcaToggleMenu(\''+_dmId+'\');window._coRdClear('+ri+')" >Remove from '+roundLabel(ri)+'</button>';
   h+='</div></div></div>';
   // v124.84: the stats on one line (were four pills), read from rd.course (tee-specific snapshot)
   const _rc=rd.course||{};
