@@ -2667,7 +2667,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.21';
+const APP_VERSION='v125.23';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -9157,9 +9157,11 @@ function openRoundSheet(fnName,cur){
 }
 function closeRoundSheet(){const s=document.getElementById('roundSheet');if(s)s.remove();}
 function renderRdSel(cid,cur,fn){const el=document.getElementById(cid);if(!el)return;const isEntry=cid==='entryRdSel'||cid==='ctxRdSel';el.innerHTML=WK.rounds.map((rd,i)=>{const done=isRoundComplete(i);const detailsLink=isEntry&&i===cur?`<div onclick="event.stopPropagation();showRoundDetails()" style="position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,0.5);color:rgba(255,255,255,0.8);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1">i</div>`:'';return`<div class="rd-btn${i===cur?' active':''}${done?' done':''}" onclick="${fn}(${i})">${roundLabel(i)}<br><span style="font-size:9px;opacity:0.75">${rdLabel(i)}</span>${detailsLink}</div>`;}).join('');}
-function switchEntryRound(r){STATE.currentRound=r;STATE.currentHole=_flightResumeHole(r,(getFlightPick(r)||0));STATE.razzleToastOk=false;if(!STATE.razzleHWM)STATE.razzleHWM={};const _seRfi=getFlightPick(r)||0;if(!STATE.razzleHWM[r]||typeof STATE.razzleHWM[r]!=='object')STATE.razzleHWM[r]={};const _roundComplete=isRoundComplete(r);const _maxH=holeOffset(r)+fsHoleCount(r,_seRfi)-1;if(STATE.razzleHWM[r][_seRfi]===undefined)STATE.razzleHWM[r][_seRfi]=_roundComplete?_maxH:-1;renderRdSel('entryRdSel',r,'switchEntryRound');_renderCtxRdSel('scores');STATE.scRound=r;updateHoleUI();if(_scViewMode==='card')renderSCGrid();}
+// v125.23: one round for Scores and Games. _rdSet moves the round without drawing Scores; both tabs call it.
+function _rdSet(r){STATE.currentRound=r;STATE.currentHole=_flightResumeHole(r,(getFlightPick(r)||0));STATE.razzleToastOk=false;if(!STATE.razzleHWM)STATE.razzleHWM={};const _seRfi=getFlightPick(r)||0;if(!STATE.razzleHWM[r]||typeof STATE.razzleHWM[r]!=='object')STATE.razzleHWM[r]={};const _roundComplete=isRoundComplete(r);const _maxH=holeOffset(r)+fsHoleCount(r,_seRfi)-1;if(STATE.razzleHWM[r][_seRfi]===undefined)STATE.razzleHWM[r][_seRfi]=_roundComplete?_maxH:-1;STATE.scRound=r;}
+function switchEntryRound(r){_rdSet(r);renderRdSel('entryRdSel',r,'switchEntryRound');_renderCtxRdSel('scores');updateHoleUI();if(_scViewMode==='card')renderSCGrid();}
 function switchCardRound(r){STATE.scRound=r;renderRdSel('cardRdSel',r,'switchCardRound');STATE.scGridFlightSel=-1;renderSCGrid();}
-function switchGamesRound(r){if(STATE.gamesViewRound!==r)_gsCollapseAll();STATE.gamesViewRound=r;renderGamesTab();}
+function switchGamesRound(r){if(STATE.gamesViewRound!==r)_gsCollapseAll();if(r!==STATE.currentRound)_rdSet(r);STATE.gamesViewRound=r;renderGamesTab();}
 function switchGamesGame(g){if(STATE.gamesViewGame!==g)_gsCollapseAll();STATE.gamesViewGame=g;renderGamesTab();}
 function switchTeamsRound(r){STATE.teamsRound=r;renderTeamsPanel();}
 function _vpi(pi){return Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];}
@@ -18600,7 +18602,8 @@ window._gsSnakeIncStep=function(btn,d){
 
 function renderGamesTab(){
   if(!WK)return;
-  const r=STATE.gamesViewRound!==undefined?STATE.gamesViewRound:STATE.currentRound;
+  // v125.23: Games shows the round Scores is on (one round for both tabs).
+  const r=STATE.currentRound;
   STATE.gamesViewRound=r;
   renderRdPicker('ctxRdSel',r,'switchGamesRound',false);
   const _mf=isMultiFlight(r);
@@ -19420,7 +19423,7 @@ function _mnTopCard(){
   // v125.16: a cup trip shows what has paid out until the trip is complete; who pays whom shows then.
   if(typeof _cupMoneyOn==='function'&&_cupMoneyOn()&&!_tripComplete())return _cupSoFarHtml('So far','Settle up opens when every round is complete. Who pays whom shows then, in the fewest payments.');
   const S=STATE.settledRounds||[],done=_tripComplete(),open=_settleOpenKeys(),one=WK.rounds.length===1;
-  const _m=function(v){return '$'+(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
+  const _m=function(v){return '$'+_mnCm(Math.round(v*100)%100?v.toFixed(2):String(Math.round(v)));};
   const pays=function(t){return t.map(function(x){return '<div class="mn-pay"><span>'+_gtEsc(displayName(x.from))+' <em>pays</em> '+_gtEsc(displayName(x.to))+'</span><b>'+_m(x.amt)+'</b></div>';}).join('');};
   if(done&&!open.length&&S.length){
     const at=Object.keys(STATE.roundSettleData||{}).map(function(k){const d=STATE.roundSettleData[k];return d&&d.settledAt;}).filter(Boolean).sort().pop();
@@ -20958,6 +20961,8 @@ function _rcNines(pi,r){
   const _nVal=roundValFs('ninesVal',r,_nfi,WK.ninesVal||1);
   return {v:(3*_nRoll.pts[_mi]-_nT)*_nVal,d:_nRoll.pts[_mi]+' of '+_nT+' pts'};
 }
+// v125.22: a thousands comma on a money string's whole part ("2185.71" -> "2,185.71"); Recap's tiles and payments.
+function _mnCm(t){const p=String(t).split('.');p[0]=p[0].replace(/\B(?=(\d{3})+$)/g,',');return p.join('.');}
 function renderSettle(){
   const {allDone,auditGolf,expNet,totalNet,outstandingNet,snakeNet,ninesNet}=_settleNums();
   const S=STATE.settledRounds||[];
@@ -21019,7 +21024,7 @@ function renderSettle(){
   // Whole dollars unless anything on the page has cents.
   const vals=[];tiles.forEach(t=>{vals.push(totalNet[t.pi],t.a.total,expNet[t.pi]);t.gt.forEach(g=>{vals.push(g.v);g.rows.forEach(x=>vals.push(x.v));});});
   const cents=vals.some(v=>Math.round(Math.abs(v||0)*100)%100!==0);
-  const M=v=>(cents?Math.abs(v).toFixed(2):String(Math.round(Math.abs(v))));
+  const M=v=>_mnCm(cents?Math.abs(v).toFixed(2):String(Math.round(Math.abs(v))));
   const A=v=>(v>0.004?'+$':v<-0.004?'-$':'$')+M(v);
   const C=v=>v>0.004?'money-pos':v<-0.004?'money-neg':'money-nil';
   tiles.sort((x,y)=>totalNet[y.pi]-totalNet[x.pi]||x.pi-y.pi).forEach(t=>{
@@ -21248,7 +21253,7 @@ function _mnChipFit(o){
 }
 function renderMoneyGolf(){renderMoney();}
 // v124.62: a game tile on Bets opens that round and game on the Games tab.
-function _mnOpenGame(r,g){STATE.gamesViewRound=r;STATE.gamesViewGame=g;
+function _mnOpenGame(r,g){if(r!==STATE.currentRound)_rdSet(r);STATE.gamesViewRound=r;STATE.gamesViewGame=g;
   // v124.63 (Kyle 18 Oct): a game only some foursomes play lives on that foursome's lane, not on All.
   const fl=flightsForRound(r),on=fl.map((_,fi)=>fi).filter(fi=>!_fsOff(g,r,fi));
   STATE.gamesLane=(fl.length>1&&on.length&&on.length<fl.length)?on[0]:'both';
