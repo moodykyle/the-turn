@@ -155,7 +155,7 @@ body{background:#F4F1E8;color:#111;font-family:-apple-system,BlinkMacSystemFont,
 .co-empty .co-emt{flex:1;min-width:0;}
 .co-empty .co-emn{font-size:14px;font-weight:500;color:var(--color-text-secondary);}
 .co-empty .co-emr{font-size:11px;color:var(--color-text-tertiary);margin-top:2px;}
-.co-empty .co-pick{height:36px;}
+.co-empty .co-pick{display:inline-flex;align-items:center;justify-content:center;height:32px;min-width:0;padding:0 12px;font-size:13px;line-height:1;}
 .su-rt b.su-nc{font-weight:500;color:var(--color-text-secondary);}
 .su-pick{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--color-text-primary);cursor:pointer;text-align:right;max-width:100%;}
 .su-pick.empty,.su-pick .su-chg{color:#13795B;}
@@ -2733,7 +2733,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.30';
+const APP_VERSION='v125.31';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7953,7 +7953,7 @@ function _twStep1Html(){
     +tile('name','Trip name','tw_name','text',_twS.name,'e.g. Shaker Cup 2027')
     +tile('date','Date','tw_date','date',_twS.date,'')
     +tile('pin','Region (optional)','tw_region','text',_twS.region,'e.g. Pinehurst')+'</div>'
-    +_twRoundsStep(nR,1,6,'')
+    +_twRoundsStep(nR,1,TW_MAX_ROUNDS,'')
     +'<div class="qrw-hint">More rounds can be added to the trip later.</div>'+_twFmtHtml();
   return '<div class="qrw" data-tw-step="1">'+_twTop(1)+'<div class="qr-step-t qrw-title">Name your trip</div></div>'
     +'<div class="qrw-body">'+h+'</div>'+_twFoot(_twS.nameErr?'Name the trip to continue.':'','Create trip',!!_twS.nameErr)+'</div>';
@@ -7961,6 +7961,7 @@ function _twStep1Html(){
 // v125.30: the Rounds stepper, on New trip (1 to 6) and the course list (Trip Setup). On the course list + adds an
 // empty round and - takes off the last one, asking first when it has a course; a round with scores stays. Nothing
 // is saved until Save (_twEditSaveCourses).
+var TW_MAX_ROUNDS=10;   // v125.31: was 6, the old pill's width
 function _twRoundsStep(nR,lo,hi,sub){
   return '<div class="qrw-card tw-rstep'+(sub?' tw-rcl':'')+'" id="twRoundsStep"><div><div class="tw-rsl">Rounds</div>'+(sub?'<div class="tw-rss">'+sub+'</div>':'')+'</div>'
     +'<div class="gs-money"><button type="button" aria-label="Fewer rounds" onclick="window._twRoundsBy(-1)"'+(nR<=lo?' disabled':'')+'>\u2212</button>'
@@ -7968,7 +7969,7 @@ function _twRoundsStep(nR,lo,hi,sub){
     +'<button type="button" aria-label="More rounds" onclick="window._twRoundsBy(1)"'+(nR>=hi?' disabled':'')+'>+</button></div></div>';
 }
 function _twRoundsLo(){var lo=1;if(_twS.edit&&WK&&WK.rounds)for(var r=0;r<WK.rounds.length;r++)if(_gsRoundHasScores(r))lo=r+1;return lo;}
-function _twRoundsHi(){return _twS.edit&&WK&&WK.rounds?Math.max(6,WK.rounds.length):6;}
+function _twRoundsHi(){return _twS.edit&&WK&&WK.rounds?Math.max(TW_MAX_ROUNDS,WK.rounds.length):TW_MAX_ROUNDS;}
 window._twRoundsBy=function(d){
   var n=_twS.numRounds||4,to=n+d;
   if(to<_twRoundsLo()||to>_twRoundsHi())return;
@@ -8181,7 +8182,7 @@ window._twNext=function(){
     _twS.name=name;
     _twS.date=_twS.date||'';
     _twS.region=(_twS.region||'').trim();
-    _twS.numRounds=Math.max(1,Math.min(6,parseInt(_twS.numRounds,10)||4));
+    _twS.numRounds=Math.max(1,Math.min(TW_MAX_ROUNDS,parseInt(_twS.numRounds,10)||4));
     // Sync courses array length
     while(_twS.courses.length<_twS.numRounds)_twS.courses.push('');
     _twS.courses=_twS.courses.slice(0,_twS.numRounds);
