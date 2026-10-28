@@ -143,6 +143,24 @@ body{background:#F4F1E8;color:#111;font-family:-apple-system,BlinkMacSystemFont,
 .opt-menu-ico .ti{font-size:18px;}
 .opt-menu-text{flex:1;min-width:0;}
 .opt-menu-title{font-weight:600;font-size:15px;color:var(--color-text-primary);}
+/* v125.29: an empty round's card on Settings > Courses; the round sheet's course row and its quiet Remove link. */
+.co-empty .co-emh{display:flex;align-items:center;gap:10px;padding:14px 16px;}
+.co-empty .co-emt{flex:1;min-width:0;}
+.co-empty .co-emn{font-size:14px;font-weight:500;color:var(--color-text-secondary);}
+.co-empty .co-emr{font-size:11px;color:var(--color-text-tertiary);margin-top:2px;}
+.co-empty .co-pick{height:36px;}
+.su-rt b.su-nc{font-weight:500;color:var(--color-text-secondary);}
+.su-pick{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--color-text-primary);cursor:pointer;text-align:right;max-width:100%;}
+.su-pick.empty,.su-pick .su-chg{color:#13795B;}
+.su-shrm-l{all:unset;display:block;margin:14px auto 2px;font-size:14px;font-weight:600;color:#C2410C;cursor:pointer;}
+.tw-rd.tw-just{box-shadow:0 0 0 1.5px #13795B inset;}
+.qrw-change.tw-set{display:inline-flex;align-items:center;gap:4px;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .su-pick.empty,body:not(.force-light) .su-pick .su-chg{color:#3CC79A;}
+body:not(.force-light) .su-shrm-l{color:#E8774F;}
+body:not(.force-light) .tw-rd.tw-just{box-shadow:0 0 0 1.5px #1D9E75 inset;}}
+body.force-dark .su-pick.empty,body.force-dark .su-pick .su-chg{color:#3CC79A;}
+body.force-dark .su-shrm-l{color:#E8774F;}
+body.force-dark .tw-rd.tw-just{box-shadow:0 0 0 1.5px #1D9E75 inset;}
 /* v125.25: the trip setup checklist. Green titles by day, gold at night; cup colours on a cup trip.
    v125.26: green is the base and gold lives only in dark rules (the darkpass rule). */
 #setupCard{margin-bottom:14px;}
@@ -2708,7 +2726,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.28';
+const APP_VERSION='v125.29';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7869,8 +7887,29 @@ window._twEditSaveCourses=function(){
 };
 window._twEditClose=function(){
   document.getElementById('wizardScreen').style.display='none';
-  window._pendingGroupId=null;_twS.edit=null;_twS.pick=null;
-  setView('setup');setOptPanel('menu');
+  var back=_twS.back,ri=_twS.single;
+  window._pendingGroupId=null;_twS.edit=null;_twS.pick=null;_twS.single=null;_twS.back=null;_twS.justSet=null;
+  // v125.29: back where the picker was opened from.
+  if(back==='scores'&&ri!=null){setView('scores');switchEntryRound(ri);return;}
+  setView('setup');
+  if(back==='courses')setOptPanel('courses');
+  else if(back==='sheet'&&ri!=null){setOptPanel('weekend');window._suRdOpen(ri);}
+  else setOptPanel('menu');
+};
+// v125.29: the picker for one round, from Settings > Courses, the round sheet or Scores.
+window._stpCoursePick=function(ri,back){
+  if(!WK||!WK.rounds||!WK.rounds[ri]||!canEditTrip())return;
+  if(_gsRoundHasScores(ri)){showMsg(roundLabel(ri)+' has scores, so its course stays.');return;}
+  window._suRdClose&&window._suRdClose();
+  window._stpCourses();_twS.single=ri;_twS.back=back||'menu';window._twOpenRound(ri);
+};
+window._twHandAdd=function(i){
+  // as _gcaShowManual: an abandoned import's vendor id and location must not ride into a hand entry
+  window._gcaSeedExternalId=null;window._gcaSeedLocation=null;
+  var ws=document.getElementById('wizardScreen');
+  window._hcOpen({ctx:'Rd '+(i+1),saveLabel:'Save course',
+    onSave:function(name){if(ws)ws.style.display='flex';window._twPickCourse(i,name);},
+    onCancel:function(){if(ws)ws.style.display='flex';_twRender();}});
 };
 window._twSetFmt=function(el){
   var v=el&&el.dataset&&el.dataset.val;if(v!=='ind'&&v!=='cup')return;
@@ -7991,10 +8030,11 @@ function _twStep4Html(){
     var _lk=!!_twS.edit&&_gsRoundHasScores(i);
     var sub=cn?[_qrwPlace(cn),t?t.tee_name:'',t?_qrTeeYds(t):''].filter(Boolean).join(' · '):'Not picked yet';
     if(_lk)sub='Scores entered';
-    h+=(_lk?'<div class="tw-rd" aria-disabled="true">':'<button type="button" class="tw-rd'+(cn?'':' empty')+'" onclick="window._twOpenRound('+i+')">')
+    var _js=_twS.justSet===i&&!!cn;
+    h+=(_lk?'<div class="tw-rd" aria-disabled="true">':'<button type="button" class="tw-rd'+(cn?'':' empty')+(_js?' tw-just':'')+'" onclick="window._twOpenRound('+i+')">')
       +'<span class="tw-rdn"><small>RD</small>'+(i+1)+'</span>'
       +'<span class="qrw-rt"><span class="qrw-rn">'+(cn?_gtEsc(courseDisp(cn)):'Choose a course')+'</span><span class="qrw-rs">'+_gtEsc(sub)+'</span></span>'
-      +(_lk?'</div>':'<span class="qrw-change">'+(cn?'Change':'Choose')+'</span></button>');
+      +(_lk?'</div>':(_js?'<span class="qrw-change tw-set"><i class="ti ti-check" aria-hidden="true"></i> Set</span>':'<span class="qrw-change">'+(cn?'Change':'Choose')+'</span>')+'</button>');
   }
   var note=miss?miss+' of '+nR+' round'+(nR===1?'':'s')+' still need'+(miss===1?'s':'')+' a course':'';
   return '<div class="qrw" data-tw-step="4">'+_twTop(4)+'<div class="qr-step-t qrw-title">Where are you playing?</div><div class="qrw-sub">One course per round.</div></div>'
@@ -8008,7 +8048,8 @@ function _twPickHtml(i){
     h+='<div class="qrw-search"><i class="ti ti-search" aria-hidden="true"></i>'
       +'<input id="tw_csearch'+i+'" placeholder="Search courses" enterkeyhint="search" autocomplete="off" aria-label="Search courses" onkeydown="if(event.key===&apos;Enter&apos;)window._twRoundSearch('+i+')"/>'
       +'<button type="button" onclick="window._twRoundSearch('+i+')" aria-label="Search"><i class="ti ti-arrow-right" aria-hidden="true"></i></button></div>'
-      +'<div id="tw_rresults'+i+'" class="qrw-results"></div>';
+      +'<div id="tw_rresults'+i+'" class="qrw-results"></div>'
+      +'<button type="button" class="qrw-link" onclick="window._twHandAdd('+i+')">Not listed? Add it by hand</button>';
     var near=_twS.near,rec=_qrRecentCourses(gid),list=near||rec;
     window._twListStash=list.map(function(x){return x.name;});
     if(list.length){
@@ -8032,7 +8073,7 @@ function _twPickHtml(i){
       +'<button type="button" class="qrw-change" onclick="window._twClearCourse('+i+')">Change</button></div>'
       +_twTeesHtml(i)+'</div>';
   }
-  return '<div class="qrw" data-tw-step="4" data-tw-pick="'+i+'">'+_twTop(4)+'<div class="qr-step-t qrw-title">Round '+(i+1)+'</div><div class="qrw-sub">'+(_twS.walk?'Round '+(i+1)+' of '+_twS.numRounds+'. The next empty round opens after you pick.':'Choose its course and tees.')+'</div></div>'
+  return '<div class="qrw" data-tw-step="4" data-tw-pick="'+i+'">'+_twTop(4)+'<div class="qr-step-t qrw-title">Round '+(i+1)+'</div><div class="qrw-sub">'+'Choose its course and tees.'+'</div></div>'
     +'<div class="qrw-body">'+h+'</div>'
     +'<div class="qrw-foot"><button type="button" class="qrw-cta'+(cn?'':' off')+'" onclick="window._twPickBack()">Done</button></div></div>';
 }
@@ -8043,14 +8084,15 @@ function _twTeesHtml(i){
     return _qrChipHtml(t,sel.gender===g&&sel.teeName===t.tee_name,"window._twTeeChip("+i+",'"+g+"',"+k+")");}).join('');},
     {open:'_twTeeOpen',state:_twS.teeOpen});
 }
-window._twOpenRound=function(i){if(!(i>=0&&i<_twS.numRounds))return;if(_twS.edit&&_gsRoundHasScores(i))return;_twS.walk=!_twS.courses[i];_twS.pick=i;_twS.teeOpen='';_twS.near=null;_twS.nearErr='';_twS.nearAsk=false;_twRender();};
-window._twPickBack=function(){_twS.pick=null;_twS.walk=false;_twS.teeOpen='';_twRender();};
+window._twOpenRound=function(i){if(!(i>=0&&i<_twS.numRounds))return;if(_twS.edit&&_gsRoundHasScores(i))return;_twS.walk=false;_twS.justSet=null;_twS.pick=i;_twS.teeOpen='';_twS.near=null;_twS.nearErr='';_twS.nearAsk=false;_twRender();};
+window._twPickBack=function(){if(_twS.single!=null){window._twEditClose();return;}_twS.pick=null;_twS.walk=false;_twS.teeOpen='';_twRender();};
 // v123.64: after a pick, the next empty round (from the one after, wrapping) when walking; else the list.
 function _twAfterPick(i){
+  // v125.29: one round's picker saves and goes back; the list marks the round just set (no walk).
+  if(_twS.single!=null){window._twEditSaveCourses();return;}
+  _twS.justSet=i;
   _twS.teeOpen='';_twS.near=null;_twS.nearErr='';_twS.nearAsk=false;
-  var n=_twS.numRounds,next=null;
-  if(_twS.walk)for(var k=1;k<=n;k++){var j=(i+k)%n;if(!_twS.courses[j]){next=j;break;}}
-  _twS.pick=next;if(next===null)_twS.walk=false;
+  _twS.pick=null;_twS.walk=false;
   _twRender();
 }
 window._twPickListed=function(i,k){var cn=window._twListStash&&window._twListStash[k];if(cn)window._twPickCourse(i,cn);};
@@ -11589,10 +11631,10 @@ function _scNoCourse(r){
   m.style.display='';hw.style.display='none';hw.dataset.nc='1';if(typeof _updateActionRow==='function')_updateActionRow();
   m.innerHTML='<div class="su-card" style="padding:18px 16px;margin:12px 14px"><div style="font-weight:600;font-size:16px;color:var(--color-text-primary)">'+roundLabel(r)+' has no course yet</div>'
     +'<div style="font-size:13px;color:var(--color-text-secondary);margin-top:4px;line-height:1.4">Pick its course before scoring.</div>'
-    +'<button type="button" class="act-edit" style="margin-top:14px" onclick="window._scNoCourseGo('+r+')">Pick a course</button></div>';
+    +'<button type="button" class="qrw-cta" style="margin-top:16px;height:46px" onclick="window._scNoCourseGo('+r+')">Pick a course</button></div>';
   return true;
 }
-window._scNoCourseGo=function(r){window._stpCourses();};
+window._scNoCourseGo=function(r){window._stpCoursePick(r,'scores');};
 function updateHoleUI(){_pinScroll(window.scrollY||0);
   if(!WK||!STATE||!WK.rounds||!WK.players)return;
   const r=STATE.currentRound,hi=STATE.currentHole;
@@ -14615,7 +14657,7 @@ function renderWeekendPanel(){
     const nineLabel=rd.nineHole==='front'?'Front 9':rd.nineHole==='back'?'Back 9':rd.nineHole?'9 holes':null;
     const teeLine=teeName?`<span class="su-dot" style="background:${teeColor}"></span>${teeName} tees`:'';
     const subLine=[teeLine,nineLabel].filter(Boolean).join(' \u00b7 ');
-    let row=`<button type="button" class="su-rdb" onclick="window._suRdOpen(${origI})">${_isQ&&WK.rounds.length===1?'':`<span class="su-rl">${roundLabel(origI)}</span>`}<span class="su-rt"><b>${courseDisp(rd.courseName)}</b>${subLine?`<small>${subLine}</small>`:''}</span><span class="su-ch" aria-hidden="true">\u203a</span></button>`;
+    let row=`<button type="button" class="su-rdb" onclick="window._suRdOpen(${origI})">${_isQ&&WK.rounds.length===1?'':`<span class="su-rl">${roundLabel(origI)}</span>`}<span class="su-rt">${rd.courseName?`<b>${courseDisp(rd.courseName)}</b>`:`<b class="su-nc">No course yet</b>`}${subLine?`<small>${subLine}</small>`:''}</span><span class="su-ch" aria-hidden="true">\u203a</span></button>`;
     return row;
   };
   const orderedRounds=WK.rounds.map((rd,i)=>({rd,i})).sort((a,b)=>{const ae=a.rd.isE9&&!a.rd.inStandings?1:0;const be=b.rd.isE9&&!b.rd.inStandings?1:0;return ae-be;}).map(x=>x.rd);
@@ -14716,14 +14758,15 @@ window._suRdOpen=function(ri){
   const tSub=tObj?[tObj.slope_rating?'Slope '+tObj.slope_rating:'',tObj.total_yards?Number(tObj.total_yards).toLocaleString()+' yds':''].filter(Boolean).join(' \u00b7 '):'';
   const tCol=tn?_gcaTeeColor(tn,all):'#9CA3AF';
   const ro=!canEditTrip()||isReadOnly;
-  let b=_gsRow('Course','',`<span class="su-nh su-nhc">${courseDisp(rd.courseName)}<i class="ti ti-chevron-down" aria-hidden="true"></i><select aria-label="Course"${ro?' disabled':''} onchange="window._suRdSet(${ri},'course',this.value)">${cOpts}</select></span>`);
+  // v125.29: the Course row opens the round picker (search, Recent, near me); the dropdown is gone.
+  let b=_gsRow('Course','',ro?_gtEsc(rd.courseName?courseDisp(rd.courseName):'No course yet'):(rd.courseName?`<button type="button" class="su-pick" onclick="window._stpCoursePick(${ri},'sheet')">${_gtEsc(courseDisp(rd.courseName))} <span class="su-chg">Change ›</span></button>`:`<button type="button" class="su-pick empty" onclick="window._stpCoursePick(${ri},'sheet')">Pick a course ›</button>`));
   if(tOpts)b+=_gsRow('Tees',tSub,`<span class="su-nh"><span class="su-dot" style="background:${tCol}"></span>${tn||'Select tee'}<i class="ti ti-chevron-down" aria-hidden="true"></i><select aria-label="Tees"${ro?' disabled':''} onchange="window._suRdSet(${ri},'tee',this.value)">${tOpts}</select></span>`);
   if(rd.nineHole||ov.dataset.nine==='1')b+=_gsRow('Holes','',_gsSeg([['front','Front 9'],['back','Back 9'],['18','18']],rd.nineHole||'18',"window._suRdSet("+ri+",'nine',VAL)",true));
   const del=WK.rounds.length>1&&!ro;
-  ov.innerHTML='<div class="grp-sheet-inner su-sh"><div class="grp-sheet-pill"></div><div class="grp-sheet-title">'+roundLabel(ri)+' \u00b7 '+courseDisp(rd.courseName)+'</div>'
+  ov.innerHTML='<div class="grp-sheet-inner su-sh"><div class="grp-sheet-pill"></div><div class="grp-sheet-title">'+roundLabel(ri)+' \u00b7 '+(rd.courseName?courseDisp(rd.courseName):'No course yet')+'</div>'
     +'<div class="su-card">'+b+'</div>'
-    +(del?'<button type="button" class="su-shrm" onclick="window._suRdClose();removeRound('+ri+')">Remove '+roundLabel(ri)+'</button>':'')
-    +'<button type="button" class="su-shdone" onclick="window._suRdClose()">Done</button></div>';
+    +'<button type="button" class="su-shdone" onclick="window._suRdClose()">Done</button>'
+    +(del?'<button type="button" class="su-shrm-l" onclick="window._suRdClose();removeRound('+ri+')">Remove '+roundLabel(ri)+' from the trip</button>':'')+'</div>';
   ov.style.display='flex';ov.dataset.ri=ri;
 };
 window._suRdClose=function(){const ov=document.getElementById('suRdSheet');if(ov)ov.remove();};
@@ -16334,8 +16377,7 @@ window._coRdClear=function(ri){
   if(!WK||!WK.rounds||!WK.rounds[ri]||!canEditTrip())return;
   const rd=WK.rounds[ri],cn=rd.courseName;
   if(_gsRoundHasScores(ri)){showMsg(roundLabel(ri)+' has scores, so its course stays.');return;}
-  rd.courseName='';rd.course=null;
-  if(cn&&!WK.rounds.some(function(r){return r.courseName===cn;})){if(!WK.stagedCourses)WK.stagedCourses=[];if(WK.stagedCourses.indexOf(cn)<0)WK.stagedCourses.push(cn);}
+  rd.courseName='';rd.course=null;   // v125.29: nothing is staged; the course stays in the shared list and Recent
   s2MarkDirty(['trip']);autoSave();s2WriteActive();renderCoursesPanel();
 };
 window._gcaSaveEdit=function(eid){
@@ -16675,87 +16717,16 @@ function renderCoursesPanel(){
       }
     }
   });
-  // Build trip course cards (rounds that have a course assigned)
-  const tripRounds=(WK&&WK.rounds?WK.rounds:[]).map((rd,ri)=>({rd,ri,name:rd.courseName})).filter(x=>x.name);
-  let html='';
-
-  const stagedCourses=(WK&&WK.stagedCourses||[]).filter(n=>!tripRounds.some(r=>r.name===n));
-  if(tripRounds.length||stagedCourses.length){
-    html+='<div class="pm-hd"><div class="sec-hd gs-sec">Courses</div>'+(tripRounds.length>=2?'<a class="co-addl" href="#gca-add-section">+ Add a course</a>':'')+'</div>';
-    tripRounds.forEach(({rd,ri,name})=>{
-      const c=CATALOG[name]||null;
-      const eid='ce_'+name.replace(/\W/g,'_');
-      html+=_gcaTripCourseCard(rd,ri,c,eid);
-    });
-    stagedCourses.forEach((name,_si)=>{
-      const _sc=CATALOG[name]||{};
-      const _seid='ce_'+name.replace(/\W/g,'_');
-      window._gcaNameByEid[_seid]=name;
-      // Build a fake rd-like object for the full card renderer
-      const _fakeRd={courseName:name,course:Object.assign({},_sc,{defaultTee:null})};
-      // Use _gcaTripCourseCard but override the header to show staged state
-      // Instead, inline a full card with staged header
-      const _sc2=_sc;
-      const _holes=_sc2.holes||[];
-      const _par=_holes.length?_holes.reduce((a,h)=>a+(h.par||4),0):72;
-      const _yds=_holes.length?_holes.reduce((a,h)=>a+(h.yardage||0),0):0;
-      const _hasYds=_holes.some(h=>h.yardage>0);
-      const _ago=_sc2.api_fetched_at?_gcaFetchedAgo(_sc2.api_fetched_at):null;
-      const _isApi=!!(_sc2.source==='api'||_sc2.external_id||_sc2.tees);
-      const _dmId='gca-dots-staged-'+_seid;
-      function _sHoleNums(from,to){let s='<div style="display:grid;grid-template-columns:28px repeat('+(to-from)+',1fr);gap:2px;font-size:10px;text-align:center;margin-bottom:2px"><div></div>';for(let h=from;h<to;h++)s+='<div style="font-size:9px;color:var(--color-text-tertiary);padding:2px 0">'+(h+1)+'</div>';return s+'</div>';}
-      function _sHoleRow(label,from,to,key){let s='<div style="display:grid;grid-template-columns:28px repeat('+(to-from)+',1fr);gap:2px;font-size:10px;text-align:center;margin-bottom:2px"><div style="font-size:9px;color:var(--color-text-tertiary);display:flex;align-items:center">'+label+'</div>';for(let h=from;h<to;h++){const val=_holes[h]?_holes[h][key]:'';const bg=key==='par'?'background:var(--color-background-secondary);':'';const col=key==='par'?'color:var(--color-text-secondary);':'color:var(--color-text-tertiary);';s+='<div style="padding:3px 0;border-radius:3px;'+bg+col+'">'+val+'</div>';}return s+'</div>';}
-      const _front=_holes.length>=9;const _back=_holes.length>=18;
-      const _hGrid=_front?(_sHoleNums(0,9)+(_hasYds?_sHoleRow('Yds',0,9,'yardage'):'')+_sHoleRow('Par',0,9,'par')+_sHoleRow('HCP',0,9,'si')+(_back?'<div style="border-top:0.5px solid var(--color-border-tertiary);margin:5px 0"></div>'+_sHoleNums(9,18)+(_hasYds?_sHoleRow('Yds',9,18,'yardage'):'')+_sHoleRow('Par',9,18,'par')+_sHoleRow('HCP',9,18,'si'):'')):'<div style="font-size:11px;color:var(--color-text-tertiary)">No hole data</div>';
-      const _teePill=_sc2.tees?_buildTeePicker(name,null,null,'var _v=event.target.value.split("|");window._gcaSetStagedTee(\''+name+'\',_v[0],_v[1])'):'';
-      html+='<div class="section-card co-card" id="gca-card-'+_seid+'">';
-      // Header
-      html+='<div class="section-hd" style="align-items:center">';
-      html+='<div style="flex:1;min-width:0;margin-right:6px">';
-      html+='<div style="font-size:14px;font-weight:500;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(_sc2.displayName||name)+'</div>';
-      html+='<div style="font-size:11px;margin-top:2px"><span onclick="setOptPanel(\'weekend\')" style="color:#1D9E75;font-weight:500;cursor:pointer">Assign to a round in Weekend ›</span></div>';
-      html+='</div>';
-      // Tee pill - read defaultTee from WK.stagedCourseTees (survives reload)
-      if(_sc2.tees){
-        const _sdt=(WK&&WK.stagedCourseTees&&WK.stagedCourseTees[name])||null;
-        const _stName=_sdt?_sdt.teeName:'';
-        const _stGender=_sdt?_sdt.gender:'male';
-        const _stColor=_stName?_gcaTeeColor(_stName,(_sc2.tees[_stGender]||[])):'#9CA3AF';
-        const _stDot=_stName?'<span style="width:8px;height:8px;border-radius:50%;background:'+_stColor+';display:inline-block;flex-shrink:0"></span>':'';
-        const _stLabel=_stName||'Select tee';
-        const _teeOpts2=_gcaTeeOptions(name,_stGender,_stName);
-        if(_teeOpts2)html+='<span style="display:inline-flex;align-items:center;gap:4px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:20px;padding:3px 8px 3px 6px;cursor:pointer;white-space:nowrap;position:relative">'+_stDot+'<span style="font-size:12px;font-weight:500;color:var(--color-text-secondary)">'+_stLabel+'</span><i class="ti ti-chevron-down" style="font-size:11px;color:var(--color-text-tertiary)"></i><select onchange="window._gcaTeePick2(\''+name+'\',this.value)" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%">'+_teeOpts2+'</select></span>';
-      }
-      // Dots menu
-      html+='<div style="position:relative;flex-shrink:0;margin-left:8px">';
-      html+='<button onclick="window._gcaToggleMenu(\''+_dmId+'\',this)" style="border:none;background:none;padding:4px;cursor:pointer;color:var(--color-text-secondary);display:flex;align-items:center"><i class="ti ti-dots" style="font-size:18px" aria-hidden="true"></i></button>';
-      html+='<div id="'+_dmId+'" style="display:none">';
-      if(_isApi)html+='<button class="gca-menu-item" onclick="window._gcaToggleMenu(\''+_dmId+'\');window._gcaRefresh(\''+_seid+'\',true)">Refresh from API</button>';
-      html+='<button class="gca-menu-item" onclick="window._gcaToggleMenu(\''+_dmId+'\');window._gcaOpenEdit(null,\''+_seid+'\',\''+name+'\')">Edit course</button>';
-      html+='<button class="gca-menu-item" onclick="window._gcaToggleMenu(\''+_dmId+'\');setOptPanel(\'weekend\')">Assign to round</button>';
-      html+='<button class="gca-menu-item" style="color:#DC2626" onclick="window._gcaToggleMenu(\''+_dmId+'\');window._gcaStagedRemove(\''+_seid+'\',\''+name+'\')">Remove from trip</button>';
-      html+='</div></div></div>';
-      // v124.84: one stats line
-      html+=_coStats(_sc2.rating,_sc2.slope,_par,_yds);
-      // Hole grid
-      html+=_coFold('s'+_si,_hGrid);
-      html+='</div>';
-    });
-  } else {
-    html+='<div style="text-align:center;color:var(--color-text-secondary);font-size:13px;padding:16px 0 8px">No courses assigned yet. Search below to add one.</div>';
-  }
-  // Add a Course search (always shown)
-  html+='<div id="gca-add-section" class="co-add">';
-  html+='<div class="pm-hd"><div class="sec-hd gs-sec">Add a course</div></div>';
-  html+='<div class="section-card" style="padding:10px 12px;margin-bottom:10px">';
-  html+='<div style="display:flex;align-items:center;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);overflow:hidden;background:var(--color-background-primary)">';
-  html+='<input class="text-input" id="gcaSearch" placeholder="Search by course or club name" style="flex:1;border:none;box-shadow:none;border-radius:0;margin:0" onkeydown="if(event.key===\'Enter\')searchCourses()"/>';
-  html+='<button onclick="searchCourses()" style="border:none;background:transparent;padding:9px 12px;cursor:pointer;border-left:0.5px solid var(--color-border-tertiary);color:#1D9E75;display:flex;align-items:center;flex-shrink:0" aria-label="Search"><i class="ti ti-search" style="font-size:16px" aria-hidden="true"></i></button>';
-  html+='</div>';
-  html+='<div id="gcaResults" style="margin-top:6px"></div>';
-  html+='</div>';
-  html+='<div class="tw-addrow su-add co-man"><button class="tw-addrd" onclick="window._gcaShowManual()">+ Add manually</button></div>';
-  html+='</div>';
+  // v125.29: one card per round, in round order; an empty round offers Pick a course. Every course comes in through
+  // a round's picker, so there are no staged cards and no separate Add a course here.
+  let html='<div class="pm-hd"><div class="sec-hd gs-sec">Courses</div></div>';
+  const _R=(WK&&WK.rounds)||[],_ed=typeof canEditTrip==='function'&&canEditTrip();
+  if(!_R.length)html+='<div style="text-align:center;color:var(--color-text-secondary);font-size:13px;padding:16px 0 8px">No rounds yet. Add one in Trip Setup.</div>';
+  _R.forEach(function(rd,ri){
+    if(rd.courseName){const c=CATALOG[rd.courseName]||null;const eid='ce_'+rd.courseName.replace(/\W/g,'_');html+=_gcaTripCourseCard(rd,ri,c,eid);return;}
+    html+='<div class="section-card co-card co-empty"><div class="co-emh"><div class="co-emt"><div class="co-emn">No course yet</div><div class="co-emr">'+roundLabel(ri)+'</div></div>'
+      +(_ed?'<button type="button" class="act-edit co-pick" onclick="window._stpCoursePick('+ri+',\'courses\')">Pick a course</button>':'')+'</div></div>';
+  });
   document.getElementById('opt-panel-courses').innerHTML=html;
 }
 // Stage 3: ordered game definitions, single source of truth for the
