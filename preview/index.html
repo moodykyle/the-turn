@@ -2756,7 +2756,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.33';
+const APP_VERSION='v125.34';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -9318,7 +9318,7 @@ function renderOptMenu(){
     +row('ti-calendar-event',setupTitle,setupSub,"setOptPanel('weekend')")
     +row('ti-users','Players',nP+' player'+(nP===1?'':'s')+(isQ?' \u00b7 foursomes and handicaps':''),"setOptPanel('players')")
     +(isQ?'':row('ti-users-group','Foursomes','Split rounds into groups',"setOptPanel('flights')"))
-    +(isQ?'':row('ti-trophy','Team Cup',_cupMenuSub(),"setOptPanel('cup')"))
+    +(isQ||!(WK.cup&&WK.cup.on)?'':row('ti-trophy','Team Cup',_cupMenuSub(),"setOptPanel('cup')"))
     +row('ti-map-pin','Courses','Course library',"setOptPanel('courses')")
     +row('ti-adjustments-horizontal','Preferences','Appearance, version',"setOptPanel('info')")
     +'</div><div class="opt-menu-gap"></div><div class="opt-menu-card">'
@@ -14691,7 +14691,7 @@ function renderWeekendPanel(){
   const _fmt=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};
   // --- Trip details ---
   const _isQ=!!WK.isQuickRound,_suCard=h=>'<div class="su-card">'+h+'</div>',_suSec=t=>'<div class="sec-hd gs-sec">'+t+'</div>';
-  let html=_suSec(_isQ?'Round Setup':'Trip')+_suCard(_gsRow('Name','',`<input class="inline-edit su-in" value="${WK.name}" onchange="WK.name=this.value;document.getElementById('mainTitle').textContent=WK.name;autoSave();s2MarkDirty(['trip']);s2WriteActive()"/>`)+_gsRow('Date','',`<input class="inline-edit su-in" type="date" value="${WK.date}" max="2099-12-31" onchange="WK.date=this.value;autoSave();s2MarkDirty(['trip']);s2WriteActive();const _f=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' \u00b7 '+_f(WK.date)):WK.region||_f(WK.date)||''"/>`)+(_isQ?'':_gsRow('Region','',`<input class="inline-edit su-in" value="${WK.region||''}" placeholder="e.g. Pinehurst" onchange="WK.region=this.value;autoSave();s2MarkDirty(['trip']);s2WriteActive();const _f=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' \u00b7 '+_f(WK.date)):WK.region||_f(WK.date)||''"/>`)));
+  let html=_suSec(_isQ?'Round Setup':'Trip')+_suCard(_gsRow('Name','',`<input class="inline-edit su-in" value="${WK.name}" onchange="WK.name=this.value;document.getElementById('mainTitle').textContent=WK.name;autoSave();s2MarkDirty(['trip']);s2WriteActive()"/>`)+_gsRow('Date','',`<input class="inline-edit su-in" type="date" value="${WK.date}" max="2099-12-31" onchange="WK.date=this.value;autoSave();s2MarkDirty(['trip']);s2WriteActive();const _f=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' \u00b7 '+_f(WK.date)):WK.region||_f(WK.date)||''"/>`)+(_isQ?'':_gsRow('Region','',`<input class="inline-edit su-in" value="${WK.region||''}" placeholder="e.g. Pinehurst" onchange="WK.region=this.value;autoSave();s2MarkDirty(['trip']);s2WriteActive();const _f=d=>{if(!d)return '';const _p=d.split('-');const _mo=['January','February','March','April','May','June','July','August','September','October','November','December'];return(_p[1]?_mo[parseInt(_p[1],10)-1]+' ':'')+(_p[0]||'');};document.getElementById('mainSub').textContent=(WK.region&&WK.date)?(WK.region+' \u00b7 '+_f(WK.date)):WK.region||_f(WK.date)||''"/>`))+(_isQ?'':_suFmtRow()));
 
   // --- Rounds (unified: regular + E-rounds, with tee picker + Add Round) ---
   const _tripCourseNames=[...WK.rounds.filter(r=>r.courseName).map(r=>r.courseName),...(WK.stagedCourses||[])].filter((v,i,a)=>a.indexOf(v)===i);
@@ -15111,8 +15111,8 @@ function _cupSetupHtml(){
   const c=(WK.cup&&WK.cup.on)?WK.cup:null,ed=canEditTrip(),dis=ed?'':' disabled';
   const tg=function(on,js){return '<label class="toggle"><input type="checkbox" '+(on?'checked':'')+dis+' onchange="'+js+'"><span class="toggle-slider"></span></label>';};
   let h='<div class="sec-hd gs-sec">The cup</div><div class="su-card" id="cupCard">';
-  h+=_gsRow('Team Cup','Two teams play for points',tg(!!c,'window._cupOn(this.checked)'));
-  if(!c)return h+'</div>';
+  // v125.34: no switch here; Format in Trip Setup turns the cup on and off.
+  if(!c)return h+'<div class="pm-empty">Team Cup is off. Turn it on in Trip Setup \u203a Format.</div></div>';
   h+=_gsRow('Name','','<input class="inline-edit su-in" value="'+_gtEsc(c.name||'')+'" placeholder="'+_gtEsc(WK.name||'The Cup')+'"'+dis+' onchange="window._cupSet(\'name\',this.value)"/>');
   h+='</div><div class="sec-hd gs-sec">Teams</div><div class="su-card">';
   [0,1].forEach(function(sd){
@@ -15601,6 +15601,24 @@ function _cupStrip(sel){
   const c=WK.cup,T=_cupTotals();
   b.innerHTML='<i class="ti ti-trophy" aria-hidden="true"></i><span class="n">'+_gtEsc(c.name||WK.name||'Team Cup')+'</span><span class="sc"><b class="a">'+_gtEsc(c.teams[0].name)+' '+_cupPts(T.pts[0])+'</b><b class="b">'+_gtEsc(c.teams[1].name)+' '+_cupPts(T.pts[1])+'</b></span><span class="ch" aria-hidden="true">›</span>';
 }
+// v125.34: Format, Trip Setup's switch between Individual and Team Cup. _TW_FMT's lines; the cup line points to
+// Settings > Team Cup for teams.
+function _suFmtRow(){
+  const cup=!!(WK.cup&&WK.cup.on);
+  const sub=cup?'Two teams play match play for points. Set teams in Settings \u203a Team Cup.':_TW_FMT.ind;
+  return _gsRow('Format',sub,_gsSeg([['ind','Individual'],['cup','Team Cup']],cup?'cup':'ind','window._suFmt(VAL)'),true);
+}
+window._suFmt=function(v){
+  if(!canEditTrip()||!WK)return;
+  const cup=!!(WK.cup&&WK.cup.on);
+  if((v==='cup')===cup)return;
+  const done=function(){window._cupOn(v==='cup');renderWeekendPanel();};
+  if(v==='cup'){done();return;}
+  const sc=(WK.rounds||[]).map(function(_,r){return r;}).filter(function(r){return _gsRoundHasScores(r);});
+  if(!sc.length){done();return;}
+  _confirmSheet({title:'Switch to Individual?',body:_stpRds(sc)+(sc.length===1?' has':' have')+' scores. Cup points stop, and each cup round\u2019s Match Play goes back to regular games. Teams and lineups are kept if you switch back.',
+    okLabel:'Switch',cancelLabel:'Keep Team Cup',onOk:done,onCancel:function(){renderWeekendPanel();}});
+};
 window._cupOn=function(on){
   if(!canEditTrip())return;
   if(!WK.cup)WK.cup={on:true,name:'',teams:[{name:'Red',cap:null},{name:'Blue',cap:null}],side:{},stake:0,tie:'none'};
