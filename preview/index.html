@@ -143,6 +143,13 @@ body{background:#F4F1E8;color:#111;font-family:-apple-system,BlinkMacSystemFont,
 .opt-menu-ico .ti{font-size:18px;}
 .opt-menu-text{flex:1;min-width:0;}
 .opt-menu-title{font-weight:600;font-size:15px;color:var(--color-text-primary);}
+/* v125.30: the Rounds stepper on New trip and the course list. */
+.tw-rstep{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;min-height:56px;box-sizing:border-box;}
+.tw-rstep .tw-rsl{font-size:15px;font-weight:600;color:var(--color-text-primary);}
+.tw-rstep .tw-rss{font-size:12px;color:var(--color-text-secondary);margin-top:2px;}
+.tw-rstep .tw-rnum{width:52px;text-align:center;font-size:15px;font-weight:600;color:var(--color-text-primary);font-variant-numeric:tabular-nums;}
+.tw-rstep .gs-money button:disabled{opacity:0.35;cursor:default;}
+.tw-rstep.tw-rcl{margin-bottom:14px;}
 /* v125.29: an empty round's card on Settings > Courses; the round sheet's course row and its quiet Remove link. */
 .co-empty .co-emh{display:flex;align-items:center;gap:10px;padding:14px 16px;}
 .co-empty .co-emt{flex:1;min-width:0;}
@@ -2726,7 +2733,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.29';
+const APP_VERSION='v125.30';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7876,13 +7883,23 @@ window._twEditAddPlayers=function(){
   window._twEditClose();
 };
 window._twEditSaveCourses=function(){
+  // v125.30: the stepper's count first. Rounds come off the end (never one with scores); new ones have no course yet.
+  var nW=_twS.numRounds||WK.rounds.length;
+  if(_twS.edit==='courses'&&_twS.single==null){
+    while(WK.rounds.length>nW&&WK.rounds.length>1&&!_gsRoundHasScores(WK.rounds.length-1))removeRound(WK.rounds.length-1);
+    while(WK.rounds.length<nW)addRound('');
+  }
+  var chg=false;
   for(var i=0;i<WK.rounds.length;i++){
     if(_gsRoundHasScores(i))continue;
-    var cn=_twS.courses[i]||'';if(!cn)continue;
+    var cn=_twS.courses[i]||'';
+    // v125.30: a round taken off and added back with the stepper comes back with no course.
+    if(!cn){if(!_rdNoCourse(i)){WK.rounds[i].courseName='';WK.rounds[i].course=null;chg=true;}continue;}
     if(cn!==WK.rounds[i].courseName||_rdNoCourse(i))window._wkSetCourse(i,cn);
     var t=_twS.tees[i]||{},cur=WK.rounds[i].course&&WK.rounds[i].course.defaultTee;
     if(t.teeName&&!(cur&&cur.teeName===t.teeName&&cur.gender===t.gender))window._gcaSetTee(i,t.gender||'male',t.teeName);
   }
+  if(chg){s2MarkDirty(['trip']);autoSave();s2WriteActive();}
   window._twEditClose();
 };
 window._twEditClose=function(){
@@ -7927,7 +7944,7 @@ function _twStepHtml(){
 
 // Step 1: Trip setup. v123.62: tiles and the rounds pill (canvas "Trip wizard").
 function _twStep1Html(){
-  var nR=_twS.numRounds||4,ri=Math.max(0,Math.min(5,nR-1));
+  var nR=_twS.numRounds||4;
   var tile=function(ico,lbl,id,type,val,ph){
     return '<label class="tw-tile"><span class="qrw-ico">'+_TW_ICO[ico]+'</span><span class="tw-tt"><span class="tw-tl">'+lbl+'</span>'
       +'<input id="'+id+'" class="tw-in" type="'+type+'"'+(type==='date'?' max="2099-12-31"':'')+' placeholder="'+ph+'" value="'+_gtEsc(val||'')+'" autocomplete="off"></span></label>';
@@ -7936,19 +7953,32 @@ function _twStep1Html(){
     +tile('name','Trip name','tw_name','text',_twS.name,'e.g. Shaker Cup 2027')
     +tile('date','Date','tw_date','date',_twS.date,'')
     +tile('pin','Region (optional)','tw_region','text',_twS.region,'e.g. Pinehurst')+'</div>'
-    +'<div class="qrw-lbl">ROUNDS</div>'
-    +'<div class="qrw-seg tw-rseg" id="twRoundsSeg" role="radiogroup" aria-label="Rounds"><span class="qrw-pill" style="width:calc((100% - 8px) / 6);transform:translateX('+(ri*100)+'%)"></span>'
-    +[1,2,3,4,5,6].map(function(n){var on=n===nR;
-      return '<button type="button" role="radio" aria-checked="'+on+'" class="'+(on?'on':'')+'" data-val="'+n+'" onclick="window._twSetRounds(this)"><span>'+n+'</span></button>';}).join('')+'</div>'
+    +_twRoundsStep(nR,1,6,'')
     +'<div class="qrw-hint">More rounds can be added to the trip later.</div>'+_twFmtHtml();
   return '<div class="qrw" data-tw-step="1">'+_twTop(1)+'<div class="qr-step-t qrw-title">Name your trip</div></div>'
     +'<div class="qrw-body">'+h+'</div>'+_twFoot(_twS.nameErr?'Name the trip to continue.':'','Create trip',!!_twS.nameErr)+'</div>';
 }
-// The pill moves in place (typed text stays); with no switch on screen it redraws after a stash.
-window._twSetRounds=function(el){
-  var n=parseInt(el&&el.dataset&&el.dataset.val,10);if(!(n>=1&&n<=6))return;
-  _twS.numRounds=n;
-  if(!_wizSegTo(document.getElementById('twRoundsSeg'),String(n))){_twStash();_twRender();}
+// v125.30: the Rounds stepper, on New trip (1 to 6) and the course list (Trip Setup). On the course list + adds an
+// empty round and - takes off the last one, asking first when it has a course; a round with scores stays. Nothing
+// is saved until Save (_twEditSaveCourses).
+function _twRoundsStep(nR,lo,hi,sub){
+  return '<div class="qrw-card tw-rstep'+(sub?' tw-rcl':'')+'" id="twRoundsStep"><div><div class="tw-rsl">Rounds</div>'+(sub?'<div class="tw-rss">'+sub+'</div>':'')+'</div>'
+    +'<div class="gs-money"><button type="button" aria-label="Fewer rounds" onclick="window._twRoundsBy(-1)"'+(nR<=lo?' disabled':'')+'>\u2212</button>'
+    +'<output class="tw-rnum" aria-live="polite">'+nR+'</output>'
+    +'<button type="button" aria-label="More rounds" onclick="window._twRoundsBy(1)"'+(nR>=hi?' disabled':'')+'>+</button></div></div>';
+}
+function _twRoundsLo(){var lo=1;if(_twS.edit&&WK&&WK.rounds)for(var r=0;r<WK.rounds.length;r++)if(_gsRoundHasScores(r))lo=r+1;return lo;}
+function _twRoundsHi(){return _twS.edit&&WK&&WK.rounds?Math.max(6,WK.rounds.length):6;}
+window._twRoundsBy=function(d){
+  var n=_twS.numRounds||4,to=n+d;
+  if(to<_twRoundsLo()||to>_twRoundsHi())return;
+  if(!_twS.edit){_twStash();_twS.numRounds=to;_twRender();return;}
+  _twS.justSet=null;
+  if(d>0){_twS.numRounds=to;_twS.courses.push('');_twS.tees.push({});_twRender();return;}
+  var i=n-1,cn=_twS.courses[i]||'';
+  var go=function(){_twS.numRounds=i;_twS.courses.length=i;_twS.tees.length=i;_twRender();};
+  if(!cn){go();return;}
+  _confirmSheet({title:'Take off Rd '+(i+1)+'?',body:_gtEsc(courseDisp(cn))+' comes off with it. Nothing changes until you Save.',okLabel:'Take it off',onOk:go});
 };
 
 // Step 2: Players. v123.63: the round wizard's member rows. The handicap boxes keep their tw_hcp_ ids,
@@ -8038,7 +8068,7 @@ function _twStep4Html(){
   }
   var note=miss?miss+' of '+nR+' round'+(nR===1?'':'s')+' still need'+(miss===1?'s':'')+' a course':'';
   return '<div class="qrw" data-tw-step="4">'+_twTop(4)+'<div class="qr-step-t qrw-title">Where are you playing?</div><div class="qrw-sub">One course per round.</div></div>'
-    +'<div class="qrw-body"><div class="tw-rds">'+h+'</div><div class="qrw-hint c">Tap a round to choose its course: search, Recent, or Courses near me. Tees are picked there too.</div></div>'
+    +'<div class="qrw-body">'+(_twS.edit==='courses'?_twRoundsStep(nR,_twRoundsLo(),_twRoundsHi(),'\u2212 takes off the last round'):'')+'<div class="tw-rds">'+h+'</div><div class="qrw-hint c">Tap a round to choose its course: search, Recent, or Courses near me. Tees are picked there too.</div></div>'
     +'<div class="qrw-foot">'+(note?'<div class="qrw-hint c">'+note+'</div>':'')
     +'<button type="button" class="qrw-cta'+(miss&&!_twS.edit?' off':'')+'" onclick="window._twNext()">'+(_twS.edit?'Save':'Continue')+'</button></div></div>';
 }
@@ -15617,7 +15647,7 @@ window._wkSetCourse=function(ri,cn){
   }
   s2MarkDirty(['trip']);autoSave();s2WriteActive();renderWeekendPanel();
 };
-function addRound(){if(!canEditTrip())return;const cn=document.getElementById('newRoundCourse')?.value||Object.keys(CATALOG)[0];WK.rounds.push({rid:s2NewTok(),courseName:cn,course:CATALOG[cn]});const nP=WK.players.length;STATE.scores.push(Array(18).fill(null).map(()=>Array(nP).fill(null)));const g=WK.mpGamesDefault;WK.mpGamesPerRound.push(g);WK.vegasSegsPerRound.push(WK.vegasSegsDefault);if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=[];WK.skinsGamesPerRound.push(0);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams.push([Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);const vg=vegasSegForRound(WK.rounds.length-1);STATE.vegTeams.push([Array(vg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);if(!STATE.hammerTeams)STATE.hammerTeams=[];STATE.hammerTeams.push([defaultHammerTeams(WK.rounds.length-1)]);if(!STATE.hammerState)STATE.hammerState=[];STATE.hammerState.push([Array(18).fill(null)]);if(!WK.hammerSegsPerRound)WK.hammerSegsPerRound=[];WK.hammerSegsPerRound.push(WK.hammerSegsDefault||1);if(!STATE.pressState)STATE.pressState=[];STATE.pressState.push([[]]);if(!STATE.skinsTeams)STATE.skinsTeams=[];const sg=skinsGamesForRound(WK.rounds.length-1);STATE.skinsTeams.push([Array(sg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);const _newR=WK.rounds.length-1;STATE.roundFlights[_newR]=_flightsForNewRound(_newR-1);reconcileWolfOrder(_newR);reconcileSnakeHolders(_newR);reconcileMPTeams(_newR);reconcileVegasTeams(_newR);reconcileHammerTeams(_newR);reconcileSkinsTeams(_newR);reconcileRazzleOrder(_newR);reconcileFBTeams(_newR);renderWeekendPanel();}
+function addRound(cn){if(!canEditTrip())return;if(cn==null)cn=document.getElementById('newRoundCourse')?.value||Object.keys(CATALOG)[0];WK.rounds.push({rid:s2NewTok(),courseName:cn,course:cn?CATALOG[cn]:null});const nP=WK.players.length;STATE.scores.push(Array(18).fill(null).map(()=>Array(nP).fill(null)));const g=WK.mpGamesDefault;WK.mpGamesPerRound.push(g);WK.vegasSegsPerRound.push(WK.vegasSegsDefault);if(!WK.skinsGamesPerRound)WK.skinsGamesPerRound=[];WK.skinsGamesPerRound.push(0);const rots=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];STATE.mpTeams.push([Array(g).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);const vg=vegasSegForRound(WK.rounds.length-1);STATE.vegTeams.push([Array(vg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);if(!STATE.hammerTeams)STATE.hammerTeams=[];STATE.hammerTeams.push([defaultHammerTeams(WK.rounds.length-1)]);if(!STATE.hammerState)STATE.hammerState=[];STATE.hammerState.push([Array(18).fill(null)]);if(!WK.hammerSegsPerRound)WK.hammerSegsPerRound=[];WK.hammerSegsPerRound.push(WK.hammerSegsDefault||1);if(!STATE.pressState)STATE.pressState=[];STATE.pressState.push([[]]);if(!STATE.skinsTeams)STATE.skinsTeams=[];const sg=skinsGamesForRound(WK.rounds.length-1);STATE.skinsTeams.push([Array(sg).fill(null).map((_,gi)=>JSON.parse(JSON.stringify(rots[gi%3]||rots[0])))]);STATE.roundFlights=padFlights(STATE.roundFlights,WK.rounds.length,WK.players.length);const _newR=WK.rounds.length-1;STATE.roundFlights[_newR]=_flightsForNewRound(_newR-1);reconcileWolfOrder(_newR);reconcileSnakeHolders(_newR);reconcileMPTeams(_newR);reconcileVegasTeams(_newR);reconcileHammerTeams(_newR);reconcileSkinsTeams(_newR);reconcileRazzleOrder(_newR);reconcileFBTeams(_newR);renderWeekendPanel();if(typeof s2MarkDirty==='function'){s2MarkDirty(['trip']);autoSave();s2WriteActive();}}
 function launchE9(){
   _e9State={step:1,cn:null,nineHole:null,inStandings:false,tee:null,pendingCn:null,teeOpen:'',near:null,nearErr:'',nearAsk:false,nearBusy:false};
   _showE9Modal();
@@ -16045,7 +16075,7 @@ function removeRound(idx){if(WK.rounds.length<=1){showMsg('Need at least 1 round
 // Capture the id BEFORE the splice — after it, index idx names a different round.
 const _deadRid=(WK.rounds[idx]&&WK.rounds[idx].rid)?(WK._id+':round:'+WK.rounds[idx].rid):null;
 if(_deadRid)s2DeleteWhere('scores','round_id=eq.'+encodeURIComponent(_deadRid));
-WK.rounds.splice(idx,1);STATE.scores.splice(idx,1);WK.mpGamesPerRound.splice(idx,1);WK.vegasSegsPerRound.splice(idx,1);WK.skinsGamesPerRound?.splice(idx,1);STATE.mpTeams.splice(idx,1);STATE.vegTeams.splice(idx,1);STATE.hammerTeams?.splice(idx,1);STATE.hammerState?.splice(idx,1);WK.hammerSegsPerRound?.splice(idx,1);STATE.skinsTeams?.splice(idx,1);if(STATE.currentRound>=WK.rounds.length)STATE.currentRound=WK.rounds.length-1;if(STATE.teamsRound>=WK.rounds.length)STATE.teamsRound=WK.rounds.length-1;if(STATE.mpViewRound>=WK.rounds.length)STATE.mpViewRound=WK.rounds.length-1;if(STATE.vegasViewRound>=WK.rounds.length)STATE.vegasViewRound=WK.rounds.length-1;if((STATE.skinsViewRound||0)>=WK.rounds.length)STATE.skinsViewRound=WK.rounds.length-1;if(STATE.scRound>=WK.rounds.length)STATE.scRound=WK.rounds.length-1;renderWeekendPanel();}
+WK.rounds.splice(idx,1);STATE.scores.splice(idx,1);WK.mpGamesPerRound.splice(idx,1);WK.vegasSegsPerRound.splice(idx,1);WK.skinsGamesPerRound?.splice(idx,1);STATE.mpTeams.splice(idx,1);STATE.vegTeams.splice(idx,1);STATE.hammerTeams?.splice(idx,1);STATE.hammerState?.splice(idx,1);WK.hammerSegsPerRound?.splice(idx,1);STATE.skinsTeams?.splice(idx,1);if(STATE.currentRound>=WK.rounds.length)STATE.currentRound=WK.rounds.length-1;if(STATE.teamsRound>=WK.rounds.length)STATE.teamsRound=WK.rounds.length-1;if(STATE.mpViewRound>=WK.rounds.length)STATE.mpViewRound=WK.rounds.length-1;if(STATE.vegasViewRound>=WK.rounds.length)STATE.vegasViewRound=WK.rounds.length-1;if((STATE.skinsViewRound||0)>=WK.rounds.length)STATE.skinsViewRound=WK.rounds.length-1;if(STATE.scRound>=WK.rounds.length)STATE.scRound=WK.rounds.length-1;renderWeekendPanel();if(typeof s2MarkDirty==='function'){s2MarkDirty(['trip']);autoSave();s2WriteActive();}}
 // --- GolfCourseAPI import helpers ---
 window._gcaLastQuery='';
 function _gcaFetchedAgo(ts){
