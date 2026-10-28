@@ -2756,7 +2756,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.34';
+const APP_VERSION='v125.35';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -15613,10 +15613,13 @@ window._suFmt=function(v){
   const cup=!!(WK.cup&&WK.cup.on);
   if((v==='cup')===cup)return;
   const done=function(){window._cupOn(v==='cup');renderWeekendPanel();};
-  if(v==='cup'){done();return;}
   const sc=(WK.rounds||[]).map(function(_,r){return r;}).filter(function(r){return _gsRoundHasScores(r);});
   if(!sc.length){done();return;}
-  _confirmSheet({title:'Switch to Individual?',body:_stpRds(sc)+(sc.length===1?' has':' have')+' scores. Cup points stop, and each cup round\u2019s Match Play goes back to regular games. Teams and lineups are kept if you switch back.',
+  const has=_stpRds(sc)+(sc.length===1?' has':' have')+' scores. ';
+  // v125.35: asks both ways.
+  if(v==='cup')_confirmSheet({title:'Switch to Team Cup?',body:has+'Cup points start, and a round with a cup lineup plays its Match Play as cup matches, which can change that round\u2019s money.',
+    okLabel:'Switch',cancelLabel:'Keep Individual',onOk:done,onCancel:function(){renderWeekendPanel();}});
+  else _confirmSheet({title:'Switch to Individual?',body:has+'Cup points stop, and each cup round\u2019s Match Play goes back to regular games. Teams and lineups are kept if you switch back.',
     okLabel:'Switch',cancelLabel:'Keep Team Cup',onOk:done,onCancel:function(){renderWeekendPanel();}});
 };
 window._cupOn=function(on){
