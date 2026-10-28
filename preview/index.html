@@ -2756,7 +2756,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.32';
+const APP_VERSION='v125.33';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7941,7 +7941,10 @@ window._stpCoursePick=function(ri,back){
   if(!WK||!WK.rounds||!WK.rounds[ri]||!canEditTrip())return;
   if(_gsRoundHasScores(ri)){showMsg(roundLabel(ri)+' has scores, so its course stays.');return;}
   window._suRdClose&&window._suRdClose();
-  window._stpCourses();_twS.single=ri;_twS.back=back||'menu';window._twOpenRound(ri);
+  window._stpCourses();_twS.single=ri;_twS.back=back||'menu';
+  // v125.33: straight to search; the picker's copy of the course is cleared, the round keeps it until a pick.
+  _twS.courses[ri]='';_twS.tees[ri]={};
+  window._twOpenRound(ri);
 };
 window._twHandAdd=function(i){
   // as _gcaShowManual: an abandoned import's vendor id and location must not ride into a hand entry
