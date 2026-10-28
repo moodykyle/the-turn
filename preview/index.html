@@ -143,6 +143,29 @@ body{background:#F4F1E8;color:#111;font-family:-apple-system,BlinkMacSystemFont,
 .opt-menu-ico .ti{font-size:18px;}
 .opt-menu-text{flex:1;min-width:0;}
 .opt-menu-title{font-weight:600;font-size:15px;color:var(--color-text-primary);}
+/* v125.32: the round sheet. Course with its town and a Change button; tees as equal tiles in two columns. */
+.su-card.rs-card{padding:0;}
+.rs-sec{padding:14px 16px;}
+.rs-sep{height:0.5px;background:var(--color-border-tertiary);margin:0 16px;}
+.rs-lbl{font-size:11px;font-weight:700;letter-spacing:0.08em;color:var(--color-text-secondary);}
+.rs-crs{display:flex;align-items:center;gap:12px;}
+.rs-crs .rs-ct{flex:1;min-width:0;}
+.rs-nm{font-size:16px;font-weight:600;color:var(--color-text-primary);margin-top:5px;overflow-wrap:anywhere;}
+.rs-nm.empty{font-weight:500;color:var(--color-text-secondary);}
+.rs-sub{font-size:12px;color:var(--color-text-secondary);margin-top:3px;}
+.act-edit.rs-chg{display:inline-flex;align-items:center;justify-content:center;height:32px;min-width:0;padding:0 12px;font-size:13px;line-height:1;flex-shrink:0;}
+.rs-g{font-size:12px;font-weight:600;color:var(--color-text-secondary);margin-top:12px;}
+.rs-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px;}
+.rs-tee{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;height:38px;min-width:0;padding:0 10px;border-radius:10px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);font-size:14px;font-weight:500;color:var(--color-text-primary);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.rs-tee .rs-tn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rs-tee.on{background:rgba(29,158,117,0.16);border:1.5px solid #13795B;font-weight:600;}
+.rs-tee:disabled{cursor:default;}
+.rs-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.25);}
+.rs-stat{font-size:12px;color:var(--color-text-secondary);margin-top:10px;}
+@media(prefers-color-scheme:dark){body:not(.force-light) .rs-tee.on{border-color:#3CC79A;}
+body:not(.force-light) .rs-dot{box-shadow:inset 0 0 0 1px rgba(255,255,255,0.35);}}
+body.force-dark .rs-tee.on{border-color:#3CC79A;}
+body.force-dark .rs-dot{box-shadow:inset 0 0 0 1px rgba(255,255,255,0.35);}
 /* v125.30: the Rounds stepper on New trip and the course list. */
 .tw-rstep{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;min-height:56px;box-sizing:border-box;}
 .tw-rstep .tw-rsl{font-size:15px;font-weight:600;color:var(--color-text-primary);}
@@ -2733,7 +2756,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.31';
+const APP_VERSION='v125.32';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -14786,16 +14809,26 @@ window._suRdOpen=function(ri){
   const c=CATALOG[rd.courseName],all=c&&c.tees?(tg==='female'?(c.tees.female||[]):(c.tees.male||[])):[];
   const tObj=all.find(t=>t.tee_name===tn);
   const tOpts=_gcaTeeOptions(rd.courseName,dt?dt.gender:null,tn||'');
-  const tSub=tObj?[tObj.slope_rating?'Slope '+tObj.slope_rating:'',tObj.total_yards?Number(tObj.total_yards).toLocaleString()+' yds':''].filter(Boolean).join(' \u00b7 '):'';
-  const tCol=tn?_gcaTeeColor(tn,all):'#9CA3AF';
   const ro=!canEditTrip()||isReadOnly;
-  // v125.29: the Course row opens the round picker (search, Recent, near me); the dropdown is gone.
-  let b=_gsRow('Course','',ro?_gtEsc(rd.courseName?courseDisp(rd.courseName):'No course yet'):(rd.courseName?`<button type="button" class="su-pick" onclick="window._stpCoursePick(${ri},'sheet')">${_gtEsc(courseDisp(rd.courseName))} <span class="su-chg">Change ›</span></button>`:`<button type="button" class="su-pick empty" onclick="window._stpCoursePick(${ri},'sheet')">Pick a course ›</button>`));
-  if(tOpts)b+=_gsRow('Tees',tSub,`<span class="su-nh"><span class="su-dot" style="background:${tCol}"></span>${tn||'Select tee'}<i class="ti ti-chevron-down" aria-hidden="true"></i><select aria-label="Tees"${ro?' disabled':''} onchange="window._suRdSet(${ri},'tee',this.value)">${tOpts}</select></span>`);
-  if(rd.nineHole||ov.dataset.nine==='1')b+=_gsRow('Holes','',_gsSeg([['front','Front 9'],['back','Back 9'],['18','18']],rd.nineHole||'18',"window._suRdSet("+ri+",'nine',VAL)",true));
+  // v125.32: the course with its town and a Change button; the tees as equal tiles, two columns.
+  const pk=`window._stpCoursePick(${ri},'sheet')`;
+  let b='<div class="rs-sec rs-crs"><div class="rs-ct"><div class="rs-lbl">COURSE</div>'
+    +(rd.courseName?'<div class="rs-nm">'+_gtEsc(courseDisp(rd.courseName))+'</div>'+(_qrwPlace(rd.courseName)?'<div class="rs-sub">'+_gtEsc(_qrwPlace(rd.courseName))+'</div>':''):'<div class="rs-nm empty">No course yet</div>')+'</div>'
+    +(ro?'':'<button type="button" class="act-edit rs-chg" onclick="'+pk+'">'+(rd.courseName?'Change':'Pick a course')+'</button>')+'</div>';
+  if(tOpts){
+    const ml=(c.tees.male||[]),fl=(c.tees.female||[]),both=ml.length&&fl.length;
+    const grid=function(g,list){return '<div class="rs-grid">'+list.map(function(t){const on=tg===g&&t.tee_name===tn;
+      return '<button type="button" class="rs-tee'+(on?' on':'')+'" aria-pressed="'+on+'" data-v="'+_gtEsc(g+'|'+t.tee_name)+'"'+(ro?' disabled':' onclick="window._suRdSet('+ri+',\'tee\',this.dataset.v)"')+'><span class="rs-dot" style="background:'+_gcaTeeColor(t.tee_name,list)+'"></span><span class="rs-tn">'+_gtEsc(t.tee_name)+'</span></button>';}).join('')+'</div>';};
+    const st=tObj?[tObj.course_rating?tObj.course_rating+' rating':'',tObj.slope_rating?tObj.slope_rating+' slope':'',tObj.total_yards?Number(tObj.total_yards).toLocaleString()+' yds':''].filter(Boolean).join(' \u00b7 '):'';
+    b+='<div class="rs-sep"></div><div class="rs-sec"><div class="rs-lbl">TEES</div>'
+      +(ml.length?(both?'<div class="rs-g">Men&#39;s</div>':'')+grid('male',ml):'')
+      +(fl.length?(both?'<div class="rs-g">Women&#39;s</div>':'')+grid('female',fl):'')
+      +(st?'<div class="rs-stat">'+st+'</div>':'')+'</div>';
+  }
+  if(rd.nineHole||ov.dataset.nine==='1')b+='<div class="rs-sep"></div><div class="rs-sec">'+_gsRow('Holes','',_gsSeg([['front','Front 9'],['back','Back 9'],['18','18']],rd.nineHole||'18',"window._suRdSet("+ri+",'nine',VAL)",true))+'</div>';
   const del=WK.rounds.length>1&&!ro;
-  ov.innerHTML='<div class="grp-sheet-inner su-sh"><div class="grp-sheet-pill"></div><div class="grp-sheet-title">'+roundLabel(ri)+' \u00b7 '+(rd.courseName?courseDisp(rd.courseName):'No course yet')+'</div>'
-    +'<div class="su-card">'+b+'</div>'
+  ov.innerHTML='<div class="grp-sheet-inner su-sh"><div class="grp-sheet-pill"></div><div class="grp-sheet-title">'+roundLabel(ri)+'</div>'
+    +'<div class="su-card rs-card">'+b+'</div>'
     +'<button type="button" class="su-shdone" onclick="window._suRdClose()">Done</button>'
     +(del?'<button type="button" class="su-shrm-l" onclick="window._suRdClose();removeRound('+ri+')">Remove '+roundLabel(ri)+' from the trip</button>':'')+'</div>';
   ov.style.display='flex';ov.dataset.ri=ri;
