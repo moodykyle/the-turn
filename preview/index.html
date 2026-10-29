@@ -2756,7 +2756,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.37';
+const APP_VERSION='v125.38';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -7132,6 +7132,8 @@ function viewTrip(id,opts){
       if(!_rp||!_rp.live){delete STATE._resumeAllDone;_clearActiveTripCrumb();showHome();dismissSplash();return;}
     }
     isReadOnly=false;viewingTripId=id;
+    // v125.38: this phone's foursome opens on its own next hole, not the field's first owed hole.
+    if(!STATE._resumeAllDone&&WK.rounds[STATE.currentRound]&&isMultiFlight(STATE.currentRound)){const _fp=getFlightPick(STATE.currentRound);if(_fp!==null)STATE.currentHole=_flightResumeHole(STATE.currentRound,_fp);}
     const _allDone=STATE._resumeAllDone;delete STATE._resumeAllDone;launchMainApp();if(_allDone)setView('board');s2ValidateOnLoad();
     dismissSplash();
   });}
