@@ -2764,7 +2764,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.40';
+const APP_VERSION='v125.41';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -3291,6 +3291,10 @@ async function _s2ServerPids(tripId){
 } // v124.1: this write's players save was refused by the unique index
 let _s2WriteInFlight=false; // sync poll must never rebuild over a write that hasn't landed yet
 let _s2WritePending=false;  // a write arrived while one was in flight; flush once the current one lands
+// v125.41: the round settings a trip saves and loads when set. One list, read by both serializers through
+// _rdCarry: a setting the app keeps on a round goes here, or it is lost on reload (gate rdcarry).
+const _RD_CARRY=['ninesVal','ninesBlitz','shortInStandings','mpFinalSeg','mpUnique','hammerUnique','vegasUnique','skinsUnique','hammerVal','hammerSegs','mpCount','hammerMode','hammerMax','hammerPayout','hammerHalve','hammerScoring','gameVal','vegasVal','vegasFlip','vegasDouble','vegasTwoBird','skinsVal','snakeBase','razzleVal','razzleBirdieBonus','razzleSweepBonus','razzle5HoleBonus','razzleBirdieGross','razzleSettle','razzleFinalMatch','razzleFinalCloseBonus','razzleFinalBirdieBonus','razzleBirdieOn','razzleSweepOn','razzle5HoleOn','razzle5HoleMode','wolfPlacement','wolfBlindMult','wolfLoneMode','wolfPartnerMode','fbOn','fbTeamSize','fbScope','fbAnte','fbPays','fbSplit','fbTie','fbFive43','fbGross','grindersOn','grindersAnte','grindersNet','fbTeamsManual','pressesOn','pressVal','autoPressOn','autoPressThreshold','nineHole','inStandings','wolfVal','mpHUNetOffMatchLow'];
+function _rdCarry(rd){const o={};for(let i=0;i<_RD_CARRY.length;i++){const k=_RD_CARRY[i];if(rd[k]!=null)o[k]=rd[k];}return o;}
 async function s2WriteActive(){
   if(!WK||!STATE)return;
   // Re-entrancy guard: two overlapping writes would rebuild the same dirty score rows
@@ -3405,71 +3409,16 @@ async function s2WriteActive(){
           wolfOn:!!rd.wolfOn,
           hammerOn:!!rd.hammerOn,
           ninesOn:!!rd.ninesOn,
-          ...(rd.ninesVal!=null&&{ninesVal:rd.ninesVal}),
-          ...(rd.ninesBlitz!=null&&{ninesBlitz:rd.ninesBlitz}),
+          ..._rdCarry(rd),
           independentGames:!!rd.independentGames,
           ...(Array.isArray(rd.fsGames)&&rd.fsGames.length&&{fsGames:rd.fsGames}),
           ...(Array.isArray(rd.fsEndHoles)&&rd.fsEndHoles.length&&{fsEndHoles:rd.fsEndHoles}),
-          ...(rd.shortInStandings!=null&&{shortInStandings:rd.shortInStandings}),
-          ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),...(rd.mpUnique!=null&&{mpUnique:rd.mpUnique}),...(rd.hammerUnique!=null&&{hammerUnique:rd.hammerUnique}),...(rd.vegasUnique!=null&&{vegasUnique:rd.vegasUnique}),...(rd.skinsUnique!=null&&{skinsUnique:rd.skinsUnique}),
-          ...(rd.hammerVal!=null&&{hammerVal:rd.hammerVal}),
-          ...(rd.hammerSegs!=null&&{hammerSegs:rd.hammerSegs}),
-          ...(rd.mpCount!=null&&{mpCount:rd.mpCount}),
-          ...(rd.hammerMode!=null&&{hammerMode:rd.hammerMode}),
-          ...(rd.hammerMax!=null&&{hammerMax:rd.hammerMax}),
-          ...(rd.hammerPayout!=null&&{hammerPayout:rd.hammerPayout}),
-          ...(rd.hammerHalve!=null&&{hammerHalve:rd.hammerHalve}),
-          ...(rd.hammerScoring!=null&&{hammerScoring:rd.hammerScoring}),
-          // Per-round dollar overrides — undefined means use trip default
-          ...(rd.gameVal!=null&&{gameVal:rd.gameVal}),
-          ...(rd.vegasVal!=null&&{vegasVal:rd.vegasVal}),
-          ...(rd.vegasFlip!=null&&{vegasFlip:rd.vegasFlip}),
-          ...(rd.vegasDouble!=null&&{vegasDouble:rd.vegasDouble}),
-          ...(rd.vegasTwoBird!=null&&{vegasTwoBird:rd.vegasTwoBird}),
-          ...(rd.skinsVal!=null&&{skinsVal:rd.skinsVal}),
-          ...(rd.snakeBase!=null&&{snakeBase:rd.snakeBase}),
-          ...(rd.razzleVal!=null&&{razzleVal:rd.razzleVal}),
-          ...(rd.razzleBirdieBonus!=null&&{razzleBirdieBonus:rd.razzleBirdieBonus}),
-          ...(rd.razzleSweepBonus!=null&&{razzleSweepBonus:rd.razzleSweepBonus}),
-          ...(rd.razzle5HoleBonus!=null&&{razzle5HoleBonus:rd.razzle5HoleBonus}),
-          ...(rd.razzleBirdieGross!=null&&{razzleBirdieGross:rd.razzleBirdieGross}),
-          ...(rd.razzleSettle!=null&&{razzleSettle:rd.razzleSettle}),
-          ...(rd.razzleFinalMatch!=null&&{razzleFinalMatch:rd.razzleFinalMatch}),
-          ...(rd.razzleFinalCloseBonus!=null&&{razzleFinalCloseBonus:rd.razzleFinalCloseBonus}),
-          ...(rd.razzleFinalBirdieBonus!=null&&{razzleFinalBirdieBonus:rd.razzleFinalBirdieBonus}),
-          ...(rd.razzleBirdieOn!=null&&{razzleBirdieOn:rd.razzleBirdieOn}),
-          ...(rd.razzleSweepOn!=null&&{razzleSweepOn:rd.razzleSweepOn}),
-          ...(rd.razzle5HoleOn!=null&&{razzle5HoleOn:rd.razzle5HoleOn}),
-          ...(rd.razzle5HoleMode!=null&&{razzle5HoleMode:rd.razzle5HoleMode}),
-          ...(rd.wolfPlacement!=null&&{wolfPlacement:rd.wolfPlacement}),
-          ...(rd.wolfBlindMult!=null&&{wolfBlindMult:rd.wolfBlindMult}),
-          ...(rd.wolfLoneMode!=null&&{wolfLoneMode:rd.wolfLoneMode}),
-          ...(rd.wolfPartnerMode!=null&&{wolfPartnerMode:rd.wolfPartnerMode}),
-          ...(rd.fbOn!=null&&{fbOn:rd.fbOn}),
-          ...(rd.fbTeamSize!=null&&{fbTeamSize:rd.fbTeamSize}),
-          ...(rd.fbScope!=null&&{fbScope:rd.fbScope}),
-          ...(rd.fbAnte!=null&&{fbAnte:rd.fbAnte}),
-          ...(rd.fbPays!=null&&{fbPays:rd.fbPays}),
-          ...(rd.fbSplit!=null&&{fbSplit:rd.fbSplit}),
-          ...(rd.fbTie!=null&&{fbTie:rd.fbTie}),
-          ...(rd.fbFive43!=null&&{fbFive43:rd.fbFive43}),
-          ...(rd.fbGross!=null&&{fbGross:rd.fbGross}),
-          ...(rd.grindersOn!=null&&{grindersOn:rd.grindersOn}),
-          ...(rd.grindersAnte!=null&&{grindersAnte:rd.grindersAnte}),
-          ...(rd.grindersNet!=null&&{grindersNet:rd.grindersNet}),
           ...(Array.isArray(rd.fbTeams)&&rd.fbTeams.length&&{fbTeams:rd.fbTeams}),
-          ...(rd.fbTeamsManual!=null&&{fbTeamsManual:rd.fbTeamsManual}),
           // Per-round, per-player-index state, which is the class fbTeamsManual was lost
           // as. On BOTH serializers, and the gate asserts a save-and-reload round trip
           // rather than the presence of the key.
           ...(rd.idxSnap&&{idxSnap:rd.idxSnap}),
-          ...(rd.pressesOn!=null&&{pressesOn:rd.pressesOn}),
-          ...(rd.pressVal!=null&&{pressVal:rd.pressVal}),
-          ...(rd.autoPressOn!=null&&{autoPressOn:rd.autoPressOn}),
-          ...(rd.autoPressThreshold!=null&&{autoPressThreshold:rd.autoPressThreshold}),
-          ...(rd.nineHole!=null&&{nineHole:rd.nineHole}),
           ...(rd.isE9&&{isE9:true}),
-          ...(rd.inStandings!=null&&{inStandings:rd.inStandings}),
           ...(rd.mpFormat&&{mpFormat:rd.mpFormat})
         })),
         summary:{
@@ -3839,68 +3788,13 @@ async function s2ReadTrip(tripId){
         wolfOn:rd.wolfOn!==undefined?rd.wolfOn:!!t.wolf_on,
         hammerOn:rd.hammerOn!==undefined?rd.hammerOn:!!t.hammer_on,
         ninesOn:rd.ninesOn===true,
-        ...(rd.ninesVal!=null&&{ninesVal:rd.ninesVal}),
-        ...(rd.ninesBlitz!=null&&{ninesBlitz:rd.ninesBlitz}),
+        ..._rdCarry(rd),
         independentGames:rd.independentGames===true,
         ...(Array.isArray(rd.fsGames)&&rd.fsGames.length&&{fsGames:rd.fsGames}),
         ...(Array.isArray(rd.fsEndHoles)&&rd.fsEndHoles.length&&{fsEndHoles:rd.fsEndHoles}),
-        ...(rd.shortInStandings!=null&&{shortInStandings:rd.shortInStandings}),
-        ...(rd.mpFinalSeg!=null&&{mpFinalSeg:rd.mpFinalSeg}),...(rd.mpUnique!=null&&{mpUnique:rd.mpUnique}),...(rd.hammerUnique!=null&&{hammerUnique:rd.hammerUnique}),...(rd.vegasUnique!=null&&{vegasUnique:rd.vegasUnique}),...(rd.skinsUnique!=null&&{skinsUnique:rd.skinsUnique}),
-        ...(rd.hammerVal!=null&&{hammerVal:rd.hammerVal}),
-        ...(rd.hammerSegs!=null&&{hammerSegs:rd.hammerSegs}),
-        ...(rd.mpCount!=null&&{mpCount:rd.mpCount}),
-        ...(rd.hammerMode!=null&&{hammerMode:rd.hammerMode}),
-        ...(rd.hammerMax!=null&&{hammerMax:rd.hammerMax}),
-        ...(rd.hammerPayout!=null&&{hammerPayout:rd.hammerPayout}),
-        ...(rd.hammerHalve!=null&&{hammerHalve:rd.hammerHalve}),
-        ...(rd.hammerScoring!=null&&{hammerScoring:rd.hammerScoring}),
-        // Per-round dollar overrides — only set if present, undefined = use trip default
-        ...(rd.gameVal!=null&&{gameVal:rd.gameVal}),
-        ...(rd.vegasVal!=null&&{vegasVal:rd.vegasVal}),
-        ...(rd.vegasFlip!=null&&{vegasFlip:rd.vegasFlip}),
-        ...(rd.vegasDouble!=null&&{vegasDouble:rd.vegasDouble}),
-        ...(rd.vegasTwoBird!=null&&{vegasTwoBird:rd.vegasTwoBird}),
-        ...(rd.skinsVal!=null&&{skinsVal:rd.skinsVal}),
-        ...(rd.snakeBase!=null&&{snakeBase:rd.snakeBase}),
-        ...(rd.razzleVal!=null&&{razzleVal:rd.razzleVal}),
-        ...(rd.razzleBirdieBonus!=null&&{razzleBirdieBonus:rd.razzleBirdieBonus}),
-        ...(rd.razzleSweepBonus!=null&&{razzleSweepBonus:rd.razzleSweepBonus}),
-        ...(rd.razzle5HoleBonus!=null&&{razzle5HoleBonus:rd.razzle5HoleBonus}),
-        ...(rd.razzleBirdieGross!=null&&{razzleBirdieGross:rd.razzleBirdieGross}),
-        ...(rd.razzleSettle!=null&&{razzleSettle:rd.razzleSettle}),
-          ...(rd.razzleFinalMatch!=null&&{razzleFinalMatch:rd.razzleFinalMatch}),
-          ...(rd.razzleFinalCloseBonus!=null&&{razzleFinalCloseBonus:rd.razzleFinalCloseBonus}),
-          ...(rd.razzleFinalBirdieBonus!=null&&{razzleFinalBirdieBonus:rd.razzleFinalBirdieBonus}),
-          ...(rd.razzleBirdieOn!=null&&{razzleBirdieOn:rd.razzleBirdieOn}),
-          ...(rd.razzleSweepOn!=null&&{razzleSweepOn:rd.razzleSweepOn}),
-          ...(rd.razzle5HoleOn!=null&&{razzle5HoleOn:rd.razzle5HoleOn}),
-          ...(rd.razzle5HoleMode!=null&&{razzle5HoleMode:rd.razzle5HoleMode}),
-        ...(rd.wolfPlacement!=null&&{wolfPlacement:rd.wolfPlacement}),
-        ...(rd.wolfBlindMult!=null&&{wolfBlindMult:rd.wolfBlindMult}),
-        ...(rd.wolfLoneMode!=null&&{wolfLoneMode:rd.wolfLoneMode}),
-        ...(rd.wolfPartnerMode!=null&&{wolfPartnerMode:rd.wolfPartnerMode}),
-        ...(rd.fbOn!=null&&{fbOn:rd.fbOn}),
-        ...(rd.fbTeamSize!=null&&{fbTeamSize:rd.fbTeamSize}),
-        ...(rd.fbScope!=null&&{fbScope:rd.fbScope}),
-        ...(rd.fbAnte!=null&&{fbAnte:rd.fbAnte}),
-        ...(rd.fbPays!=null&&{fbPays:rd.fbPays}),
-        ...(rd.fbSplit!=null&&{fbSplit:rd.fbSplit}),
-        ...(rd.fbTie!=null&&{fbTie:rd.fbTie}),
-        ...(rd.fbFive43!=null&&{fbFive43:rd.fbFive43}),
-        ...(rd.fbGross!=null&&{fbGross:rd.fbGross}),
-        ...(rd.grindersOn!=null&&{grindersOn:rd.grindersOn}),
-        ...(rd.grindersAnte!=null&&{grindersAnte:rd.grindersAnte}),
-        ...(rd.grindersNet!=null&&{grindersNet:rd.grindersNet}),
         ...(Array.isArray(rd.fbTeams)&&rd.fbTeams.length&&{fbTeams:rd.fbTeams}),
-        ...(rd.fbTeamsManual!=null&&{fbTeamsManual:rd.fbTeamsManual}),
         ...(rd.idxSnap&&{idxSnap:rd.idxSnap}),
-        ...(rd.pressesOn!=null&&{pressesOn:rd.pressesOn}),
-        ...(rd.pressVal!=null&&{pressVal:rd.pressVal}),
-        ...(rd.autoPressOn!=null&&{autoPressOn:rd.autoPressOn}),
-        ...(rd.autoPressThreshold!=null&&{autoPressThreshold:rd.autoPressThreshold}),
-        ...(rd.nineHole!=null&&{nineHole:rd.nineHole}),
         ...(rd.isE9&&{isE9:true}),
-        ...(rd.inStandings!=null&&{inStandings:rd.inStandings})
       }))
     };
     // Freeze identity BEFORE anything reads it. Any round or player without a token
