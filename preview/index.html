@@ -2743,7 +2743,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.42';
+const APP_VERSION='v125.43';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -20334,6 +20334,8 @@ function calcHammerHole(hi,r,fi){
 function calcHammerSegResult(r,si,fi){
   fi=fi||0;
   if(!gameOnFs('hammer',r,fi))return null;
+  // v125.43: a foursome that is not 2 or 4 cannot play Hammer (the Games note says so); it pays nothing.
+  if(_gameGroupNote('hammer',(flightsForRound(r)[fi]||[]).length))return null;
   const hSeg=hammerSegsForRound(r,fi),_off=holeOffset(r),seg=getSegments(hSeg,roundHoleCount(r))[si];
   const baseVal=roundValFs('hammerVal',r,fi,WK.hammerVal||2);
   const halveCarry=roundValFs('hammerHalve',r,fi,WK.hammerHalve||'carry');
