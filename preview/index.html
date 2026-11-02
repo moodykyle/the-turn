@@ -2743,7 +2743,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.46';
+const APP_VERSION='v125.47';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -6679,7 +6679,7 @@ window._qrSearchCourse=async function(){
         +(sub?'<div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">'+sub+'</div>':'')
         +'</div>';
     }).join('')
-      +'<div style="font-size:11px;color:var(--color-text-secondary);margin-top:4px;text-align:center">Not what you&apos;re looking for? <button onclick="window._qrOnlineSearch(window._gcaLastQuery)" style="border:none;background:none;padding:0;font-size:11px;color:#1D9E75;font-weight:500;cursor:pointer;text-decoration:underline">Search online</button></div>';
+      +'<div style="font-size:11px;color:var(--color-text-secondary);margin-top:4px;text-align:center">Not what you&apos;re looking for? <button onclick="window._qrOnlineSearch()" style="border:none;background:none;padding:0;font-size:11px;color:#1D9E75;font-weight:500;cursor:pointer;text-decoration:underline">Search online</button></div>';
     return;
   }
   el.innerHTML='<div style="font-size:12px;color:var(--color-text-secondary)">Searching...</div>';
@@ -6692,6 +6692,7 @@ window._qrPickSearch=function(ri){
 };
 window._qrOnlineSearch=async function(q){
   const el=document.getElementById('qrCourseResults');if(!el)return;
+  q=_gcaQ(q,'qrCourseSearch');if(!q){el.innerHTML=_GCA_TYPE;return;}
   try{
     const r=await fetch(GOLF_PROXY+'?action=search&query='+encodeURIComponent(q),{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});
     _gcaLimitErr(r);
@@ -8148,7 +8149,7 @@ window._twRoundSearch=async function(i){
         +(sub?'<div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">'+sub+'</div>':'')
         +'</div>';
     }).join('')
-    +'<div style="font-size:12px;color:var(--color-text-secondary);margin-top:6px;padding:0 2px;display:flex;align-items:center;gap:4px"><i class="ti ti-info-circle" style="font-size:13px;color:var(--color-text-tertiary)"></i>Not what you\'re looking for? <button onclick="window._twOnlineSearch('+i+',window._gcaLastQuery)" style="border:none;background:none;padding:0;font-size:12px;color:#1D9E75;font-weight:500;cursor:pointer;text-decoration:underline">Search online</button></div>';
+    +'<div style="font-size:12px;color:var(--color-text-secondary);margin-top:6px;padding:0 2px;display:flex;align-items:center;gap:4px"><i class="ti ti-info-circle" style="font-size:13px;color:var(--color-text-tertiary)"></i>Not what you\'re looking for? <button onclick="window._twOnlineSearch('+i+')" style="border:none;background:none;padding:0;font-size:12px;color:#1D9E75;font-weight:500;cursor:pointer;text-decoration:underline">Search online</button></div>';
     return;
   }
   // 2. Not found locally - hit proxy
@@ -8158,6 +8159,7 @@ window._twRoundSearch=async function(i){
 window._twOnlineSearch=async function(i,q){
   const el=document.getElementById('tw_rresults'+i);
   if(!el)return;
+  q=_gcaQ(q,'tw_csearch'+i);if(!q){el.innerHTML=_GCA_TYPE;return;}
   try{
     const r=await fetch(GOLF_PROXY+'?action=search&query='+encodeURIComponent(q),{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});
     _gcaLimitErr(r);
@@ -16015,6 +16017,9 @@ function _gcaTeeToHoles(tee){
 // name, and `|| []` cannot see that because an object is truthy. Array.isArray can.
 // Real arrays pass through untouched, so nothing about a healthy record changes.
 function _gcaTeeList(v){return Array.isArray(v)?v:[];}
+// v125.47: what an online course search looks for: the search box as it is now, else the text it was handed.
+function _gcaQ(q,boxId){const b=document.getElementById(boxId);const v=((b&&b.value)||'').trim();return v||String(q==null?'':q).trim();}
+const _GCA_TYPE='<div style="font-size:12px;color:var(--color-text-secondary)">Type a course name to search.</div>';
 // v125.46: one rule for every course search. Results that share name, town and state are the vendor's duplicate
 // records of one course: show one. The same name in another town is a different course: show both.
 function _gcaDedupe(list){
@@ -16134,7 +16139,7 @@ async function searchCourses(){
           +'<div style="font-size:11px;color:var(--color-text-secondary)">Slope '+c.slope+' · Rating '+(c.rating||'--')+'</div>'
           +'</div>';
       }).join('')
-      +'<div style="font-size:11px;color:var(--color-text-secondary);margin-top:8px;text-align:center">Not seeing it? <button class="btn-sm" onclick="window._gcaProxySearch(window._gcaLastQuery)">Search online</button></div>';
+      +'<div style="font-size:11px;color:var(--color-text-secondary);margin-top:8px;text-align:center">Not seeing it? <button class="btn-sm" onclick="window._gcaProxySearch()">Search online</button></div>';
     return;
   }
   // 2. Not found locally - hit proxy automatically
@@ -16144,6 +16149,7 @@ async function searchCourses(){
 window._gcaProxySearch=async function(q){
   const el=document.getElementById('gcaResults');
   if(!el)return;
+  q=_gcaQ(q,'gcaSearch');if(!q){el.innerHTML=_GCA_TYPE;return;}
   try{
     const r=await fetch(GOLF_PROXY+'?action=search&query='+encodeURIComponent(q),{
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}
@@ -16190,7 +16196,7 @@ window._e9SearchCourse=async function(){
         +(sub?'<div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">'+sub+'</div>':'')
         +'</div>';
     }).join('')
-      +'<div style="font-size:11px;color:var(--color-text-secondary);margin-top:4px;text-align:center">Not what you&apos;re looking for? <button onclick="window._e9OnlineSearch(window._e9LastQuery)" style="border:none;background:none;padding:0;font-size:11px;color:#1D9E75;font-weight:500;cursor:pointer;text-decoration:underline">Search online</button></div>';
+      +'<div style="font-size:11px;color:var(--color-text-secondary);margin-top:4px;text-align:center">Not what you&apos;re looking for? <button onclick="window._e9OnlineSearch()" style="border:none;background:none;padding:0;font-size:11px;color:#1D9E75;font-weight:500;cursor:pointer;text-decoration:underline">Search online</button></div>';
     return;
   }
   el.innerHTML='<div style="font-size:12px;color:var(--color-text-secondary)">Searching...</div>';
@@ -16205,6 +16211,7 @@ window._e9PickSearch=function(ri){
 };
 window._e9OnlineSearch=async function(q){
   const el=document.getElementById('e9CourseResults');if(!el)return;
+  q=_gcaQ(q,'e9CourseSearch');if(!q){el.innerHTML=_GCA_TYPE;return;}
   try{
     const r=await fetch(GOLF_PROXY+'?action=search&query='+encodeURIComponent(q),{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}});
     _gcaLimitErr(r);
