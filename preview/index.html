@@ -2743,7 +2743,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.43';
+const APP_VERSION='v125.44';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -3158,12 +3158,59 @@ const _s2Dirty={trip:false,players:false,expenses:false,scores:new Set()};
 // null for the hole: the writer's null-skip is load-bearing, it is what stops a device
 // with stale state from overwriting the other foursome's scores.
 const _s2Cleared=new Set();
+// v125.44: unsaved work kept on the phone. One entry per trip: the working copy (WK, STATE), what is still unsaved,
+// whose it is, and whether the trip has been on the server. Written whenever something is marked unsaved, dropped
+// once a save leaves nothing unsaved. Read by viewTrip; cleared by sign-out and by deleting the trip.
+const LS_PEND='tt_pending_v1';
+const _pendConfirmed=new Set();
+let _pendQ=false;
+function _pendAll(){try{const m=JSON.parse(localStorage.getItem(LS_PEND)||'{}');return (m&&typeof m==='object')?m:{};}catch(e){return {};}}
+function _pendPutAll(m){try{if(Object.keys(m).length)localStorage.setItem(LS_PEND,JSON.stringify(m));else localStorage.removeItem(LS_PEND);return true;}catch(e){console.warn('[pend] could not save to the phone',e);return false;}}
+function _pendHas(id){return !!(id&&_pendAll()[id]);}
+function _pendDrop(id){const m=_pendAll();if(m[id]){delete m[id];_pendPutAll(m);}}
+function _pendGet(id){
+  if(!_pendReady())return null;
+  const m=_pendAll(),e=m[id];if(!e||!e.WK||!e.STATE)return null;
+  const u=(typeof sbCurrentUser==='function'&&sbCurrentUser())||null;
+  if(e.uid&&(!u||u.id!==e.uid)){delete m[id];_pendPutAll(m);return null;}
+  return e;
+}
+// typeof guards: older gate rigs extract these functions without the save state (the project's rig hazard).
+function _pendReady(){return typeof _s2Dirty!=='undefined'&&typeof _s2Cleared!=='undefined'&&typeof _pendConfirmed!=='undefined';}
+function _pendSave(){
+  if(!_pendReady())return;
+  if(typeof WK==='undefined'||!WK||!STATE||!WK._id||isReadOnly)return;
+  const id=WK._id;
+  if(!_s2HasUnsaved()){_pendDrop(id);return;}
+  const m=_pendAll(),prev=m[id],u=(typeof sbCurrentUser==='function'&&sbCurrentUser())||null;
+  m[id]={v:1,id:id,uid:u?u.id:null,ts:Date.now(),confirmed:!!(prev&&prev.confirmed)||_pendConfirmed.has(id),
+    dirty:{trip:!!_s2Dirty.trip,players:!!_s2Dirty.players,expenses:!!_s2Dirty.expenses,scores:[..._s2Dirty.scores],cleared:[..._s2Cleared]},
+    WK:WK,STATE:STATE};
+  _pendPutAll(m);
+}
+// Coalesced to the end of the current task, so the copy includes every change the tap made, and lands before the
+// next event (an app closed after a tap still has it).
+function _pendSoon(){if(!_pendReady())return;if(typeof queueMicrotask!=='function'){_pendSave();return;}if(_pendQ)return;_pendQ=true;queueMicrotask(function(){_pendQ=false;_pendSave();});}
+// Opening a trip: the one on screen keeps its copy, and the new one starts with nothing unsaved.
+function _pendSwitch(){
+  if(!_pendReady())return;
+  if(typeof WK!=='undefined'&&WK&&STATE&&_s2HasUnsaved())_pendSave();
+  _s2Dirty.trip=false;_s2Dirty.players=false;_s2Dirty.expenses=false;_s2Dirty.scores.clear();_s2Cleared.clear();
+}
+function _pendRestore(e){
+  if(!_pendReady())return;
+  const d=e.dirty||{};
+  _s2Dirty.trip=!!d.trip;_s2Dirty.players=!!d.players;_s2Dirty.expenses=!!d.expenses;
+  (d.scores||[]).forEach(function(k){_s2Dirty.scores.add(k);});(d.cleared||[]).forEach(function(k){_s2Cleared.add(k);});
+  if(e.confirmed)_pendConfirmed.add(e.id);
+}
 
 function s2MarkDirty(types,scoreKey){
   if(types.includes('trip'))_s2Dirty.trip=true;
   if(types.includes('players'))_s2Dirty.players=true;
   if(types.includes('expenses'))_s2Dirty.expenses=true;
   if(types.includes('score')&&scoreKey)_s2Dirty.scores.add(scoreKey);
+  _pendSoon();
 }
 
 // Deterministic IDs — stable, no UUID generation needed
@@ -3415,7 +3462,7 @@ async function s2WriteActive(){
         },
         updated_at:new Date().toISOString()
       }],undefined,'updated_at');
-      if(!_tripRes)_s2Dirty.trip=true;
+      if(!_tripRes)_s2Dirty.trip=true;else if(typeof _pendConfirmed!=='undefined')_pendConfirmed.add(tripId);
       // Self-echo suppression. autoSave marks the trip dirty every hole, so this write
       // bumps the server-stamped trips.updated_at every hole. The beacon watermark was
       // only advanced when the SYNC applied a rebuild, never when WE wrote, so the next
@@ -3542,6 +3589,7 @@ async function s2WriteActive(){
   }catch(e){
   }finally{
     _s2WriteInFlight=false;
+    if(WK&&WK._id===tripId)_pendSave();
     if(_s2PlayersRefused){
       _s2PlayersRefused=false;
       showMsg('Players changed on another phone. Updating to match.');
@@ -3636,6 +3684,7 @@ async function s2ReadTrip(tripId){
     if(!tr.ok){console.warn('[s2ReadTrip] trips fetch not ok:',tr.status);return null;}
     const tripRows=await tr.json();
     if(!tripRows||!tripRows.length){console.warn('[s2ReadTrip] no trip row for',tripId);return S2_ABSENT;}
+    if(typeof _pendConfirmed!=='undefined')_pendConfirmed.add(tripId);
     const t=tripRows[0];
     console.log('[s2ReadTrip] trip row found, rounds_data:',t.rounds_data?.length,'summary:',!!t.summary);
 
@@ -4420,6 +4469,8 @@ async function sbSignOut(){
   sbSaveSession(null);
   _clearActiveTripCrumb();
   try{localStorage.removeItem(LS_GROUPS_CACHE);}catch(e){}
+  // v125.44: the next person on this phone must not send this account's unsaved work.
+  try{localStorage.removeItem(LS_PEND);}catch(e){}
   sbShowLogin();
 }
 
@@ -5605,7 +5656,8 @@ async function renderHomeDashboard(){
         if(t.is_quick_round)return results[results.length-1]===null;
         return false;
       };
-      const pruned=local.filter(function(t){return allSbIds.has(t.id)||_failed(t);});
+      // v125.44: a trip with a copy saved on this phone has work the server has not seen; keep it.
+      const pruned=local.filter(function(t){return allSbIds.has(t.id)||_failed(t)||_pendHas(t.id);});
       if(pruned.length<local.length){changed=true;local.splice(0,local.length,...pruned);}
       if(changed){saveTrips(local);renderHomeDashboard();}
     });
@@ -6974,7 +7026,24 @@ function viewTrip(id,opts){
   _writeActiveTripCrumb(id);
   // Step 3: try new schema first, fall back to blob
   s2ReadTrip(id).then(s2data=>{
-    if(s2data&&s2data!==S2_ABSENT){
+    // v125.44: a copy saved on this phone holds work the server has not seen.
+    const _pd=_pendGet(id);let _pdSend=false;
+    if(_pd&&s2data===S2_ABSENT&&_pd.confirmed){
+      // Deleted on another phone: the deletion wins (Kyle, 1 Nov).
+      _pendDrop(id);
+      try{localStorage.setItem(LS_TRIPS,JSON.stringify(loadTrips().filter(t=>t.id!==id)));}catch(e){}
+      const _dc=_readActiveTripCrumb();if(_dc&&_dc.id===id)_clearActiveTripCrumb();
+      showHome();
+      _viewTripToast("This trip was deleted on another phone. Your unsent changes weren't kept.");
+      dismissSplash();
+      return;
+    }
+    if(_pd){
+      _pendSwitch();
+      WK=JSON.parse(JSON.stringify(_pd.WK));STATE=JSON.parse(JSON.stringify(_pd.STATE));
+      _pendRestore(_pd);_pdSend=true;
+    } else if(s2data&&s2data!==S2_ABSENT){
+      _pendSwitch();
       WK=s2data.WK;
       STATE=s2data.STATE;
     } else {
@@ -7017,6 +7086,12 @@ function viewTrip(id,opts){
     if(!STATE._resumeAllDone&&WK.rounds[STATE.currentRound]&&isMultiFlight(STATE.currentRound)){const _fp=getFlightPick(STATE.currentRound);if(_fp!==null)STATE.currentHole=_flightResumeHole(STATE.currentRound,_fp);}
     const _allDone=STATE._resumeAllDone;delete STATE._resumeAllDone;launchMainApp();if(_allDone)setView('board');s2ValidateOnLoad();
     dismissSplash();
+    // v125.44: send what the copy held, then read the server so other phones' changes come in.
+    if(_pdSend&&navigator.onLine&&_s2HasUnsaved()){
+      Promise.resolve(s2WriteActive()).then(function(){
+        if(!_s2HasUnsaved()&&WK&&WK._id===id&&typeof _syncApplyTripRebuild==='function'){_syncTripUpdatedAt=null;return _syncApplyTripRebuild(id);}
+      }).catch(function(){});
+    }
   });}
 // Shared rehydration path for a freshly-loaded WK/STATE pair — used on initial trip
 // open (viewTrip) AND by the device-sync poll's trip-row rebuild. Keeping this as one
@@ -7367,7 +7442,7 @@ async function _commitDeleteTrip(id,btn,gid){
   // network delete is several sequential DELETEs; blocking the UI on it felt like a hang.
   // _deletedTripIds keeps the home reconciliation from re-adding the trip while that network
   // delete is in flight. A failed network delete self-heals: the trip reappears on next sync.
-  _deletedTripIds.add(id);
+  _deletedTripIds.add(id);_pendDrop(id);
   const _crumb=_readActiveTripCrumb();if(_crumb&&_crumb.id===id)_clearActiveTripCrumb();
   const trips=loadTrips().filter(t=>t.id!==id);
   saveTrips(trips);
@@ -11538,7 +11613,7 @@ function _clearHoleForFlight(r,hi){
   const _scoped=_mf&&_fp!==null;
   _flightNeedIdxs(r).forEach(function(pi){
     if(STATE.scores[r]&&STATE.scores[r][hi])STATE.scores[r][hi][pi]=null;
-    _s2Cleared.add(r+':'+hi+':'+pi);
+    _s2Cleared.add(r+':'+hi+':'+pi);_pendSoon();
   });
   const _clr=function(rows){
     if(!rows)return;
