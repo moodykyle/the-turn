@@ -2743,7 +2743,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.44';
+const APP_VERSION='v125.45';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -6894,6 +6894,7 @@ function _qrLaunchRound(){
   if(!_qrS||!_qrS.course){if(_qrS){_qrS.step=2;}_qrRender();var _cn=document.getElementById('qrCourseNeed');if(_cn)_cn.style.display='block';return;}
   // MOVED HERE FROM startQuickRound, v120.19. Same ordering requirement as _twLaunch:
   // above initState, or the team builders read the outgoing trip's foursomes.
+  _pendSwitch();
   WK=null;STATE=null;isReadOnly=false;viewingTripId=null;
   const n=_qrS.n;
   const cn=_qrS.course||Object.keys(CATALOG)[0];
@@ -6966,6 +6967,7 @@ function _qrLaunchRound(){
   initState(_qrS.netOffLow||false);
   launchMainApp();
   autoSave();
+  _writeActiveTripCrumb(WK._id); // v125.45: a new round reopens on launch like an opened one
   s2WriteActive();
 }
 
@@ -8481,6 +8483,7 @@ function _twLaunch(){
   // trip's Vegas/Skins/Hammer teams from the previous trip's foursomes. Committing
   // to the new trip is the moment the old one stops mattering - not opening a
   // wizard that has a Cancel on its first step.
+  _pendSwitch();
   WK=null;STATE=null;isReadOnly=false;viewingTripId=null;
   const s=_twS;
   const nP=s.selectedMembers.length;
@@ -8542,6 +8545,7 @@ function _twLaunch(){
   initState(s.netOffLow);
   launchMainApp();
   autoSave();
+  _writeActiveTripCrumb(WK._id); // v125.45: a new trip reopens on launch like an opened one
   s2WriteActive();
   if(s.oneScreen){if(s.fmt==='cup'&&typeof window._cupOn==='function')window._cupOn(true);setView('setup');setOptPanel('menu');}
 }
