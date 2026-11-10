@@ -2743,7 +2743,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.47';
+const APP_VERSION='v125.48';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5170,11 +5170,11 @@ async function loadCourses(){
   }catch(e){}
   // Try Supabase first
   try{
-    const r=await fetch(SB_URL+'/rest/v1/courses?select=name,display_name,slope,rating,holes,tees,source,external_id,api_fetched_at,location&order=name.asc',{
+    // v125.48: in pages, past the server's 1,000-row cap. null (a failed page) falls back to the saved copy.
+    const rows=await _sbAllRows(SB_URL+'/rest/v1/courses?select=name,display_name,slope,rating,holes,tees,source,external_id,api_fetched_at,location&order=name.asc',{
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbBearer()}
     });
-    if(r.ok){
-      const rows=await r.json();
+    {
       if(rows&&rows.length){
         rows.forEach(c=>{
           if(c.name&&c.holes)CATALOG[c.name]={
