@@ -2743,7 +2743,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.48';
+const APP_VERSION='v125.49';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -4647,14 +4647,19 @@ async function sbGetUserGroups(){
 async function sbCreateGroup(name){
   const user=sbCurrentUser();
   if(!user)return null;
-  const join_code=sbGenerateJoinCode();
   try{
-    const gr=await fetch(SB_URL+'/rest/v1/groups',{
-      method:'POST',
-      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+(_sbSession?.access_token||SB_KEY),'Content-Type':'application/json','Prefer':'return=representation'},
-      body:JSON.stringify({name:name.trim(),join_code,created_by:user.id})
-    });
-    if(!gr.ok)return null;
+    // v125.49: a random code another group already holds comes back 409 (unique, any case); try a new one.
+    let gr=null;
+    for(let _t=0;_t<5;_t++){
+      const join_code=sbGenerateJoinCode();
+      gr=await fetch(SB_URL+'/rest/v1/groups',{
+        method:'POST',
+        headers:{'apikey':SB_KEY,'Authorization':'Bearer '+(_sbSession?.access_token||SB_KEY),'Content-Type':'application/json','Prefer':'return=representation'},
+        body:JSON.stringify({name:name.trim(),join_code,created_by:user.id})
+      });
+      if(gr.status!==409)break;
+    }
+    if(!gr||!gr.ok)return null;
     const grRows=await gr.json();
     const group=grRows[0];
     const meta=user.user_metadata||{};
@@ -6244,10 +6249,9 @@ window._customizeJoinCodeSubmit=async function(gid){
   if(!/^[A-Z0-9]+$/.test(code)){window._grpShowErr('Join code can only contain letters and numbers.');return;}
   try{
     var tok=_sbSession?.access_token||SB_KEY;
-    var check=await fetch(SB_URL+'/rest/v1/groups?join_code=eq.'+encodeURIComponent(code)+'&select=group_id',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Accept':'application/json'}});
-    var existing=await check.json();
-    if(existing.length>0&&existing[0].group_id!==gid){window._grpShowErr(code+' is already taken. Pick a different code.');return;}
+    // v125.49: other groups can't be read (RLS), so the database decides: a taken code is a 409 (unique, any case).
     var r=await fetch(SB_URL+'/rest/v1/groups?group_id=eq.'+encodeURIComponent(gid),{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({join_code:code})});
+    if(r.status===409){window._grpShowErr(code+' is already taken. Pick a different code.');return;}
     if(r.ok||r.status===204){if(_groupCache[gid])_groupCache[gid].join_code=code;renderGroupList();window.openGroupSettings(gid);renderGroupPage(gid);}
     else{window._grpShowErr('Could not update the join code. Please try again.');}
   }catch(e){window._grpShowErr('Could not update the join code. Please try again.');}
