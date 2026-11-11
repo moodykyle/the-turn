@@ -281,7 +281,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(52%) sepia(9
 .score-wrap{display:flex;align-items:center;gap:5px;}
 .adj{width:36px;height:36px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--color-text-primary);user-select:none;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
 .score-block{display:flex;flex-direction:column;align-items:center;width:38px;}
-.score-val{font-size:20px;font-weight:500;line-height:1.1;}.ob-tm{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1.5;}
+.score-val{font-size:20px;font-weight:500;line-height:1.1;}.ob-tm{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1.5;}.sc-grid td[rowspan]{vertical-align:middle;}
 .score-val.eagle{color:#0F6E56;}.score-val.birdie{color:#1D9E75;}.score-val.par{color:var(--color-text-primary);}.score-val.bogey{color:#D85A30;}.score-val.double{color:#993C1D;}
 .player-row.pr-done .player-name{font-size:17px;}.player-row.pr-done .score-val{font-size:24px;}.player-row.pr-done .stroke-tag{font-size:12px;}.player-row.pr-done .net-val{font-size:11px;}
 .net-val{font-size:10px;color:var(--color-text-secondary);line-height:1.2;}
@@ -2743,7 +2743,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.54';
+const APP_VERSION='v125.55';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -9817,10 +9817,11 @@ function renderScorecard(){
   // Snake holder for the ACTIVE foursome at this hole (the card only shows that foursome).
   const _snkHolder=gameOnFs('snake',r,_fp)?currentSnakeHolderForFlight(r,hi,_fp):null;
   // v125.52: a one-ball cup match shows a row per side, on its first player; a tap there writes both (adjScore).
+  const _rg=typeof _rdGross==='function'&&_rdGross(r);
   const _obFi=_fp==null?_curFi(r):_fp,_obT=typeof _cupObTeams==='function'?_cupObTeams(r,_obFi):null,_obN=_obT?_cupNames(r,_obFi):null;
   if(_obT)displayOrder=displayOrder.filter(i=>i!==_obT[0][1]&&i!==_obT[1][1]);
   const _obRow=i=>{if(!_obT)return '';const sd=_obT[0][0]===i?0:_obT[1][0]===i?1:-1;if(sd<0)return '';const nm=_obN?(sd===0?_obN.A:_obN.B):'',cs=_obN?((sd===0?_obN.sa:_obN.sb)===0?'a':'b'):(sd?'b':'a');return '<span class="ob-tm cpl-'+cs+'">TEAM '+_gtEsc(String(nm).toUpperCase())+'</span>'+displayName(_obT[sd][0])+'<br>'+displayName(_obT[sd][1]);};
-  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag==='FIELD'?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const grTick=gameOn('grinders',r)&&grPlayerOk(r,i,hi)?`<span class="gr-tick" title="Par or better">&#10003;</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const _flk=isFlightLocked(r,_fp==null?_curFi(r):_fp);const roStyle=_pvLock?'pointer-events:none':(isReadOnly?'opacity:0.5;pointer-events:none':((_flk||_deadH)?'pointer-events:none':''));const _rowDim=((_pvLock&&!_flk)||_deadH)?'opacity:0.42;':'';const _minusBtn=(_pvLock||_deadH||_flk)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':((_pvLock||_flk)?'':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=(isWolfPlayer?'player-row wolf-player-row':'player-row')+(_flk?' pr-done':'');const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbLtr(_fbRowDiv[i])}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="player-info"><div class="player-name">${_obRow(i)||displayName(i)}${snakeBadge}${twosBadge}${grTick}</div>${_obRow(i)?'<span class="stroke-tag stroke-no">one ball, gross</span>':stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null&&!_obRow(i)?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('')+_grHoleChip(r,_fp,hi);
+  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag==='FIELD'?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const grTick=gameOn('grinders',r)&&grPlayerOk(r,i,hi)?`<span class="gr-tick" title="Par or better">&#10003;</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const _flk=isFlightLocked(r,_fp==null?_curFi(r):_fp);const roStyle=_pvLock?'pointer-events:none':(isReadOnly?'opacity:0.5;pointer-events:none':((_flk||_deadH)?'pointer-events:none':''));const _rowDim=((_pvLock&&!_flk)||_deadH)?'opacity:0.42;':'';const _minusBtn=(_pvLock||_deadH||_flk)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':((_pvLock||_flk)?'':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=(isWolfPlayer?'player-row wolf-player-row':'player-row')+(_flk?' pr-done':'');const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbLtr(_fbRowDiv[i])}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="player-info"><div class="player-name">${_obRow(i)||displayName(i)}${snakeBadge}${twosBadge}${grTick}</div>${_obRow(i)?'<span class="stroke-tag stroke-no">one ball, gross</span>':_rg?'<span class="stroke-tag stroke-no">gross</span>':stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null&&!_rg&&!_obRow(i)?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('')+_grHoleChip(r,_fp,hi);
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
   try{renderNinesBox();}catch(ne){console.error('renderNinesBox error:',ne);const nw=document.getElementById('ninesBoxWrap');if(nw)nw.innerHTML='';}
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
@@ -11673,7 +11674,7 @@ function _flightsAccent0(i){return ['#3B82F6','#1D9E75','#F59E0B','#8B5CF6','#EC
 function renderSCGrid(){
   const r=STATE.scRound;
   // v125.54: one ball a pair plays gross: no strokes on the grid, Net is the gross total.
-  const _obG=typeof _cupOneBall==='function'&&_cupOneBall(r);
+  const _obG=typeof _rdGross==='function'&&_rdGross(r);
   _scGridFilterRender();
   const activeHoles=holesForRound(r);
   const off=holeOffset(r);
@@ -11717,6 +11718,10 @@ function renderSCGrid(){
   hcpRow+=`<td class="total-col"></td><td class="net-col"></td></tr>`;
   function _scGridRowsFor(idxs,fi,block){
     let rows='';
+    // v125.55: a one-ball pair shares one line of cells: the lead's span both rows, the partner keeps a name row.
+    const _gT=(fi!==null&&fi!==undefined&&typeof _cupObTeams==='function')?_cupObTeams(r,fi):null,_gMate={},_gLead={};
+    if(_gT){[0,1].forEach(sd=>{_gLead[_gT[sd][0]]=1;_gMate[_gT[sd][1]]=1;});const _o=[];idxs.forEach(pi=>{if(_gMate[pi])return;_o.push(pi);if(_gLead[pi]){const m=_gT[0][0]===pi?_gT[0][1]:_gT[1][1];if(idxs.indexOf(m)>=0)_o.push(m);}});idxs=_o;}
+    const _sp=(pi,html)=>_gLead[pi]?html.replace(/<td/g,'<td rowspan="2"'):html;
     // Holes past THIS foursome's end hole were never played. Header rows stay neutral
     // because they are shared by every foursome in the All view and cannot be true for
     // two different end holes at once. Only the player cells stripe.
@@ -11752,15 +11757,17 @@ function renderSCGrid(){
       const _rc=['pr',block&&_k===0?'fs-top':'',block&&_k===idxs.length-1?'fs-bot':'',_k%2?'alt':''].filter(Boolean).join(' ');
       rows+=`<tr class="${_rc}">`;
       rows+=`<td class="player-col">${displayName(pi)}</td>`;
+      if(_gMate[pi]){rows+=`</tr>`;return;}
+      let _cells='';
       if(_scSplit){
-        cells.forEach((c,i)=>{rows+=c;if(i===_scSplit-1)rows+=`<td class="turn-col">${hasOut?tOut:''}</td>`;});
-        rows+=`<td class="turn-col">${hasIn?tIn:''}</td>`;
+        cells.forEach((c,i)=>{_cells+=c;if(i===_scSplit-1)_cells+=`<td class="turn-col">${hasOut?tOut:''}</td>`;});
+        _cells+=`<td class="turn-col">${hasIn?tIn:''}</td>`;
       }else{
-        rows+=cells.join('');
+        _cells+=cells.join('');
       }
-      rows+=`<td class="total-col">${hasAny?tG:''}</td>`;
-      rows+=`<td class="net-col">${hasAny?tN:''}</td>`;
-      rows+=`</tr>`;
+      _cells+=`<td class="total-col">${hasAny?tG:''}</td>`;
+      _cells+=`<td class="net-col">${hasAny?tN:''}</td>`;
+      rows+=_sp(pi,_cells)+`</tr>`;
     });
     return rows;
   }
@@ -14754,6 +14761,9 @@ function _cupUnits(r){const N=(WK.players||[]).length,out=[];if(!_cupOneBall(r))
   for(let i=0;i<N;i++)if(!seen[i])out.push([i]);return out;}
 // A unit's score on a hole: a player's own, or the pair's one ball (the lower if the two ever differ).
 function _cupUV(u,f){if(u.length===1)return f(u[0]);const v=u.map(f).filter(function(x){return x!=null;});return v.length?Math.min.apply(null,v):null;}
+// v125.55: a round no one nets. Today that is a cup Scramble or Alt shot round; anything that shows strokes or a net
+// asks this, not the format, so a future gross round plugs in here.
+function _rdGross(r){return _cupOneBall(r);}
 function _cupOneBall(r){if(!WK||!WK.cup||!WK.cup.on||!WK.rounds||!WK.rounds[r]||WK.rounds[r].isE9)return false;const raw=WK.cup.lu&&WK.cup.lu[_cupRid(r)];return !!raw&&(raw.fmt==='sc'||raw.fmt==='as');}
 // v125.1: a round's lineup. WK.cup.lu[rid] = {fmt:'bb'|'sg'|'off', m:[[slotsA,slotsB],...]}, slots are pids or null,
 // two a side for best ball, one for singles. Read through _cupLuGet, which never writes: it sizes the matches to the
