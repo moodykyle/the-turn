@@ -1039,6 +1039,10 @@ body.force-dark .gs-net.warn{background:#3A2E10;border-color:#6B5418}body.force-
 .gs-setup-toggle .gs-st small{font-size:12px;font-weight:400;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gs-setup-toggle .gs-setup-chevron{font-size:18px;line-height:1;color:var(--color-text-tertiary)}
 .gs-setup-toggle.open .gs-setup-chevron{transform:rotate(90deg)}
+/* v125.56, Kyle (option A): closed, the settings row is a quiet grey line, not a card. */
+.gs-setup-toggle:not(.open){background:none;box-shadow:none!important;padding:10px 4px}
+.gs-setup-toggle:not(.open) .gs-st b{font-size:13px;font-weight:500;color:var(--color-text-secondary)}
+.gs-setup-toggle:not(.open) .gs-setup-chevron{font-size:16px;color:var(--color-text-secondary)}
 /* v124.9: Match Play team card. Team colours: green A, blue B; dark uses a readable blue. */
 :root{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpAt:#FFFFFF;--mpBt:#FFFFFF;--mpPb:#FBF1DA;--mpPt:#8A6410;--mpFt:#E3DCC9;--mpFtB:#D6CEB8}
 @media(prefers-color-scheme:dark){:root{--mpA:#3CC79A;--mpB:#7DB3F0;--mpAf:#1D9E75;--mpBf:#7DB3F0;--mpAt:#06120D;--mpBt:#08162A;--mpPb:#2A2410;--mpPt:#EFC456;--mpFt:var(--color-background-secondary);--mpFtB:var(--color-border-tertiary)}}
@@ -2743,7 +2747,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.55';
+const APP_VERSION='v125.56';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5306,6 +5310,8 @@ function _gsNetSubText(html){
 function gameNetNote(gid,r,fi){
   if(!WK||!WK.rounds||!WK.rounds[r])return null;
   if(gid==='snake'||gid==='twos'||gid==='grinders')return null;
+  // v125.56: a gross round has no strokes to explain.
+  if(typeof _rdGross==='function'&&_rdGross(r))return{html:'This round plays <b>gross</b>, no strokes.',warn:false,change:false};
   const netting=!!(STATE.netOffFlightLow||STATE.netOffLow);
   const multi=isMultiFlight(r);
   const full={html:'Everyone plays their <b>full handicap</b>. No strokes come off a low man.',warn:false,change:true};
@@ -18754,9 +18760,8 @@ function _gsSetupPlaceholder(def,r){
   const _sharedHere=_gsSharedHere(def,r);
   const _removeBtn=_locked?'':`<button class="gs-remove-btn" onclick="window._gsRemoveGame('${def.id}')">Remove ${def.label} from ${def.tripLevel?'trip':_sharedHere?'all foursomes':'this round'}</button>`;
   const _bodyCls=_locked?'gs-setup-body gs-setup-locked':'gs-setup-body';
-  // v124.9: "<Game> settings", with the strokes rule under it when there is one and it is not a warning.
-  const _sub=window._gsNetSub||'';
-  return `<button class="gs-setup-toggle${isOpen?' open':''}" onclick="window._gsToggleSetup('${def.id}')"><span class="gs-st"><b>${def.label} settings</b>${_sub?`<small>${_sub}</small>`:''}</span><span class="gs-setup-chevron">›</span></button>`+
+  // v124.9: "<Game> settings". v125.56: no strokes line under it; the row is quiet, a warning still sits on top.
+  return `<button class="gs-setup-toggle${isOpen?' open':''}" onclick="window._gsToggleSetup('${def.id}')"><span class="gs-st"><b>${def.label} settings</b></span><span class="gs-setup-chevron">›</span></button>`+
     (isOpen?`<div class="${_bodyCls}">${_note}${_gsSetupBody(def,r)}${_removeBtn}</div>`:'');
 }
 function _gsSnakeSetupBody(r){
@@ -18875,7 +18880,7 @@ function renderGamesContent(){
     // still sits up here, amber, where it cannot be missed.
     _nn.innerHTML=(_nt&&_nt.warn)?('<div class="gs-net warn"><div class="t">'+_nt.html+'</div>'
       +(_nt.change&&canEditTrip()?'<div class="c" onclick="_gsNetJump()">Fix</div>':'')+'</div>'):'';
-    window._gsNetSub=(_nt&&!_nt.warn)?_gsNetSubText(_nt.html):'';
+    // v125.56: the settings row no longer shows the strokes rule, so nothing reads _gsNetSub; it is gone.
   }
   if(g==='hammer')renderHammerRound();
   else if(g==='mp')renderMPRound();
