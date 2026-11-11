@@ -2743,7 +2743,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.49';
+const APP_VERSION='v125.50';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5889,6 +5889,10 @@ window.openGroupPage = function(gid){
 };
 
 window._gpBack=function(){window.homeNavGo(_gpFrom||'groups');};
+// v125.50: a group deleted or left closes its own page, if that page is on screen.
+window._gpGoneBack=function(gid){var sc=document.getElementById('homeGroupScreen');if(sc&&sc.style.display!=='none'&&_gpGid===gid)window._gpBack();};
+// v125.50: a group deleted or left leaves the phone's saved list too, so a failed refetch can't bring it back.
+function _grpForget(gid){delete _groupCache[gid];try{var d=_loadCachedGroups().filter(function(g){return g&&g.group_id!==gid;});localStorage.setItem(LS_GROUPS_CACHE,JSON.stringify(d));}catch(e){}}
 window._gpSetTab=function(gid,tab){_gpTab=tab;renderGroupPage(gid);window.scrollTo(0,0);};
 window.closeGroupPage = function(){
   document.getElementById('homeGroupScreen').style.display='none';
@@ -6179,8 +6183,10 @@ window._removeMemberGo = async function(gid,memberId,name){
       if(_groupCache[gid])delete _groupCache[gid]._members;
       renderGroupPage(gid);
       _loadGroupMembersIntoTile(gid);
+      return true;
     } else {showMsg('Remove failed. Please try again.');}
   }catch(e){showMsg('Remove failed. Please try again.');}
+  return false;
 };
 
 // ── GROUP SETTINGS SHEET ────────────────────────────────────────────────────
@@ -6276,7 +6282,7 @@ window._deleteGroupConfirm=async function(gid){
   try{
     var tok=_sbSession?.access_token||SB_KEY;
     var r=await fetch(SB_URL+'/rest/v1/groups?group_id=eq.'+encodeURIComponent(gid),{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok}});
-    if(r.ok||r.status===204){delete _groupCache[gid];sbSetActiveGroup(null);window.closeHmMemberSheet();renderGroupList();}
+    if(r.ok||r.status===204){_grpForget(gid);sbSetActiveGroup(null);window.closeHmMemberSheet();renderGroupList();window._gpGoneBack(gid);}
     else{window._grpShowErr('Could not delete the group. It may still have trips or rounds attached.');}
   }catch(e){window._grpShowErr('Could not delete the group. It may still have trips or rounds attached.');}
 };
@@ -6289,8 +6295,9 @@ window._leaveGroup = function(gid,name){
       const g=_groupCache[gid];
       const me=(g?._members||[]).find(m=>m.user_id===user.id);
       if(!me)return;
-      await window._removeMemberGo(gid,me.member_id,me.display_name||'yourself');
+      if(!(await window._removeMemberGo(gid,me.member_id,me.display_name||'yourself')))return;
       if(_activeGroup&&_activeGroup.group_id===gid)sbSetActiveGroup(null);
+      _grpForget(gid);renderGroupList();window._gpGoneBack(gid);
     }});
 };
 
