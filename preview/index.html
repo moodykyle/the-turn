@@ -2743,7 +2743,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.53';
+const APP_VERSION='v125.54';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -11672,6 +11672,8 @@ function _scGridFilterPick(i){STATE.scGridFlightSel=i;_scGridFilterRender();rend
 function _flightsAccent0(i){return ['#3B82F6','#1D9E75','#F59E0B','#8B5CF6','#EC4899'][i%5];}
 function renderSCGrid(){
   const r=STATE.scRound;
+  // v125.54: one ball a pair plays gross: no strokes on the grid, Net is the gross total.
+  const _obG=typeof _cupOneBall==='function'&&_cupOneBall(r);
   _scGridFilterRender();
   const activeHoles=holesForRound(r);
   const off=holeOffset(r);
@@ -11724,7 +11726,7 @@ function renderSCGrid(){
       const cells=activeHoles.map((hole,i)=>{
         const hi=i+off;
         const _gv=_gvShort&&hi>=_gvEnd;
-        const g=STATE.scores[r][hi][pi],st=strokes(pi,hi,r);
+        const g=STATE.scores[r][hi][pi],st=_obG?0:strokes(pi,hi,r);
         const dot=st>=2?`<div class="dot-row"><span class="stroke-dot"></span><span class="stroke-dot"></span></div>`:st===1?`<div class="dot-row"><span class="stroke-dot"></span></div>`:st<=-1?('<div class="dot-row">'+'<span class="stroke-dot stroke-dot-give"></span>'.repeat(Math.min(-st,2))+'</div>'):`<div class="dot-row"></div>`;
         // Show the stroke dots on unplayed holes too, so you can see where shots fall
         // BEFORE you get there. Previously this emitted an empty dot-row and threw the
@@ -11745,7 +11747,7 @@ function renderSCGrid(){
       const hasIn=activeHoles.slice(_scSplit).some((_,i)=>STATE.scores[r][i+_scSplit+off][pi]!==null);
       const tOut=activeHoles.slice(0,_scSplit).reduce((a,_,i)=>a+(STATE.scores[r][i+off][pi]||0),0);
       const tIn=activeHoles.slice(_scSplit).reduce((a,_,i)=>a+(STATE.scores[r][i+_scSplit+off][pi]||0),0);
-      const tN=activeHoles.reduce((a,_,i)=>{const n=getNet(pi,i+off,r);return n!==null?a+n:a;},0);
+      const tN=activeHoles.reduce((a,_,i)=>{const n=_obG?STATE.scores[r][i+off][pi]:getNet(pi,i+off,r);return n!=null?a+n:a;},0);
       // v124.41: the block's first and last rows round its corners; every other row is tinted.
       const _rc=['pr',block&&_k===0?'fs-top':'',block&&_k===idxs.length-1?'fs-bot':'',_k%2?'alt':''].filter(Boolean).join(' ');
       rows+=`<tr class="${_rc}">`;
