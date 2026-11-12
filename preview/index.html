@@ -281,7 +281,21 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(52%) sepia(9
 .score-wrap{display:flex;align-items:center;gap:5px;}
 .adj{width:36px;height:36px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--color-text-primary);user-select:none;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
 .score-block{display:flex;flex-direction:column;align-items:center;width:38px;}
-.score-val{font-size:20px;font-weight:500;line-height:1.1;}.ob-tm{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1.5;}.sc-grid td[rowspan]{vertical-align:middle;}
+.score-val{font-size:20px;font-weight:500;line-height:1.1;}.ob-tm{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1.5;}
+/* v125.58: the trip scramble on Scores: team label, Team scores box, the format line. */
+.ob-tm.ob-tr{color:var(--color-text-secondary);}
+.tr-box{margin-top:0.75rem;}
+.tr-row{display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:0.5px solid var(--color-border-tertiary);}
+.tr-row:not(.mine){opacity:.6;}
+.tr-pos{width:24px;font-size:13px;color:var(--color-text-secondary);}
+.tr-nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;}
+.tr-row.mine .tr-nm{font-weight:600;}
+.tr-th{min-width:20px;text-align:right;font-size:12px;color:var(--color-text-secondary);}
+.tr-tp{width:36px;text-align:right;font-size:15px;font-weight:600;}
+.fl-card{margin:0 16px 10px;padding:0;}
+.fl-card .su-rdb{padding:12px 14px;}
+.fl-chg{font-size:14px;font-weight:600;flex-shrink:0;}
+.rs-play{margin-top:8px;}.sc-grid td[rowspan]{vertical-align:middle;}
 .score-val.eagle{color:#0F6E56;}.score-val.birdie{color:#1D9E75;}.score-val.par{color:var(--color-text-primary);}.score-val.bogey{color:#D85A30;}.score-val.double{color:#993C1D;}
 .player-row.pr-done .player-name{font-size:17px;}.player-row.pr-done .score-val{font-size:24px;}.player-row.pr-done .stroke-tag{font-size:12px;}.player-row.pr-done .net-val{font-size:11px;}
 .net-val{font-size:10px;color:var(--color-text-secondary);line-height:1.2;}
@@ -2430,8 +2444,9 @@ body.force-light .lp-view,body.force-light .lp-you{color:#13795B;}body.force-lig
       <div id="holeDetailWrap">
         <div class="hole-nav"><button class="nav-btn" id="prevBtn" onclick="changeHole(-1)" disabled>&#8592;</button><div style="text-align:center"><div class="hole-label" id="holeLabel"></div><span id="viewOnlyPill" style="display:none;align-items:center;gap:3px;font-size:9px;font-weight:500;letter-spacing:0.5px;color:#e0b44a;background:rgba(224,180,74,0.14);padding:2px 8px;border-radius:10px;margin-top:3px"><i class="ti ti-eye" style="font-size:11px" aria-hidden="true"></i>VIEW ONLY</span><div style="font-size:13px;color:var(--color-text-secondary)" id="holeMeta"></div></div><button class="nav-btn" id="nextBtn" onclick="changeHole(1)">&#8594;</button></div>
         <div class="banner" id="banner"></div>
+        <div id="fmtLineWrap"></div>
         <div class="scorecard" id="scorecard"></div>
-        <div id="hammerBoxWrap"></div><div id="wolfBoxWrap"></div><div id="fbBoxWrap"></div><div id="snakeEntryWrap"></div><div id="skinsBoxWrap"></div><div id="razzleBoxWrap"></div><div id="mpBoxWrap"></div><div id="vegasBoxWrap"></div><div id="ninesBoxWrap"></div>
+        <div id="trBoxWrap"></div><div id="hammerBoxWrap"></div><div id="wolfBoxWrap"></div><div id="fbBoxWrap"></div><div id="snakeEntryWrap"></div><div id="skinsBoxWrap"></div><div id="razzleBoxWrap"></div><div id="mpBoxWrap"></div><div id="vegasBoxWrap"></div><div id="ninesBoxWrap"></div>
         <!-- Hole tracker: collapsed strip by default, tap to expand full grid -->
         <div id="holeStrip" onclick="window._toggleHoleStrip()">
           <span class="hs-label" id="hsLabel">Hole 1 of 18</span>
@@ -2753,7 +2768,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.57';
+const APP_VERSION='v125.58';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -9835,9 +9850,14 @@ function renderScorecard(){
   const _rg=typeof _rdGross==='function'&&_rdGross(r);
   const _obFi=_fp==null?_curFi(r):_fp,_obT=typeof _cupObTeams==='function'?_cupObTeams(r,_obFi):null,_obN=_obT?_cupNames(r,_obFi):null;
   if(_obT)displayOrder=displayOrder.filter(i=>i!==_obT[0][1]&&i!==_obT[1][1]);
+  // v125.58: a trip scramble does the same a team: a 2-man team under its last names, a 4-man team its four players.
+  const _trG=!_obT&&typeof _obGroups==='function'?_obGroups(r,_obFi):null;
+  if(_trG){const _hd={};_trG.forEach(t=>t.slice(1).forEach(i=>{_hd[i]=1;}));displayOrder=displayOrder.filter(i=>!_hd[i]);}
+  const _trRow=i=>{if(!_trG)return '';const t=_trG.find(t=>t[0]===i);if(!t)return '';return (t.length===2?'<span class="ob-tm ob-tr">'+_gtEsc(_trTeamName(t).toUpperCase())+'</span>':'')+t.map(x=>displayName(x)).join('<br>');};
   const _obRow=i=>{if(!_obT)return '';const sd=_obT[0][0]===i?0:_obT[1][0]===i?1:-1;if(sd<0)return '';const nm=_obN?(sd===0?_obN.A:_obN.B):'',cs=_obN?((sd===0?_obN.sa:_obN.sb)===0?'a':'b'):(sd?'b':'a');return '<span class="ob-tm cpl-'+cs+'">TEAM '+_gtEsc(String(nm).toUpperCase())+'</span>'+displayName(_obT[sd][0])+'<br>'+displayName(_obT[sd][1]);};
-  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag==='FIELD'?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const grTick=gameOn('grinders',r)&&grPlayerOk(r,i,hi)?`<span class="gr-tick" title="Par or better">&#10003;</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const _flk=isFlightLocked(r,_fp==null?_curFi(r):_fp);const roStyle=_pvLock?'pointer-events:none':(isReadOnly?'opacity:0.5;pointer-events:none':((_flk||_deadH)?'pointer-events:none':''));const _rowDim=((_pvLock&&!_flk)||_deadH)?'opacity:0.42;':'';const _minusBtn=(_pvLock||_deadH||_flk)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':((_pvLock||_flk)?'':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=(isWolfPlayer?'player-row wolf-player-row':'player-row')+(_flk?' pr-done':'');const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbLtr(_fbRowDiv[i])}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="player-info"><div class="player-name">${_obRow(i)||displayName(i)}${snakeBadge}${twosBadge}${grTick}</div>${_obRow(i)?'<span class="stroke-tag stroke-no">one ball, gross</span>':_rg?'<span class="stroke-tag stroke-no">gross</span>':stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null&&!_rg&&!_obRow(i)?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('')+_grHoleChip(r,_fp,hi);
+  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag==='FIELD'?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const grTick=gameOn('grinders',r)&&grPlayerOk(r,i,hi)?`<span class="gr-tick" title="Par or better">&#10003;</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const _flk=isFlightLocked(r,_fp==null?_curFi(r):_fp);const roStyle=_pvLock?'pointer-events:none':(isReadOnly?'opacity:0.5;pointer-events:none':((_flk||_deadH)?'pointer-events:none':''));const _rowDim=((_pvLock&&!_flk)||_deadH)?'opacity:0.42;':'';const _minusBtn=(_pvLock||_deadH||_flk)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':((_pvLock||_flk)?'':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=(isWolfPlayer?'player-row wolf-player-row':'player-row')+(_flk?' pr-done':'');const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbLtr(_fbRowDiv[i])}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="player-info"><div class="player-name">${_obRow(i)||_trRow(i)||displayName(i)}${snakeBadge}${twosBadge}${grTick}</div>${(_obRow(i)||_trRow(i))?'<span class="stroke-tag stroke-no">one ball, gross</span>':_rg?'<span class="stroke-tag stroke-no">gross</span>':stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null&&!_rg&&!_obRow(i)?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('')+_grHoleChip(r,_fp,hi);
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
+  try{renderTrBox();renderFmtLine();}catch(te){console.error('renderTrBox error:',te);}
   try{renderNinesBox();}catch(ne){console.error('renderNinesBox error:',ne);const nw=document.getElementById('ninesBoxWrap');if(nw)nw.innerHTML='';}
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
   try{renderRazzleBox();}catch(re){console.error('renderRazzleBox error:',re);const w=document.getElementById('razzleBoxWrap');if(w)w.innerHTML='';}
@@ -9869,7 +9889,7 @@ function adjScore(pi,delta){_pinScroll(window.scrollY||0);if(isReadOnly)return;i
    if(fsEndedShort(_asR,_asFi)&&_asHi>=holeOffset(_asR)+fsHoleCount(_asR,_asFi)){
      showMsg('This round ended at hole '+fsHoleCount(_asR,_asFi)+'. Tap Resume round to keep playing.');
      return;}}
-  const r=STATE.currentRound,hi=STATE.currentHole,par=WK.rounds[r].course.holes[hi]?.par||4,c=STATE.scores[r][hi][pi];STATE.scores[r][hi][pi]=c===null?par:Math.max(1,c+delta);_s2Cleared.delete(r+':'+hi+':'+pi);{const _m=typeof _cupMate==='function'?_cupMate(r,_curFi(r),pi):-1;if(_m>=0){STATE.scores[r][hi][_m]=STATE.scores[r][hi][pi];_s2Cleared.delete(r+':'+hi+':'+_m);}}
+  const r=STATE.currentRound,hi=STATE.currentHole,par=WK.rounds[r].course.holes[hi]?.par||4,c=STATE.scores[r][hi][pi];STATE.scores[r][hi][pi]=c===null?par:Math.max(1,c+delta);_s2Cleared.delete(r+':'+hi+':'+pi);{const _m=typeof _cupMate==='function'?_cupMate(r,_curFi(r),pi):-1;if(_m>=0){STATE.scores[r][hi][_m]=STATE.scores[r][hi][pi];_s2Cleared.delete(r+':'+hi+':'+_m);}}if(typeof _trScr==='function'&&_trScr(r))_obMates(r,_curFi(r),pi).forEach(_m=>{STATE.scores[r][hi][_m]=STATE.scores[r][hi][pi];_s2Cleared.delete(r+':'+hi+':'+_m);});
   // v123.11: the score just landed, so this is the instant a round can become played.
   // Freezing here is what makes "played rounds keep the index they were played off"
   // survive a member-side change that never touches this trip. Runs after the write
@@ -11736,7 +11756,10 @@ function renderSCGrid(){
     // v125.55: a one-ball pair shares one line of cells: the lead's span both rows, the partner keeps a name row.
     const _gT=(fi!==null&&fi!==undefined&&typeof _cupObTeams==='function')?_cupObTeams(r,fi):null,_gMate={},_gLead={};
     if(_gT){[0,1].forEach(sd=>{_gLead[_gT[sd][0]]=1;_gMate[_gT[sd][1]]=1;});const _o=[];idxs.forEach(pi=>{if(_gMate[pi])return;_o.push(pi);if(_gLead[pi]){const m=_gT[0][0]===pi?_gT[0][1]:_gT[1][1];if(idxs.indexOf(m)>=0)_o.push(m);}});idxs=_o;}
-    const _sp=(pi,html)=>_gLead[pi]?html.replace(/<td/g,'<td rowspan="2"'):html;
+    // v125.58: a trip scramble team merges the same way, over its two or four rows.
+    const _gTr=!_gT&&fi!==null&&fi!==undefined&&typeof _trScr==='function'&&_trScr(r)?_obGroups(r,fi):null,_gSpan={};
+    if(_gTr){_gTr.forEach(t=>{_gLead[t[0]]=1;_gSpan[t[0]]=t.length;t.slice(1).forEach(i=>{_gMate[i]=1;});});const _o=[];idxs.forEach(pi=>{if(_gMate[pi])return;_o.push(pi);const t=_gTr.find(t=>t[0]===pi);if(t)t.slice(1).forEach(m=>{if(idxs.indexOf(m)>=0)_o.push(m);});});idxs=_o;}
+    const _sp=(pi,html)=>_gLead[pi]?html.replace(/<td/g,'<td rowspan="'+(_gSpan[pi]||2)+'"'):html;
     // Holes past THIS foursome's end hole were never played. Header rows stay neutral
     // because they are shared by every foursome in the All view and cannot be true for
     // two different end holes at once. Only the player cells stripe.
@@ -14614,7 +14637,8 @@ function renderWeekendPanel(){
     const teePill=teeOpts?`<span style="display:inline-flex;align-items:center;gap:4px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:999px;padding:3px 9px;font-size:12px;font-weight:500;position:relative;flex-shrink:0"><span style="width:8px;height:8px;border-radius:50%;background:${teeColor};display:inline-block;flex-shrink:0"></span>${teeName||'Select tee'}<span style="color:#1D9E75;font-size:11px">\u25be</span><select onchange="window._wkSetTee(${origI},this.value)" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer">${teeOpts}</select></span>`:'';
     const nineLabel=rd.nineHole==='front'?'Front 9':rd.nineHole==='back'?'Back 9':rd.nineHole?'9 holes':null;
     const teeLine=teeName?`<span class="su-dot" style="background:${teeColor}"></span>${teeName} tees`:'';
-    const subLine=[teeLine,nineLabel].filter(Boolean).join(' \u00b7 ');
+    const _fmtLabel=(typeof _trScr==='function'&&_trScr(origI))?(_trGet(origI).n+'-man '+_cupFmtName(_trGet(origI).fmt)):null;
+    const subLine=[teeLine,nineLabel,_fmtLabel].filter(Boolean).join(' \u00b7 ');
     let row=`<button type="button" class="su-rdb" onclick="window._suRdOpen(${origI})">${_isQ&&WK.rounds.length===1?'':`<span class="su-rl">${roundLabel(origI)}</span>`}<span class="su-rt">${rd.courseName?`<b>${courseDisp(rd.courseName)}</b>`:`<b class="su-nc">No course yet</b>`}${subLine?`<small>${subLine}</small>`:''}</span><span class="su-ch" aria-hidden="true">\u203a</span></button>`;
     return row;
   };
@@ -14734,7 +14758,7 @@ window._suRdOpen=function(ri){
   if(!rd.isE9&&!(typeof _cupOwns==='function'&&_cupOwns(ri))){
     const _sc=_trScr(ri),_L=_sc?_trGet(ri):null,_ed=!ro&&!_cupLuLocked(ri);
     b+='<div class="rs-sep"></div><div class="rs-sec"><div class="rs-lbl">PLAY</div>'
-      +_gsRow('Format','',_ed?_gsSeg([['own','Own ball'],['sc','Scramble'],['as','Alt shot']],_sc?_L.fmt:'own',"window._suRdSet("+ri+",'fmt',VAL)",false):'<span class="su-fixed">'+(_sc?_cupFmtName(_L.fmt):'Own ball')+'</span>',true);
+      +'<div class="rs-play">'+(_ed?_gsSeg([['own','Own ball'],['sc','Scramble'],['as','Alt shot']],_sc?_L.fmt:'own',"window._suRdSet("+ri+",'fmt',VAL)",false):'<span class="su-fixed">'+(_sc?_cupFmtName(_L.fmt):'Own ball')+'</span>')+'</div>';
     if(_sc){
       const _tot=Math.floor(WK.players.length/_L.n),_f=_trTeams(_L);
       b+=_gsRow('Teams',_L.n===4?'Each foursome is a team':'Pairs in each foursome',_ed?_gsSeg([['2','2-man'],['4','4-man']],String(_L.n),"window._suRdSet("+ri+",'size',VAL)",false):'<span class="su-fixed">'+_L.n+'-man</span>',true)
@@ -14809,6 +14833,54 @@ function _trGet(r){
 }
 function _trAny(L){return L.m.some(function(c){return c.some(function(t){return t.some(function(v){return v!=null;});});});}
 function _trTeams(L){let f=0;L.m.forEach(function(c){c.forEach(function(t){if(t.every(function(v){return v!=null;}))f++;});});return f;}
+// v125.58: a one-ball round's teams in foursome fi, as player indexes: a cup Scramble or Alt shot pair match, or the
+// trip scramble's whole teams in that foursome. Null when the round plays its own balls.
+function _obGroups(r,fi){
+  const c=typeof _cupObTeams==='function'?_cupObTeams(r,fi):null;if(c)return [c[0],c[1]];
+  if(fi==null||!_trScr(r))return null;
+  const F=(STATE.roundFlights&&STATE.roundFlights[r]&&STATE.roundFlights[r][fi])||[],out=[];
+  _trFieldTeams(r).forEach(function(t){if(t.every(function(i){return i>=0&&F.indexOf(i)>=0;}))out.push(t);});
+  return out.length?out:null;
+}
+function _obMates(r,fi,pi){const G=_obGroups(r,fi);if(!G)return [];for(let k=0;k<G.length;k++)if(G[k].indexOf(pi)>=0)return G[k].filter(function(x){return x!==pi;});return [];}
+// Every whole team in the field, in card order, as player indexes.
+function _trFieldTeams(r){if(!_trScr(r))return [];const L=_trGet(r),out=[];
+  L.m.forEach(function(card){card.forEach(function(t){if(t.every(function(v){return v!=null;}))out.push(t.map(function(pid){return WK.players.findIndex(function(p){return p.pid===pid;});}));});});return out;}
+// A trip team's name: its last names, with an initial where two players in the trip share one.
+function _trTeamName(pis){return pis.map(function(i){const p=WK.players[i]||{},dup=!!p.last&&WK.players.filter(function(q){return q.last===p.last;}).length>1;return (dup&&p.first?p.first[0]+'. ':'')+(p.last||_plFullName(p));}).join(' / ');}
+// v125.58: the scramble round's Team scores: every whole team in the field by gross to par, with its holes played.
+// This foursome's teams are bold; teams that have not started sit at the bottom.
+function renderTrBox(){
+  const w=document.getElementById('trBoxWrap');if(!w)return;
+  const r=STATE.currentRound;if(!WK||!WK.rounds||!WK.rounds[r]){w.innerHTML='';return;}
+  const T=_trFieldTeams(r);   // none off a scramble round, so nothing scored below
+  const off=holeOffset(r),n=roundHoleCount(r),H=WK.rounds[r].course.holes,fi=_curFi(r);
+  const mine=(STATE.roundFlights&&STATE.roundFlights[r]&&STATE.roundFlights[r][fi])||[];
+  const rows=T.map(function(t){let g=0,p=0,th=0;for(let h=0;h<n;h++){const v=STATE.scores[r][h+off]&&STATE.scores[r][h+off][t[0]];if(v!=null){g+=v;p+=(H[h+off]&&H[h+off].par)||4;th++;}}return {t:t,tp:g-p,th:th,mine:mine.indexOf(t[0])>=0};});
+  const S=rows.filter(function(x){return x.th>0;}).sort(function(a,b){return a.tp-b.tp;}),Z=rows.filter(function(x){return !x.th;});
+  if(!S.length){w.innerHTML='';return;}   // before the first score the format line says it
+  const tp=function(v){return v===0?'E':v>0?'+'+v:'\u2212'+(-v);};
+  const row=function(x,pos){return '<div class="tr-row'+(x.mine?' mine':'')+'"><span class="tr-pos">'+pos+'</span> <span class="tr-nm">'+_gtEsc(_trTeamName(x.t))+'</span> <span class="tr-th">'+(!x.th?'':x.th>=n?'F':x.th)+'</span> <span class="tr-tp">'+(x.th?tp(x.tp):'\u2013')+'</span></div>';};
+  const L=_trGet(r);
+  w.innerHTML='<div class="calc-box tr-box">'+gameBoxHeaderWithFmt((L.fmt==='as'?'Alt shot':'Scramble')+' · Team scores','Gross · all foursomes',true)
+    +S.map(function(x){const lower=S.filter(function(y){return y.tp<x.tp;}).length,tie=S.filter(function(y){return y.tp===x.tp;}).length>1;return row(x,(tie?'T':'')+(lower+1));}).join('')
+    +Z.map(function(x){return row(x,'');}).join('')+'</div>';
+}
+// v125.58: before a round's first score, a line above the players says how it is played. A scramble shows its teams
+// status and opens the teams; an own ball round has Change for an editor, which opens the round sheet.
+function renderFmtLine(){
+  const w=document.getElementById('fmtLineWrap');if(!w)return;
+  const r=STATE.currentRound,rd=WK&&WK.rounds&&WK.rounds[r];
+  if(!rd||rd.isE9||(typeof _cupOwns==='function'&&_cupOwns(r))||_gsRoundHasScores(r)){w.innerHTML='';return;}
+  const ed=canEditTrip()&&!isReadOnly,sc=_trScr(r);let t,sub,act='',tail='';
+  if(sc){const L=_trGet(r),tot=Math.floor(WK.players.length/L.n),f=_trTeams(L);
+    t=roundLabel(r)+' · '+L.n+'-man '+_cupFmtName(L.fmt);sub=(!f?'No teams yet':f>=tot?'All '+tot+' teams set':f+' of '+tot+' teams set')+' · one ball a team, gross';
+    if(ed){act="setView('setup');window._trOpen("+r+")";tail='<span class="su-ch" aria-hidden="true">›</span>';}}
+  else{t=roundLabel(r)+' · Own ball';sub='Each player plays his own ball';
+    if(ed){act="setView('setup');setOptPanel('weekend');window._suRdOpen("+r+")";tail='<span class="su-chg fl-chg">Change</span>';}}
+  const tag=act?'button type="button" onclick="'+act+'"':'div';
+  w.innerHTML='<div class="su-card fl-card"><'+tag+' class="su-rdb"><span class="su-rt"><b>'+t+'</b><small>'+sub+'</small></span>'+tail+'</'+(act?'button':'div')+'></div>';
+}
 function _trPut(r,L){WK.rounds[r].scr={fmt:L.fmt,n:L.n,m:L.m};_trApply(r);_cupDirty();}
 // The teams run the round: each card's whole teams are a foursome, a 2-man card's two teams its Match Play sides.
 // Anyone not on a whole team goes into foursomes of four after them. With no whole team, the foursomes stay.
