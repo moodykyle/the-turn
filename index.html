@@ -281,7 +281,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(52%) sepia(9
 .score-wrap{display:flex;align-items:center;gap:5px;}
 .adj{width:36px;height:36px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--color-text-primary);user-select:none;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
 .score-block{display:flex;flex-direction:column;align-items:center;width:38px;}
-.score-val{font-size:20px;font-weight:500;line-height:1.1;}
+.score-val{font-size:20px;font-weight:500;line-height:1.1;}.ob-tm{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;line-height:1.5;}.sc-grid td[rowspan]{vertical-align:middle;}
 .score-val.eagle{color:#0F6E56;}.score-val.birdie{color:#1D9E75;}.score-val.par{color:var(--color-text-primary);}.score-val.bogey{color:#D85A30;}.score-val.double{color:#993C1D;}
 .player-row.pr-done .player-name{font-size:17px;}.player-row.pr-done .score-val{font-size:24px;}.player-row.pr-done .stroke-tag{font-size:12px;}.player-row.pr-done .net-val{font-size:11px;}
 .net-val{font-size:10px;color:var(--color-text-secondary);line-height:1.2;}
@@ -1039,6 +1039,10 @@ body.force-dark .gs-net.warn{background:#3A2E10;border-color:#6B5418}body.force-
 .gs-setup-toggle .gs-st small{font-size:12px;font-weight:400;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gs-setup-toggle .gs-setup-chevron{font-size:18px;line-height:1;color:var(--color-text-tertiary)}
 .gs-setup-toggle.open .gs-setup-chevron{transform:rotate(90deg)}
+/* v125.56, Kyle (option A): closed, the settings row is a quiet grey line, not a card. */
+.gs-setup-toggle:not(.open){background:none;box-shadow:none!important;padding:10px 4px}
+.gs-setup-toggle:not(.open) .gs-st b{font-size:13px;font-weight:500;color:var(--color-text-secondary)}
+.gs-setup-toggle:not(.open) .gs-setup-chevron{font-size:16px;color:var(--color-text-secondary)}
 /* v124.9: Match Play team card. Team colours: green A, blue B; dark uses a readable blue. */
 :root{--mpA:#13795B;--mpB:#1F5FA8;--mpAf:#13795B;--mpBf:#1F5FA8;--mpAt:#FFFFFF;--mpBt:#FFFFFF;--mpPb:#FBF1DA;--mpPt:#8A6410;--mpFt:#E3DCC9;--mpFtB:#D6CEB8}
 @media(prefers-color-scheme:dark){:root{--mpA:#3CC79A;--mpB:#7DB3F0;--mpAf:#1D9E75;--mpBf:#7DB3F0;--mpAt:#06120D;--mpBt:#08162A;--mpPb:#2A2410;--mpPt:#EFC456;--mpFt:var(--color-background-secondary);--mpFtB:var(--color-border-tertiary)}}
@@ -2743,7 +2747,7 @@ function _s2CanSelfHeal(r){if(!_pencilActive())return true;var rr=r!=null?r:STAT
 function _amGroupAdmin(g){if(_simMember)return false;return !!(g&&g.role==='admin');}
 function canEditTrip(){if(!WK)return true;if(_simMember)return false;if(_simRunner)return true;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;if(_uid&&WK._tripAdmins&&WK._tripAdmins.indexOf(_uid)>=0)return true;if(!WK._groupId)return true;return false;}
 function canManageRunners(){if(_simMember||_simRunner)return false;if(!WK)return false;var _grp=WK._groupId?_groupCache[WK._groupId]:null;if(_grp&&_grp.role==='admin')return true;var _uid=sbCurrentUser()?.id;if(_uid&&WK._createdBy&&_uid===WK._createdBy)return true;return false;}
-const APP_VERSION='v125.50';
+const APP_VERSION='v125.56';
 // Every fetch that populates _groupCache[gid]._members names THIS. Two column sets
 // feeding one cache meant the cached row shape depended on which fetch fired last;
 // venmo was absent on the ordinary home-screen path and the member sheet blanked it.
@@ -5306,6 +5310,8 @@ function _gsNetSubText(html){
 function gameNetNote(gid,r,fi){
   if(!WK||!WK.rounds||!WK.rounds[r])return null;
   if(gid==='snake'||gid==='twos'||gid==='grinders')return null;
+  // v125.56: a gross round has no strokes to explain.
+  if(typeof _rdGross==='function'&&_rdGross(r))return{html:'This round plays <b>gross</b>, no strokes.',warn:false,change:false};
   const netting=!!(STATE.netOffFlightLow||STATE.netOffLow);
   const multi=isMultiFlight(r);
   const full={html:'Everyone plays their <b>full handicap</b>. No strokes come off a low man.',warn:false,change:true};
@@ -9616,7 +9622,7 @@ function calcVegas(hi,r,fi){fi=fi||0;
   const trigB=birdTriggers(tB,hi,r,_fp);
   return{numA,numB,diff,aWins:!tied&&numA<numB,tied,aFlip,bFlip,doubled,tA,tB,loA,hiA,loB,hiB,trigA,trigB};
 }
-function calcMP(hi,r,fi){fi=fi||0;const mpG=mpGamesForRound(r,fi),_th_mp=roundHoleCount(r),si=segForHole(hi-holeOffset(r),mpG,_th_mp),tA=STATE.mpTeams[r]?.[fi]?.[si]?.[0],tB=STATE.mpTeams[r]?.[fi]?.[si]?.[1];if(!tA||!tB||tA.length!==2||tB.length!==2)return null;const _vpMP=pi=>Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];if(!tA.every(_vpMP)||!tB.every(_vpMP))return null;const _fp=flightsForRound(r)[fi]||[];const nA=tA.map(pi=>getNetForFlight(pi,hi,r,_fp)),nB=tB.map(pi=>getNetForFlight(pi,hi,r,_fp));if(nA.includes(null)||nB.includes(null))return null;const bestA=Math.min(...nA),bestB=Math.min(...nB),halved=bestA===bestB;return{bestA,bestB,aWins:!halved&&bestA<bestB,halved,tA,tB,nA,nB};}
+function calcMP(hi,r,fi){fi=fi||0;const mpG=mpGamesForRound(r,fi),_th_mp=roundHoleCount(r),si=segForHole(hi-holeOffset(r),mpG,_th_mp),tA=STATE.mpTeams[r]?.[fi]?.[si]?.[0],tB=STATE.mpTeams[r]?.[fi]?.[si]?.[1];if(!tA||!tB||tA.length!==2||tB.length!==2)return null;const _vpMP=pi=>Number.isInteger(pi)&&pi>=0&&pi<WK.players.length&&!!WK.players[pi];if(!tA.every(_vpMP)||!tB.every(_vpMP))return null;const _fp=flightsForRound(r)[fi]||[];const _g1=typeof _cupOneBall==='function'&&_cupOneBall(r),_nf=pi=>{if(!_g1)return getNetForFlight(pi,hi,r,_fp);const g=STATE.scores[r][hi][pi];return g==null?null:g;};const nA=tA.map(_nf),nB=tB.map(_nf);if(nA.includes(null)||nB.includes(null))return null;const bestA=Math.min(...nA),bestB=Math.min(...nB),halved=bestA===bestB;return{bestA,bestB,aWins:!halved&&bestA<bestB,halved,tA,tB,nA,nB};}
 // The twos payout, in ONE place. It was computed independently in renderMoney and in the
 // settle audit. Same arithmetic both times, which is luck, not design.
 function twosAward(){
@@ -9816,7 +9822,12 @@ function renderScorecard(){
   let _huPairNet=null;if(gameOnFs('mp',r,_fp)&&isHeadsUp(r)&&huNetOffMatchLow(r,_fp)){const _siHU=segForHole(hi-holeOffset(r),mpGamesForRound(r,_fp),roundHoleCount(r));const _tmHU=STATE.mpTeams[r]?.[_fp]?.[_siHU];if(_tmHU&&_tmHU[0]&&_tmHU[1]){_huPairNet={};for(let _mi=0;_mi<_tmHU[0].length;_mi++){const _pa=_tmHU[0][_mi],_pb=_tmHU[1][_mi];if(_pa!==undefined&&_pb!==undefined){_huPairNet[_pa]=[_pa,_pb];_huPairNet[_pb]=[_pa,_pb];}}}}
   // Snake holder for the ACTIVE foursome at this hole (the card only shows that foursome).
   const _snkHolder=gameOnFs('snake',r,_fp)?currentSnakeHolderForFlight(r,hi,_fp):null;
-  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag==='FIELD'?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const grTick=gameOn('grinders',r)&&grPlayerOk(r,i,hi)?`<span class="gr-tick" title="Par or better">&#10003;</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const _flk=isFlightLocked(r,_fp==null?_curFi(r):_fp);const roStyle=_pvLock?'pointer-events:none':(isReadOnly?'opacity:0.5;pointer-events:none':((_flk||_deadH)?'pointer-events:none':''));const _rowDim=((_pvLock&&!_flk)||_deadH)?'opacity:0.42;':'';const _minusBtn=(_pvLock||_deadH||_flk)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':((_pvLock||_flk)?'':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=(isWolfPlayer?'player-row wolf-player-row':'player-row')+(_flk?' pr-done':'');const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbLtr(_fbRowDiv[i])}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="player-info"><div class="player-name">${displayName(i)}${snakeBadge}${twosBadge}${grTick}</div>${stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('')+_grHoleChip(r,_fp,hi);
+  // v125.52: a one-ball cup match shows a row per side, on its first player; a tap there writes both (adjScore).
+  const _rg=typeof _rdGross==='function'&&_rdGross(r);
+  const _obFi=_fp==null?_curFi(r):_fp,_obT=typeof _cupObTeams==='function'?_cupObTeams(r,_obFi):null,_obN=_obT?_cupNames(r,_obFi):null;
+  if(_obT)displayOrder=displayOrder.filter(i=>i!==_obT[0][1]&&i!==_obT[1][1]);
+  const _obRow=i=>{if(!_obT)return '';const sd=_obT[0][0]===i?0:_obT[1][0]===i?1:-1;if(sd<0)return '';const nm=_obN?(sd===0?_obN.A:_obN.B):'',cs=_obN?((sd===0?_obN.sa:_obN.sb)===0?'a':'b'):(sd?'b':'a');return '<span class="ob-tm cpl-'+cs+'">TEAM '+_gtEsc(String(nm).toUpperCase())+'</span>'+displayName(_obT[sd][0])+'<br>'+displayName(_obT[sd][1]);};
+  document.getElementById('scorecard').innerHTML=displayOrder.map((i)=>{const p=WK.players[i];const g=STATE.scores[r][hi][i],st=isHeadsUp(r)?((_huPairNet&&_huPairNet[i])?strokesOffLow(i,hi,r,_huPairNet[i]):strokes(i,hi,r)):(_fbPoolNet?strokesOffLow(i,hi,r,_fbPoolNet):(_gameNet?strokesForFlight(i,hi,r,_flPlayers):strokes(i,hi,r))),n=g!==null?g-st:null;const rel=g!==null?g-hole.par:null,cls=g!==null?scoreClass(g,hole.par):'';const relStr=rel===null?'':rel===0?'E':rel>0?'+'+rel:''+rel,relCls=rel===null?'':rel<0?'rel-under':rel>0?'rel-over':'';const _bt=_netTag==='FIELD'?`<span style="font-size:9px;opacity:0.62;margin-left:4px;letter-spacing:0.04em">${_netTag}</span>`:'';const stTag=st>0?`<span class="stroke-tag stroke-yes">+${st} stroke${st>1?'s':''}${_bt}</span>`:st<0?`<span class="stroke-tag stroke-give">gives ${-st} stroke${st<-1?'s':''}${_bt}</span>`:`<span class="stroke-tag stroke-no">no stroke${_bt}</span>`;const twosBadge=gameOn('twos',r)&&g===2?`<span class="twos-badge">2's Club!</span>`:'';const grTick=gameOn('grinders',r)&&grPlayerOk(r,i,hi)?`<span class="gr-tick" title="Par or better">&#10003;</span>`:'';const snakeBadge=gameOn('snake',r)&&_snkHolder===i?`<span style="font-size:14px;line-height:1;margin-left:2px">🐍</span>`:'';const _pvLock=_pencilViewerLocked(r,_fp);const _deadH=(_fp!==null&&_fp!==undefined)&&_mpHoleDead(r,_fp,hi);const _flk=isFlightLocked(r,_fp==null?_curFi(r):_fp);const roStyle=_pvLock?'pointer-events:none':(isReadOnly?'opacity:0.5;pointer-events:none':((_flk||_deadH)?'pointer-events:none':''));const _rowDim=((_pvLock&&!_flk)||_deadH)?'opacity:0.42;':'';const _minusBtn=(_pvLock||_deadH||_flk)?'':'<button class="adj" onclick="adjScore('+i+',-1)">−</button>';const _plusBtn=_deadH?'<span style="font-size:11px;font-style:italic;color:var(--color-text-tertiary);margin-left:2px">not played</span>':((_pvLock||_flk)?'':'<button class="adj" onclick="adjScore('+i+',1)">+</button>');const wolfPiHere=wolfActive?wolfForHoleEff(hi,r,_fp):-1;const isWolfPlayer=wolfActive&&i===wolfPiHere;const rowCls=(isWolfPlayer?'player-row wolf-player-row':'player-row')+(_flk?' pr-done':'');const topDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line"></div><div class="wolf-divider-label">WOLF</div><div class="wolf-divider-line"></div></div>`:'';const bottomDivider=isWolfPlayer?`<div class="wolf-divider"><div class="wolf-divider-line" style="height:2px"></div></div>`:'';const _mDiv=(_huRowDiv&&_huRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">MATCH ${_huRowDiv[i]}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:(_fbRowDiv&&_fbRowDiv[i])?`<div class="wolf-divider"><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div><div class="wolf-divider-label" style="color:var(--color-text-secondary)">TEAM ${_fbLtr(_fbRowDiv[i])}</div><div class="wolf-divider-line" style="background:var(--color-border-secondary)"></div></div>`:'';return _mDiv+topDivider+`<div class="${rowCls}" style="${_rowDim}"><div class="player-info"><div class="player-name">${_obRow(i)||displayName(i)}${snakeBadge}${twosBadge}${grTick}</div>${_obRow(i)?'<span class="stroke-tag stroke-no">one ball, gross</span>':_rg?'<span class="stroke-tag stroke-no">gross</span>':stTag}</div><div class="score-wrap" style="${roStyle}">${_minusBtn}<div class="score-block"><div class="score-val ${cls}">${g!==null?g:'—'}</div><div class="net-val">${n!==null&&!_rg&&!_obRow(i)?'net '+n:''}</div></div>${_plusBtn}</div></div>`+bottomDivider;}).join('')+_grHoleChip(r,_fp,hi);
   renderSnakeEntry();renderMPHoleBox();renderVegasBoxWrap();renderSkinsBoxWrap();
   try{renderNinesBox();}catch(ne){console.error('renderNinesBox error:',ne);const nw=document.getElementById('ninesBoxWrap');if(nw)nw.innerHTML='';}
   }catch(e){console.error('renderScorecard error:',e);const sc=document.getElementById('scorecard');if(sc)sc.innerHTML='<div style="padding:12px;color:var(--color-text-secondary);font-size:12px;text-align:center">Error rendering scores. Try switching holes.</div>';}
@@ -9849,7 +9860,7 @@ function adjScore(pi,delta){_pinScroll(window.scrollY||0);if(isReadOnly)return;i
    if(fsEndedShort(_asR,_asFi)&&_asHi>=holeOffset(_asR)+fsHoleCount(_asR,_asFi)){
      showMsg('This round ended at hole '+fsHoleCount(_asR,_asFi)+'. Tap Resume round to keep playing.');
      return;}}
-  const r=STATE.currentRound,hi=STATE.currentHole,par=WK.rounds[r].course.holes[hi]?.par||4,c=STATE.scores[r][hi][pi];STATE.scores[r][hi][pi]=c===null?par:Math.max(1,c+delta);_s2Cleared.delete(r+':'+hi+':'+pi);
+  const r=STATE.currentRound,hi=STATE.currentHole,par=WK.rounds[r].course.holes[hi]?.par||4,c=STATE.scores[r][hi][pi];STATE.scores[r][hi][pi]=c===null?par:Math.max(1,c+delta);_s2Cleared.delete(r+':'+hi+':'+pi);{const _m=typeof _cupMate==='function'?_cupMate(r,_curFi(r),pi):-1;if(_m>=0){STATE.scores[r][hi][_m]=STATE.scores[r][hi][pi];_s2Cleared.delete(r+':'+hi+':'+_m);}}
   // v123.11: the score just landed, so this is the instant a round can become played.
   // Freezing here is what makes "played rounds keep the index they were played off"
   // survive a member-side change that never touches this trip. Runs after the write
@@ -11237,7 +11248,7 @@ function renderMPHoleBox(){
   const seg=getSegments(mpG,roundHoleCount(r))[si];
   const _huBox=isHeadsUp(r);
   // v124.46: the match in the title, its holes on the second line (as the Games tab names them).
-  const mpFmtLabel=`Holes ${seg.start+holeOffset(r)+1} to ${seg.end+holeOffset(r)} · `+(_huBox?'Heads up 1v1':'2v2 best ball');
+  const mpFmtLabel=`Holes ${seg.start+holeOffset(r)+1} to ${seg.end+holeOffset(r)} · `+(_huBox?'Heads up 1v1':(typeof _cupOneBall==='function'&&_cupOneBall(r))?_cupFmtName(_cupLuGet(r).fmt)+', one ball':'2v2 best ball');
   const _mpTitle=`Match Play · ${_huBox?'Game':'Match'} ${si+1}`;
   const hdr=gameBoxHeaderWithFmt(_mpTitle,mpFmtLabel);
   if(_huBox){
@@ -11323,7 +11334,8 @@ function renderMPHoleBox(){
     return;
   }
   function mpTeamBlock(team,scores,bestScore,isWinner){
-    const players=team.map((pi,idx)=>{const s=scores?scores[idx]:null;return`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net">${s!==null&&s===bestScore&&isWinner?'<span class="mp-best">best → </span>':''}${s!==null?'net '+s:'—'}</span></div>`;}).join('');
+    const _ob1=!_huBox&&typeof _cupOneBall==='function'&&_cupOneBall(r);
+    const players=team.map((pi,idx)=>{const s=scores?scores[idx]:null;if(_ob1)return`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net">${idx?'':(s!==null?(s===bestScore&&isWinner?'<span class="mp-best">best → </span>':'')+s:'—')}</span></div>`;return`<div class="mp-player-line"><span class="mp-player-name">${displayName(pi)}</span><span class="mp-net">${s!==null&&s===bestScore&&isWinner?'<span class="mp-best">best → </span>':''}${s!==null?'net '+s:'—'}</span></div>`;}).join('');
     const teamLbl=_huBox?displayName(team[0]):(team===tA?'A':'B');
     const _tlc=_huBox?'':` style="color:var(--mp${team===tA?'A':'B'})"`;
     return `<div class="mp-team-block"><div class="mp-team-letter"${_tlc}>${teamLbl}</div><div class="mp-team-players">${players}</div></div>`;
@@ -11667,6 +11679,8 @@ function _scGridFilterPick(i){STATE.scGridFlightSel=i;_scGridFilterRender();rend
 function _flightsAccent0(i){return ['#3B82F6','#1D9E75','#F59E0B','#8B5CF6','#EC4899'][i%5];}
 function renderSCGrid(){
   const r=STATE.scRound;
+  // v125.54: one ball a pair plays gross: no strokes on the grid, Net is the gross total.
+  const _obG=typeof _rdGross==='function'&&_rdGross(r);
   _scGridFilterRender();
   const activeHoles=holesForRound(r);
   const off=holeOffset(r);
@@ -11710,6 +11724,10 @@ function renderSCGrid(){
   hcpRow+=`<td class="total-col"></td><td class="net-col"></td></tr>`;
   function _scGridRowsFor(idxs,fi,block){
     let rows='';
+    // v125.55: a one-ball pair shares one line of cells: the lead's span both rows, the partner keeps a name row.
+    const _gT=(fi!==null&&fi!==undefined&&typeof _cupObTeams==='function')?_cupObTeams(r,fi):null,_gMate={},_gLead={};
+    if(_gT){[0,1].forEach(sd=>{_gLead[_gT[sd][0]]=1;_gMate[_gT[sd][1]]=1;});const _o=[];idxs.forEach(pi=>{if(_gMate[pi])return;_o.push(pi);if(_gLead[pi]){const m=_gT[0][0]===pi?_gT[0][1]:_gT[1][1];if(idxs.indexOf(m)>=0)_o.push(m);}});idxs=_o;}
+    const _sp=(pi,html)=>_gLead[pi]?html.replace(/<td/g,'<td rowspan="2"'):html;
     // Holes past THIS foursome's end hole were never played. Header rows stay neutral
     // because they are shared by every foursome in the All view and cannot be true for
     // two different end holes at once. Only the player cells stripe.
@@ -11719,7 +11737,7 @@ function renderSCGrid(){
       const cells=activeHoles.map((hole,i)=>{
         const hi=i+off;
         const _gv=_gvShort&&hi>=_gvEnd;
-        const g=STATE.scores[r][hi][pi],st=strokes(pi,hi,r);
+        const g=STATE.scores[r][hi][pi],st=_obG?0:strokes(pi,hi,r);
         const dot=st>=2?`<div class="dot-row"><span class="stroke-dot"></span><span class="stroke-dot"></span></div>`:st===1?`<div class="dot-row"><span class="stroke-dot"></span></div>`:st<=-1?('<div class="dot-row">'+'<span class="stroke-dot stroke-dot-give"></span>'.repeat(Math.min(-st,2))+'</div>'):`<div class="dot-row"></div>`;
         // Show the stroke dots on unplayed holes too, so you can see where shots fall
         // BEFORE you get there. Previously this emitted an empty dot-row and threw the
@@ -11740,20 +11758,22 @@ function renderSCGrid(){
       const hasIn=activeHoles.slice(_scSplit).some((_,i)=>STATE.scores[r][i+_scSplit+off][pi]!==null);
       const tOut=activeHoles.slice(0,_scSplit).reduce((a,_,i)=>a+(STATE.scores[r][i+off][pi]||0),0);
       const tIn=activeHoles.slice(_scSplit).reduce((a,_,i)=>a+(STATE.scores[r][i+_scSplit+off][pi]||0),0);
-      const tN=activeHoles.reduce((a,_,i)=>{const n=getNet(pi,i+off,r);return n!==null?a+n:a;},0);
+      const tN=activeHoles.reduce((a,_,i)=>{const n=_obG?STATE.scores[r][i+off][pi]:getNet(pi,i+off,r);return n!=null?a+n:a;},0);
       // v124.41: the block's first and last rows round its corners; every other row is tinted.
       const _rc=['pr',block&&_k===0?'fs-top':'',block&&_k===idxs.length-1?'fs-bot':'',_k%2?'alt':''].filter(Boolean).join(' ');
       rows+=`<tr class="${_rc}">`;
       rows+=`<td class="player-col">${displayName(pi)}</td>`;
+      if(_gMate[pi]){rows+=`</tr>`;return;}
+      let _cells='';
       if(_scSplit){
-        cells.forEach((c,i)=>{rows+=c;if(i===_scSplit-1)rows+=`<td class="turn-col">${hasOut?tOut:''}</td>`;});
-        rows+=`<td class="turn-col">${hasIn?tIn:''}</td>`;
+        cells.forEach((c,i)=>{_cells+=c;if(i===_scSplit-1)_cells+=`<td class="turn-col">${hasOut?tOut:''}</td>`;});
+        _cells+=`<td class="turn-col">${hasIn?tIn:''}</td>`;
       }else{
-        rows+=cells.join('');
+        _cells+=cells.join('');
       }
-      rows+=`<td class="total-col">${hasAny?tG:''}</td>`;
-      rows+=`<td class="net-col">${hasAny?tN:''}</td>`;
-      rows+=`</tr>`;
+      _cells+=`<td class="total-col">${hasAny?tG:''}</td>`;
+      _cells+=`<td class="net-col">${hasAny?tN:''}</td>`;
+      rows+=_sp(pi,_cells)+`</tr>`;
     });
     return rows;
   }
@@ -11819,7 +11839,7 @@ function calcAllMP(){if(!WK||WK.players.length<4)return WK.players.map((_,pi)=>(
 // ONE answer, consumed everywhere. Nine sites used to each decide this for themselves, and
 // every one of them decided a tie by roster order, so the whole pot went to whoever was
 // typed into the roster first. Zero-sum never caught it: paying the wrong man still balances.
-function _potFinalRound(){for(let r=WK.rounds.length-1;r>=0;r--){if(inStandingsRound(r))return r;}return -1;}
+function _potFinalRound(){for(let r=WK.rounds.length-1;r>=0;r--){if((typeof _indivRound==='function'?_indivRound(r):inStandingsRound(r)))return r;}return -1;}
 function _potNetOver(pi,r,holeIdxs){let s=0;for(let k=0;k<holeIdxs.length;k++){const v=getNet(pi,holeIdxs[k],r);if(v===null)return null;s+=v;}return s;}
 // Countback: lowest net in the final standings round, then the last 9, last 6, last 3, final hole.
 // Returns {winner,level}. A null winner means the ladder ran out and nobody can be separated,
@@ -11946,7 +11966,7 @@ function tripStandings(){
   const rows=WK.players.map((p,i)=>{
     let net=0,played=0,parTot=0;
     for(let r=0;r<WK.rounds.length;r++){
-      if(!inStandingsRound(r))continue;
+      if(!(typeof _indivRound==='function'?_indivRound(r):inStandingsRound(r)))continue;
       const off=holeOffset(r),n=standingsHoleCount(r);
       for(let h=off;h<off+n;h++){
         const g=(STATE.scores[r]&&STATE.scores[r][h])?STATE.scores[r][h][i]:null;
@@ -12014,7 +12034,7 @@ function _standingIsMe(t,x){
 function playerThru(pi){
   let last=-1;
   for(let r=0;r<WK.rounds.length;r++){
-    if(!inStandingsRound(r))continue;
+    if(!(typeof _indivRound==='function'?_indivRound(r):inStandingsRound(r)))continue;
     const off=holeOffset(r),n=standingsHoleCount(r);
     for(let h=off;h<off+n;h++){
       if(STATE.scores[r]&&STATE.scores[r][h]&&STATE.scores[r][h][pi]!==null){last=r;break;}
@@ -12036,15 +12056,15 @@ function calcPotRankings(){
   return WK.players.map((_,pi)=>{
     let net=0,played=0,parTot=0;
     WK.rounds.forEach((_,r)=>{
-      if(!inStandingsRound(r))return;
+      if(!(typeof _indivRound==='function'?_indivRound(r):inStandingsRound(r)))return;
       {const _off_bn=holeOffset(r),_n_bn=standingsHoleCount(r);for(let h=_off_bn;h<_off_bn+_n_bn;h++){const s=getNet(pi,h,r);if(s!==null){net+=s;played++;parTot+=WK.rounds[r].course.holes[h]?.par||4;}}}
     });
     return{pi,total:-(net-parTot),byRound:[]};// negate so sort descending = lowest net wins
   }).sort((a,b)=>b.total-a.total);
 }
 function totalHolesPlayed(){if(!WK.players||!WK.players.length)return 0;return WK.rounds.reduce((a,_,r)=>{if(!inStandingsRound(r))return a;const n=standingsHoleCount(r);const off=holeOffset(r);let cnt=0;for(let hi=off;hi<off+n;hi++){if(STATE.scores[r][hi]&&STATE.scores[r][hi].every(s=>s!==null))cnt++;}return a+cnt;},0);}
-function totalHoles(){return WK.rounds.reduce((a,_,r)=>{if(!inStandingsRound(r))return a;return a+standingsHoleCount(r);},0);}
-function calcRoundRankings(){const entries=[];WK.rounds.forEach((rd,r)=>{if(rd.nineHole)return;if(!inStandingsRound(r))return;const off=holeOffset(r),cnt=standingsHoleCount(r);const activeHoles=STATE.scores[r].slice(off,off+cnt);const anyComplete=activeHoles.some(h=>h.every(s=>s!==null));if(!anyComplete)return;WK.players.forEach((p,pi)=>{const roundComplete=activeHoles.every(h=>h[pi]!==null);if(!roundComplete)return;const gross=activeHoles.reduce((a,hole)=>a+(hole[pi]||0),0);const net=Array.from({length:cnt},(_,i)=>getNet(pi,off+i,r)).reduce((a,n)=>a+(n||0),0);const parTotal=rd.course.holes.slice(off,off+cnt).reduce((a,h)=>a+h.par,0);entries.push({pi,r,courseName:rd.courseName,gross,net,parTotal,relGross:gross-parTotal,relNet:net-parTotal});});});entries.sort((a,b)=>a.net-b.net);let rank=1;entries.forEach((e,i)=>{if(i>0&&entries[i].net===entries[i-1].net){e.rank=entries[i-1].rank;}else{e.rank=rank;}rank=i+2;});return entries;}
+function totalHoles(){return WK.rounds.reduce((a,_,r)=>{if(!(typeof _indivRound==='function'?_indivRound(r):inStandingsRound(r)))return a;return a+standingsHoleCount(r);},0);}
+function calcRoundRankings(){const entries=[];WK.rounds.forEach((rd,r)=>{if(rd.nineHole)return;if(!(typeof _indivRound==='function'?_indivRound(r):inStandingsRound(r)))return;const off=holeOffset(r),cnt=standingsHoleCount(r);const activeHoles=STATE.scores[r].slice(off,off+cnt);const anyComplete=activeHoles.some(h=>h.every(s=>s!==null));if(!anyComplete)return;WK.players.forEach((p,pi)=>{const roundComplete=activeHoles.every(h=>h[pi]!==null);if(!roundComplete)return;const gross=activeHoles.reduce((a,hole)=>a+(hole[pi]||0),0);const net=Array.from({length:cnt},(_,i)=>getNet(pi,off+i,r)).reduce((a,n)=>a+(n||0),0);const parTotal=rd.course.holes.slice(off,off+cnt).reduce((a,h)=>a+h.par,0);entries.push({pi,r,courseName:rd.courseName,gross,net,parTotal,relGross:gross-parTotal,relNet:net-parTotal});});});entries.sort((a,b)=>a.net-b.net);let rank=1;entries.forEach((e,i)=>{if(i>0&&entries[i].net===entries[i-1].net){e.rank=entries[i-1].rank;}else{e.rank=rank;}rank=i+2;});return entries;}
 function toggleRoundRankings(){STATE.roundRankOpen=!STATE.roundRankOpen;renderBoard();}
 function toggleEmergencyRankings(){STATE.emergencyRankOpen=!STATE.emergencyRankOpen;renderBoard();}
 function calcEmergencyRankings(){const entries=[];WK.rounds.forEach((rd,r)=>{if(inStandingsRound(r))return;const off=holeOffset(r),cnt=standingsHoleCount(r);const activeHoles=STATE.scores[r].slice(off,off+cnt);const anyComplete=activeHoles.some(h=>h.every(s=>s!==null));if(!anyComplete)return;WK.players.forEach((p,pi)=>{const roundComplete=activeHoles.every(h=>h[pi]!==null);if(!roundComplete)return;const gross=activeHoles.reduce((a,hole)=>a+(hole[pi]||0),0);const net=Array.from({length:cnt},(_,i)=>getNet(pi,off+i,r)).reduce((a,n)=>a+(n||0),0);const parTotal=rd.course.holes.slice(off,off+cnt).reduce((a,h)=>a+h.par,0);entries.push({pi,r,courseName:rd.courseName,gross,net,parTotal,relGross:gross-parTotal,relNet:net-parTotal});});});entries.sort((a,b)=>a.net-b.net);let rank=1;entries.forEach((e,i)=>{if(i>0&&entries[i].net===entries[i-1].net){e.rank=entries[i-1].rank;}else{e.rank=rank;}rank=i+2;});return entries;}
@@ -12066,7 +12086,7 @@ function renderBoard(){let html='';html+=_cupBoardHtml();/* v125.0: the Team Cup
   const lbPlayers=WK.players.map((p,i)=>{
     let net=0,played=0,parTot=0;
     const rounds=WK.rounds.map((_,r)=>{
-      if(!inStandingsRound(r))return null;
+      if(!(typeof _indivRound==='function'?_indivRound(r):inStandingsRound(r)))return null;
       let rNet=0,rGross=0,rPar=0,rPlayed=0;
       {const _off_bg=holeOffset(r),_n_bg=standingsHoleCount(r);for(let h=_off_bg;h<_off_bg+_n_bg;h++){
         const g=STATE.scores[r][h][i];
@@ -12107,7 +12127,7 @@ function renderBoard(){let html='';html+=_cupBoardHtml();/* v125.0: the Team Cup
         const netCol=relNet<0?'#1D9E75':relNet>0?'#D85A30':'var(--color-text-primary)';
         // Count strokes received in this round
         let rdStrokes=0;
-        if(rd.complete&&inStandingsRound(rd.r)){const _off_b=holeOffset(rd.r),_n_b=standingsHoleCount(rd.r);for(let hi=_off_b;hi<_off_b+_n_b;hi++)rdStrokes+=strokes(p.i,hi,rd.r);}
+        if(rd.complete&&(typeof _indivRound==='function'?_indivRound(rd.r):inStandingsRound(rd.r))){const _off_b=holeOffset(rd.r),_n_b=standingsHoleCount(rd.r);for(let hi=_off_b;hi<_off_b+_n_b;hi++)rdStrokes+=strokes(p.i,hi,rd.r);}
         const strokesStr=rd.complete?(rdStrokes>0?rdStrokes+' stroke'+(rdStrokes!==1?'s':''):rdStrokes<0?'gives '+(-rdStrokes)+' stroke'+(rdStrokes!==-1?'s':''):'no strokes'):'';
         html+=`<div onclick="_lbOpenCard(${rd.r})" style="display:grid;grid-template-columns:auto minmax(0,auto) 1fr auto auto auto auto;align-items:center;gap:6px;padding:6px 12px;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer">
           <span style="font-size:11px;color:var(--color-text-tertiary);white-space:nowrap">${roundLabel(rd.r)}</span>
@@ -14731,6 +14751,26 @@ function renderCupPanel(){
   el.innerHTML=_cupSetupHtml();
 }
 function _cupRefresh(){if(STATE&&STATE.optPanel==='cup')renderCupPanel();if(STATE&&STATE.optPanel==='cupround')renderCupRoundPanel();}
+// v125.51: Scramble ('sc') and Alt shot ('as') are pairs like Best ball; the pair plays one ball, gross.
+function _cupPairs(f){return f==='bb'||f==='sc'||f==='as';}
+function _cupFmtName(f){return f==='sg'?'Singles':f==='off'?'Off':f==='sc'?'Scramble':f==='as'?'Alt shot':'Best ball';}
+// v125.52: the one-ball match of a foursome, [[a0,a1],[b0,b1]], or null; _cupMate is a player's partner in it, or -1.
+function _cupObTeams(r,fi){if(!_cupOneBall(r))return null;const g=STATE.mpTeams&&STATE.mpTeams[r]&&STATE.mpTeams[r][fi]&&STATE.mpTeams[r][fi][0];return g&&Array.isArray(g[0])&&Array.isArray(g[1])&&g[0].length===2&&g[1].length===2?g:null;}
+function _cupMate(r,fi,pi){const g=_cupObTeams(r,fi);if(!g)return -1;for(let t=0;t<2;t++){const k=g[t].indexOf(pi);if(k>=0)return g[t][1-k];}return -1;}
+// v125.53: one ball a pair is no one's own score. _indivRound: a round that ranks players (standings, the weekend
+// pot, best rounds, overall low net). _cupPV: a player's value for a cup payout, gross on a one-ball round. _cupUnits:
+// who a skin or an ace goes to: a pair on a one-ball round, else each player.
+function _indivRound(r){return inStandingsRound(r)&&!_cupOneBall(r);}
+function _cupPV(pi,h,r){if(_cupOneBall(r)){const g=STATE.scores[r]&&STATE.scores[r][h]?STATE.scores[r][h][pi]:null;return g==null?null:g;}return getNet(pi,h,r);}
+function _cupUnits(r){const N=(WK.players||[]).length,out=[];if(!_cupOneBall(r)){for(let i=0;i<N;i++)out.push([i]);return out;}
+  const L=_cupLuGet(r),seen={};L.m.forEach(function(x){[0,1].forEach(function(sd){const pis=x[sd].map(_cupPiOf);if(pis.length===2&&pis.every(function(i){return i>=0;})){out.push(pis);pis.forEach(function(i){seen[i]=1;});}});});
+  for(let i=0;i<N;i++)if(!seen[i])out.push([i]);return out;}
+// A unit's score on a hole: a player's own, or the pair's one ball (the lower if the two ever differ).
+function _cupUV(u,f){if(u.length===1)return f(u[0]);const v=u.map(f).filter(function(x){return x!=null;});return v.length?Math.min.apply(null,v):null;}
+// v125.55: a round no one nets. Today that is a cup Scramble or Alt shot round; anything that shows strokes or a net
+// asks this, not the format, so a future gross round plugs in here.
+function _rdGross(r){return _cupOneBall(r);}
+function _cupOneBall(r){if(!WK||!WK.cup||!WK.cup.on||!WK.rounds||!WK.rounds[r]||WK.rounds[r].isE9)return false;const raw=WK.cup.lu&&WK.cup.lu[_cupRid(r)];return !!raw&&(raw.fmt==='sc'||raw.fmt==='as');}
 // v125.1: a round's lineup. WK.cup.lu[rid] = {fmt:'bb'|'sg'|'off', m:[[slotsA,slotsB],...]}, slots are pids or null,
 // two a side for best ball, one for singles. Read through _cupLuGet, which never writes: it sizes the matches to the
 // teams and empties a slot whose player is no longer on that side. Writes go through _cupLuPut.
@@ -14739,7 +14779,7 @@ function _cupRid(r){const rd=WK.rounds[r];return rd&&rd.rid?String(rd.rid):'r'+r
 function _cupTeam(sd){return (WK.players||[]).filter(function(p){return _cupSideOf(p.pid)===sd;}).sort(function(a,b){const x=(a.idx==null?99:a.idx),y=(b.idx==null?99:b.idx);return x-y;});}
 function _cupLuN(fmt){if(fmt==='off')return 0;const a=_cupCount(0),b=_cupCount(1),m=Math.min(a,b);return fmt==='sg'?m:Math.floor(m/2);}
 function _cupLuGet(r){
-  const c=WK.cup||{},raw=(c.lu&&c.lu[_cupRid(r)])||{},fmt=(raw.fmt==='sg'||raw.fmt==='off')?raw.fmt:'bb';
+  const c=WK.cup||{},raw=(c.lu&&c.lu[_cupRid(r)])||{},fmt=(raw.fmt==='sg'||raw.fmt==='off'||raw.fmt==='sc'||raw.fmt==='as')?raw.fmt:'bb';
   const n=_cupLuN(fmt),k=fmt==='sg'?1:2,src=Array.isArray(raw.m)?raw.m:[],m=[];
   for(let i=0;i<n;i++){
     const row=Array.isArray(src[i])?src[i]:[];
@@ -14756,7 +14796,7 @@ function _cupApply(r){
   const L=_cupLuGet(r),nP=WK.players.length,rd=WK.rounds[r];
   const ix=function(pid){return pid==null?-1:WK.players.findIndex(function(p){return p.pid===pid;});};
   const fl=[],tm=[],used={};
-  if(L.fmt==='bb'){
+  if(_cupPairs(L.fmt)){
     L.m.forEach(function(x){const a=x[0].map(ix),b=x[1].map(ix);if(a.concat(b).some(function(i){return i<0;}))return;a.concat(b).forEach(function(i){used[i]=1;});fl.push(a.concat(b));tm.push([[a,b]]);});
   }else{
     const full=L.m.filter(function(x){return ix(x[0][0])>=0&&ix(x[1][0])>=0;});
@@ -14870,7 +14910,7 @@ function _cupProj(T){
 function _cupProjHtml(T){const p=_cupProj(T);return p?'<div class="rc-proj">Projected <b class="a">'+_cupPts(p[0])+'</b> – <b class="b">'+_cupPts(p[1])+'</b></div>':'';}
 function _cupLbHtml(r){
   const T=_cupTotals(),x=T.per.find(function(y){return y.r===r;}),ms=x?x.ms:[],L=_cupLuGet(r);
-  let h=_cupBandHtml(T,L.fmt==='sg'?'Singles':'Best ball',T.n?_cupPts(T.toWin)+'<br>to win':'');
+  let h=_cupBandHtml(T,_cupFmtName(L.fmt),T.n?_cupPts(T.toWin)+'<br>to win':'');
   h+=_cupProjHtml(T);
   const multi=flightsForRound(r).length>1;
   ms.forEach(function(m){h+=_cupRowHtml(m,multi?'switchGamesLane('+m.fi+')':'');});
@@ -14894,7 +14934,7 @@ function _cupDressGames(){
     if(c.classList&&c.classList.contains('mpk')){_cupDress(c,_cupNames(r,fi),{box:false,fi:fi,k:k,r:r,hu:isHeadsUp(r)});k++;}
   }
   if(!_all&&typeof _cupLaneDress==='function')_cupLaneDress(el,r,(STATE.mpViewFlight!=null&&STATE.mpViewFlight>=0)?STATE.mpViewFlight:0);
-  if(_cupLive()&&_all){const T=_cupTotals(),L=_cupLuGet(r),d=document.createElement('div');d.innerHTML=_cupBandHtml(T,L.fmt==='sg'?'Singles':'Best ball',T.n?_cupPts(T.toWin)+'<br>to win':'')+_cupProjHtml(T);while(d.lastChild)el.insertBefore(d.lastChild,el.firstChild);}
+  if(_cupLive()&&_all){const T=_cupTotals(),L=_cupLuGet(r),d=document.createElement('div');d.innerHTML=_cupBandHtml(T,_cupFmtName(L.fmt),T.n?_cupPts(T.toWin)+'<br>to win':'')+_cupProjHtml(T);while(d.lastChild)el.insertBefore(d.lastChild,el.firstChild);}
 }
 function _cupLuFull(L){return L.m.every(function(x){return x[0].concat(x[1]).every(function(v){return v!=null;});});}
 function _cupLuAny(L){return L.m.some(function(x){return x[0].concat(x[1]).some(function(v){return v!=null;});});}
@@ -14907,13 +14947,15 @@ function renderCupRoundPanel(){
   if(!c||!c.on||r==null||!WK.rounds[r]){el.innerHTML='<div class="pm-empty">Turn the Team Cup on first.</div>';return;}
   const lk=_cupLuLocked(r),ed=canEditTrip()&&!lk,L=_cupLuGet(r),n=L.m.length,rd=WK.rounds[r];
   let h=(lk?'<div class="pm-warn lu-lock">'+roundLabel(r)+' has scores, so its lineup is set.</div>':'')+'<div class="sec-hd gs-sec">'+roundLabel(r)+(rd.courseName?' · '+_gtEsc(courseDisp(rd.courseName)):'')+'</div><div class="su-card">';
-  h+=_gsRow('Format','',ed?_gsSeg([['bb','Best ball'],['sg','Singles'],['off','Off']],L.fmt,'window._cupLuFmt(VAL)',false):'<span class="su-fixed">'+(L.fmt==='sg'?'Singles':L.fmt==='off'?'Off':'Best ball')+'</span>',true);
-  h+='</div><div class="pm-note lu-note">'+(L.fmt==='off'?'This round is not part of the cup.':!n?'Put players on both teams first.':n+' match'+(n===1?'':'es')+', 1 point each. '+(L.fmt==='sg'?'Two matches to a foursome.':'Each match is its own foursome.')+' The lineup sets this round\'s foursomes and Match Play.')+'</div>';
+  const _pr=_cupPairs(L.fmt);
+  h+=_gsRow('Format','',ed?_gsSeg([['bb','Pairs'],['sg','Singles'],['off','Off']],_pr?'bb':L.fmt,'window._cupLuFmt(VAL)',false):'<span class="su-fixed">'+(_pr?'Pairs':_cupFmtName(L.fmt))+'</span>',true);
+  h+=_gsRow('Pairs play','How each pair plays its ball',ed?_gsSeg([['bb','Best ball'],['sc','Scramble'],['as','Alt shot']],_pr?L.fmt:'bb','window._cupLuPp(VAL)',false):'<span class="su-fixed">'+(_pr?_cupFmtName(L.fmt):'')+'</span>',true,!_pr,'Pairs only');
+  h+='</div><div class="pm-note lu-note">'+(L.fmt==='off'?'This round is not part of the cup.':!n?'Put players on both teams first.':n+' match'+(n===1?'':'es')+', 1 point each. '+(L.fmt==='sc'||L.fmt==='as'?'One ball a pair, gross. ':'')+(L.fmt==='sg'?'Two matches to a foursome.':'Each match is its own foursome.')+' The lineup sets this round\'s foursomes and Match Play.')+'</div>';
   if(!n){el.innerHTML=h;return;}
   h+='<div class="pm-hd hw-grp"><div class="sec-hd gs-sec">Lineup</div>'+(ed?'<span class="cup-seg"><button type="button" onclick="window._cupLuFill()">Fill by handicap</button><button type="button"'+(_cupLuAny(L)?'':' disabled')+' onclick="window._cupLuClear()">Clear</button></span>':'')+'</div>';
   const slot=function(mi,sd,k){const pid=L.m[mi][sd][k],p=pid!=null?_cupPl(pid):null;const on=ed?' onclick="window._cupLuPick('+mi+','+sd+','+k+')"':'';
     return p?'<button type="button" class="lu-p '+(sd?'b':'a')+'"'+on+'>'+_cupShort(p)+'<small>'+sbHcpDisplay(p.idx)+'</small></button>':'<button type="button" class="lu-p add"'+on+'>+ Pick</button>';};
-  if(L.fmt==='bb'){
+  if(_cupPairs(L.fmt)){
     L.m.forEach(function(_,mi){h+='<div class="su-card lu-m"><div class="lu-hd">Match '+(mi+1)+'<span>Foursome '+(mi+1)+'</span></div><div class="lu-row"><div class="lu-s">'+slot(mi,0,0)+slot(mi,0,1)+'</div><span class="lu-vs">vs</span><div class="lu-s">'+slot(mi,1,0)+slot(mi,1,1)+'</div></div></div>';});
   }else{
     for(let f=0;f*2<n;f++){h+='<div class="su-card lu-m"><div class="lu-hd">Foursome '+(f+1)+'</div>';
@@ -14928,10 +14970,16 @@ function renderCupRoundPanel(){
 window._cupLuOpen=function(r){STATE.cupLuR=r;setOptPanel('cupround');};
 window._cupLuFmt=function(v){
   if(!canEditTrip()||!WK.cup||_cupLuLocked(STATE.cupLuR))return;
-  const r=STATE.cupLuR,L=_cupLuGet(r);if(v===L.fmt)return;
+  const r=STATE.cupLuR,L=_cupLuGet(r);if(v===L.fmt||(v==='bb'&&_cupPairs(L.fmt)))return;
   const go=function(){_cupLuPut(r,{fmt:v,m:[]});_cupRefresh();};
-  if(_cupLuAny(L))_confirmSheet({icon:'ti-alert-triangle',warn:true,title:'Switch to '+(v==='sg'?'Singles':v==='off'?'Off':'Best ball')+'?',body:'The lineup for this round is cleared.',okLabel:'Switch',onOk:go,onCancel:_cupRefresh});
+  if(_cupLuAny(L))_confirmSheet({icon:'ti-alert-triangle',warn:true,title:'Switch to '+(v==='bb'?'Pairs':_cupFmtName(v))+'?',body:'The lineup for this round is cleared.',okLabel:'Switch',onOk:go,onCancel:_cupRefresh});
   else go();
+};
+// v125.51: how the pairs play. The pairs stay: Best ball, Scramble and Alt shot share a lineup.
+window._cupLuPp=function(v){
+  if(!canEditTrip()||!WK.cup||_cupLuLocked(STATE.cupLuR))return;
+  const r=STATE.cupLuR,L=_cupLuGet(r);if(!_cupPairs(L.fmt)||!_cupPairs(v)||v===L.fmt)return;
+  _cupLuPut(r,{fmt:v,m:L.m});_cupRefresh();
 };
 window._cupLuFill=function(){
   if(!canEditTrip()||!WK.cup||_cupLuLocked(STATE.cupLuR))return;
@@ -14997,7 +15045,7 @@ function _cupSetupHtml(){
   if(!rs.length)h+='<div class="pm-empty">Add a round to the trip first.</div>';
   rs.forEach(function(r){
     const L=_cupLuGet(r),n=_cupLuN(L.fmt),rd=WK.rounds[r];
-    const sub=L.fmt==='off'?'Not in the cup':(L.fmt==='sg'?'Singles':'Best ball')+' · '+n+' match'+(n===1?'':'es')+(n&&!_cupLuFull(L)?' · <span class="lu-warn">lineup not set</span>':'');
+    const sub=L.fmt==='off'?'Not in the cup':_cupFmtName(L.fmt)+' · '+n+' match'+(n===1?'':'es')+(n&&!_cupLuFull(L)?' · <span class="lu-warn">lineup not set</span>':'');
     h+='<button type="button" class="su-rdb cup-lurow" onclick="window._cupLuOpen('+r+')"><span class="su-rt"><b>'+roundLabel(r)+(rd&&rd.courseName?' · '+_gtEsc(courseDisp(rd.courseName)):'')+'</b><small>'+sub+'</small></span><span class="su-ch" aria-hidden="true">›</span></button>';
   });
   h+='</div><div class="pm-note">A match is worth 1 point, a halve ½ each. Each round\'s lineup sets who plays whom.</div>';
@@ -15024,9 +15072,10 @@ function _cupPayLabel(p){
 function _cupPaySub(p){
   const ri=_cupRi(p.r),rl=ri==='all'?'All rounds':(ri!=null&&WK.rounds[ri]?roundLabel(ri):'No round');
   if(p.kind==='cup'){const n=_cupCount(0)||_cupCount(1)?Math.max(_cupCount(0),_cupCount(1)):0;return 'Winning team'+(n&&p.amt?' · '+_cupM(p.amt/n)+' each':'');}
-  if(p.kind==='sk')return rl+' · '+(p.sc==='n'?'net':'gross')+' · split by skins';
+  const _ob=ri!=='all'&&ri!=null&&_cupOneBall(ri);
+  if(p.kind==='sk')return rl+' · '+(p.sc==='n'&&!_ob?'net':'gross')+(_ob?' · by pair':'')+' · split by skins';
   if(p.kind==='pick'){const w=(p.win||[]).map(function(pid){const q=_cupPl(pid);return q?_cupShort(q):null;}).filter(Boolean);return rl+' · '+(w.length?w.join(', '):'winner not picked');}
-  return rl+' · '+(p.who==='pair'?'best ball pairs':'net stroke play');
+  return rl+' · '+(_ob?'low team, gross':p.who==='pair'?'best ball pairs':'net stroke play');
 }
 function _cupPot(){const c=WK&&WK.cup;return (c&&c.on?(+c.entry||0):0)*((WK.players||[]).length);}
 function _cupPaid(){return _cupPayList().reduce(function(t,p){return t+(+p.amt||0);},0);}
@@ -15045,28 +15094,29 @@ function _cupPayWinners(p){
     if(T.pts[0]===T.pts[1]){const all=WK.players.map(function(_,i){return i;});return [{pis:all,share:1}];}
     const sd=T.pts[0]>T.pts[1]?0:1;return [{pis:WK.players.map(function(_,i){return i;}).filter(function(i){return _cupSideOf(WK.players[i].pid)===sd;}),share:1}];
   }
-  const rs=ri==='all'?WK.rounds.map(function(_,r){return r;}).filter(function(r){return inStandingsRound(r);}):(ri==null||!WK.rounds[ri]?[]:[ri]);
+  const rs=ri==='all'?WK.rounds.map(function(_,r){return r;}).filter(function(r){return _indivRound(r);}):(ri==null||!WK.rounds[ri]?[]:[ri]);
   if(!rs.length||!rs.every(_cupRdDone))return null;
   if(p.kind==='sk'){
     if(ri==='all')return null;
-    const r=ri,off=holeOffset(r),n=roundHoleCount(r),won=WK.players.map(function(){return 0;});let S=0;
+    const r=ri,off=holeOffset(r),n=roundHoleCount(r),U=_cupUnits(r),ob=_cupOneBall(r),won=U.map(function(){return 0;});let S=0;
     for(let h=off;h<off+n;h++){
-      const v=WK.players.map(function(_,pi){return p.sc==='n'?getNet(pi,h,r):STATE.scores[r][h][pi];});
+      const v=U.map(function(u){return _cupUV(u,function(pi){return p.sc==='n'&&!ob?getNet(pi,h,r):STATE.scores[r][h][pi];});});
       const lo=Math.min.apply(null,v),who=v.map(function(x,i){return x===lo?i:-1;}).filter(function(i){return i>=0;});
       if(who.length===1){won[who[0]]++;S++;}
     }
     if(!S)return [];
     // v125.21: the number of skins rides along for the Payouts line (JSON and every share are unchanged).
-    const _o=won.map(function(k,i){return k?{pis:[i],share:k/S}:null;}).filter(Boolean);_o.S=S;return _o;
+    // v125.53: a pair on a one-ball round wins a skin together; _cupMoney splits it between them.
+    const _o=won.map(function(k,i){return k?{pis:U[i],share:k/S}:null;}).filter(Boolean);_o.S=S;return _o;
   }
   // low net
-  if(p.who==='pair'){
+  if(p.who==='pair'||(ri!=='all'&&_cupOneBall(ri))){
     if(ri==='all')return null;
-    const L=_cupLuGet(ri);if(L.fmt!=='bb')return [];
+    const L=_cupLuGet(ri);if(!_cupPairs(L.fmt))return [];
     const off=holeOffset(ri),n=roundHoleCount(ri),pairs=[];
     L.m.forEach(function(x){[0,1].forEach(function(sd){const pis=x[sd].map(_cupPiOf);if(pis.length===2&&pis.every(function(i){return i>=0;}))pairs.push(pis);});});
     if(!pairs.length)return [];
-    const tot=pairs.map(function(pr){let t=0;for(let h=off;h<off+n;h++)t+=Math.min(getNet(pr[0],h,ri),getNet(pr[1],h,ri));return t;});
+    const tot=pairs.map(function(pr){let t=0;for(let h=off;h<off+n;h++)t+=Math.min(_cupPV(pr[0],h,ri),_cupPV(pr[1],h,ri));return t;});
     const lo=Math.min.apply(null,tot),best=pairs.filter(function(_,k){return tot[k]===lo;});
     return best.map(function(pr){return {pis:pr,share:1/best.length};});
   }
@@ -15079,7 +15129,7 @@ function _cupAces(){
   const c=WK&&WK.cup,amt=c&&c.on?(+c.ace||0):0,out=[];if(!amt)return out;
   WK.rounds.forEach(function(rd,r){const off=holeOffset(r),n=roundHoleCount(r),sc=STATE.scores&&STATE.scores[r];if(!sc)return;
     for(let h=off;h<off+n;h++){const par=(rd.course&&rd.course.holes&&rd.course.holes[h]&&rd.course.holes[h].par)||4;
-      WK.players.forEach(function(_,pi){const g=sc[h]&&sc[h][pi];if(g==null)return;if(g===1||g<=par-3)out.push({pi:pi,r:r,h:h,g:g,par:par});});}});
+      _cupUnits(r).forEach(function(u){const g=sc[h]&&sc[h][u[0]];if(g==null)return;if(g===1||g<=par-3)out.push({pi:u[0],pis:u,r:r,h:h,g:g,par:par});});}});
   return out;
 }
 // Per player: rows {l,d,v} and a total. Entry shows as one line: his share of every payout decided so far.
@@ -15097,7 +15147,8 @@ function _cupMoney(){
   const ace=+c.ace||0;
   _cupAces().forEach(function(a){
     const lbl=(a.g===1?'Ace':'Albatross')+', '+roundLabel(a.r)+' hole '+(a.h+1);
-    WK.players.forEach(function(_,pi){const v=pi===a.pi?ace*(N-1):-ace;rows[pi].push({l:pi===a.pi?'Your '+(a.g===1?'ace':'albatross'):(a.g===1?'Ace':'Albatross'),d:pi===a.pi?lbl:_cupShort(WK.players[a.pi])+', '+roundLabel(a.r)+' hole '+(a.h+1),v:v});tot[pi]+=v;});
+    const _ap=a.pis||[a.pi];
+    WK.players.forEach(function(_,pi){const _in=_ap.indexOf(pi)>=0,v=_in?ace*(N-_ap.length)/_ap.length:-ace;rows[pi].push({l:_in?'Your '+(a.g===1?'ace':'albatross'):(a.g===1?'Ace':'Albatross'),d:_in?lbl:_ap.map(function(i){return _cupShort(WK.players[i]);}).join(' / ')+', '+roundLabel(a.r)+' hole '+(a.h+1),v:v});tot[pi]+=v;});
   });
   return {rows:rows,tot:tot,decided:decided,all:list.length};
 }
@@ -15155,7 +15206,8 @@ window._cupPayOpen=function(i){
   let h='<div class="grp-sheet-inner su-sh"><div class="grp-sheet-pill"></div><div class="grp-sheet-title">'+_gtEsc(_cupPayLabel(p))+'</div><div class="su-card">';
   h+=_gsRow('Prize','',seg([['cup','Cup'],['ln','Low net'],['sk','Skins'],['pick','Pick']],p.kind,'kind'),true);
   h+=_gsRow('Round','',p.kind==='cup'?'':seg(rOpts,p.r,'r'),true,p.kind==='cup','The whole cup');
-  h+=_gsRow('Players',p.who==='pair'?'Best ball, a pair per team':'Each player alone',p.kind==='ln'?seg([['pair','Pairs'],['player','Players']],p.who,'who'):'',false,p.kind!=='ln','Low net only');
+  const _pob=p.kind==='ln'&&p.r!=='all'&&_cupOneBall(_cupRi(p.r));
+  h+=_gsRow('Players',p.who==='pair'?'Best ball, a pair per team':'Each player alone',p.kind==='ln'?seg([['pair','Pairs'],['player','Players']],_pob?'pair':p.who,'who'):'',false,p.kind!=='ln'||_pob,_pob?'By pair: one ball a pair':'Low net only');
   h+=_gsRow('Scoring',p.sc==='n'?'Net skins':'Gross skins',p.kind==='sk'?seg([['g','Gross'],['n','Net']],p.sc,'sc'):'',false,p.kind!=='sk','Skins only');
   h+=_gsRow('Name','Closest to the pin, longest drive…',p.kind==='pick'?'<input class="inline-edit su-in" value="'+_gtEsc(p.name||'')+'" placeholder="Closest to the pin"'+dis+' onchange="window._cupPaySet('+i+',\'name\',this.value)"/>':'',false,p.kind!=='pick','Pick only');
   h+=_gsRow('Winner','You pick who won',p.kind==='pick'?'<button type="button" class="cup-winbtn"'+dis+' onclick="window._cupPayWinOpen('+i+')">'+((p.win||[]).length?(p.win||[]).map(function(pid){const q=_cupPl(pid);return q?_cupShort(q):'';}).filter(Boolean).join(', '):'Pick')+' ›</button>':'',false,p.kind!=='pick','From the scores');
@@ -15195,7 +15247,7 @@ window._cupPayWinClose=function(i){const ov=document.getElementById('cupPickShee
 function _cupPayFor(r){
   return _cupPayList().map(function(p,i){return {p:p,i:i};}).filter(function(x){const p=x.p,ri=_cupRi(p.r);
     if(!(+p.amt))return false;
-    if(p.kind==='ln')return p.r==='all'?inStandingsRound(r):ri===r;
+    if(p.kind==='ln')return p.r==='all'?_indivRound(r):ri===r;
     if(p.kind==='sk'||p.kind==='pick')return ri===r;
     return false;});
 }
@@ -15216,8 +15268,10 @@ function _cupNmSpan(pi){const p=WK.players[pi];if(!p)return '';const sd=_cupSide
 function _cupPayViewHtml(r,x){
   const p=x.p,N=WK.players.length,off=holeOffset(r),n=roundHoleCount(r),open=STATE.cupPayOpen||{};
   let h='<div class="pm-note cpv-note">';
-  h+=p.kind==='sk'?'Payout: '+_cupM(+p.amt)+' split by skins won across the whole field ('+(p.sc==='n'?'net':'gross')+'). No carryovers.'
+  const _vob=_cupOneBall(r);
+  h+=p.kind==='sk'?'Payout: '+_cupM(+p.amt)+(_vob?' split by skins won, one score a pair (gross). No carryovers.':' split by skins won across the whole field ('+(p.sc==='n'?'net':'gross')+'). No carryovers.')
     :p.kind==='pick'?'Payout: '+_cupM(+p.amt)+(canEditTrip()?' to the winner. Tap Pick to choose who won; pick two or more to split it.':' to the winner the organizer picks.')
+    :_vob&&p.kind==='ln'?'Payout: '+_cupM(+p.amt)+' to the low team, gross, one ball a pair, split on a tie. Worked out from the scores.'
     :p.who==='pair'?'Payout: '+_cupM(+p.amt)+' to the low best-ball pair, split on a tie. Worked out from the scores.'
     :'Payout: '+_cupM(+p.amt)+' to the lowest net '+(p.r==='all'?'total across every round':'score this round')+', split on a tie.';
   h+='</div><div class="section-card cpv">';
@@ -15232,44 +15286,45 @@ function _cupPayViewHtml(r,x){
     return h+'</div>';
   }
   if(p.kind==='sk'){
-    const won=WK.players.map(function(){return [];});let S=0,thru=0;
+    const U=_cupUnits(r),ob=_cupOneBall(r),won=U.map(function(){return [];});let S=0,thru=0;
     for(let hh=off;hh<off+n;hh++){
-      const v=WK.players.map(function(_,pi){return p.sc==='n'?getNet(pi,hh,r):STATE.scores[r][hh][pi];});
+      const v=U.map(function(u){return _cupUV(u,function(pi){return p.sc==='n'&&!ob?getNet(pi,hh,r):STATE.scores[r][hh][pi];});});
       if(v.some(function(s){return s==null;}))continue;thru=hh-off+1;
       const lo=Math.min.apply(null,v),who=v.map(function(s,i){return s===lo?i:-1;}).filter(function(i){return i>=0;});
       if(who.length===1){won[who[0]].push(hh+1);S++;}
     }
-    h+='<div class="cpv-hd"><b>Skins</b><span>'+roundLabel(r)+' · '+(p.sc==='n'?'net':'gross')+' · whole field</span></div>';
-    const rows=won.map(function(hs,pi){return {pi:pi,hs:hs};}).filter(function(o){return o.hs.length;}).sort(function(a,b){return b.hs.length-a.hs.length;});
-    rows.forEach(function(o){h+='<div class="cpv-row"><span class="cpv-rk">'+o.hs.length+'</span><span class="cpv-nm">'+_cupNmSpan(o.pi)+'<small>Hole'+(o.hs.length>1?'s ':' ')+o.hs.join(', ')+'</small></span><span class="cpv-amt">'+_cupM((+p.amt)*o.hs.length/S)+'</span></div>';});
+    h+='<div class="cpv-hd"><b>Skins</b><span>'+roundLabel(r)+' · '+(p.sc==='n'&&!ob?'net':'gross')+' · '+(ob?'by pair':'whole field')+'</span></div>';
+    const rows=won.map(function(hs,k){return {pis:U[k],hs:hs};}).filter(function(o){return o.hs.length;}).sort(function(a,b){return b.hs.length-a.hs.length;});
+    rows.forEach(function(o){h+='<div class="cpv-row"><span class="cpv-rk">'+o.hs.length+'</span><span class="cpv-nm">'+o.pis.map(_cupNmSpan).join('<br>')+'<small>Hole'+(o.hs.length>1?'s ':' ')+o.hs.join(', ')+'</small></span><span class="cpv-amt">'+_cupM((+p.amt)*o.hs.length/S)+'</span></div>';});
     h+='<div class="cpv-ft"><span>'+(S?S+(S===1?' skin':' skins'):'No skins yet')+(thru?' thru '+(thru+off):'')+'</span>'+(S?'<span>'+_cupM((+p.amt)/S)+' a skin</span>':'')+'</div>';
     return h+'</div>';
   }
   // low net: pairs from the round's lineup, or players
   let ents=[];
-  if(p.who==='pair'){
+  const _pw=p.who==='pair'||(p.r!=='all'&&_cupOneBall(r));
+  if(_pw){
     const L=_cupLuGet(r);
-    if(L.fmt==='bb')L.m.forEach(function(m){[0,1].forEach(function(sd){const pis=m[sd].map(_cupPiOf);if(pis.length===2&&pis.every(function(i){return i>=0;}))ents.push({pis:pis});});});
-    ents.forEach(function(e){let tp=0,th=0;for(let hh=off;hh<off+n;hh++){const a=getNet(e.pis[0],hh,r),b=getNet(e.pis[1],hh,r);const v=[a,b].filter(function(s){return s!=null;});if(!v.length)continue;tp+=Math.min.apply(null,v)-_cupPar(r,hh);th++;}e.tp=tp;e.th=th;});
+    if(_cupPairs(L.fmt))L.m.forEach(function(m){[0,1].forEach(function(sd){const pis=m[sd].map(_cupPiOf);if(pis.length===2&&pis.every(function(i){return i>=0;}))ents.push({pis:pis});});});
+    ents.forEach(function(e){let tp=0,th=0;for(let hh=off;hh<off+n;hh++){const a=_cupPV(e.pis[0],hh,r),b=_cupPV(e.pis[1],hh,r);const v=[a,b].filter(function(s){return s!=null;});if(!v.length)continue;tp+=Math.min.apply(null,v)-_cupPar(r,hh);th++;}e.tp=tp;e.th=th;});
   }else{
-    const rs=p.r==='all'?WK.rounds.map(function(_,q){return q;}).filter(function(q){return inStandingsRound(q);}):[r];
+    const rs=p.r==='all'?WK.rounds.map(function(_,q){return q;}).filter(function(q){return _indivRound(q);}):[r];
     ents=WK.players.map(function(_,pi){let tp=0,th=0;rs.forEach(function(q){const o=holeOffset(q),k=roundHoleCount(q);for(let hh=o;hh<o+k;hh++){const s=getNet(pi,hh,q);if(s==null)continue;tp+=s-_cupPar(q,hh);th++;}});return {pis:[pi],tp:tp,th:th};});
   }
   const live=ents.filter(function(e){return e.th>0;}).sort(function(a,b){return a.tp-b.tp||b.th-a.th;}).concat(ents.filter(function(e){return !e.th;}));
   live.forEach(function(e,k){e.rank=k&&live[k-1].th&&e.th&&live[k-1].tp===e.tp?live[k-1].rank:k+1;});
   live.forEach(function(e){e.tie=live.filter(function(o){return o.th&&o.rank===e.rank;}).length>1;});
   const lead=live.filter(function(e){return e.th&&e.rank===1;});
-  h+='<div class="cpv-hd"><b>'+_gtEsc(_cupPayLabel(p))+'</b><span>'+(p.who==='pair'?live.length+' pairs · ':'')+(p.r==='all'?'All rounds':roundLabel(r))+'</span></div>';
-  if(!live.length)h+='<div class="cpv-ft"><span>'+(p.who==='pair'?'Set this round\'s best-ball lineup first.':'No players.')+'</span></div>';
+  h+='<div class="cpv-hd"><b>'+_gtEsc(_cupPayLabel(p))+'</b><span>'+(_pw?live.length+' pairs · ':'')+(p.r==='all'?'All rounds':roundLabel(r))+'</span></div>';
+  if(!live.length)h+='<div class="cpv-ft"><span>'+(_pw?'Set this round\'s lineup first.':'No players.')+'</span></div>';
   const done=_cupPayWinners(p)!==null;
   live.forEach(function(e,k){
     const key=r+':'+(p.id||x.i)+':'+k,isOpen=!!open[key],isLead=e.th&&e.rank===1;
     h+='<div class="cpv-row'+(isLead?' lead':'')+'" onclick="window._cupPayTog(\''+key+'\')"><span class="cpv-rk'+(isLead?' lead':'')+'">'+(e.th?(e.tie?'T':'')+e.rank:'–')+'</span><span class="cpv-nm">'+e.pis.map(_cupNmSpan).join('<br>')+'</span>'
       +'<span class="cpv-sc"><b class="'+(e.th&&e.tp<0?'u':'')+'">'+(e.th?_cupTp(e.tp):'–')+'</b><small>'+(e.th?(e.th>=n&&p.r!=='all'?'F':'thru '+e.th):'not started')+'</small>'+(isLead?'<i class="cpv-amt">'+(done?'Won ':'')+_cupM((+p.amt)/lead.length)+'</i>':'')+'</span></div>';
-    if(isOpen&&p.who==='pair'){
+    if(isOpen&&_pw){
       let g='<div class="cpv-grid"><table><tr><th>Hole</th>';for(let hh=off;hh<off+n;hh++)g+='<th>'+(hh+1)+'</th>';g+='</tr><tr class="par"><td>Par</td>';for(let hh=off;hh<off+n;hh++)g+='<td>'+_cupPar(r,hh)+'</td>';g+='</tr>';
-      e.pis.forEach(function(pi,j){const o=e.pis[1-j];g+='<tr><td>'+_gtEsc(displayName(pi))+'</td>';for(let hh=off;hh<off+n;hh++){const a=getNet(pi,hh,r),b=getNet(o,hh,r);g+='<td'+(a!=null&&(b==null||a<=b)?' class="c"':'')+'>'+(a==null?'':a)+'</td>';}g+='</tr>';});
-      g+='</table><div class="cpv-key">Net scores. Green is the score that counts.</div></div>';h+=g;
+      e.pis.forEach(function(pi,j){const o=e.pis[1-j];g+='<tr><td>'+_gtEsc(displayName(pi))+'</td>';for(let hh=off;hh<off+n;hh++){const a=_cupPV(pi,hh,r),b=_cupPV(o,hh,r);g+='<td'+(a!=null&&(b==null||a<=b)?' class="c"':'')+'>'+(a==null?'':a)+'</td>';}g+='</tr>';});
+      g+='</table><div class="cpv-key">'+(_cupOneBall(r)?'Gross scores, one ball a pair.':'Net scores. Green is the score that counts.')+'</div></div>';h+=g;
     }
   });
   if(lead.length&&live.length>1){const nx=live.find(function(e){return e.th&&e.rank>1;});if(nx)h+='<div class="cpv-ft"><span>'+(lead.length>1?lead.length+' tied for the lead':'Leads by '+(nx.tp-lead[0].tp))+'</span><span>'+_cupM(+p.amt)+'</span></div>';}
@@ -15341,24 +15396,25 @@ function _cupPayStatus(p){
   if(w!==null){if(!w.length)return {t:'No winner · pays nobody',won:false,none:true};
     if(p.kind==='sk'){
       // v125.21: one line: how many skins and who won most; the full list is a tap away on Games.
-      const S=w.S||w.length,ks=w.map(function(g){return {pi:g.pis[0],k:Math.round(g.share*S)};}).sort(function(a,b){return b.k-a.k;});
+      const S=w.S||w.length,ks=w.map(function(g){return {pi:g.pis[0],pis:g.pis,k:Math.round(g.share*S)};}).sort(function(a,b){return b.k-a.k;});
+      const _nm=function(x){return x.pis.map(_cupNmT).join(' / ');},_two=ks.some(function(x){return x.pis.length>1;});
       const many=ks.filter(function(x){return x.k>1;}),ones=ks.filter(function(x){return x.k===1;});
       let ln;
-      if(S===1)ln='1 skin · '+_cupNmT(ks[0].pi);
-      else if(!many.length)ln=S+' skins · '+ones.length+' players, 1 each';
-      else ln=S+' skins · '+many.map(function(x){return _cupNmT(x.pi)+' '+x.k;}).concat(ones.length===1?[_cupNmT(ones[0].pi)+' 1']:ones.length?['others 1']:[]).join(', ');
+      if(S===1)ln='1 skin · '+_nm(ks[0]);
+      else if(!many.length)ln=S+' skins · '+ones.length+(_two?' pairs':' players')+', 1 each';
+      else ln=S+' skins · '+many.map(function(x){return _nm(x)+' '+x.k;}).concat(ones.length===1?[_nm(ones[0])+' 1']:ones.length?['others 1']:[]).join(', ');
       return {t:'Won · '+ln,won:true};}
 
     return {t:'Won · '+w.map(function(g){return g.pis.map(_cupNmT).join(' / ');}).join(', '),won:true};}
   // not decided: started?
-  const rs=ri==='all'?WK.rounds.map(function(_,q){return q;}).filter(function(q){return inStandingsRound(q);}):(ri==null?[]:[ri]);
+  const rs=ri==='all'?WK.rounds.map(function(_,q){return q;}).filter(function(q){return _indivRound(q);}):(ri==null?[]:[ri]);
   const any=rs.some(function(q){const o=holeOffset(q),k=roundHoleCount(q),sc=STATE.scores&&STATE.scores[q];if(!sc)return false;for(let h=o;h<o+k;h++){if(sc[h]&&sc[h].some(function(v){return v!=null;}))return true;}return false;});
   if(!any)return {t:'Not started',won:false};
   if(p.kind==='sk')return {t:'In progress',won:false};
   // low net leader, as the board works it out
   let ents=[];
-  if(p.who==='pair'&&ri!=='all'){const L=_cupLuGet(ri);if(L.fmt==='bb')L.m.forEach(function(m){[0,1].forEach(function(sd){const pis=m[sd].map(_cupPiOf);if(pis.length===2&&pis.every(function(i){return i>=0;}))ents.push(pis);});});
-    ents=ents.map(function(pis){let tp=0,th=0;const o=holeOffset(ri),k=roundHoleCount(ri);for(let h=o;h<o+k;h++){const v=pis.map(function(pi){return getNet(pi,h,ri);}).filter(function(s){return s!=null;});if(!v.length)continue;tp+=Math.min.apply(null,v)-_cupPar(ri,h);th++;}return {pis:pis,tp:tp,th:th};});}
+  if((p.who==='pair'||_cupOneBall(ri))&&ri!=='all'){const L=_cupLuGet(ri);if(_cupPairs(L.fmt))L.m.forEach(function(m){[0,1].forEach(function(sd){const pis=m[sd].map(_cupPiOf);if(pis.length===2&&pis.every(function(i){return i>=0;}))ents.push(pis);});});
+    ents=ents.map(function(pis){let tp=0,th=0;const o=holeOffset(ri),k=roundHoleCount(ri);for(let h=o;h<o+k;h++){const v=pis.map(function(pi){return _cupPV(pi,h,ri);}).filter(function(s){return s!=null;});if(!v.length)continue;tp+=Math.min.apply(null,v)-_cupPar(ri,h);th++;}return {pis:pis,tp:tp,th:th};});}
   else ents=WK.players.map(function(_,pi){let tp=0,th=0;rs.forEach(function(q){const o=holeOffset(q),k=roundHoleCount(q);for(let h=o;h<o+k;h++){const s=getNet(pi,h,q);if(s==null)continue;tp+=s-_cupPar(q,h);th++;}});return {pis:[pi],tp:tp,th:th};});
   ents=ents.filter(function(e){return e.th;}).sort(function(x,y){return x.tp-y.tp||y.th-x.th;});
   if(!ents.length)return {t:'Not started',won:false};
@@ -15380,7 +15436,7 @@ function _cupMoneyBetsHtml(){
       h+='<div class="cpm-r" onclick="'+_cupPayOpenJs(p)+'"><div class="t"><b>'+_gtEsc(_cupPayLabel(p))+(p.kind==='sk'&&p.sc==='n'?' (net)':'')+'</b><small>'+st.t+'</small></div><div class="v'+(st.won?' g':st.none?' q':'')+'">'+_cupM(amt)+(sub?'<small>'+sub+'</small>':'')+'</div><span class="mn-chev">›</span></div>';});
     h+='</div>';});
   const ace=+c.ace||0;
-  if(ace){const A=_cupAces();h+='<div class="sec-hd mn-exsec">Outside the pot</div><div class="mn-row cpm-card"><div class="cpm-r"><div class="t"><b>Ace or albatross</b><small>'+(A.length?A.map(function(a){return _cupNmT(a.pi)+' · '+roundLabel(a.r)+' hole '+(a.h+1);}).join(', '):'None yet')+' · '+_cupM(ace)+' from each other player</small></div><div class="v">'+_cupM(ace)+'</div></div></div>';}
+  if(ace){const A=_cupAces();h+='<div class="sec-hd mn-exsec">Outside the pot</div><div class="mn-row cpm-card"><div class="cpm-r"><div class="t"><b>Ace or albatross</b><small>'+(A.length?A.map(function(a){return (a.pis||[a.pi]).map(_cupNmT).join(' / ')+' · '+roundLabel(a.r)+' hole '+(a.h+1);}).join(', '):'None yet')+' · '+_cupM(ace)+' from each other player</small></div><div class="v">'+_cupM(ace)+'</div></div></div>';}
   return h;
 }
 // v125.0: cup scoring. A side is a cup team only when every player on it is on that team.
@@ -15451,7 +15507,7 @@ function _cupBoardHtml(){
   h+='<div class="pm-hd hw-grp"><div class="sec-hd">By round</div></div><div class="su-card">';
   T.per.forEach(function(x){
     const rd=WK.rounds[x.r],nm=x.ms.length,started=x.ms.some(function(m){return m.st!=='notstarted';});
-    const fmt=isHeadsUp(x.r)?'Singles':'Best ball';
+    const fmt=isHeadsUp(x.r)?'Singles':_cupFmtName(_cupLuGet(x.r).fmt);
     const sub=nm?fmt+' · '+nm+' match'+(nm===1?'':'es'):'No cup matches yet';
     h+='<button type="button" class="cup-rd'+(x.r===pick?' on':'')+'"'+(nm?' onclick="window._cupPick('+x.r+')"':'')+'><span class="l"><b>'+roundLabel(x.r)+(rd&&rd.courseName?' · '+_gtEsc(courseDisp(rd.courseName)):'')+'</b><small>'+sub+'</small></span>'
       +'<span class="s">'+(started?'<span class="a">'+_cupPts(x.pts[0])+'</span><span class="d">·</span><span class="b">'+_cupPts(x.pts[1])+'</span>':'<span class="d">'+(nm?'not started':'')+'</span>')+'</span></button>';
@@ -18704,9 +18760,8 @@ function _gsSetupPlaceholder(def,r){
   const _sharedHere=_gsSharedHere(def,r);
   const _removeBtn=_locked?'':`<button class="gs-remove-btn" onclick="window._gsRemoveGame('${def.id}')">Remove ${def.label} from ${def.tripLevel?'trip':_sharedHere?'all foursomes':'this round'}</button>`;
   const _bodyCls=_locked?'gs-setup-body gs-setup-locked':'gs-setup-body';
-  // v124.9: "<Game> settings", with the strokes rule under it when there is one and it is not a warning.
-  const _sub=window._gsNetSub||'';
-  return `<button class="gs-setup-toggle${isOpen?' open':''}" onclick="window._gsToggleSetup('${def.id}')"><span class="gs-st"><b>${def.label} settings</b>${_sub?`<small>${_sub}</small>`:''}</span><span class="gs-setup-chevron">›</span></button>`+
+  // v124.9: "<Game> settings". v125.56: no strokes line under it; the row is quiet, a warning still sits on top.
+  return `<button class="gs-setup-toggle${isOpen?' open':''}" onclick="window._gsToggleSetup('${def.id}')"><span class="gs-st"><b>${def.label} settings</b></span><span class="gs-setup-chevron">›</span></button>`+
     (isOpen?`<div class="${_bodyCls}">${_note}${_gsSetupBody(def,r)}${_removeBtn}</div>`:'');
 }
 function _gsSnakeSetupBody(r){
@@ -18825,7 +18880,7 @@ function renderGamesContent(){
     // still sits up here, amber, where it cannot be missed.
     _nn.innerHTML=(_nt&&_nt.warn)?('<div class="gs-net warn"><div class="t">'+_nt.html+'</div>'
       +(_nt.change&&canEditTrip()?'<div class="c" onclick="_gsNetJump()">Fix</div>':'')+'</div>'):'';
-    window._gsNetSub=(_nt&&!_nt.warn)?_gsNetSubText(_nt.html):'';
+    // v125.56: the settings row no longer shows the strokes rule, so nothing reads _gsNetSub; it is gone.
   }
   if(g==='hammer')renderHammerRound();
   else if(g==='mp')renderMPRound();
